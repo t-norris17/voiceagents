@@ -41,7 +41,9 @@ When the caller needs account recovery, follow the Account Recovery procedure:
 - Read has_email_on_file from the verify result:
   - If true: tell them you'll send a secure reset link to the email on file, call
     send_reset_email, mention it may take a few seconds and to check spam, then STAY ON THE LINE.
-  - If false: say "I'll connect you to a specialist who can verify you another way," and transfer.
+  - If false: in the SAME turn, say one short handoff line ("Let me connect you to a specialist —
+    one moment") and immediately call transfer_to_number. Do not end your turn or wait for the
+    caller between announcing and transferring.
 - You never change the account yourself — you send the link and coach; the caller does the reset.
 - Use skip_turn to wait while they work; check in when they go quiet. Guide ONE step at a time;
   wait for confirmation before the next; never read all steps at once.
@@ -78,7 +80,15 @@ built-in transfer system tool:
 | `verify_caller` | `POST /api/poc/verify_caller` | `last4_ssn`, `dob` (TEST values) → returns `has_email_on_file` |
 | `send_reset_email` | `POST /api/poc/send_reset_email` | `subject_ref` |
 | `document_resolution` | `POST /api/poc/document_resolution` | `subject_ref`, `outcome`, `notes` |
-| `transfer_to_number` (system) | ElevenLabs system tool | target = `DEMO_TRANSFER_NUMBER` |
+| `transfer_to_number` (system) | ElevenLabs system tool | target = `DEMO_TRANSFER_NUMBER` (E.164, e.g. `+13165551234`) |
+
+**Transfer tool config:** the system tool exposes a **Condition** (when to transfer) and the
+target number — there is no separate "message" field, so the handoff line comes from the agent's
+speech. Set the **Condition** to: *no email on file, verification failed after two attempts, or
+the caller asks for a person.* To avoid a long silence, the **system prompt** tells the agent to
+announce and call the transfer in the **same turn** — otherwise the model may announce in one
+turn and transfer in the next while the take-turn-after-silence timer runs. Number must be
+**E.164** (`+1…`) or Twilio rejects it.
 
 ## 6. Mock backend + reset page (deploy to a SCRATCH Vercel project)
 

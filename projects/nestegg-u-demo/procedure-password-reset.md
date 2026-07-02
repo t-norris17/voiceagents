@@ -28,7 +28,7 @@ keeping the caller on the line until they're actually logged in.
 | 1 | **Verify the caller** | `verify_caller { last4_ssn, dob }` webhook tool → `{ verified, subject_ref, has_email_on_file }` (POC: mock, synthetic identity) |
 | 2 | **Confirm why they're calling** | Agent asks the reason; matches "account recovery / can't log in / password reset" |
 | 3a | **Email on file → send the reset link** | `send_reset_email { subject_ref }` → link to the mock reset page, delivered via Resend |
-| 3b | **No email on file → transfer** | Agent: *"I'll connect you to a specialist"* → `transfer_to_number` (system tool) |
+| 3b | **No email on file → transfer** | Announce + call `transfer_to_number` (system tool) in the **same turn** (its Condition governs when it fires); don't announce, yield, then transfer — that causes the delay |
 | 4 | **Stay on the line + ~30s check-ins** | `Skip turn` + "take turn after silence" (≤30s); coach each step incl. the missing **Log In** step, until login is confirmed |
 | 5 | **Write back the resolution** | `document_resolution { subject_ref, outcome, notes }` → mock store / Data Collection |
 
@@ -54,9 +54,10 @@ Read `has_email_on_file` from the verify result:
 - **Has an email on file:** *"I'll send a secure reset link to the email on file right now, and
   I'll stay on the line with you."* Call **`send_reset_email`**. Mention it may take a few seconds
   and to check spam.
-- **No email on file:** *"It looks like we don't have an email on file for your account, so I'll
-  connect you to a specialist who can verify you another way."* Call **`transfer_to_number`**,
-  then **`document_resolution`** with `outcome: "transferred"`.
+- **No email on file:** in the **same turn**, say one brief handoff line (*"Let me connect you to
+  a specialist — one moment."*) and **immediately call `transfer_to_number`** — do not end the
+  turn or wait for a reply in between (that one-beat handoff avoids a long silence). Then call
+  **`document_resolution`** with `outcome: "transferred"`.
 
 ### Step 3 — Stay on the line and walk them through it
 Use **Skip turn** to wait while they open the link; check in when they go quiet (≤30s):
