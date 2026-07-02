@@ -50,22 +50,21 @@ agent checks in naturally while the caller works the reset.
 
 ## The conversation (target read — happy path)
 
-**Agent:** "Thanks for calling NestEgg U support — I can help you get back into your account.
-First, let me verify your identity. Can I get your date of birth and the last four digits of
-your Social Security number?"
+**Agent:** "Thank you for calling NestEgg U support. How can I help you today?"
+
+**Caller:** "I can't get into my account."
+
+> *(The caller's stated problem triggers the Account Recovery procedure.)*
+
+**Agent:** "I'm sorry about that — I can help you get back in. First, let me verify your identity.
+Can I get your date of birth and the last four digits of your Social Security number?"
 
 **Caller:** "April 12th, 1968, and last four 0123."
 
 > *(Agent calls `verify_caller { last4_ssn, dob }` → `{ verified: true, has_email_on_file: true }`.)*
 
-**Agent:** "Perfect — you're verified. What can I help you with today?"
-
-**Caller:** "I can't log into my account. I need to reset my password."
-
-> *(Account Recovery procedure triggers.)*
-
-**Agent:** "No problem at all — I'll send a secure reset link to the email we have on file right
-now, and I'll stay on the line with you while you finish it."
+**Agent:** "Perfect — you're verified. I'll send a secure reset link to the email we have on file
+right now, and I'll stay on the line with you while you finish it."
 
 > *(Agent calls `send_reset_email`.)*
 
