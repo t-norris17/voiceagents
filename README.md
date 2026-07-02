@@ -26,7 +26,7 @@ and mock backends. The agents themselves are configured in the ElevenLabs dashbo
         ├── procedure-password-reset.md     # the free-form procedure
         ├── demo-script.md                  # word-for-word talk track + identity card
         ├── elevenlabs-poc-setup.md         # dashboard build guide + demo runbook
-        ├── poc-mock-tools.js               # mock webhook-tool backend
+        ├── mock-backend/                   # deploy-ready Vercel app (mock webhook tools + /reset page)
         └── phase2/                         # Talkdesk + dashboard (deferred)
 ```
 

@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NestEgg U — Password Reset</title>
+  <style>
+    /* Themed to match nesteggu.com: orange primary, navy wordmark, sky-blue + clouds,
+       green accent line, bold headings. Colors are eyeballed from the live site —
+       tweak the vars to pixel-match if you have the brand hex codes. */
+    :root {
+      --orange:#e8842b; --orange-dark:#c96a16;
+      --navy:#243b53; --ink:#1b2733; --muted:#5f7183;
+      --blue:#3f7cad; --green:#7ab55c; --line:#e3e8ee;
+      --ok:#4a9d3f; --err:#c0392b;
+    }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+           padding:24px; color:var(--ink);
+           font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+           background:
+             radial-gradient(140px 64px at 18% 80%, rgba(255,255,255,.9), transparent 70%),
+             radial-gradient(180px 74px at 82% 88%, rgba(255,255,255,.82), transparent 70%),
+             radial-gradient(120px 56px at 60% 22%, rgba(255,255,255,.7), transparent 70%),
+             linear-gradient(180deg, #e2f3fc 0%, #c3e6f7 55%, #a9d9f0 100%); }
+    .card { background:#fff; width:100%; max-width:430px; border-radius:14px;
+            box-shadow:0 20px 55px rgba(36,59,83,.22); overflow:hidden;
+            border-top:4px solid var(--green); }
+    /* Wordmark header, echoing the white top-nav on the site */
+    .head { padding:22px 26px 18px; border-bottom:1px solid var(--line); }
+    .brand { font-family:Georgia,"Times New Roman",serif; line-height:1; display:flex;
+             align-items:baseline; gap:2px; }
+    .brand .nest { font-size:26px; font-weight:700; color:var(--navy); letter-spacing:.3px; }
+    .brand .u { font-size:34px; font-weight:700; color:var(--orange); margin-left:3px; }
+    .brand .ribbon { font-family:-apple-system,"Segoe UI",Roboto,sans-serif; font-size:8px;
+                     font-weight:800; letter-spacing:.14em; color:var(--orange);
+                     text-transform:uppercase; align-self:center; margin-left:6px;
+                     border:1px solid var(--orange); border-radius:3px; padding:2px 5px; }
+    .head p { margin:8px 0 0; font-size:12px; color:var(--muted); letter-spacing:.2px; }
+    .body { padding:24px 26px; }
+    h2 { margin:0 0 6px; font-size:20px; font-weight:800; color:var(--ink); letter-spacing:-.01em; }
+    p.lead { margin:0 0 18px; font-size:14px; line-height:1.55; color:var(--muted); }
+    label { display:block; font-size:13px; font-weight:700; margin:14px 0 6px; color:var(--navy); }
+    input { width:100%; padding:12px; border:1px solid #cdd6e0; border-radius:8px;
+            font-size:15px; background:#fbfdff; }
+    input:focus { outline:none; border-color:var(--blue);
+                  box-shadow:0 0 0 3px rgba(63,124,173,.18); }
+    /* Raised orange button, matching the site's CTAs */
+    button { width:100%; margin-top:20px; padding:13px; border:0; border-radius:8px;
+             background:var(--orange); color:#fff; font-size:14px; font-weight:800;
+             text-transform:uppercase; letter-spacing:.06em; cursor:pointer;
+             box-shadow:0 4px 0 var(--orange-dark), 0 7px 14px rgba(201,106,22,.28);
+             transition:transform .06s, box-shadow .06s; }
+    button:hover { background:#ef8f39; }
+    button:active { transform:translateY(3px); box-shadow:0 1px 0 var(--orange-dark); }
+    .rules { list-style:none; padding:0; font-size:12.5px; color:var(--muted);
+             margin:12px 0 0; line-height:1.9; }
+    .rules li::before { content:"○ "; color:#c6ced7; font-weight:700; }
+    .rules li.met { color:var(--ok); }
+    .rules li.met::before { content:"● "; color:var(--ok); }
+    .hidden { display:none; }
+    .note { font-size:12px; color:var(--muted); margin-top:16px; text-align:center; }
+    .err { color:var(--err); font-size:13px; margin-top:10px; }
+    .success { text-align:center; padding:8px 0; }
+    .success .egg { font-size:44px; }
+    .foot { padding:14px 26px 18px; text-align:center; font-size:11px; color:var(--muted);
+            border-top:1px solid var(--line); background:#fafcfe; }
+    .foot b { color:var(--navy); }
+    .foot .u { color:var(--orange); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="head">
+      <div class="brand">
+        <span class="nest">NestEgg</span><span class="u">U</span>
+        <span class="ribbon">Learn + Act = Earn</span>
+      </div>
+      <p>Your retirement education resource</p>
+    </div>
+    <div class="body">
+
+      <!-- STEP 1: the quirk — you must click "Log In" before the reset field appears. -->
+      <section id="gate">
+        <h2>Reset your password</h2>
+        <p class="lead">To reset your password, first log in to reveal the reset form.</p>
+        <button id="loginBtn">Log In</button>
+        <p class="note">Trouble? The reset field appears after you click <b>Log In</b>.</p>
+      </section>
+
+      <!-- STEP 2: revealed only after clicking Log In. -->
+      <section id="resetForm" class="hidden">
+        <h2>Choose a new password</h2>
+        <p class="lead">Set a new password for your NestEgg U account.</p>
+        <label for="pw">New password</label>
+        <input id="pw" type="password" autocomplete="new-password" placeholder="New password" />
+        <label for="pw2">Confirm new password</label>
+        <input id="pw2" type="password" autocomplete="new-password" placeholder="Re-enter password" />
+        <ul class="rules" id="rules">
+          <li data-rule="len">At least 12 characters</li>
+          <li data-rule="num">Includes a number</li>
+          <li data-rule="sym">Includes a symbol</li>
+          <li data-rule="match">Both entries match</li>
+        </ul>
+        <div class="err hidden" id="err"></div>
+        <button id="saveBtn">Save new password</button>
+      </section>
+
+      <!-- STEP 3: success. -->
+      <section id="done" class="hidden success">
+        <div class="egg">🥚</div>
+        <h2 style="color:var(--ok)">Password updated</h2>
+        <p class="lead">You can now log in with your new password.</p>
+      </section>
+
+    </div>
+    <div class="foot">Secure password reset · <b>NestEgg<span class="u">U</span></b></div>
+  </div>
+
+  <script>
+    // Mock only — nothing is sent anywhere. Reproduces the real-site "Log In first" quirk
+    // and enforces the demo password rules (12+ chars, a number, a symbol).
+    var gate = document.getElementById('gate');
+    var form = document.getElementById('resetForm');
+    var done = document.getElementById('done');
+    var pw = document.getElementById('pw');
+    var pw2 = document.getElementById('pw2');
+    var err = document.getElementById('err');
+
+    document.getElementById('loginBtn').onclick = function () {
+      gate.classList.add('hidden');
+      form.classList.remove('hidden');
+      pw.focus();
+    };
+
+    function checks() {
+      var v = pw.value;
+      return {
+        len: v.length >= 12,
+        num: /[0-9]/.test(v),
+        sym: /[^A-Za-z0-9]/.test(v),
+        match: v.length > 0 && v === pw2.value
+      };
+    }
+
+    function paint() {
+      var c = checks();
+      document.querySelectorAll('#rules li').forEach(function (li) {
+        li.classList.toggle('met', c[li.getAttribute('data-rule')]);
+      });
+    }
+    pw.oninput = pw2.oninput = function () { paint(); err.classList.add('hidden'); };
+
+    document.getElementById('saveBtn').onclick = function () {
+      var c = checks();
+      if (c.len && c.num && c.sym && c.match) {
+        form.classList.add('hidden');
+        done.classList.remove('hidden');
+      } else {
+        err.textContent = c.match
+          ? 'Password must be at least 12 characters and include a number and a symbol.'
+          : 'The two passwords do not match.';
+        err.classList.remove('hidden');
+      }
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+# Secrets — never commit. Store these in Vercel env vars (or a local .env.local).
+.env
+.env.*
+!.env.example
+
+# Node / Vercel
+node_modules/
+.vercel/
