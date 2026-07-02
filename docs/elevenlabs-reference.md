@@ -62,11 +62,15 @@ answering capability questions — don't rely on memory. Procedures are **Alpha*
 
 ## Telephony
 
-- **Web test widget** — zero-setup, call from the browser (good for building/demoing).
-- **ElevenLabs phone number** — provision a number and dial it (feels like a real line).
-- **SIP trunking** — connect existing telephony (e.g. Talkdesk) inbound + outbound; digest auth;
-  custom SIP headers pass call context. (Phase 2 for these projects.)
-- Docs: `/docs/eleven-agents/phone-numbers/sip-trunking`, `.../sip-reference`
+- **Web test widget** — zero-setup, call from the browser (good for building/demoing). No PSTN
+  leg, so a live `transfer_to_number` to a real phone won't actually connect from the widget.
+- **Phone number = bring-your-own.** ElevenLabs does **not** provision/sell native numbers
+  (verified via docs, 2026-07). You **import a Twilio number** (paid Twilio account + a number;
+  ElevenLabs auto-detects inbound/outbound on import) or connect a **SIP trunk**.
+- **SIP trunking** — connect existing telephony (e.g. Talkdesk, Twilio, Vonage, Telnyx, Plivo…)
+  inbound + outbound; digest auth; custom SIP headers pass call context. (Phase 2 for these projects.)
+- Docs: `/docs/eleven-agents/phone-numbers/twilio-integration/native-integration`,
+  `/docs/eleven-agents/phone-numbers/sip-trunking`
 
 ## Voices
 

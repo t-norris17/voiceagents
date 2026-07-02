@@ -89,9 +89,18 @@ built-in transfer system tool:
 
 ## 7. Telephony for the demo
 
-- Provision a temporary **ElevenLabs phone number** and have the caller dial it (feels like the
-  1-800). The **web test widget** is the zero-setup fallback.
-- Set the transfer target (`DEMO_TRANSFER_NUMBER`) to the presenter's phone; test one transfer.
+ElevenLabs does **not** sell native numbers — you either dial from the browser widget or import a
+Twilio number. Two paths:
+
+- **Web test widget (zero setup):** call the agent from the browser. Fine for the happy path.
+  ⚠️ But the widget has no real phone leg, so a live **transfer to your phone won't connect** —
+  the no-email branch can only be *narrated*, not actually transferred.
+- **Twilio number (recommended if you want the "dial the 1-800" feel + a real transfer):** buy a
+  number in Twilio and **import it into ElevenLabs**. Use a **paid** number (~$1–2/mo), not a
+  trial number — trial numbers play a Twilio preamble and only call verified numbers. This makes
+  `transfer_to_number` → `DEMO_TRANSFER_NUMBER` actually ring the presenter's phone.
+- Set the transfer target (`DEMO_TRANSFER_NUMBER`) on the transfer tool; test one transfer before
+  the demo.
 
 ---
 
