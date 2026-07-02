@@ -40,23 +40,25 @@ keeping the caller on the line until they're actually logged in.
 > one step at a time and **wait for confirmation**. Short, spoken sentences. Patient, plain tone.
 > **POC: synthetic test data only — never handle a real SSN or real member data.**
 
-### Step 1 — Verify the caller
-Ask for **date of birth + the last 4 digits of the SSN**, then call **`verify_caller`**. If not
-verified after two attempts → stop and **transfer to a specialist** (simulated in POC).
+> **Triggers after the greeting.** The agent's first message is a generic greeting ("How can I
+> help you today?"); the caller stating they can't get in / need a reset is what fires this
+> procedure. Do **not** ask for identity until the caller has said what they need.
 
-### Step 2 — Confirm the reason
-*"What can I help you with today?"* → confirm it's account recovery / can't log in / password
-reset. (Anything else out of scope → transfer.)
+### Step 1 — Acknowledge, then verify identity
+Briefly reassure them (*"I'm sorry about that — I can get you back in"*). Then, before anything
+else, ask for their **date of birth + the last 4 digits of the SSN** and call **`verify_caller`**.
+If not verified after two attempts → stop and **transfer to a specialist** (simulated in POC).
 
-### Step 3 — Send the reset link, or transfer
+### Step 2 — Send the reset link, or transfer
 Read `has_email_on_file` from the verify result:
 - **Has an email on file:** *"I'll send a secure reset link to the email on file right now, and
   I'll stay on the line with you."* Call **`send_reset_email`**. Mention it may take a few seconds
   and to check spam.
 - **No email on file:** *"It looks like we don't have an email on file for your account, so I'll
-  connect you to a specialist who can verify you another way."* Call **`transfer_to_number`**.
+  connect you to a specialist who can verify you another way."* Call **`transfer_to_number`**,
+  then **`document_resolution`** with `outcome: "transferred"`.
 
-### Step 4 — Stay on the line and walk them through it
+### Step 3 — Stay on the line and walk them through it
 Use **Skip turn** to wait while they open the link; check in when they go quiet (≤30s):
 1. *"Open the link I just sent. Tell me when the reset page has loaded."* — wait.
 2. **(The missing step — the fix.)** *"If it drops you on the login page, click **Log In** first —
@@ -69,7 +71,7 @@ Use **Skip turn** to wait while they open the link; check in when they go quiet 
 Check-in style while waiting: *"Still with you — how's it going so far?"* Never go silent for
 long; never dump all steps at once.
 
-### Step 5 — Document the resolution
+### Step 4 — Document the resolution
 Call **`document_resolution`** with `{ subject_ref, outcome, notes }`. Confirm to the caller it's
 done and ask if there's anything else.
 

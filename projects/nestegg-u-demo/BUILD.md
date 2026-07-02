@@ -15,6 +15,42 @@
 
 ---
 
+### 2026-07-02 — Session 7
+
+**Time spent:** ~2 hrs
+**Status after session:** ahead — backend deployed & live; agent build underway
+
+**What we did:**
+- **Deployed the mock backend to Vercel and verified it end-to-end** — Resend sends the reset
+  email to `DEMO_EMAIL`, and the themed `/reset` page loads. Live at
+  `https://lumio-retirement.vercel.app` (`/reset` + `/api/poc/*`).
+- Themed the reset page to **nesteggu.com** (orange CTAs, NestEgg U wordmark, sky/clouds) from
+  the live-site screenshots.
+- Opened & merged **PR #1** (the demo build) and **PR #2** (`mock-backend/vercel.json` to skip
+  the leftover `vite build` that was failing the deploy).
+- Started the **ElevenLabs agent build** from `elevenlabs-poc-setup.md`.
+
+**What broke / surprised us:**
+- First Vercel deploy failed with `vite: command not found` — the "Lumio Retirement" project was
+  a former Vite app and still carried a `vite build` command. Fixed with a repo `vercel.json`.
+- Design tweak: the agent now opens with a **generic greeting**, and the caller's stated problem
+  ("I can't get into my account") triggers the Account Recovery procedure — verification is the
+  procedure's first step, not the agent's opening line. Updated the prompt, talk track, procedure.
+
+**Decisions made:**
+- Reset flow deploys to the existing **Lumio Retirement** Vercel test project (env vars live there).
+- Greeting-first, intent-triggered procedure (above).
+
+**Next session:**
+> Finish the ElevenLabs agent: register the 3 webhook tools against the live URLs + the transfer
+> tool (target 316-680-7638), attach the free-form procedure + triggers, upload the KBA, set
+> voice + conversation-flow toggles (Skip turn, ~25s take-turn-after-silence) + post-call Data
+> Collection, and import the Twilio 833 number. Then rehearse both branches (happy path +
+> no-email transfer) and record the Monday backup. Keep Vercel Deployment Protection OFF so the
+> emailed link + webhooks stay publicly reachable.
+
+---
+
 ### 2026-07-02 — Session 6
 
 **Time spent:** ~1 hr
