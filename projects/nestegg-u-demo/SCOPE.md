@@ -1,80 +1,90 @@
-# SCOPE — Lumio Retirement Voice Line
+# SCOPE — NestEgg U Password-Reset Voice Demo
 
-**Slug:** lumio-retirement-voice
+**Slug:** nestegg-u-demo
 **Status:** draft
-**Created:** 2026-07-01
-**Effort:** XL (program) · **POC due Tue Jul 7** (~4 working days)
+**Created:** 2026-07-02
+**Effort:** M (~12 business hours / ~1.5 working days to **Tue Jul 7**)
 **Owner:** Tanner
 
-> **Phase 0 (now): ElevenLabs POC, no Talkdesk.** One topic — account recovery / password
-> reset — demoed end-to-end in ElevenLabs. SIP, Navigator routing, transfer-to-Talkdesk, and
-> the Lumio metrics dashboard are all **phase 2 (post-POC)**. See `elevenlabs-poc-setup.md`.
-> Pilot topic set beyond the demo is TBD from a 750-transcript categorization (in progress).
-
-> **Not the plan-admin app.** This is the *customer-facing phone line* that deflects easy calls to an AI voice agent. The internal plan-administration app (plan analysts, ERISA reviewers) is a separate build — see `docs/retirement-command-DESIGN.md`. They may share a brand/Supabase project later; they are separate efforts.
+> **This scope is the demo only.** The broader program (Talkdesk routing, SIP, multi-topic
+> pilot, Lumio metrics dashboard) is **phase 2** — captured in `SPEC.md` and `phase2/`. For the
+> next 12 hours: one topic, done well.
 
 ---
 
 ## Problem
 
-The retirement phone team spends a large share of its time answering repetitive, KBA-answerable questions on the 1-800 line. Those "easy win" calls crowd out the complex cases that actually need a human, and there's no clean way to triage them at the door. Today every caller waits in the same queue regardless of how trivial their question is.
+NestEgg U's password-reset call is **3,136 calls** in volume, but only **3% self-serve** and
+**55% call back**. The recorded IVR message can't confirm or adapt, and it **omits the one
+non-obvious step** — you must click **Log In** *before* the "Forgot Password" link appears. That
+missing step is the likely driver of the callback rate. We need to prove, on a live demo call,
+that a conversational agent resolves this on the first call.
 
 ## Solution
 
-Put an AI voice agent behind the existing Talkdesk line. Talkdesk Navigator classifies intent at the front door; AI-eligible topics route (over SIP) to an ElevenLabs voice agent that authenticates the caller (OTP), answers from the team's KCS knowledge-base articles, and warm-transfers back to a live Talkdesk agent the moment it's out of scope, unsure, or asked to. Every AI call's outcome flows into Lumio, where supervisors get one dashboard of what the AI is handling. Callers never meet Lumie; Lumio owns the staff-facing metrics and audit.
-
-## Pilot scope (proposed — confirm to lock)
-
-Working assumption: this is a **plan-participant–facing** line (callers asking about
-their own retirement accounts), not a plan-sponsor/employer line. Confirm or correct.
-
-Proposed v1 pilot = **5 informational, low-risk, high-volume topics** (everything else
-routes straight to a human):
-
-1. Portal login / password reset
-2. Check balance / find statements
-3. How contributions & contribution changes work (informational)
-4. Loan eligibility & how to request (informational)
-5. Leaving employer: rollover / distribution process (informational)
+A single-topic **ElevenLabs voice agent** — warm, clear American female voice to match the
+current IVR — that verifies the caller against a synthetic test identity, then **coaches them
+through NestEgg's self-service password reset one step at a time**, explicitly naming the
+"click Log In first" step, **staying on the line** (Skip turn + ~25s check-ins) until they've
+**actually logged in with the new password**, and then logging the resolution. Built in the
+ElevenLabs dashboard from `elevenlabs-poc-setup.md`, grounded in the corrected
+`kba-nestegg-password-reset.md`, and rehearsed against `demo-script.md`.
 
 ## Success criteria
 
-- [ ] Pilot AI agent handles 3–5 defined topics end-to-end (auth → KBA answer → clean end or transfer) in production.
-- [ ] Measurable **deflection rate** on AI-routed calls, with a **false-answer / bad-deflection rate at or below an agreed ceiling** (e.g. <2%) — tracked in the dashboard.
-- [ ] 100% of out-of-scope / low-confidence / failed-auth situations **warm-transfer** to a Talkdesk human with context carried over (no cold transfers, no dead ends).
-- [ ] Supervisors can see deflection rate, transfer rate + reason, topic mix, auth success, and handle time in a Lumio dashboard.
+- [ ] A demo call runs the full happy path end-to-end — **verify → intent → guided reset →
+      confirmed login → resolution logged** — and sounds warm, crisp, and smooth.
+- [ ] The agent **explicitly catches the "click Log In first" step** mid-call (the 55%-callback fix).
+- [ ] The agent **stays on the line** through the reset (Skip turn + ≤30s check-ins) with no dead
+      air and without hanging up.
+- [ ] A **clean screen+audio backup recording** of the happy path exists before Tuesday.
 
 ## Why now
 
-Sponsor (Tanner's boss) is driving this as a way to shift easy wins off the human team. ElevenLabs' Conversational AI now supports every required piece (SIP into existing telephony, KB-grounded procedures, transfer-to-human, post-call webhooks) — verified against their docs — so the plumbing is buildable today rather than a research project. It's also the first concrete client-facing use of the platform, seeding the future Call Center flavor.
+Working demo is due **Tue Jul 7**; today is Jul 2, leaving **~12 business hours** to build,
+rehearse, and record. This is the first concrete client-facing use of the platform; the boss is
+both the demo audience and the sponsor. Everything ElevenLabs needs (KB-grounded free-form
+procedures, Skip turn / take-turn-after-silence, webhook tools, post-call data) is verified
+buildable today — see `../../docs/elevenlabs-reference.md`.
 
 ## Constraints
 
-- Regulated financial services — compliance must be in the room from day one (recording disclosure, PII handling, what the AI is allowed to do).
-- Talkdesk stays the front door and switchboard; we plug in, we don't replace it.
-- ElevenLabs Procedures are **Alpha** (breaking changes expected); KBA answers must use **free-form** procedures (structured ones can't reference the KB) and can't be converted later.
-- **Answer-only in v1** — no account-changing actions by the AI until a higher-assurance auth model is approved.
-- Dashboard + OTP + webhook receiver build on the existing Lumio stack (Vite/React 19, Vercel `/api`, Supabase).
-- Metrics data is owned by Lumio, not locked in a vendor dashboard (vendor portability).
+- **~12 business hours total**, inclusive of build + rehearsal + backup recording.
+- **ElevenLabs only** — no Talkdesk, no SIP, no dashboard (all phase 2).
+- **Regulated financial services: synthetic test data only.** No real SSN/PII. The only real
+  value permitted is a demo *inbox*, and only if we keep an email step (we are not — see below).
+- Procedures are **Alpha**; KBA answers must be **free-form** (structured can't reference the KB,
+  and types can't be converted later).
+- The agent is **configuration in the ElevenLabs dashboard, not code** in this repo. This repo is
+  docs + (if needed) a small mock backend.
 
 ## Non-goals
 
-- Not: any transactional action by the AI (distributions, beneficiary/address changes, loans) — those transfer to a human.
-- Not: a Lumie persona on the caller-facing side.
-- Not: replacing Talkdesk routing, queues, or telephony.
-- Not: custom ASR/TTS — ElevenLabs provides the voice stack.
-- Not: any retirement plan-admin functionality (that's the other project).
+- **Not: the email-reset-link flow.** The authoritative KBA shows NestEgg's Forgot Password as
+  self-service (SSN + DOB + ZIP + security question) with **no emailed reset link**. We demo the
+  guided self-service flow. *(Revisit only if the business confirms NestEgg actually sends reset
+  emails — see open questions.)*
+- Not: OTP/SMS, or any transactional account change — the agent **never touches the account**.
+- Not: any topic besides account recovery / password reset.
+- Not: Talkdesk routing, SIP trunking, or the Lumio metrics dashboard (phase 2).
+- Not: the production webhook receiver, `ai_call_events` DB, or repo re-architecture.
 
 ## Open questions
 
-- [ ] Authenticate before Navigator routing (shared with human path) or only on the AI path? (Lean: up front, shared.)
-- [ ] What, if anything, may the AI *do* after OTP? (v1 = answer-only; confirm with compliance.)
-- [ ] Which 3–5 topics for the pilot? (Highest-volume, lowest-risk, best KBA coverage.)
-- [ ] How do KCS KBA updates propagate into the ElevenLabs KB — manual re-upload or sync? Owner + cadence?
-- [ ] One human transfer queue or per-topic queues (right skill group)?
-- [ ] Recording consent/disclosure wording + retention (compliance-owned).
-- [ ] Who provisions the Talkdesk↔ElevenLabs SIP trunk and the custom-header contract?
+> The first two gate the build plan. Current working assumptions in **bold**; confirm or flip.
+
+- [ ] **Reset method — guided self-service** (assumed, per the KBA) **vs. email link.** Confirm
+      NestEgg has no emailed reset-link option. If it does, the email variant is back on the table.
+- [ ] **Demo surface — mock / narration** (assumed safe default) **vs. driving the real
+      nesteggu.com site.** Upgrade to the real site only if a working synthetic test account
+      (known SSN/DOB/ZIP/security answer) exists and the site is reliable on stage.
+- [ ] **Password rules** for NestEgg (length/complexity) — needed for the "set your new password"
+      step in the talk track. Currently a `[PASSWORD RULES]` placeholder.
+- [ ] **Security-question fallback** — if the caller doesn't know their security answer (a hard
+      gate), the agent guides them to a live agent. Confirm wording / simulated-transfer behavior.
+- [ ] **Telephony** — provision a temporary ElevenLabs phone number vs. the web test widget.
+      Default: do both; widget is the zero-setup backup.
 
 ---
 
-*Scope locked: not yet — pending sponsor confirmation.*
+*Scope locked: not yet — pending confirmation of the two working assumptions above.*
