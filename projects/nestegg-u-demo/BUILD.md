@@ -1,14 +1,53 @@
-# BUILD LOG — Lumio Retirement Voice Line
+# BUILD LOG — NestEgg U Password-Reset Voice Demo
 
-**Slug:** lumio-retirement-voice
+**Slug:** nestegg-u-demo
 **Started:** 2026-07-01
 **Status:** active
+
+> Re-badged from `lumio-retirement-voice` on 2026-07-02. Earlier sessions (1–5) below predate the
+> rename and still reference the old slug/paths — kept as the historical record.
 
 ---
 
 ## Session log
 
 <!-- Add new sessions at the top, newest first -->
+
+---
+
+### 2026-07-02 — Session 6
+
+**Time spent:** ~1 hr
+**Status after session:** on track — repo reorganized, skill installed, demo scope locked, SPEC written
+
+**What we did:**
+- Reorganized the flat repo into the documented layout: `docs/` + `projects/nestegg-u-demo/`
+  (+ `phase2/`), preserving history with `git mv`; fixed the broken README/CLAUDE links.
+- Installed the missing **`project-spec` skill** at `.claude/skills/project-spec/` (SKILL.md +
+  the three templates) so the repo matches its own docs.
+- **Locked the demo scope** to Tanner's target workflow (email reset-link flow) and wrote a
+  demo-focused **`SPEC.md`**; moved the old program-level spec to `phase2/PROGRAM-SPEC.md`.
+
+**What broke / surprised us:**
+- Tanner's target flow is the **email-link** variant — reversing the earlier session's lean
+  toward guided self-service. Consequence: the emailed link can't point at the live NestEgg site
+  (it's self-service, no emailed link), so we'll build a **mock `/reset` page** that reproduces
+  the "click Log In first" quirk.
+
+**Decisions made:**
+- Auth = **SSN last-4 + DOB**. Delivery = **Resend** → `DEMO_EMAIL`. Password rules = **12+ chars
+  incl. numbers + symbols**. No-email branch = **"connect you to a specialist" → real
+  `transfer_to_number`** to the presenter's demo phone (stored as `DEMO_TRANSFER_NUMBER` in env /
+  dashboard config, **not** in the repo).
+- `verify_caller` returns `has_email_on_file` to drive the send-vs-transfer branch.
+
+**Next session:**
+> **Block 2 — align the demo assets to the locked email-link flow.** Trim `poc-mock-tools.js`
+> `verify_caller` to `{ last4_ssn, dob }` and add `has_email_on_file` to its output; update
+> `demo-script.md` (auth → SSN+DOB; add the no-email→transfer branch) and
+> `procedure-password-reset.md` (drop the OTP/SMS steps; keep verify → send email → stay-on-line
+> → document); re-badge `START-HERE.md` to this flow. Then Block 3: build the mock `/reset` page
+> + deploy the backend to a scratch Vercel project with Resend wired. See `SPEC.md` for the plan.
 
 ---
 

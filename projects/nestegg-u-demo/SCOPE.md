@@ -1,14 +1,14 @@
 # SCOPE — NestEgg U Password-Reset Voice Demo
 
 **Slug:** nestegg-u-demo
-**Status:** draft
+**Status:** active
 **Created:** 2026-07-02
 **Effort:** M (~12 business hours / ~1.5 working days to **Tue Jul 7**)
 **Owner:** Tanner
 
 > **This scope is the demo only.** The broader program (Talkdesk routing, SIP, multi-topic
-> pilot, Lumio metrics dashboard) is **phase 2** — captured in `SPEC.md` and `phase2/`. For the
-> next 12 hours: one topic, done well.
+> pilot, Lumio metrics dashboard) is **phase 2** — captured in `phase2/` (see
+> `phase2/PROGRAM-SPEC.md`). For the next 12 hours: one topic, done well.
 
 ---
 
@@ -94,18 +94,21 @@ human, post-call data) is verified buildable today — see `../../docs/elevenlab
 | `document_resolution` | `{ subject_ref, outcome, notes }` | `{ logged, ticket_id }` |
 | `transfer_to_number` (system) | — | Simulated in POC; used on the no-email branch |
 
+## Decisions (resolved — carried into SPEC.md)
+
+- **Password rules:** **12+ characters, must include numbers and symbols.**
+- **Email provider:** **Resend**, with `DEMO_EMAIL` set to the presenter's own inbox.
+- **SSN form:** read **last 4** only (phone-safe; proving the concept).
+- **Mock reset page:** **build a small hosted page** that reproduces the "click Log In first"
+  quirk (live feel, no dependency on the real site).
+- **No-email-on-file branch:** agent says *"I'll connect you to a specialist,"* then a real
+  `transfer_to_number` to the presenter's **demo phone** (stored in dashboard config / env as
+  `DEMO_TRANSFER_NUMBER` — **not** hardcoded in the repo).
+
 ## Open questions
 
-- [ ] **Password rules** for the mock reset page (length/complexity) — needed for the "set your
-      new password" step. Currently a `[PASSWORD RULES]` placeholder.
-- [ ] **Email provider** for the demo (Resend / SendGrid / SES) + `DEMO_EMAIL` (presenter inbox)
-      so the link actually delivers on stage.
-- [ ] **SSN form** — read **last 4** (phone-safe convention) or full synthetic SSN? Assumed last 4.
-- [ ] **Mock reset page** — build a tiny hosted page that reproduces the "click Log In first"
-      quirk, or coach against a static screenshot? (Leaning: tiny hosted page for a live feel.)
-- [ ] **No-email-on-file branch** — how to present the simulated transfer (agent message vs. a
-      real `transfer_to_number` to a demo phone)?
+- [ ] None blocking. (Voice A/B against the IVR is a build-time tuning task, not a scope gate.)
 
 ---
 
-*Scope locked: not yet — pending confirmation of the open questions above.*
+*Scope locked: 2026-07-02.*
