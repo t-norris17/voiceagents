@@ -27,6 +27,11 @@
   the three templates) so the repo matches its own docs.
 - **Locked the demo scope** to Tanner's target workflow (email reset-link flow) and wrote a
   demo-focused **`SPEC.md`**; moved the old program-level spec to `phase2/PROGRAM-SPEC.md`.
+- **Block 2+3 (assets):** reconciled every demo asset to the locked flow —
+  `poc-mock-tools.js` (auth → SSN+DOB, `has_email_on_file` branch, Resend wired, 2nd no-email
+  identity), `demo-script.md`, `procedure-password-reset.md`, `elevenlabs-poc-setup.md`,
+  `START-HERE.md` — and built the **mock reset page** (`reset-page/index.html`) that reproduces
+  the "click Log In first" quirk and enforces the 12-char rule.
 
 **What broke / surprised us:**
 - Tanner's target flow is the **email-link** variant — reversing the earlier session's lean
@@ -42,12 +47,14 @@
 - `verify_caller` returns `has_email_on_file` to drive the send-vs-transfer branch.
 
 **Next session:**
-> **Block 2 — align the demo assets to the locked email-link flow.** Trim `poc-mock-tools.js`
-> `verify_caller` to `{ last4_ssn, dob }` and add `has_email_on_file` to its output; update
-> `demo-script.md` (auth → SSN+DOB; add the no-email→transfer branch) and
-> `procedure-password-reset.md` (drop the OTP/SMS steps; keep verify → send email → stay-on-line
-> → document); re-badge `START-HERE.md` to this flow. Then Block 3: build the mock `/reset` page
-> + deploy the backend to a scratch Vercel project with Resend wired. See `SPEC.md` for the plan.
+> **Blocks 2 + 3 are done in-repo.** Next is **deployment + the ElevenLabs build**, which happen
+> outside this repo: (1) deploy `poc-mock-tools.js` + `reset-page/` to a **scratch Vercel
+> project**, set env (`DEMO_EMAIL`, `RESEND_API_KEY`, `RESEND_FROM`, `RESET_PAGE_URL`), and test
+> that a real reset email lands in `DEMO_EMAIL`; (2) build the agent in the **ElevenLabs
+> dashboard** from `elevenlabs-poc-setup.md` — voice A/B, paste the system prompt, create the
+> free-form procedure + trigger, upload the KBA, register the 3 webhook tools + transfer, enable
+> Skip turn + ~25s take-turn-after-silence + post-call Data Collection. Then rehearse both
+> branches and record the Monday backup.
 
 ---
 

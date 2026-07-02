@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NestEgg U — Password Reset</title>
+  <style>
+    :root { --navy:#0f2a4a; --blue:#1f6feb; --bg:#eef2f7; --ok:#1a7f37; --err:#b42318; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+           background:var(--bg); color:#12233b; display:flex; min-height:100vh;
+           align-items:center; justify-content:center; padding:24px; }
+    .card { background:#fff; width:100%; max-width:420px; border-radius:14px;
+            box-shadow:0 10px 40px rgba(15,42,74,.12); overflow:hidden; }
+    .head { background:var(--navy); color:#fff; padding:22px 26px; }
+    .head h1 { margin:0; font-size:19px; letter-spacing:.2px; }
+    .head p { margin:4px 0 0; font-size:13px; opacity:.8; }
+    .body { padding:26px; }
+    p.lead { margin:0 0 18px; font-size:14px; line-height:1.5; color:#3a4a5f; }
+    label { display:block; font-size:13px; font-weight:600; margin:14px 0 6px; }
+    input { width:100%; padding:11px 12px; border:1px solid #c9d4e2; border-radius:8px;
+            font-size:15px; }
+    input:focus { outline:none; border-color:var(--blue); box-shadow:0 0 0 3px rgba(31,111,235,.15); }
+    button { width:100%; margin-top:20px; padding:12px; border:0; border-radius:8px;
+             background:var(--blue); color:#fff; font-size:15px; font-weight:600; cursor:pointer; }
+    button:hover { background:#1a5fd0; }
+    .rules { font-size:12px; color:#64748b; margin-top:8px; line-height:1.5; }
+    .rules li.met { color:var(--ok); }
+    .hidden { display:none; }
+    .note { font-size:12px; color:#64748b; margin-top:16px; text-align:center; }
+    .ok { color:var(--ok); font-weight:600; }
+    .err { color:var(--err); font-size:13px; margin-top:8px; }
+    .success { text-align:center; padding:10px 0; }
+    .success .big { font-size:40px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="head">
+      <h1>NestEgg U</h1>
+      <p>Account password reset</p>
+    </div>
+    <div class="body">
+
+      <!-- STEP 1: the quirk — you must click "Log In" before the reset field appears. -->
+      <section id="gate">
+        <p class="lead">To reset your password, first log in to reveal the reset form.</p>
+        <button id="loginBtn">Log In</button>
+        <p class="note">Trouble? The reset field appears after you click <b>Log In</b>.</p>
+      </section>
+
+      <!-- STEP 2: revealed only after clicking Log In. -->
+      <section id="resetForm" class="hidden">
+        <p class="lead">Choose a new password for your account.</p>
+        <label for="pw">New password</label>
+        <input id="pw" type="password" autocomplete="new-password" placeholder="New password" />
+        <label for="pw2">Confirm new password</label>
+        <input id="pw2" type="password" autocomplete="new-password" placeholder="Re-enter password" />
+        <ul class="rules" id="rules">
+          <li data-rule="len">At least 12 characters</li>
+          <li data-rule="num">Includes a number</li>
+          <li data-rule="sym">Includes a symbol</li>
+          <li data-rule="match">Both entries match</li>
+        </ul>
+        <div class="err hidden" id="err"></div>
+        <button id="saveBtn">Save new password</button>
+      </section>
+
+      <!-- STEP 3: success. -->
+      <section id="done" class="hidden success">
+        <div class="big">✅</div>
+        <p class="lead"><span class="ok">Password updated.</span><br />You can now log in with your new password.</p>
+      </section>
+
+    </div>
+  </div>
+
+  <script>
+    // Mock only — nothing is sent anywhere. Reproduces the real-site "Log In first" quirk
+    // and enforces the demo password rules (12+ chars, a number, a symbol).
+    var gate = document.getElementById('gate');
+    var form = document.getElementById('resetForm');
+    var done = document.getElementById('done');
+    var pw = document.getElementById('pw');
+    var pw2 = document.getElementById('pw2');
+    var err = document.getElementById('err');
+
+    document.getElementById('loginBtn').onclick = function () {
+      gate.classList.add('hidden');
+      form.classList.remove('hidden');
+      pw.focus();
+    };
+
+    function checks() {
+      var v = pw.value;
+      return {
+        len: v.length >= 12,
+        num: /[0-9]/.test(v),
+        sym: /[^A-Za-z0-9]/.test(v),
+        match: v.length > 0 && v === pw2.value
+      };
+    }
+
+    function paint() {
+      var c = checks();
+      document.querySelectorAll('#rules li').forEach(function (li) {
+        li.classList.toggle('met', c[li.getAttribute('data-rule')]);
+      });
+    }
+    pw.oninput = pw2.oninput = function () { paint(); err.classList.add('hidden'); };
+
+    document.getElementById('saveBtn').onclick = function () {
+      var c = checks();
+      if (c.len && c.num && c.sym && c.match) {
+        form.classList.add('hidden');
+        done.classList.remove('hidden');
+      } else {
+        err.textContent = c.match
+          ? 'Password must be at least 12 characters and include a number and a symbol.'
+          : 'The two passwords do not match.';
+        err.classList.remove('hidden');
+      }
+    };
+  </script>
+</body>
+</html>

@@ -1,66 +1,93 @@
-// POC mock tools for the ElevenLabs account-recovery demo.
+// POC mock tools for the NestEgg U password-reset voice demo.
 //
-// Deploy to a SCRATCH Vercel project — NOT wealth-command. Throwaway demo scaffolding:
-// in-memory state, synthetic data only, no real member PII, no auth hardening.
+// Deploy to a SCRATCH Vercel project — NOT any production project. Throwaway demo
+// scaffolding: in-memory state, synthetic identities only, no real member PII, no auth
+// hardening.
 //
-// Demo flow: verify caller (SSN + address) -> send reset link to email on file -> document.
+// Locked demo flow (see ../SPEC.md):
+//   verify caller (SSN last-4 + DOB) -> if email on file, send reset link via Resend;
+//   if NOT, the agent transfers to a specialist -> document the resolution.
 //
 // Routes (register each as an ElevenLabs webhook tool):
-//   POST /api/poc/verify_caller       { name, dob, last4_ssn, zip }   -> { verified, subject_ref }
+//   POST /api/poc/verify_caller       { last4_ssn, dob }              -> { verified, subject_ref, has_email_on_file }
 //   POST /api/poc/send_reset_email    { subject_ref }                 -> { sent, delivered_to }
 //   POST /api/poc/document_resolution { subject_ref, outcome, notes } -> { logged, ticket_id }
 //
-// Real email in the room (recommended): set RESET_LINK + an email provider in sendEmail().
-// The "email on file" is the boss's own inbox for the demo — set DEMO_EMAIL.
+// Env vars (set in the Vercel project):
+//   DEMO_EMAIL       presenter's own inbox = the "email on file" (the one real value allowed)
+//   RESEND_API_KEY   Resend key so the reset email actually sends on stage
+//   RESEND_FROM      verified sender (default: onboarding@resend.dev — fine for a quick demo)
+//   RESET_PAGE_URL   URL of the mock /reset page the email links to
 
-// Synthetic test identity. SSN is in the 900-range = never issued (invalid by design).
-const TEST_IDENTITY = {
-  name: "michael reynolds",
-  dob: "1968-04-12",
-  last4_ssn: "0123",
-  zip: "67202",
-  subject_ref: "poc-subject-001",
-  email_on_file: process.env.DEMO_EMAIL || "demo@example.com", // set to the boss's inbox
-};
+// Synthetic test identities. SSNs are in the 900-range = never issued (invalid by design).
+const IDENTITIES = [
+  {
+    subject_ref: "poc-subject-001", // HAPPY PATH — has an email on file
+    dob: "1968-04-12",
+    last4_ssn: "0123",
+    email_on_file: process.env.DEMO_EMAIL || "demo@example.com",
+  },
+  {
+    subject_ref: "poc-subject-002", // TRANSFER BRANCH — no email on file
+    dob: "1970-01-01",
+    last4_ssn: "0000",
+    email_on_file: null,
+  },
+];
 
-const RESET_LINK = process.env.RESET_LINK || "https://example.retirement/login";
+const RESET_PAGE_URL = process.env.RESET_PAGE_URL || "https://example.vercel.app/reset";
+const RESEND_FROM = process.env.RESEND_FROM || "onboarding@resend.dev";
 
-const resolutions = []; // audit of documented resolutions
+const resolutions = []; // in-memory audit of documented resolutions
 let seq = 0;
 const id = (p) => `${p}_${++seq}`;
-const norm = (s) => String(s || "").trim().toLowerCase();
+const digits = (s) => String(s || "").replace(/\D/g, "");
+const byRef = (ref) => IDENTITIES.find((i) => i.subject_ref === ref);
+// Demo-lenient DOB match: compare the multiset of digits so "1968-04-12" and "04/12/1968"
+// both match, regardless of how the agent formats the spoken date. Fine for 2 fixed identities.
+const dobKey = (s) => digits(s).split("").sort().join("");
 
-async function sendEmail(to, subject, body) {
-  // POC: wire your email provider here (Resend/SendGrid/SES). No-op stub if unset.
-  if (!process.env.EMAIL_PROVIDER) return { mocked: true, to };
-  // e.g. await resend.emails.send({ to, from, subject, html: body })
-  return { mocked: false, to };
+async function sendResetEmail(to) {
+  const link = `${RESET_PAGE_URL}?token=${id("tok")}`;
+  const html =
+    `<p>We received a request to reset your NestEgg U password.</p>` +
+    `<p><a href="${link}">Reset your password</a></p>` +
+    `<p>If the page shows a login screen, click <b>Log In</b> first — the reset field appears right after.</p>`;
+  if (!process.env.RESEND_API_KEY) return { mocked: true, link }; // no-op stub if unset
+  const r = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ from: RESEND_FROM, to, subject: "Reset your NestEgg U password", html }),
+  });
+  if (!r.ok) throw new Error(`resend ${r.status}: ${await r.text()}`);
+  return { mocked: false, link };
 }
 
 const handlers = {
-  async verify_caller({ name, dob, last4_ssn, zip }) {
-    const ok =
-      norm(name) === TEST_IDENTITY.name &&
-      norm(dob) === TEST_IDENTITY.dob &&
-      norm(last4_ssn) === TEST_IDENTITY.last4_ssn &&
-      norm(zip) === TEST_IDENTITY.zip;
-    // Lenient fallback for the demo: SSN + ZIP alone is enough (in case DOB read varies).
-    const lenient =
-      norm(last4_ssn) === TEST_IDENTITY.last4_ssn && norm(zip) === TEST_IDENTITY.zip;
-    return ok || lenient
-      ? { verified: true, subject_ref: TEST_IDENTITY.subject_ref }
-      : { verified: false };
+  async verify_caller({ last4_ssn, dob }) {
+    const found = IDENTITIES.find(
+      (i) => digits(last4_ssn) === i.last4_ssn && dobKey(dob) === dobKey(i.dob)
+    );
+    if (!found) return { verified: false };
+    return {
+      verified: true,
+      subject_ref: found.subject_ref,
+      has_email_on_file: Boolean(found.email_on_file),
+    };
   },
 
   async send_reset_email({ subject_ref }) {
-    const to = TEST_IDENTITY.email_on_file;
-    await sendEmail(
-      to,
-      "Reset your password",
-      `Click to reset your password: ${RESET_LINK}  (click "Log In" first to reveal the reset field)`
-    );
-    // Return only a masked address — never echo full PII to the agent.
-    const masked = to.replace(/^(.).*(@.*)$/, "$1***$2");
+    const who = byRef(subject_ref);
+    if (!who || !who.email_on_file) {
+      // No email on file — the agent should take the transfer branch, not call this.
+      return { sent: false, reason: "no_email_on_file" };
+    }
+    await sendResetEmail(who.email_on_file);
+    // Return only a masked address — never echo full PII back to the agent.
+    const masked = who.email_on_file.replace(/^(.).*(@.*)$/, "$1***$2");
     return { sent: true, delivered_to: masked };
   },
 
