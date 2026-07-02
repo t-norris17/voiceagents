@@ -43,9 +43,31 @@ let seq = 0;
 const id = (p) => `${p}_${++seq}`;
 const digits = (s) => String(s || "").replace(/\D/g, "");
 const byRef = (ref) => IDENTITIES.find((i) => i.subject_ref === ref);
-// Demo-lenient DOB match: compare the multiset of digits so "1968-04-12" and "04/12/1968"
-// both match, regardless of how the agent formats the spoken date. Fine for 2 fixed identities.
-const dobKey = (s) => digits(s).split("").sort().join("");
+
+// Last 4 of SSN, tolerant of a dropped leading zero (agent may say "123" for "0123").
+const norm4 = (s) => digits(s).slice(-4).padStart(4, "0");
+
+// Parse a spoken/typed DOB into { y, mo, d }. Handles ISO (1968-04-12), US numeric
+// (04/12/1968 or 4-12-1968), and month names ("April 12, 1968", "Apr 12 1968").
+const MONTHS = {
+  january: 1, february: 2, march: 3, april: 4, may: 5, june: 6, july: 7, august: 8,
+  september: 9, october: 10, november: 11, december: 12, jan: 1, feb: 2, mar: 3, apr: 4,
+  jun: 6, jul: 7, aug: 8, sep: 9, sept: 9, oct: 10, nov: 11, dec: 12,
+};
+function parseDob(s) {
+  s = String(s || "").trim().toLowerCase();
+  let m = s.match(/([a-z]+)\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})/); // April 12, 1968
+  if (m && MONTHS[m[1]]) return { y: +m[3], mo: MONTHS[m[1]], d: +m[2] };
+  m = s.match(/(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/); // 1968-04-12
+  if (m) return { y: +m[1], mo: +m[2], d: +m[3] };
+  m = s.match(/(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/); // 04/12/1968
+  if (m) return { y: +m[3], mo: +m[1], d: +m[2] };
+  return null;
+}
+const sameDob = (a, b) => {
+  const x = parseDob(a), y = parseDob(b);
+  return Boolean(x && y && x.y === y.y && x.mo === y.mo && x.d === y.d);
+};
 
 async function sendResetEmail(to) {
   const link = `${RESET_PAGE_URL}?token=${id("tok")}`;
@@ -69,7 +91,7 @@ async function sendResetEmail(to) {
 const handlers = {
   async verify_caller({ last4_ssn, dob }) {
     const found = IDENTITIES.find(
-      (i) => digits(last4_ssn) === i.last4_ssn && dobKey(dob) === dobKey(i.dob)
+      (i) => norm4(last4_ssn) === norm4(i.last4_ssn) && sameDob(dob, i.dob)
     );
     if (!found) return { verified: false };
     return {
