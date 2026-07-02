@@ -7,8 +7,8 @@
 > Demo scope: **one topic — Account Recovery** — done end-to-end. Caller dials, authenticates with
 > **SSN (last 4) + DOB** (synthetic identity), then the agent **emails a reset link to the address
 > on file** and stays on the line while they complete it. If there's **no email on file**, the
-> agent **transfers to a specialist.** See `demo-script.md` for the talk track, `poc-mock-tools.js`
-> for the backend, and `reset-page/` for the page the email opens.
+> agent **transfers to a specialist.** See `demo-script.md` for the talk track and `mock-backend/`
+> for the deploy-ready backend + the `/reset` page the email opens.
 > **Synthetic test data only.** The only real values are `DEMO_EMAIL` (presenter's own inbox, so
 > the link lands on stage) and `DEMO_TRANSFER_NUMBER` (presenter's phone, the transfer target).
 
@@ -67,7 +67,7 @@ free-form procedure.
 
 ## 5. Tools (webhook tools → the mock backend)
 
-Register these 3 webhook tools pointing at the deployed mock (`poc-mock-tools.js`), plus the
+Register these 3 webhook tools pointing at the deployed mock (`mock-backend/`), plus the
 built-in transfer system tool:
 
 | Tool | Method/Path | Params (agent-filled) |
@@ -79,8 +79,9 @@ built-in transfer system tool:
 
 ## 6. Mock backend + reset page (deploy to a SCRATCH Vercel project)
 
-- Deploy `poc-mock-tools.js` (the 3 webhook tools) and `reset-page/index.html` (the page the
-  email links to) to a **throwaway** Vercel project — not tied to anything production.
+- Deploy the **`mock-backend/`** folder (the 3 webhook tools at `api/poc/[tool].js` + the
+  `/reset` page) to a **throwaway** Vercel project — not tied to anything production. Exact
+  steps + test curls are in `mock-backend/README.md`.
 - **Env vars:** `DEMO_EMAIL` (presenter inbox), `RESEND_API_KEY`, `RESEND_FROM` (a verified
   sender, or `onboarding@resend.dev` for a quick demo), `RESET_PAGE_URL` (the deployed `/reset`
   URL). Suggested routing: API at `/api/poc/<tool>`, page at `/reset`.

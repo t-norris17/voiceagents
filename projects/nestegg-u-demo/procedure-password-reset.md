@@ -79,7 +79,7 @@ Not verified after two tries · no email on file · account locked / needs activ
 
 ---
 
-## Tools this procedure calls (POC = mocked; see `poc-mock-tools.js`)
+## Tools this procedure calls (POC = mocked; see `mock-backend/`)
 
 | Tool | Input | Output |
 |---|---|---|

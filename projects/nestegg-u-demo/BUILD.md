@@ -48,9 +48,10 @@
 
 **Next session:**
 > **Blocks 2 + 3 are done in-repo.** Next is **deployment + the ElevenLabs build**, which happen
-> outside this repo: (1) deploy `poc-mock-tools.js` + `reset-page/` to a **scratch Vercel
-> project**, set env (`DEMO_EMAIL`, `RESEND_API_KEY`, `RESEND_FROM`, `RESET_PAGE_URL`), and test
-> that a real reset email lands in `DEMO_EMAIL`; (2) build the agent in the **ElevenLabs
+> outside this repo: (1) deploy the **`mock-backend/`** folder to the scratch Vercel project
+> (steps in `mock-backend/README.md`), set env (`DEMO_EMAIL`, `RESEND_API_KEY`, `RESEND_FROM`,
+> `RESET_PAGE_URL`), and test that a real reset email lands in `DEMO_EMAIL`; (2) build the agent
+> in the **ElevenLabs
 > dashboard** from `elevenlabs-poc-setup.md` — voice A/B, paste the system prompt, create the
 > free-form procedure + trigger, upload the KBA, register the 3 webhook tools + transfer, enable
 > Skip turn + ~25s take-turn-after-silence + post-call Data Collection. Then rehearse both

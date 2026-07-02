@@ -16,7 +16,7 @@
 |---|---|---|
 | Voice agent | **ElevenLabs Conversational AI** (dashboard config, not code) | Bought voice stack; free-form procedures + tools + Skip turn + transfer are all native |
 | Agent logic | **Free-form procedure** grounded in the KBA | Structured procedures can't reference the KB; can't convert types later |
-| Mock backend | **Node serverless on Vercel** (`poc-mock-tools.js`, single handler) | Throwaway scratch project; in-memory state is fine for one demo session |
+| Mock backend | **Node serverless on Vercel** (`mock-backend/`, `api/poc/[tool].js` handler) | Throwaway scratch project; in-memory state is fine for one demo session |
 | Mock reset page | **Static hosted page** (same Vercel project, `/reset`) | The emailed link needs somewhere real to land; reproduces the "Log In first" quirk |
 | Email delivery | **Resend** (`RESEND_API_KEY`) → `DEMO_EMAIL` | Sends the real reset link to the presenter's inbox on stage |
 | Telephony | **ElevenLabs phone number** (primary) + **web widget** (backup) | Feels like the 1-800; widget is zero-setup fallback |
@@ -60,8 +60,10 @@ projects/nestegg-u-demo/
   procedure-password-reset.md   # free-form procedure  (trim to: verify SSN+DOB → send email → stay-on-line → document)
   demo-script.md                # word-for-word talk track + synthetic identity  (align auth to SSN+DOB)
   elevenlabs-poc-setup.md       # dashboard build guide + runbook  (add transfer tool + Resend + /reset page)
-  poc-mock-tools.js             # mock backend: verify_caller, send_reset_email, document_resolution
-  reset-page/                   # NEW — tiny hosted mock reset page (index.html) served at /reset
+  mock-backend/                 # deploy-ready Vercel app (throwaway/scratch project)
+    api/poc/[tool].js           #   the 3 webhook tools, routed by {tool} -> /api/poc/<tool>
+    public/reset/index.html     #   the mock reset page -> served at /reset
+    package.json .env.example README.md
   phase2/                       # deferred: PROGRAM-SPEC.md, TOOLS-AND-WEBHOOK.md, 001_ai_call_events.sql
 ```
 
@@ -70,7 +72,7 @@ projects/nestegg-u-demo/
 | Integration | Purpose | Auth method | Status |
 |---|---|---|---|
 | ElevenLabs Conversational AI | The agent: voice, procedure, tools, transfer, post-call data | Dashboard login; webhook tools call the mock over HTTPS | To build |
-| Vercel (scratch project) | Host `poc-mock-tools.js` + the `/reset` mock page | Project env vars | To deploy |
+| Vercel (scratch project) | Host `mock-backend/` (the 3 webhook tools + the `/reset` page) | Project env vars | To deploy |
 | Resend | Send the real reset email on stage | `RESEND_API_KEY` (env) | To wire |
 | Demo inbox (`DEMO_EMAIL`) | The "email on file" the link lands in | Presenter's own inbox | Presenter-provided |
 | Demo phone (`DEMO_TRANSFER_NUMBER`) | Transfer target for the no-email / failed-auth branch | ElevenLabs `transfer_to_number` config | Presenter-provided (not in repo) |

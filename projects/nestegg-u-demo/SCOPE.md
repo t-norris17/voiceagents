@@ -72,7 +72,7 @@ human, post-call data) is verified buildable today — see `../../docs/elevenlab
 - Procedures are **Alpha**; the account-recovery procedure must be **free-form** (structured
   can't reference the KB; types can't be converted later).
 - The agent is **configuration in the ElevenLabs dashboard, not code**. This repo is docs + a
-  small mock backend (`poc-mock-tools.js`).
+  small mock backend (`mock-backend/`).
 
 ## Non-goals
 
@@ -85,7 +85,7 @@ human, post-call data) is verified buildable today — see `../../docs/elevenlab
   dashboard (phase 2).
 - Not: the production webhook receiver, `ai_call_events` DB, or repo re-architecture.
 
-## Tools the agent calls (POC = mocked; see `poc-mock-tools.js`)
+## Tools the agent calls (POC = mocked; see `mock-backend/`)
 
 | Tool | Input | Output |
 |---|---|---|

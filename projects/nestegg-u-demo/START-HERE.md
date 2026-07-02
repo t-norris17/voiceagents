@@ -50,14 +50,13 @@ The demo shows a conversational agent resolving it on the first call. Lead and c
 | `procedure-password-reset.md` | The free-form procedure — aligned to the locked email-link flow |
 | `demo-script.md` | Word-for-word talk track + synthetic identity cards + voice pick |
 | `elevenlabs-poc-setup.md` | Build guide: agent settings, system prompt, tool schemas, runbook |
-| `poc-mock-tools.js` | Mock backend: `verify_caller`, `send_reset_email`, `document_resolution` |
-| `reset-page/` | The mock reset page the emailed link opens (reproduces "Log In first") |
+| `mock-backend/` | Deploy-ready Vercel app: the 3 webhook tools (`api/poc/[tool].js`) + the mock `/reset` page (reproduces "Log In first"). See its `README.md` for deploy steps |
 | `phase2/` | Program spec + Talkdesk/dashboard reference (deferred, not for the demo) |
 
 ## Next steps to Tuesday
 
-1. **Build the mock backend + reset page:** deploy `poc-mock-tools.js` + `reset-page/` to a
-   scratch Vercel project; set `DEMO_EMAIL`, `RESEND_API_KEY`, `RESET_PAGE_URL`; test delivery.
+1. **Deploy the mock backend:** deploy `mock-backend/` to a scratch Vercel project (see its
+   `README.md`); set `DEMO_EMAIL`, `RESEND_API_KEY`, `RESET_PAGE_URL`; test delivery.
 2. **Build the agent** in the ElevenLabs dashboard from `elevenlabs-poc-setup.md`; upload
    `kba-nestegg-password-reset.md` as the Knowledge Base; register the 3 webhook tools + the
    transfer tool; A/B the female voice against the IVR.
