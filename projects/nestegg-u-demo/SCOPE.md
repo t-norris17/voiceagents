@@ -8,7 +8,7 @@
 
 > **Phase 0 (now): ElevenLabs POC, no Talkdesk.** One topic — account recovery / password
 > reset — demoed end-to-end in ElevenLabs. SIP, Navigator routing, transfer-to-Talkdesk, and
-> the Lumio metrics dashboard are all **phase 2 (post-POC)**. See `artifacts/elevenlabs-poc-setup.md`.
+> the Lumio metrics dashboard are all **phase 2 (post-POC)**. See `elevenlabs-poc-setup.md`.
 > Pilot topic set beyond the demo is TBD from a 750-transcript categorization (in progress).
 
 > **Not the plan-admin app.** This is the *customer-facing phone line* that deflects easy calls to an AI voice agent. The internal plan-administration app (plan analysts, ERISA reviewers) is a separate build — see `docs/retirement-command-DESIGN.md`. They may share a brand/Supabase project later; they are separate efforts.
