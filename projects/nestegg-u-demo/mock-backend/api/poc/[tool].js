@@ -44,8 +44,16 @@ const id = (p) => `${p}_${++seq}`;
 const digits = (s) => String(s || "").replace(/\D/g, "");
 const byRef = (ref) => IDENTITIES.find((i) => i.subject_ref === ref);
 
-// Last 4 of SSN, tolerant of a dropped leading zero (agent may say "123" for "0123").
-const norm4 = (s) => digits(s).slice(-4).padStart(4, "0");
+// Over the phone, spoken digits often arrive as words ("oh one two three" for 0123).
+// Map number-words to digits (other words become spaces) before extracting.
+const NUMWORDS = {
+  zero: "0", oh: "0", o: "0", one: "1", two: "2", three: "3", four: "4",
+  five: "5", six: "6", seven: "7", eight: "8", nine: "9",
+};
+const wordsToDigits = (s) =>
+  String(s || "").toLowerCase().replace(/[a-z]+/g, (w) => (w in NUMWORDS ? NUMWORDS[w] : " "));
+// Last 4 of SSN, tolerant of spelled-out digits and a dropped leading zero.
+const norm4 = (s) => digits(wordsToDigits(s)).slice(-4).padStart(4, "0");
 
 // Parse a spoken/typed DOB into { y, mo, d }. Handles ISO (1968-04-12), US numeric
 // (04/12/1968 or 4-12-1968), and month names ("April 12, 1968", "Apr 12 1968").
