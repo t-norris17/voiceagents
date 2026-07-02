@@ -5,45 +5,84 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>NestEgg U — Password Reset</title>
   <style>
-    :root { --navy:#0f2a4a; --blue:#1f6feb; --bg:#eef2f7; --ok:#1a7f37; --err:#b42318; }
-    * { box-sizing: border-box; }
-    body { margin:0; font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-           background:var(--bg); color:#12233b; display:flex; min-height:100vh;
-           align-items:center; justify-content:center; padding:24px; }
-    .card { background:#fff; width:100%; max-width:420px; border-radius:14px;
-            box-shadow:0 10px 40px rgba(15,42,74,.12); overflow:hidden; }
-    .head { background:var(--navy); color:#fff; padding:22px 26px; }
-    .head h1 { margin:0; font-size:19px; letter-spacing:.2px; }
-    .head p { margin:4px 0 0; font-size:13px; opacity:.8; }
-    .body { padding:26px; }
-    p.lead { margin:0 0 18px; font-size:14px; line-height:1.5; color:#3a4a5f; }
-    label { display:block; font-size:13px; font-weight:600; margin:14px 0 6px; }
-    input { width:100%; padding:11px 12px; border:1px solid #c9d4e2; border-radius:8px;
-            font-size:15px; }
-    input:focus { outline:none; border-color:var(--blue); box-shadow:0 0 0 3px rgba(31,111,235,.15); }
-    button { width:100%; margin-top:20px; padding:12px; border:0; border-radius:8px;
-             background:var(--blue); color:#fff; font-size:15px; font-weight:600; cursor:pointer; }
-    button:hover { background:#1a5fd0; }
-    .rules { font-size:12px; color:#64748b; margin-top:8px; line-height:1.5; }
+    /* Themed to match nesteggu.com: orange primary, navy wordmark, sky-blue + clouds,
+       green accent line, bold headings. Colors are eyeballed from the live site —
+       tweak the vars to pixel-match if you have the brand hex codes. */
+    :root {
+      --orange:#e8842b; --orange-dark:#c96a16;
+      --navy:#243b53; --ink:#1b2733; --muted:#5f7183;
+      --blue:#3f7cad; --green:#7ab55c; --line:#e3e8ee;
+      --ok:#4a9d3f; --err:#c0392b;
+    }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+           padding:24px; color:var(--ink);
+           font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+           background:
+             radial-gradient(140px 64px at 18% 80%, rgba(255,255,255,.9), transparent 70%),
+             radial-gradient(180px 74px at 82% 88%, rgba(255,255,255,.82), transparent 70%),
+             radial-gradient(120px 56px at 60% 22%, rgba(255,255,255,.7), transparent 70%),
+             linear-gradient(180deg, #e2f3fc 0%, #c3e6f7 55%, #a9d9f0 100%); }
+    .card { background:#fff; width:100%; max-width:430px; border-radius:14px;
+            box-shadow:0 20px 55px rgba(36,59,83,.22); overflow:hidden;
+            border-top:4px solid var(--green); }
+    /* Wordmark header, echoing the white top-nav on the site */
+    .head { padding:22px 26px 18px; border-bottom:1px solid var(--line); }
+    .brand { font-family:Georgia,"Times New Roman",serif; line-height:1; display:flex;
+             align-items:baseline; gap:2px; }
+    .brand .nest { font-size:26px; font-weight:700; color:var(--navy); letter-spacing:.3px; }
+    .brand .u { font-size:34px; font-weight:700; color:var(--orange); margin-left:3px; }
+    .brand .ribbon { font-family:-apple-system,"Segoe UI",Roboto,sans-serif; font-size:8px;
+                     font-weight:800; letter-spacing:.14em; color:var(--orange);
+                     text-transform:uppercase; align-self:center; margin-left:6px;
+                     border:1px solid var(--orange); border-radius:3px; padding:2px 5px; }
+    .head p { margin:8px 0 0; font-size:12px; color:var(--muted); letter-spacing:.2px; }
+    .body { padding:24px 26px; }
+    h2 { margin:0 0 6px; font-size:20px; font-weight:800; color:var(--ink); letter-spacing:-.01em; }
+    p.lead { margin:0 0 18px; font-size:14px; line-height:1.55; color:var(--muted); }
+    label { display:block; font-size:13px; font-weight:700; margin:14px 0 6px; color:var(--navy); }
+    input { width:100%; padding:12px; border:1px solid #cdd6e0; border-radius:8px;
+            font-size:15px; background:#fbfdff; }
+    input:focus { outline:none; border-color:var(--blue);
+                  box-shadow:0 0 0 3px rgba(63,124,173,.18); }
+    /* Raised orange button, matching the site's CTAs */
+    button { width:100%; margin-top:20px; padding:13px; border:0; border-radius:8px;
+             background:var(--orange); color:#fff; font-size:14px; font-weight:800;
+             text-transform:uppercase; letter-spacing:.06em; cursor:pointer;
+             box-shadow:0 4px 0 var(--orange-dark), 0 7px 14px rgba(201,106,22,.28);
+             transition:transform .06s, box-shadow .06s; }
+    button:hover { background:#ef8f39; }
+    button:active { transform:translateY(3px); box-shadow:0 1px 0 var(--orange-dark); }
+    .rules { list-style:none; padding:0; font-size:12.5px; color:var(--muted);
+             margin:12px 0 0; line-height:1.9; }
+    .rules li::before { content:"○ "; color:#c6ced7; font-weight:700; }
     .rules li.met { color:var(--ok); }
+    .rules li.met::before { content:"● "; color:var(--ok); }
     .hidden { display:none; }
-    .note { font-size:12px; color:#64748b; margin-top:16px; text-align:center; }
-    .ok { color:var(--ok); font-weight:600; }
-    .err { color:var(--err); font-size:13px; margin-top:8px; }
-    .success { text-align:center; padding:10px 0; }
-    .success .big { font-size:40px; }
+    .note { font-size:12px; color:var(--muted); margin-top:16px; text-align:center; }
+    .err { color:var(--err); font-size:13px; margin-top:10px; }
+    .success { text-align:center; padding:8px 0; }
+    .success .egg { font-size:44px; }
+    .foot { padding:14px 26px 18px; text-align:center; font-size:11px; color:var(--muted);
+            border-top:1px solid var(--line); background:#fafcfe; }
+    .foot b { color:var(--navy); }
+    .foot .u { color:var(--orange); }
   </style>
 </head>
 <body>
   <div class="card">
     <div class="head">
-      <h1>NestEgg U</h1>
-      <p>Account password reset</p>
+      <div class="brand">
+        <span class="nest">NestEgg</span><span class="u">U</span>
+        <span class="ribbon">Learn + Act = Earn</span>
+      </div>
+      <p>Your retirement education resource</p>
     </div>
     <div class="body">
 
       <!-- STEP 1: the quirk — you must click "Log In" before the reset field appears. -->
       <section id="gate">
+        <h2>Reset your password</h2>
         <p class="lead">To reset your password, first log in to reveal the reset form.</p>
         <button id="loginBtn">Log In</button>
         <p class="note">Trouble? The reset field appears after you click <b>Log In</b>.</p>
@@ -51,7 +90,8 @@
 
       <!-- STEP 2: revealed only after clicking Log In. -->
       <section id="resetForm" class="hidden">
-        <p class="lead">Choose a new password for your account.</p>
+        <h2>Choose a new password</h2>
+        <p class="lead">Set a new password for your NestEgg U account.</p>
         <label for="pw">New password</label>
         <input id="pw" type="password" autocomplete="new-password" placeholder="New password" />
         <label for="pw2">Confirm new password</label>
@@ -68,11 +108,13 @@
 
       <!-- STEP 3: success. -->
       <section id="done" class="hidden success">
-        <div class="big">✅</div>
-        <p class="lead"><span class="ok">Password updated.</span><br />You can now log in with your new password.</p>
+        <div class="egg">🥚</div>
+        <h2 style="color:var(--ok)">Password updated</h2>
+        <p class="lead">You can now log in with your new password.</p>
       </section>
 
     </div>
+    <div class="foot">Secure password reset · <b>NestEgg<span class="u">U</span></b></div>
   </div>
 
   <script>
