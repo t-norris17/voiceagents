@@ -15,76 +15,97 @@
 ## Problem
 
 NestEgg U's password-reset call is **3,136 calls** in volume, but only **3% self-serve** and
-**55% call back**. The recorded IVR message can't confirm or adapt, and it **omits the one
-non-obvious step** — you must click **Log In** *before* the "Forgot Password" link appears. That
-missing step is the likely driver of the callback rate. We need to prove, on a live demo call,
-that a conversational agent resolves this on the first call.
+**55% call back**. The recorded IVR message can't confirm or adapt, and callers get stuck — most
+notoriously on the non-obvious step where you must click **Log In** *before* the "Forgot
+Password" field appears. We need to prove, on a live demo call, that a conversational agent
+authenticates the caller, gets a reset moving, and **stays with them until they're back in** —
+resolving it on the first call.
 
-## Solution
+## Solution — the target workflow
 
-A single-topic **ElevenLabs voice agent** — warm, clear American female voice to match the
-current IVR — that verifies the caller against a synthetic test identity, then **coaches them
-through NestEgg's self-service password reset one step at a time**, explicitly naming the
-"click Log In first" step, **staying on the line** (Skip turn + ~25s check-ins) until they've
-**actually logged in with the new password**, and then logging the resolution. Built in the
-ElevenLabs dashboard from `elevenlabs-poc-setup.md`, grounded in the corrected
-`kba-nestegg-password-reset.md`, and rehearsed against `demo-script.md`.
+A single-topic **ElevenLabs voice agent** (warm, clear American female voice) that runs this flow:
+
+1. **Caller** says they can't get into their account.
+2. **Agent authenticates** them with **SSN + date of birth** (synthetic test identity).
+3. On success, the **agent sends a password-reset link to the email address on file**
+   (`send_reset_email`).
+   - **If there is no email on file → transfer to a human** (simulated in the POC — no Talkdesk).
+4. The **agent stays on the line, checking in ~every 30s** (Skip turn + take-turn-after-silence),
+   coaching the caller as needed — including the **"click Log In first"** catch — **until the
+   caller has reset their password and confirmed they're back in.** Then it logs the resolution.
+
+Built in the ElevenLabs dashboard from `elevenlabs-poc-setup.md`, grounded in
+`kba-nestegg-password-reset.md`, rehearsed against `demo-script.md`. The emailed link opens a
+**mock reset page** we control (see the note under Constraints).
 
 ## Success criteria
 
-- [ ] A demo call runs the full happy path end-to-end — **verify → intent → guided reset →
-      confirmed login → resolution logged** — and sounds warm, crisp, and smooth.
-- [ ] The agent **explicitly catches the "click Log In first" step** mid-call (the 55%-callback fix).
-- [ ] The agent **stays on the line** through the reset (Skip turn + ≤30s check-ins) with no dead
-      air and without hanging up.
+- [ ] **Happy path, end-to-end:** "can't log in" → agent authenticates via **SSN + DOB** → sends
+      the reset link to the email on file (**the link lands in the room**) → stays on the line
+      with ~30s check-ins → caller completes the reset and **confirms they're logged in** →
+      resolution logged. Sounds warm, crisp, smooth.
+- [ ] The **"no email on file → transfer to a human"** branch is demonstrable (simulated in POC).
+- [ ] The agent **stays on the line** without dead air and **catches the "click Log In first"
+      step** during the reset (the 55%-callback fix).
 - [ ] A **clean screen+audio backup recording** of the happy path exists before Tuesday.
 
 ## Why now
 
 Working demo is due **Tue Jul 7**; today is Jul 2, leaving **~12 business hours** to build,
-rehearse, and record. This is the first concrete client-facing use of the platform; the boss is
-both the demo audience and the sponsor. Everything ElevenLabs needs (KB-grounded free-form
-procedures, Skip turn / take-turn-after-silence, webhook tools, post-call data) is verified
-buildable today — see `../../docs/elevenlabs-reference.md`.
+rehearse, and record. First concrete client-facing use of the platform; the boss is both the
+demo audience and the sponsor. Everything ElevenLabs needs (KB-grounded free-form procedures,
+webhook tools for the send + document actions, Skip turn / take-turn-after-silence, transfer to
+human, post-call data) is verified buildable today — see `../../docs/elevenlabs-reference.md`.
 
 ## Constraints
 
 - **~12 business hours total**, inclusive of build + rehearsal + backup recording.
-- **ElevenLabs only** — no Talkdesk, no SIP, no dashboard (all phase 2).
-- **Regulated financial services: synthetic test data only.** No real SSN/PII. The only real
-  value permitted is a demo *inbox*, and only if we keep an email step (we are not — see below).
-- Procedures are **Alpha**; KBA answers must be **free-form** (structured can't reference the KB,
-  and types can't be converted later).
-- The agent is **configuration in the ElevenLabs dashboard, not code** in this repo. This repo is
-  docs + (if needed) a small mock backend.
+- **ElevenLabs only** — no Talkdesk, no SIP, no dashboard (all phase 2). The transfer branch is
+  therefore **simulated** in the POC.
+- **Regulated financial services: synthetic test data only.** No real SSN/PII. **The one real
+  value permitted is the demo *inbox*** — set the "email on file" to the presenter's own inbox so
+  the reset link actually lands on stage.
+- **Mock reset page:** NestEgg's live site is self-service (knowledge-based) and has **no emailed
+  reset link** (per `kba-nestegg-password-reset.md`). So the emailed link must open a **mock
+  reset page we control**, not the real nesteggu.com. That mock should reproduce the **"click Log
+  In first"** quirk so the agent can catch it — that beat is the whole business case.
+- Procedures are **Alpha**; the account-recovery procedure must be **free-form** (structured
+  can't reference the KB; types can't be converted later).
+- The agent is **configuration in the ElevenLabs dashboard, not code**. This repo is docs + a
+  small mock backend (`poc-mock-tools.js`).
 
 ## Non-goals
 
-- **Not: the email-reset-link flow.** The authoritative KBA shows NestEgg's Forgot Password as
-  self-service (SSN + DOB + ZIP + security question) with **no emailed reset link**. We demo the
-  guided self-service flow. *(Revisit only if the business confirms NestEgg actually sends reset
-  emails — see open questions.)*
-- Not: OTP/SMS, or any transactional account change — the agent **never touches the account**.
+- Not: **guided self-service on the real site.** We're doing the email-link flow instead.
+- Not: OTP/SMS as a second factor (auth is SSN + DOB for the demo).
+- Not: the agent **changing the password itself** — it sends the link and coaches; the caller
+  performs the reset.
 - Not: any topic besides account recovery / password reset.
-- Not: Talkdesk routing, SIP trunking, or the Lumio metrics dashboard (phase 2).
+- Not: Talkdesk routing, SIP trunking, a real human-transfer queue, or the Lumio metrics
+  dashboard (phase 2).
 - Not: the production webhook receiver, `ai_call_events` DB, or repo re-architecture.
+
+## Tools the agent calls (POC = mocked; see `poc-mock-tools.js`)
+
+| Tool | Input | Output |
+|---|---|---|
+| `verify_caller` | `{ last4_ssn, dob }` (TEST identity) | `{ verified, subject_ref, has_email_on_file }` |
+| `send_reset_email` | `{ subject_ref }` | `{ sent, delivered_to (masked) }` |
+| `document_resolution` | `{ subject_ref, outcome, notes }` | `{ logged, ticket_id }` |
+| `transfer_to_number` (system) | — | Simulated in POC; used on the no-email branch |
 
 ## Open questions
 
-> The first two gate the build plan. Current working assumptions in **bold**; confirm or flip.
-
-- [ ] **Reset method — guided self-service** (assumed, per the KBA) **vs. email link.** Confirm
-      NestEgg has no emailed reset-link option. If it does, the email variant is back on the table.
-- [ ] **Demo surface — mock / narration** (assumed safe default) **vs. driving the real
-      nesteggu.com site.** Upgrade to the real site only if a working synthetic test account
-      (known SSN/DOB/ZIP/security answer) exists and the site is reliable on stage.
-- [ ] **Password rules** for NestEgg (length/complexity) — needed for the "set your new password"
-      step in the talk track. Currently a `[PASSWORD RULES]` placeholder.
-- [ ] **Security-question fallback** — if the caller doesn't know their security answer (a hard
-      gate), the agent guides them to a live agent. Confirm wording / simulated-transfer behavior.
-- [ ] **Telephony** — provision a temporary ElevenLabs phone number vs. the web test widget.
-      Default: do both; widget is the zero-setup backup.
+- [ ] **Password rules** for the mock reset page (length/complexity) — needed for the "set your
+      new password" step. Currently a `[PASSWORD RULES]` placeholder.
+- [ ] **Email provider** for the demo (Resend / SendGrid / SES) + `DEMO_EMAIL` (presenter inbox)
+      so the link actually delivers on stage.
+- [ ] **SSN form** — read **last 4** (phone-safe convention) or full synthetic SSN? Assumed last 4.
+- [ ] **Mock reset page** — build a tiny hosted page that reproduces the "click Log In first"
+      quirk, or coach against a static screenshot? (Leaning: tiny hosted page for a live feel.)
+- [ ] **No-email-on-file branch** — how to present the simulated transfer (agent message vs. a
+      real `transfer_to_number` to a demo phone)?
 
 ---
 
-*Scope locked: not yet — pending confirmation of the two working assumptions above.*
+*Scope locked: not yet — pending confirmation of the open questions above.*
