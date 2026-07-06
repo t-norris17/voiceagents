@@ -13,6 +13,11 @@ Manufacturing**, whose 401(k) is recordkept by NestEgg. **All content is synthet
 This keeps answers **grounded** (rules from the plan document) and **personal** (their figures from
 the tool) without cross-contamination.
 
+> **Demo uses ONE plan (Vertex) in the native KB — that's not the production shape.** NestEgg
+> records ~150 employer plans, so the prompt stays **plan-agnostic** (it never names a plan; the
+> plan comes from the caller's record). At scale, retrieval is scoped by `plan_id` through a tool,
+> not a shared KB — see [`../phase2/multi-tenant-plan-qa.md`](../phase2/multi-tenant-plan-qa.md).
+
 ## Files
 | File | Upload to KB? | What it is |
 |---|---|---|
