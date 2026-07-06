@@ -14,6 +14,10 @@
 //   POST /api/poc/send_reset_email    { subject_ref }                 -> { sent, delivered_to }
 //   POST /api/poc/document_resolution { subject_ref, outcome, notes } -> { logged, ticket_id }
 //
+// Post-call webhook (set as the agent's post-call webhook URL, not an agent tool):
+//   POST /api/poc/postcall  <ElevenLabs post_call_transcription payload>  -> emails a call summary
+//     to DEMO_EMAIL via Resend. (Demo: no HMAC check — production must verify the signature.)
+//
 // Env vars (set in the Vercel project):
 //   DEMO_EMAIL       presenter's own inbox = the "email on file" (the one real value allowed)
 //   RESEND_API_KEY   Resend key so the reset email actually sends on stage
@@ -93,24 +97,39 @@ const sameDob = (a, b) => {
   return Boolean(x && y && x.y === y.y && x.mo === y.mo && x.d === y.d);
 };
 
-async function sendResetEmail(to) {
-  const link = `${RESET_PAGE_URL}?token=${id("tok")}`;
-  const html =
-    `<p>We received a request to reset your NestEgg U password.</p>` +
-    `<p><a href="${link}">Reset your password</a></p>` +
-    `<p>If the page shows a login screen, click <b>Log In</b> first — the reset field appears right after.</p>`;
-  if (!process.env.RESEND_API_KEY) return { mocked: true, link }; // no-op stub if unset
+// Generic Resend send. No-op if RESEND_API_KEY is unset.
+async function sendMail(to, subject, html) {
+  if (!process.env.RESEND_API_KEY) return { mocked: true };
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ from: RESEND_FROM, to, subject: "Reset your NestEgg U password", html }),
+    body: JSON.stringify({ from: RESEND_FROM, to, subject, html }),
   });
   if (!r.ok) throw new Error(`resend ${r.status}: ${await r.text()}`);
-  return { mocked: false, link };
+  return { mocked: false };
 }
+
+async function sendResetEmail(to) {
+  const link = `${RESET_PAGE_URL}?token=${id("tok")}`;
+  const html =
+    `<p>We received a request to reset your NestEgg U password.</p>` +
+    `<p><a href="${link}">Reset your password</a></p>` +
+    `<p>If the page shows a login screen, click <b>Log In</b> first — the reset field appears right after.</p>`;
+  const res = await sendMail(to, "Reset your NestEgg U password", html);
+  return { ...res, link };
+}
+
+// Format a spoken/JSON call duration as "Nm Ss".
+const fmtDur = (s) => (s == null ? "—" : `${Math.floor(s / 60)}m ${s % 60}s`);
+// Pull a Data Collection value (ElevenLabs returns { field: { value, ... } } or a bare value).
+const dcValue = (dc, k) => {
+  const f = dc && dc[k];
+  const v = f && typeof f === "object" ? f.value : f;
+  return v === undefined || v === null || v === "" ? "—" : v;
+};
 
 const handlers = {
   async verify_caller({ last4_ssn, dob }) {
@@ -131,6 +150,45 @@ const handlers = {
     const d = PLAN_DETAILS[subject_ref];
     if (!d) return { found: false };
     return { found: true, ...d };
+  },
+
+  // Post-call webhook receiver: ElevenLabs POSTs the transcript + analysis when a call ends.
+  // We format an "end-of-call report" and email it to the address on file (DEMO_EMAIL) via Resend.
+  // NOTE (demo shortcut): production MUST verify the ElevenLabs-Signature HMAC header before
+  // trusting this payload, and scrub PII — see ../../phase2/TOOLS-AND-WEBHOOK.md.
+  async postcall(payload) {
+    const data = (payload && payload.data) || payload || {};
+    const meta = data.metadata || {};
+    const analysis = data.analysis || {};
+    const dc = analysis.data_collection_results || {};
+    const convId = data.conversation_id || "(unknown)";
+    const summary = analysis.transcript_summary || "(no summary available)";
+    const to = process.env.DEMO_EMAIL || "demo@example.com";
+
+    const row = (k, v) =>
+      `<tr><td style="padding:4px 14px 4px 0;color:#61707f">${k}</td>` +
+      `<td style="padding:4px 0;font-weight:600;color:#1b2733">${v}</td></tr>`;
+    const html =
+      `<div style="font-family:-apple-system,Segoe UI,Arial,sans-serif;max-width:560px;color:#1b2733">` +
+      `<h2 style="margin:0 0 2px">NestEgg U — Call Summary</h2>` +
+      `<p style="color:#61707f;margin:0 0 16px;font-size:13px">Automated end-of-call report</p>` +
+      `<table style="border-collapse:collapse;font-size:14px">` +
+      row("Conversation", convId) +
+      row("Duration", fmtDur(meta.call_duration_secs)) +
+      row("Intent", dcValue(dc, "intent")) +
+      row("Outcome", dcValue(dc, "outcome")) +
+      row("Auth", dcValue(dc, "auth_outcome")) +
+      row("Transfer reason", dcValue(dc, "transfer_reason")) +
+      row("Sentiment", dcValue(dc, "caller_sentiment")) +
+      row("Call successful", analysis.call_successful || "—") +
+      `</table>` +
+      `<h3 style="margin:18px 0 6px;font-size:14px">Summary</h3>` +
+      `<p style="font-size:14px;line-height:1.55;margin:0">${summary}</p>` +
+      `<p style="font-size:12px;color:#8b98a6;margin-top:20px">Synthetic demo · NestEgg U voice agent</p>` +
+      `</div>`;
+
+    await sendMail(to, `NestEgg U call summary — ${dcValue(dc, "outcome")}`, html);
+    return { ok: true, emailed_to: to.replace(/^(.).*(@.*)$/, "$1***$2") };
   },
 
   async send_reset_email({ subject_ref }) {
