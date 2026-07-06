@@ -15,6 +15,47 @@
 
 ---
 
+### 2026-07-06 — Session 8
+
+**Time spent:** ~a full session
+**Status after session:** ahead — agent built end-to-end in ElevenLabs; demo-ready pending rehearsal
+
+**What we did:**
+- Built **Robin** in the ElevenLabs dashboard end-to-end: voice, identity-gated two-topic system
+  prompt (plan-agnostic), first message, the 4 webhook tools + transfer + skip-turn, RAG on the
+  Vertex plan KB, `get_plan_details`, and the account-recovery + plan-Q&A procedures.
+- Wired the **post-call webhook → end-of-call report email** (via Resend) and added Data Collection
+  fields (`intent`, `outcome`, `auth_outcome`, `transfer_reason`, `caller_sentiment`, `plan_topic`,
+  `reset_completed`, `login_step_coached`, `notes`).
+- Added the **plan Q&A** capability (Vertex 401(k) KB + `get_plan_details`) and the multi-tenant
+  (150-plan) design note in `phase2/`.
+- Built an interactive **contact-center dashboard** (artifact) grounded in ElevenLabs post-call fields.
+- Tuned latency/warmth: Gemini 2.5 Flash, temp 0.53, RAG trim (8k chars / 5 chunks), soft-timeout
+  guidance, voice settings.
+- Consolidated `demo-script.md` into the 4-scenario master script (reset, plan Q&A, no-email
+  transfer, failed auth).
+
+**What broke / surprised us (fixed):**
+- verify_caller failed on phone ASR (spoken/word digits) → robust DOB + number-word parsing.
+- Vercel deploy failed on a leftover `vite build` → `vercel.json`.
+- Agent leaked the plan name pre-verification → identity gate.
+- Latency from RAG defaults (50k chars / 20 chunks) + RAG had been left OFF → trimmed + enabled.
+- Spoken audio tags ("Acknowledge") + terse plan answers → prompt rules (no stage directions; warm
+  follow-up). Skip-turn vs soft-timeout garble → turn soft timeout off now that latency's fixed.
+
+**Decisions made:**
+- Plan rules → KB/RAG; personal figures → `get_plan_details` tool; prompt stays plan-agnostic.
+- Post-call report via the real post-call webhook (not a tool); HMAC verification deferred to prod.
+
+**Next session:**
+> **Rehearse + record.** Apply the last prompt lines (no audio tags; warm follow-up) and turn Soft
+> Timeout OFF, then run all four scenarios in `demo-script.md` on the Twilio line and confirm the
+> post-call report email lands after each. **Record a clean screen+audio backup of Scenario 1** (and
+> ideally Scenario 2) before Tuesday — never demo live without it. Nice-to-haves if time: eval
+> criteria for the dashboard QA tab, commit the dashboard to the repo.
+
+---
+
 ### 2026-07-02 — Session 7
 
 **Time spent:** ~2 hrs
