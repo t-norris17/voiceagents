@@ -10,6 +10,7 @@
 //
 // Routes (register each as an ElevenLabs webhook tool):
 //   POST /api/poc/verify_caller       { last4_ssn, dob }              -> { verified, subject_ref, has_email_on_file }
+//   POST /api/poc/get_plan_details    { subject_ref }                 -> { found, plan, balance, outstanding_loan, ... }
 //   POST /api/poc/send_reset_email    { subject_ref }                 -> { sent, delivered_to }
 //   POST /api/poc/document_resolution { subject_ref, outcome, notes } -> { logged, ticket_id }
 //
@@ -34,6 +35,21 @@ const IDENTITIES = [
     email_on_file: null,
   },
 ];
+
+// Per-participant plan data for the Vertex Manufacturing 401(k) Q&A (see ../../plan-kb/).
+// Served ONLY by get_plan_details, keyed by subject_ref — never put per-person figures in the KB.
+const PLAN_DETAILS = {
+  "poc-subject-001": { // Michael Reynolds — fully vested, no loan
+    plan: "Vertex Manufacturing 401(k)", age: 58, fully_vested: true,
+    balance: 142350, vested_balance: 142350, outstanding_loan: false,
+    max_loan_available: 50000, deferral_pct: 8, investment: "NestEgg Target Retirement 2035",
+  },
+  "poc-subject-002": { // Dana Osborne — partially vested, has a loan out
+    plan: "Vertex Manufacturing 401(k)", age: 55, fully_vested: false,
+    balance: 38200, vested_balance: 26100, outstanding_loan: true,
+    max_loan_available: 0, deferral_pct: 5, investment: "NestEgg Target Retirement 2030",
+  },
+};
 
 const RESET_PAGE_URL = process.env.RESET_PAGE_URL || "https://example.vercel.app/reset";
 const RESEND_FROM = process.env.RESEND_FROM || "onboarding@resend.dev";
@@ -107,6 +123,14 @@ const handlers = {
       subject_ref: found.subject_ref,
       has_email_on_file: Boolean(found.email_on_file),
     };
+  },
+
+  // Returns the verified caller's OWN plan figures for Q&A (call after verify_caller).
+  // Plan RULES come from the Knowledge Base (RAG); this only supplies personal numbers.
+  async get_plan_details({ subject_ref }) {
+    const d = PLAN_DETAILS[subject_ref];
+    if (!d) return { found: false };
+    return { found: true, ...d };
   },
 
   async send_reset_email({ subject_ref }) {
