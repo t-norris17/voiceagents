@@ -28,21 +28,28 @@ the tool) without cross-contamination.
 2. **Add a free-form procedure "Plan Questions"** — free-form so it can reference the KB — with
    triggers like *"loan against my 401k," "borrow from my 401k," "roll over," "rollover," "leaving
    the company," "quitting," "retirement plan question," "contribution," "vesting," "match."*
-   Body: *answer from the Vertex plan Knowledge Base; if the answer needs the caller's own numbers,
-   call `get_plan_details` first; if it's genuinely out of scope or tax/legal advice, say so and
-   offer the participant line.*
+   Body: *only handle this **after the caller is verified**. If not yet verified, do **not** mention
+   the plan, employer, or any account detail — say you can help and that you first need to verify
+   them, then verify with `verify_caller`. Once verified, answer from the Vertex plan Knowledge Base;
+   if the answer needs the caller's own numbers, call `get_plan_details`; if it's out of scope or
+   tax/legal advice, say so and offer the participant line.*
 3. **Register the `get_plan_details` tool** (webhook → the mock backend) so personal answers work.
 4. **System-prompt addition** (the agent now handles two topics):
 
    ```
    You also answer general questions about the caller's Vertex Manufacturing 401(k) using the plan
-   Knowledge Base. Verify the caller first. Answer only from the plan documents — do not guess. For
-   questions that need the caller's own numbers (their balance, whether they have a loan, vesting),
-   call get_plan_details and use those figures. You provide plan information and education, NOT tax,
-   legal, or investment advice — for personal tax questions, point them to a tax advisor or the
-   participant line. If a question isn't covered by the plan documents, say you're not certain and
-   offer to connect them to a specialist.
+   Knowledge Base. IDENTITY GATE: do NOT reveal, confirm, or reference any account, plan, employer,
+   or balance detail — including the plan's name — until the caller is verified with verify_caller.
+   If an unverified caller asks a plan question, respond generically ("I can help — first I need to
+   verify your identity") and verify before saying anything specific. Once verified, answer only
+   from the plan documents — do not guess. For questions that need the caller's own numbers (their
+   balance, whether they have a loan, vesting), call get_plan_details and use those figures. You
+   provide plan information and education, NOT tax, legal, or investment advice — for personal tax
+   questions, point them to a tax advisor or the participant line. If a question isn't covered by
+   the plan documents, say you're not certain and offer to connect them to a specialist.
    ```
+   The full consolidated system prompt (Robin, both topics, identity gate) is in
+   `../elevenlabs-poc-setup.md` §2.
 
 5. **RAG settings:** enable Knowledge Base retrieval on the agent; keep a low-latency model so
    answers stay fast. Tune the number of retrieved chunks so the agent cites the right article.
