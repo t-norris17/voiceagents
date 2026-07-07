@@ -33,11 +33,14 @@ the tool) without cross-contamination.
 2. **Add a free-form procedure "Plan Questions"** — free-form so it can reference the KB — with
    triggers like *"loan against my 401k," "borrow from my 401k," "roll over," "rollover," "leaving
    the company," "quitting," "retirement plan question," "contribution," "vesting," "match."*
-   Body: *only handle this **after the caller is verified**. If not yet verified, do **not** mention
-   the plan, employer, or any account detail — say you can help and that you first need to verify
-   them, then verify with `verify_caller`. Once verified, answer from the Vertex plan Knowledge Base;
-   if the answer needs the caller's own numbers, call `get_plan_details`; if it's out of scope or
-   tax/legal advice, say so and offer the participant line.*
+   Body: *⛔ FIRST, CHECK VERIFICATION. If the caller is NOT yet verified, do **not** answer, do
+   **not** use the Knowledge Base, and do **not** mention any plan, employer, or account detail —
+   warmly say "I'd be glad to help — first I need to verify your identity," then verify with
+   `verify_caller` (date of birth + last 4 of SSN). Only once verified: answer from the plan
+   Knowledge Base for the caller's own plan (refer to it by the name in their record); call
+   `get_plan_details` if the answer needs their personal numbers; always end with a warm follow-up
+   offering the next step; for tax/legal advice or anything not in the documents, say so and offer
+   the participant line.*
 3. **Register the `get_plan_details` tool** (webhook → the mock backend) so personal answers work.
 4. **System-prompt addition** (the agent now handles two topics):
 
