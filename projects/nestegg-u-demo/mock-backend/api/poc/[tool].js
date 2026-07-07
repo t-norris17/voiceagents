@@ -9,7 +9,7 @@
 //   if NOT, the agent transfers to a specialist -> document the resolution.
 //
 // Routes (register each as an ElevenLabs webhook tool):
-//   POST /api/poc/verify_caller       { last4_ssn, dob }              -> { verified, subject_ref, has_email_on_file }
+//   POST /api/poc/verify_caller       { last4_ssn, dob }              -> { verified, subject_ref, has_email_on_file, email_on_file }
 //   POST /api/poc/get_plan_details    { subject_ref }                 -> { found, plan, balance, outstanding_loan, ... }
 //   POST /api/poc/send_reset_email    { subject_ref }                 -> { sent, delivered_to }
 //   POST /api/poc/document_resolution { subject_ref, outcome, notes } -> { logged, ticket_id }
@@ -141,6 +141,9 @@ const handlers = {
       verified: true,
       subject_ref: found.subject_ref,
       has_email_on_file: Boolean(found.email_on_file),
+      // Full address so Robin can read it back to CONFIRM before sending ("is your
+      // email still …?"). Synthetic/demo only — this is the caller's own inbox.
+      email_on_file: found.email_on_file || null,
     };
   },
 
