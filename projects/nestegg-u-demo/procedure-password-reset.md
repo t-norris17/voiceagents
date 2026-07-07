@@ -25,7 +25,7 @@ keeping the caller on the line until they're actually logged in.
 
 | # | Step | How it's built |
 |---|---|---|
-| 1 | **Verify the caller** | `verify_caller { last4_ssn, dob }` webhook tool → `{ verified, subject_ref, has_email_on_file }` (POC: mock, synthetic identity) |
+| 1 | **Verify the caller** | `verify_caller { last4_ssn, dob }` webhook tool → `{ verified, subject_ref, has_email_on_file, email_on_file }` (POC: mock, synthetic identity) |
 | 2 | **Confirm why they're calling** | Agent asks the reason; matches "account recovery / can't log in / password reset" |
 | 3a | **Email on file → send the reset link** | `send_reset_email { subject_ref }` → link to the mock reset page, delivered via Resend |
 | 3b | **No email on file → transfer** | Call `transfer_to_number` (system tool) directly with a `client_message` (read to caller) + `agent_message` (warm summary to operator); its Condition governs when it fires. Don't pre-announce in a separate turn — that caused the delay |
@@ -49,11 +49,14 @@ Briefly reassure them (*"I'm sorry about that — I can get you back in"*). Then
 else, ask for their **date of birth + the last 4 digits of the SSN** and call **`verify_caller`**.
 If not verified after two attempts → stop and **transfer to a specialist** (simulated in POC).
 
-### Step 2 — Send the reset link, or transfer
-Read `has_email_on_file` from the verify result:
-- **Has an email on file:** *"I'll send a secure reset link to the email on file right now, and
-  I'll stay on the line with you."* Call **`send_reset_email`**. Mention it may take a few seconds
-  and to check spam.
+### Step 2 — Confirm the email, then send the reset link (or transfer)
+Read `has_email_on_file` and `email_on_file` from the verify result:
+- **Has an email on file:** **confirm before sending.** Read the address back and wait for a yes —
+  *"I have your email on file as [email_on_file] — is that still correct, and do you have access to
+  it right now?"* Only after they confirm: *"Great — I'll send a secure reset link there right now,
+  and I'll stay on the line with you."* Call **`send_reset_email`**. Mention it may take a few
+  seconds and to check spam. If the address is wrong or they can't get into it, **don't send there**
+  — transfer instead (see the no-email branch).
 - **No email on file:** **call `transfer_to_number` directly** — do not speak a separate handoff
   line first. Put the handoff in its **`client_message`** argument (*"Let me connect you to a
   specialist who can verify you another way — one moment."*) and a short **`agent_message`** for
@@ -88,7 +91,7 @@ Not verified after two tries · no email on file · account locked / needs activ
 
 | Tool | Input | Output |
 |---|---|---|
-| `verify_caller` | `{ last4_ssn, dob }` (TEST data) | `{ verified, subject_ref, has_email_on_file }` |
+| `verify_caller` | `{ last4_ssn, dob }` (TEST data) | `{ verified, subject_ref, has_email_on_file, email_on_file }` |
 | `send_reset_email` | `{ subject_ref }` | `{ sent, delivered_to }` |
 | `document_resolution` | `{ subject_ref, outcome, notes }` | `{ logged, ticket_id }` |
 | `transfer_to_number` (system) | — | Simulated in POC; used on the no-email / failed-auth branch |
