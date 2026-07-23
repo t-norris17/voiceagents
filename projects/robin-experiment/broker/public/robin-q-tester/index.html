@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Robin — Q&A Test</title>
+<title>Robin Q Tester</title>
 <style>
   :root{
     --paper:#f2f0ea; --ink:#17181c; --sub:#6c7075; --faint:#a29e95;
@@ -61,11 +61,21 @@
   .text em{ font-style:italic; }
   .text ul{ margin:.3em 0 .6em; padding-left:1.15em; } .text li{ margin:.15em 0; }
 
-  .cardfoot{ margin-top:12px; }
-  .resend{ background:none; border:1px solid var(--line); border-radius:999px; padding:4px 12px; font-family:var(--mono); font-size:.66rem; text-transform:uppercase; letter-spacing:.06em; color:var(--sub); }
-  .resend:hover{ border-color:var(--accent); color:var(--accent); }
+  .cardfoot{ margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .resend,.flag{ background:none; border:1px solid var(--line); border-radius:999px; padding:4px 12px; font-family:var(--mono); font-size:.66rem; text-transform:uppercase; letter-spacing:.06em; color:var(--sub); }
+  .resend:hover,.flag:hover{ border-color:var(--accent); color:var(--accent); }
   .resend:disabled{ opacity:.5; cursor:default; }
   .spin{ font-family:var(--mono); font-size:.72rem; color:var(--faint); }
+
+  /* flag-for-review */
+  .card.flagged{ border-color:var(--accent); box-shadow:inset 3px 0 0 var(--accent); }
+  .flag.on{ background:var(--accent); border-color:var(--accent); color:var(--paper); }
+  #flagged{ margin-top:26px; border:1px solid var(--accent); border-radius:12px; background:var(--card); padding:14px 17px; }
+  #flagged .vlabel{ font-family:var(--mono); font-size:.66rem; text-transform:uppercase; letter-spacing:.14em; color:var(--accent); margin-bottom:8px; }
+  #flaglist{ margin:0; padding-left:18px; display:grid; gap:5px; }
+  #flaglist li{ font-size:.9rem; }
+  #flaglist a{ color:var(--ink); text-decoration:none; border-bottom:1px dotted var(--faint); cursor:pointer; }
+  #flaglist a:hover{ border-bottom-color:var(--accent); color:var(--accent); }
 
   footer{ margin-top:44px; border-top:1px solid var(--line); padding-top:14px; font-family:var(--mono); font-size:.68rem; color:var(--faint); }
   @media (prefers-reduced-motion:no-preference){ .dots::after{ content:''; animation:d 1.2s steps(4,end) infinite; } }
@@ -75,12 +85,12 @@
 <body>
 <div class="wrap">
   <header>
-    <div class="tag">Phase 1 · Answer test</div>
-    <h1>Robin<span class="dot">.</span> Q&amp;A</h1>
+    <div class="tag">Robin Q Tester · Phase 1</div>
+    <h1>Robin<span class="dot">.</span> Q Tester</h1>
     <p class="lede">Paste in questions a participant might ask about the INTRUST 401(k) Plan — one per
       line. Robin answers each from the plan knowledge base, the same way she would on a call, and
       when the question is one of our 25 you'll see the <b>answer key</b> beside it. Hit <b>resend</b>
-      on any answer to see how it varies. No phone call needed.</p>
+      to see how an answer varies, or <b>flag</b> any answer to collect it for review. No phone call needed.</p>
   </header>
 
   <label class="lbl" for="qs">Questions (one per line)</label>
@@ -96,9 +106,14 @@ What happens to my plan if I leave?"></textarea>
     <span class="count" id="count"></span>
   </div>
 
+  <div id="flagged" hidden>
+    <div class="vlabel">Flagged for review · <span id="flagcount">0</span></div>
+    <ol id="flaglist"></ol>
+  </div>
+
   <div id="results"></div>
 
-  <footer>Robin · INTRUST 401(k) experiment · answers grounded in the plan KB · synthetic test data</footer>
+  <footer>Robin Q Tester · INTRUST 401(k) experiment · answers grounded in the plan KB · synthetic test data</footer>
 </div>
 
 <script>
@@ -158,6 +173,7 @@ What happens to my plan if I leave?"></textarea>
   function makeCard(n, question){
     const card = document.createElement("div");
     card.className = "card";
+    card.id = "card-" + n;
     card.dataset.q = question;
     card.dataset.variations = "0";
     const ideal = IDEALS.get(norm(question));
@@ -187,8 +203,38 @@ What happens to my plan if I leave?"></textarea>
     }catch(e){
       addAnswer(card, e.message, true);
     }
-    foot.innerHTML = `<button class="resend">↻ Resend</button>`;
+    foot.innerHTML = `<button class="resend">↻ Resend</button><button class="flag">⚑ Flag</button>`;
     $(".resend", foot).addEventListener("click", (ev)=>{ ev.target.disabled=true; runQuestion(card); });
+    const fb = $(".flag", foot);
+    fb.classList.toggle("on", card.classList.contains("flagged"));
+    fb.addEventListener("click", ()=>toggleFlag(card));
+  }
+
+  // ---- flag for review ----
+  const flagged = [];
+  function toggleFlag(card){
+    const on = card.classList.toggle("flagged");
+    const q = card.dataset.q;
+    const i = flagged.indexOf(q);
+    if(on && i < 0) flagged.push(q);
+    else if(!on && i >= 0) flagged.splice(i, 1);
+    const fb = $(".flag", card); if(fb) fb.classList.toggle("on", on);
+    renderFlagged();
+  }
+  function renderFlagged(){
+    const list = $("#flaglist");
+    list.innerHTML = "";
+    flagged.forEach((q)=>{
+      const card = [...results.children].find(c => c.dataset.q === q);
+      const li = document.createElement("li");
+      const a = document.createElement("a");
+      a.textContent = q;
+      a.addEventListener("click", ()=>{ if(card) card.scrollIntoView({ behavior:"smooth", block:"center" }); });
+      li.appendChild(a);
+      list.appendChild(li);
+    });
+    $("#flagcount").textContent = String(flagged.length);
+    $("#flagged").hidden = flagged.length === 0;
   }
 
   // simple concurrency limiter
@@ -209,6 +255,7 @@ What happens to my plan if I leave?"></textarea>
     const lines = $("#qs").value.split("\n").map(s=>s.trim()).filter(Boolean);
     if(!lines.length) return;
     results.innerHTML = "";
+    flagged.length = 0; renderFlagged();
     runBtn.disabled = true;
     countEl.textContent = `Running ${lines.length}…`;
     const cards = lines.map((q,i)=>makeCard(i+1, q));
