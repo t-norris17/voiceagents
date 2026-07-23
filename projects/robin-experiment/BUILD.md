@@ -12,6 +12,42 @@
 
 ---
 
+### 2026-07-23 — Session 2
+
+**Time spent:** ~1 session
+**Status after session:** on track
+
+**What we did:**
+- Loaded **50 synthetic members** into Supabase (member_id + synthetic DOB + synthetic balances;
+  varied vesting/loans/consent; zero real PII).
+- Built the **broker** (`broker/`): dependency-free Vercel functions `verify_caller`,
+  `get_balance`, `postcall` (HMAC-verified webhook → idempotent `ai_call_events`), with tolerant
+  spoken member-id/DOB parsing (unit-tested).
+- Ingested the **INTRUST enrollment packet** → 3 RAG KB docs + 25 curated questions (seeded).
+- Built the **grader** (`grader/`): deterministic security scan + **claude-opus-4-8** LLM judge
+  (structured output) grading quality vs. ideal answers, sentiment, and security; writes
+  `call_question_scores` + call-level verdict. Added migrations 005 (security_flag/detail) + 006
+  (scored_at).
+- Dashboard reached its final **reductive (Rams/Vignelli)** design with by-question/by-category
+  grouping + per-question answer drill-down (`dashboard/`, sample data).
+
+**What broke / surprised us:**
+- Enrollment packet reveals the real INTRUST login uses SSN — reinforced Robin's hard no-SSN rule.
+- Loan limits absent from the packet → grader flags invented limits as `wrong`.
+
+**Decisions made:**
+- Judge model is stronger than Robin (Opus 4.8 vs Haiku); grade vs. stored ideal answers.
+- Security is deterministic-first and hard-fails the Security verdict.
+
+**Next session:**
+> Remaining: (1) **deploy the broker to Vercel** + set env (SUPABASE_SERVICE_ROLE_KEY,
+> ELEVENLABS_WEBHOOK_SECRET) — needs Tanner; (2) **configure ElevenLabs** for the experiment
+> (system prompt for member_id+DOB verify + no-SSN rule + INTRUST plan, upload 3 KB docs, point
+> verify_caller/get_balance webhook tools at the broker, post-call webhook → /api/postcall, add
+> Data Collection fields) — I write the paste-ready guide; (3) **wire the dashboard to live
+> Supabase** (read-only view + publishable key); (4) run the **grader calibration** set once real
+> transcripts exist; (5) generate **tester credential cards** (last). Confirm verdict thresholds.
+
 ### 2026-07-23 — Session 1
 
 **Time spent:** ~1 session

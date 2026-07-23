@@ -1,0 +1,10 @@
+{
+  "name": "robin-experiment-grader",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "LLM-judge grader for the Robin experiment: scores answer quality vs. ideal answers, sentiment, and security.",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.68.0"
+  }
+}
