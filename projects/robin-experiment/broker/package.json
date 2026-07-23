@@ -3,5 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Vercel broker between ElevenLabs (Robin) and Supabase for the 50-user experiment."
+  "description": "Vercel broker between ElevenLabs (Robin) and Supabase for the 50-user experiment, plus the Phase-1 Q&A test tool.",
+  "dependencies": {
+    "@anthropic-ai/sdk": "latest"
+  }
 }
