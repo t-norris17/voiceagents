@@ -40,8 +40,13 @@
 - Security is deterministic-first and hard-fails the Security verdict.
 
 **Next session:**
-> Remaining: (1) **deploy the broker to Vercel** + set env (SUPABASE_SERVICE_ROLE_KEY,
-> ELEVENLABS_WEBHOOK_SECRET) — needs Tanner; (2) **configure ElevenLabs** for the experiment
+> DONE since: broker **deployed & live** at `https://voiceagents-seven.vercel.app` (verify_caller +
+> get_balance verified working against Supabase); **ElevenLabs setup guide written**
+> (`elevenlabs-experiment-setup.md`) with the real broker URL baked in.
+> NEW TODO (Tanner's ask): a **boss-facing Q&A test artifact** (Phase 1) — paste ~25 questions,
+> LLM RAGs the KB (3 docs, small enough to stuff), outputs Q+A readably, each with a "resend" button
+> for answer-variation testing. Likely a broker `/api/ask` endpoint + a static artifact frontend.
+> Remaining: (1) ~~deploy broker~~ ✅; (2) **configure ElevenLabs** for the experiment
 > (system prompt for member_id+DOB verify + no-SSN rule + INTRUST plan, upload 3 KB docs, point
 > verify_caller/get_balance webhook tools at the broker, post-call webhook → /api/postcall, add
 > Data Collection fields) — I write the paste-ready guide; (3) **wire the dashboard to live

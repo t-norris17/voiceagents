@@ -3,6 +3,10 @@
 Dependency-free Vercel functions between ElevenLabs (Robin) and Supabase. Deploy this folder to a
 throwaway Vercel project; set env vars from `.env.example` in the project settings.
 
+**Deployed:** `https://voiceagents-seven.vercel.app` (Vercel project `voiceagents`, root directory
+`projects/robin-experiment/broker`). `verify_caller` + `get_balance` are live; `postcall` activates
+once `ELEVENLABS_WEBHOOK_SECRET` is set (see `../elevenlabs-experiment-setup.md` §6).
+
 | Endpoint | Method | In → Out |
 |---|---|---|
 | `/api/verify_caller` | POST | `{ member_id, dob }` → `{ verified, subject_ref, first_name, consented }` |
