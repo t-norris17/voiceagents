@@ -101,15 +101,11 @@
       <textarea id="src" placeholder="Paste the raw guide / SOP text here, or use Upload for a .txt/.md file. (PDF? Extract text first — see the note below.)"></textarea>
     </div>
     <div>
-      <label class="lbl" for="env">Plan / environment (used verbatim)</label>
+      <label class="lbl" for="env">Applies to</label>
       <input type="text" id="env" placeholder="INTRUST 401(k) Plan">
     </div>
     <div>
-      <label class="lbl" for="slug">Slug (filenames)</label>
-      <input type="text" id="slug" placeholder="intrust">
-    </div>
-    <div class="full">
-      <label class="lbl" for="source">Source citation (optional)</label>
+      <label class="lbl" for="source">Source <span style="text-transform:none;letter-spacing:0">(optional)</span></label>
       <input type="text" id="source" placeholder="2025 INTRUST Enrollment Packet">
     </div>
   </div>
@@ -194,13 +190,14 @@
   async function run(){
     const text = $("#src").value.trim(), env = $("#env").value.trim();
     if(!text){ statusEl.textContent="Paste or upload some source text first."; return; }
-    if(!env){ statusEl.textContent="Enter the plan / environment name."; return; }
+    if(!env){ statusEl.textContent="Fill in 'Applies to' — the plan or product these articles cover."; return; }
+    const slug = env.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,40) || "cleaned";
     out.style.display="none"; out.innerHTML="";
     runBtn.disabled=true;
     statusEl.innerHTML = `<span class="dots">Cleaning — segmenting, rewriting to KCS-gold, validating</span> · a big guide can take a minute or two`;
     try{
       const res = await fetch("/api/clean", { method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ text, env, slug: $("#slug").value.trim(), source: $("#source").value.trim() }) });
+        body: JSON.stringify({ text, env, slug, source: $("#source").value.trim() }) });
       const d = await res.json().catch(()=>({error:"bad response"}));
       if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
       render(d);
