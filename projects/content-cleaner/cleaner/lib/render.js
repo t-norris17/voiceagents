@@ -5,7 +5,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { articleToMarkdown } from "./kcs.js";
 
-function dropReport(result, findingsBySlug) {
+export function dropReport(result, findingsBySlug) {
   const L = ["# Drop report", "", "_What the cleaner cut from the source, and why. Confirm nothing important was lost._", ""];
   if (result.dropped?.length) {
     L.push("| Cut | Reason |", "|---|---|");
@@ -29,7 +29,7 @@ function dropReport(result, findingsBySlug) {
   return L.join("\n").trim() + "\n";
 }
 
-function coverageMap(result, reviews) {
+export function coverageMap(result, reviews) {
   const L = ["# Coverage map", "", "_Topics produced, plus the gaps the source does not answer (Robin routes these to a specialist)._", ""];
   L.push("## Topics covered", "");
   for (const a of result.articles) {
@@ -44,7 +44,7 @@ function coverageMap(result, reviews) {
   return L.join("\n").trim() + "\n";
 }
 
-function candidateQuestions(result) {
+export function candidateQuestions(result) {
   const L = ["# Candidate questions", "", "_Pulled from the cleaned articles — seed for this plan's eval set (the curated-questions pattern)._", ""];
   for (const a of result.articles) {
     if (!a.candidate_questions?.length) continue;

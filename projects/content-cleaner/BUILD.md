@@ -52,18 +52,36 @@ verified — all modules syntax-check, schemas validate, KB + prompts load, pipe
 **To close the gate, run it in an environment that has the key** (see "Open: run surface" below), then
 diff `out/intrust/*.md` against `robin-experiment/kb/*.md` and eyeball `_drop-report.md`.
 
-## Open: run surface (decision needed)
+## The hosted "door" (`api/clean.js` + `public/index.html`)
 
-The SCOPE assumed "run in-session," but the build sandbox has no API key. Pick one:
-- **A — key in this environment:** add `ANTHROPIC_API_KEY` to the remote env so the CLI runs in-session.
-- **B — broker endpoint:** wrap the pipeline as a broker route (+ a paste-in page like the Q&A tool);
-  it uses the key already on Vercel. Watch serverless timeouts (the rewrite is a large Opus call).
-- **C — local:** run the CLI wherever you have Node + the key.
+The front door: paste raw text or upload a `.txt/.md`, set the plan name (+ optional slug/source), hit
+**Clean it**. `POST /api/clean` runs the SAME pipeline in-memory and returns the cleaned articles + the
+three reports; the page is the **review room** — articles rendered with validator flags highlighted
+(PII in red, warnings in amber), critic scores, a drop report / coverage map / candidate-questions tab,
+and per-article + report **downloads**. Nothing publishes; you approve and download the markdown.
+
+`vercel.json` raises `api/clean.js` to `maxDuration: 300` — the rewrite is a big Opus call.
+
+### Deploy the door (one-time)
+
+It's its own Vercel project (kept separate so the cleaner stays reusable, not welded to the Robin
+broker). Import `t-norris17/voiceagents` in Vercel with **Root Directory =
+`projects/content-cleaner/cleaner`**, add `ANTHROPIC_API_KEY` in project env, deploy. PDF is still a
+pre-step (paste extracted text or upload `.txt/.md`; the page shows the PyMuPDF one-liner).
+
+> **maxDuration note:** 300s needs a Pro plan; Hobby caps function duration at 60s. If a big guide
+> times out on Hobby, the fix is to chunk the rewrite per-topic (a follow-up), not to shrink the guide.
+
+## Acceptance test — closes when the door is deployed
+
+Deploy the door, paste `enrollment.txt` (the raw INTRUST packet) with env "INTRUST 401(k) Plan", Clean,
+then compare the article tab against the hand-made `robin-experiment/kb/*.md` and eyeball the drop
+report (Schwab/fee tables should be there, not in the docs) and the "no PII" chip. That's the v1 gate.
 
 ## Next session
 
-- Run the acceptance test on `enrollment.txt`; compare to the hand-made KB; tune `lib/kcs.js` prompts
-  if drops/coverage aren't right.
-- Decide the run surface (A/B/C above).
-- Optional: PDF/Word/HTML/URL ingestion; a side-by-side reviewer artifact; auto-seed the eval set from
-  `_candidate-questions.md`.
+- Run the acceptance test through the deployed door; tune `lib/kcs.js` prompts if drops/coverage differ
+  from the hand-made KB.
+- Optional: per-topic chunked rewrite (removes the timeout risk / enables progress streaming);
+  PDF/Word/HTML/URL ingestion; auto-seed the eval set from `_candidate-questions.md` into a plan's
+  `curated_questions`.
