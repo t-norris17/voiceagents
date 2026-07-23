@@ -10,7 +10,7 @@
 
 A Node CLI in [`cleaner/`](./cleaner/) — raw source text → KCS-gold, Robin-ready KB articles + a
 reviewer report. Pipeline: extract → rewrite (Opus, structured) → validate (deterministic guards +
-Opus critic) → render.
+Sonnet critic) → render.
 
 ```
 cleaner/
@@ -18,14 +18,18 @@ cleaner/
   lib/kcs.js          the KCS-gold + voice-RAG rubric (rewrite/critic system prompts) + article→markdown
   lib/extract.js      read .txt/.md (PDF is a pre-step)
   lib/rewrite.js      Opus structured call: segment + rewrite to the article contract
-  lib/validate.js     deterministic guards (PII = hard fail; cross-ref/table/gesture/length = warn) + Opus critic
+  lib/validate.js     deterministic guards (PII = hard fail; cross-ref/table/gesture/length = warn) + Sonnet critic
   lib/render.js       write per-topic docs + _drop-report + _coverage-map + _candidate-questions + _run.json
   package.json        @anthropic-ai/sdk
 ```
 
 ## Run it
 
-Needs `ANTHROPIC_API_KEY` in the environment (the rewrite + critic are Opus calls).
+Needs `ANTHROPIC_API_KEY` in the environment. **Model split (cost):** the **rewrite runs on Opus**
+(quality-critical, generates the articles); the **critic runs on Sonnet** at medium effort (reviews
+grounding/coverage — the premium tier isn't needed to review). This roughly halves the per-run Opus
+spend. A full run lands around $0.35–0.45; the rewrite is the floor. Robin's live answers run on Haiku,
+so the expensive model only touches this build step, never a call.
 
 ```bash
 cd projects/content-cleaner/cleaner
