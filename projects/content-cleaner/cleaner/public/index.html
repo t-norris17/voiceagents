@@ -81,6 +81,20 @@
   .dl{ background:none; border:1px solid var(--line); border-radius:999px; padding:5px 13px; font-family:var(--mono); font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:var(--sub); }
   .dl:hover{ border-color:var(--accent); color:var(--accent); }
   pre.report{ background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px 16px; overflow-x:auto; font-family:var(--mono); font-size:.78rem; white-space:pre-wrap; }
+  .rsec{ margin:16px 0; }
+  .rsec h3{ font-family:var(--mono); font-size:.66rem; text-transform:uppercase; letter-spacing:.1em; color:var(--sub); margin:0 0 8px; }
+  .rscroll{ overflow-x:auto; }
+  .rtable{ width:100%; border-collapse:collapse; font-size:.87rem; }
+  .rtable th,.rtable td{ text-align:left; vertical-align:top; padding:7px 10px; border-bottom:1px solid var(--hair); }
+  .rtable th{ font-family:var(--mono); font-size:.62rem; text-transform:uppercase; letter-spacing:.08em; color:var(--faint); font-weight:400; }
+  .rtable td.reason{ color:var(--sub); }
+  .rlist{ margin:0; padding-left:18px; display:grid; gap:6px; font-size:.9rem; }
+  .rlist .sub{ margin:3px 0 0; padding-left:16px; display:grid; gap:3px; }
+  .rlist .sub li{ font-size:.84rem; color:var(--sub); list-style:none; position:relative; }
+  .rlist .sub li::before{ content:"↳"; position:absolute; left:-14px; color:var(--faint); }
+  .muted{ color:var(--faint); font-size:.87rem; }
+  .qgroup{ margin:0 0 14px; }
+  .qgroup .qt{ font-weight:700; font-size:.92rem; margin-bottom:4px; }
   footer{ margin-top:44px; border-top:1px solid var(--line); padding-top:14px; font-family:var(--mono); font-size:.68rem; color:var(--faint); }
 </style>
 </head>
@@ -182,7 +196,7 @@
       <div class="md"></div>
       <div class="cardfoot"><button class="dl">↓ ${a.slug}.md</button></div>`;
     $(".ctitle", c).textContent = a.title;
-    $(".md", c).innerHTML = md(a.md);
+    $(".md", c).innerHTML = md(a.md.replace(/^#[^\n]*\n+/, "")); // card already shows the title
     $(".dl", c).addEventListener("click", ()=>download(a.slug+".md", a.md));
     return c;
   }
@@ -205,6 +219,72 @@
     finally{ runBtn.disabled=false; }
   }
 
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; };
+
+  function rtable(head, rows){
+    const scroll = el("div", "rscroll"), t = el("table", "rtable");
+    t.innerHTML = `<thead><tr><th>${head[0]}</th><th>${head[1]}</th></tr></thead>`;
+    const tb = el("tbody");
+    rows.forEach(([a, b])=>{ const tr = el("tr"); tr.append(el("td", null, a), el("td", "reason", b)); tb.append(tr); });
+    t.append(tb); scroll.append(t); return scroll;
+  }
+
+  function buildDrop(d){
+    const box = document.createElement("div");
+    const s1 = el("div", "rsec"); s1.append(el("h3", null, "Dropped from the source"));
+    if(d.dropped && d.dropped.length) s1.append(rtable(["Cut", "Reason"], d.dropped.map(x=>[x.content, x.reason])));
+    else s1.append(el("p", "muted", "Nothing dropped."));
+    box.append(s1);
+
+    const s2 = el("div", "rsec"); s2.append(el("h3", null, "Validation flags"));
+    const withF = d.articles.filter(a=>a.findings && a.findings.length);
+    if(withF.length) withF.forEach(a=>{
+      const g = el("div"); g.style.marginBottom = "8px"; g.append(el("div", "muted", a.title));
+      a.findings.forEach(f=>{ const fl = el("div", "flag " + f.severity, (f.severity==="fatal"?"⛔ ":"⚠ ") + f.kind + " — " + f.detail); fl.style.marginTop = "4px"; g.append(fl); });
+      s2.append(g);
+    }); else s2.append(el("p", "muted", "No flags."));
+    box.append(s2);
+
+    if(d.terminology_notes && d.terminology_notes.length){
+      const s3 = el("div", "rsec"); s3.append(el("h3", null, "Terminology normalized"));
+      s3.append(rtable(["From", "To"], d.terminology_notes.map(x=>[x.from, x.to]))); box.append(s3);
+    }
+    return box;
+  }
+
+  function buildCoverage(d){
+    const box = document.createElement("div");
+    const s1 = el("div", "rsec"); s1.append(el("h3", null, "Topics covered"));
+    const ul = el("ul", "rlist");
+    d.articles.forEach(a=>{
+      const li = el("li");
+      li.append(document.createTextNode(a.title));
+      li.append(el("span", "muted", "  " + a.slug + (a.review ? " · critic " + a.review.score + "/5" : "")));
+      if(a.coverage_flags && a.coverage_flags.length){
+        const sub = el("ul", "sub"); a.coverage_flags.forEach(cf=>sub.append(el("li", null, "not covered: " + cf))); li.append(sub);
+      }
+      ul.append(li);
+    });
+    s1.append(ul); box.append(s1);
+    const s2 = el("div", "rsec"); s2.append(el("h3", null, "Source-level gaps"));
+    if(d.coverage_gaps && d.coverage_gaps.length){ const ul2 = el("ul", "rlist"); d.coverage_gaps.forEach(g=>ul2.append(el("li", null, g))); s2.append(ul2); }
+    else s2.append(el("p", "muted", "None flagged."));
+    box.append(s2);
+    return box;
+  }
+
+  function buildQuestions(d){
+    const box = document.createElement("div"); let any = false;
+    d.articles.forEach(a=>{
+      if(!a.candidate_questions || !a.candidate_questions.length) return;
+      any = true;
+      const g = el("div", "qgroup"); g.append(el("div", "qt", a.title));
+      const ul = el("ul", "rlist"); a.candidate_questions.forEach(q=>ul.append(el("li", null, q))); g.append(ul); box.append(g);
+    });
+    if(!any) box.append(el("p", "muted", "No candidate questions."));
+    return box;
+  }
+
   function render(d){
     statusEl.textContent = "";
     const s = d.summary;
@@ -218,9 +298,9 @@
     arts.append(sum);
     d.articles.forEach(a=>arts.append(articleCard(a)));
 
-    const dropNode = document.createElement("div"); dropNode.innerHTML = `<pre class="report"></pre>`; $("pre", dropNode).textContent = d.reports.drop;
-    const covNode = document.createElement("div"); covNode.innerHTML = `<pre class="report"></pre>`; $("pre", covNode).textContent = d.reports.coverage;
-    const qNode = document.createElement("div"); qNode.innerHTML = `<pre class="report"></pre>`; $("pre", qNode).textContent = d.reports.questions;
+    const dropNode = buildDrop(d);
+    const covNode = buildCoverage(d);
+    const qNode = buildQuestions(d);
 
     const dlAll = document.createElement("div"); dlAll.className="cardfoot"; dlAll.style.marginTop="4px";
     const b1=document.createElement("button"); b1.className="dl"; b1.textContent="↓ drop-report.md"; b1.onclick=()=>download("_drop-report.md", d.reports.drop);

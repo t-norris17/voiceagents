@@ -62,7 +62,6 @@ export function articleToMarkdown(a, meta = {}) {
   const src = meta.source ? `*Source: ${meta.source}. Participant-facing summary for Robin's Knowledge Base.*` : "";
   if (src) { lines.push(src); lines.push(""); }
   if (a.issue) { lines.push(`**Issue:** ${a.issue}`); lines.push(""); }
-  lines.push("## Answer");
   lines.push(a.resolution.trim());
   lines.push("");
   if (a.cause && a.cause.trim()) {

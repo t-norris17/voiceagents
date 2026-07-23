@@ -76,7 +76,7 @@ test("a clean, self-contained article produces NO findings", () => {
 });
 
 // --- formatter: article -> Robin-ready markdown ---
-test("articleToMarkdown renders title, answer, coverage; omits empty cause", () => {
+test("articleToMarkdown renders title, resolution, coverage; omits empty cause and the Answer header", () => {
   const md = articleToMarkdown(
     {
       environment: "INTRUST 401(k) Plan",
@@ -89,7 +89,8 @@ test("articleToMarkdown renders title, answer, coverage; omits empty cause", () 
     { source: "2025 INTRUST Enrollment Packet" }
   );
   assert.match(md, /# INTRUST 401\(k\) Plan — Can I take a loan/);
-  assert.match(md, /## Answer/);
+  assert.match(md, /Yes, the plan allows loans\./, "resolution body present");
   assert.match(md, /route to a specialist/i);
+  assert.doesNotMatch(md, /## Answer/, "the generic Answer header is dropped");
   assert.doesNotMatch(md, /## Why/, "empty cause must be omitted");
 });

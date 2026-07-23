@@ -46,6 +46,7 @@ export default async function handler(req, res) {
         findings: findingsBySlug[r.slug] || [],
         review: reviews.find((v) => v.slug === r.slug) || null,
         candidate_questions: a.candidate_questions || [],
+        coverage_flags: a.coverage_flags || [],
       };
     });
 
