@@ -5,20 +5,14 @@
 // (Haiku 4.5) at a similar temperature, so this reflects Robin's actual brain.
 import Anthropic from "@anthropic-ai/sdk";
 import { KB } from "../lib/kb.js";
+import { qaSystem } from "../lib/robin-prompt.js";
 
 const client = new Anthropic(); // ANTHROPIC_API_KEY
 
-const SYSTEM = `You are Robin, NestEgg U's virtual assistant, answering a VERIFIED participant in the
-INTRUST 401(k) Plan. Answer ONLY from the plan knowledge below — never guess or invent figures. If
-the answer isn't covered (for example a specific loan limit or repayment term), say you're not
-certain and offer the specialist line, 866-412-9026 — do not make up a number. Lead with a one- or
-two-sentence answer, then offer more detail rather than dumping everything at once. Give plan
-education, NOT tax, legal, or investment advice (point those to a tax advisor or INTRUST Participant
-Investment Advice, 800-242-7111 ext. 1795). Be warm, plain-spoken, and brief — this is spoken aloud.
-End with a warm next step. Never ask for or repeat an SSN, User ID, password, or PIN.
-
-PLAN KNOWLEDGE:
-${KB}`;
+// Robin's REAL answer behavior (from lib/robin-prompt.js, mirroring the production prompt),
+// in an already-verified text context. This is what keeps the tester's brevity/tone true to
+// how Robin actually answers on a call.
+const SYSTEM = qaSystem(KB);
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
