@@ -8,12 +8,14 @@
   :root{
     --paper:#f2f0ea; --ink:#17181c; --sub:#6c7075; --faint:#a29e95;
     --line:#d7d3c9; --hair:#e4e1d8; --card:#fbfaf7; --accent:#b8501e;
+    --ideal:#e8f0e6; --idealln:#bcd3b4; --idealtx:#3f5c39;
     --sans:"Helvetica Neue",Helvetica,Arial,system-ui,sans-serif;
     --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
   }
   @media (prefers-color-scheme:dark){
     :root{ --paper:#15161a; --ink:#ecebe6; --sub:#9a9ea4; --faint:#6a6e74;
-      --line:#2b2d33; --hair:#212329; --card:#1b1d22; --accent:#e08a4a; }
+      --line:#2b2d33; --hair:#212329; --card:#1b1d22; --accent:#e08a4a;
+      --ideal:#182016; --idealln:#2f4429; --idealtx:#9cc091; }
   }
   *{ box-sizing:border-box; }
   body{ margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans); line-height:1.55; -webkit-font-smoothing:antialiased; }
@@ -29,21 +31,36 @@
   textarea{ width:100%; min-height:150px; resize:vertical; background:var(--card); color:var(--ink);
     border:1px solid var(--line); border-radius:10px; padding:12px 14px; font:inherit; font-size:.92rem; }
   textarea:focus{ outline:2px solid var(--accent); outline-offset:1px; }
-  .row{ display:flex; align-items:center; gap:14px; margin-top:12px; flex-wrap:wrap; }
+  .row{ display:flex; align-items:center; gap:12px; margin-top:12px; flex-wrap:wrap; }
   button{ font:inherit; cursor:pointer; }
   .run{ background:var(--ink); color:var(--paper); border:0; border-radius:999px; padding:9px 20px; font-weight:600; letter-spacing:.01em; }
   .run:disabled{ opacity:.5; cursor:default; }
-  .count{ font-family:var(--mono); font-size:.72rem; color:var(--faint); }
+  .ghost{ background:none; border:1px solid var(--line); border-radius:999px; padding:8px 16px; color:var(--sub); }
+  .ghost:hover{ border-color:var(--accent); color:var(--accent); }
+  .count{ font-family:var(--mono); font-size:.72rem; color:var(--faint); margin-left:auto; }
 
   #results{ margin-top:36px; display:grid; gap:14px; }
   .card{ border:1px solid var(--line); border-radius:12px; background:var(--card); padding:15px 17px; }
   .q{ font-weight:700; display:flex; gap:10px; align-items:flex-start; }
   .q .n{ font-family:var(--mono); font-size:.8rem; color:var(--accent); flex:none; padding-top:2px; }
-  .answers{ margin:10px 0 0 0; padding-left:16px; border-left:2px solid var(--hair); display:grid; gap:12px; }
-  .ans{ }
-  .ans .vlabel{ font-family:var(--mono); font-size:.62rem; text-transform:uppercase; letter-spacing:.1em; color:var(--faint); margin-bottom:2px; }
-  .ans .text{ font-size:.92rem; white-space:pre-wrap; }
+
+  .ideal{ margin-top:12px; background:var(--ideal); border:1px solid var(--idealln); border-radius:10px; padding:10px 13px; }
+  .ideal .vlabel{ color:var(--idealtx); }
+  .ideal .text{ color:var(--idealtx); font-size:.9rem; }
+
+  .answers{ margin:12px 0 0 0; padding-left:16px; border-left:2px solid var(--hair); display:grid; gap:14px; }
+  .ans .vlabel{ font-family:var(--mono); font-size:.62rem; text-transform:uppercase; letter-spacing:.1em; color:var(--faint); margin-bottom:3px; display:flex; gap:8px; align-items:baseline; }
+  .ans .lat{ color:var(--accent); }
+  .ans .text{ font-size:.92rem; }
   .ans.err .text{ color:var(--accent); }
+  .vlabel{ font-family:var(--mono); font-size:.62rem; text-transform:uppercase; letter-spacing:.1em; color:var(--faint); margin-bottom:3px; }
+
+  /* rendered markdown */
+  .text p{ margin:0 0 .6em; } .text p:last-child{ margin-bottom:0; }
+  .text strong{ font-weight:700; }
+  .text em{ font-style:italic; }
+  .text ul{ margin:.3em 0 .6em; padding-left:1.15em; } .text li{ margin:.15em 0; }
+
   .cardfoot{ margin-top:12px; }
   .resend{ background:none; border:1px solid var(--line); border-radius:999px; padding:4px 12px; font-family:var(--mono); font-size:.66rem; text-transform:uppercase; letter-spacing:.06em; color:var(--sub); }
   .resend:hover{ border-color:var(--accent); color:var(--accent); }
@@ -61,8 +78,9 @@
     <div class="tag">Phase 1 · Answer test</div>
     <h1>Robin<span class="dot">.</span> Q&amp;A</h1>
     <p class="lede">Paste in questions a participant might ask about the INTRUST 401(k) Plan — one per
-      line. Robin answers each from the plan knowledge base, the same way she would on a call. Hit
-      <b>resend</b> on any answer to see how it varies. No phone call needed.</p>
+      line. Robin answers each from the plan knowledge base, the same way she would on a call, and
+      when the question is one of our 25 you'll see the <b>answer key</b> beside it. Hit <b>resend</b>
+      on any answer to see how it varies. No phone call needed.</p>
   </header>
 
   <label class="lbl" for="qs">Questions (one per line)</label>
@@ -74,6 +92,7 @@ What happens to my plan if I leave?"></textarea>
 
   <div class="row">
     <button class="run" id="run">Run all</button>
+    <button class="ghost" id="load">Load the 25</button>
     <span class="count" id="count"></span>
   </div>
 
@@ -86,7 +105,32 @@ What happens to my plan if I leave?"></textarea>
   const $ = (s, r=document) => r.querySelector(s);
   const results = $("#results");
   const runBtn = $("#run");
+  const loadBtn = $("#load");
   const countEl = $("#count");
+
+  // ---- curated set (fetched once) : normalized question -> ideal answer ----
+  const IDEALS = new Map();
+  let CURATED = [];
+  const norm = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+
+  fetch("/api/questions").then(r=>r.json()).then(d=>{
+    CURATED = d.questions || [];
+    CURATED.forEach(x => IDEALS.set(norm(x.q), x.ideal));
+  }).catch(()=>{ loadBtn.disabled = true; });
+
+  // ---- tiny, safe markdown renderer (escape first, then **bold** / *italic* / - bullets) ----
+  function md(text){
+    let s = String(text).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    s = s.replace(/\*\*([^*]+?)\*\*/g, "<strong>$1</strong>");
+    s = s.replace(/(^|[^*])\*(?!\s)([^*\n]+?)\*(?!\*)/g, "$1<em>$2</em>");
+    const blocks = s.split(/\n{2,}/).map(b=>b.trim()).filter(Boolean);
+    return blocks.map(b=>{
+      const lines = b.split("\n");
+      if(lines.every(l=>/^\s*[-•]\s+/.test(l)))
+        return "<ul>"+lines.map(l=>"<li>"+l.replace(/^\s*[-•]\s+/,"")+"</li>").join("")+"</ul>";
+      return "<p>"+lines.join("<br>")+"</p>";
+    }).join("");
+  }
 
   async function ask(question){
     const res = await fetch("/api/ask", {
@@ -99,12 +143,15 @@ What happens to my plan if I leave?"></textarea>
     return data.answer;
   }
 
-  function addAnswer(card, text, isErr, variationN){
+  function addAnswer(card, text, isErr, variationN, ms){
     const list = $(".answers", card);
     const wrap = document.createElement("div");
     wrap.className = "ans" + (isErr ? " err" : "");
-    wrap.innerHTML = `<div class="vlabel">${isErr?"Error":(variationN>1?("Variation "+variationN):"Answer")}</div><div class="text"></div>`;
-    $(".text", wrap).textContent = text;
+    const label = isErr ? "Error" : (variationN>1 ? ("Variation "+variationN) : "Robin's answer");
+    const lat = (!isErr && ms!=null) ? `<span class="lat">${(ms/1000).toFixed(1)}s</span>` : "";
+    wrap.innerHTML = `<div class="vlabel"><span>${label}</span>${lat}</div><div class="text"></div>`;
+    if(isErr) $(".text", wrap).textContent = text;
+    else $(".text", wrap).innerHTML = md(text);
     list.appendChild(wrap);
   }
 
@@ -113,8 +160,13 @@ What happens to my plan if I leave?"></textarea>
     card.className = "card";
     card.dataset.q = question;
     card.dataset.variations = "0";
+    const ideal = IDEALS.get(norm(question));
+    const idealHtml = ideal
+      ? `<div class="ideal"><div class="vlabel">Ideal answer · answer key</div><div class="text">${md(ideal)}</div></div>`
+      : "";
     card.innerHTML = `
       <div class="q"><span class="n">${String(n).padStart(2,"0")}</span><span class="qtext"></span></div>
+      ${idealHtml}
       <div class="answers"></div>
       <div class="cardfoot"><span class="spin dots">Thinking</span></div>`;
     $(".qtext", card).textContent = question;
@@ -125,11 +177,13 @@ What happens to my plan if I leave?"></textarea>
   async function runQuestion(card){
     const foot = $(".cardfoot", card);
     foot.innerHTML = `<span class="spin dots">Thinking</span>`;
+    const t0 = performance.now();
     try{
       const answer = await ask(card.dataset.q);
+      const ms = performance.now() - t0;
       const v = (parseInt(card.dataset.variations,10) || 0) + 1;
       card.dataset.variations = String(v);
-      addAnswer(card, answer, false, v);
+      addAnswer(card, answer, false, v, ms);
     }catch(e){
       addAnswer(card, e.message, true);
     }
@@ -145,6 +199,11 @@ What happens to my plan if I leave?"></textarea>
     });
     await Promise.all(workers);
   }
+
+  loadBtn.addEventListener("click", ()=>{
+    if(!CURATED.length) return;
+    $("#qs").value = CURATED.map(x=>x.q).join("\n");
+  });
 
   runBtn.addEventListener("click", async ()=>{
     const lines = $("#qs").value.split("\n").map(s=>s.trim()).filter(Boolean);

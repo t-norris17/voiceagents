@@ -13,6 +13,7 @@ once `ELEVENLABS_WEBHOOK_SECRET` is set (see `../elevenlabs-experiment-setup.md`
 | `/api/get_balance` | POST | `{ subject_ref }` → `{ found, plan_name, balance, vested_balance, fully_vested, outstanding_loan, deferral_pct }` |
 | `/api/postcall` | POST | ElevenLabs post-call webhook (HMAC-verified) → upsert `ai_call_events` |
 | `/api/ask` | POST | `{ question }` → Robin-style answer grounded in the embedded KB (Phase-1 Q&A test tool) |
+| `/api/questions` | GET | `{ questions:[{n,key,category,q,ideal}] }` — the 25 curated questions + answer key (from `lib/questions.js`) |
 | `/` (static) | GET | The Phase-1 Q&A test page (`public/index.html`) — paste questions, get answers, resend for variation |
 
 ## Phase-1 Q&A test tool (`/` + `/api/ask`)
@@ -21,6 +22,12 @@ A boss-facing page to pressure-test Robin's answers without placing a call. Past
 each is answered by **Haiku 4.5** (same model Robin runs on) grounded in `lib/kb.js` (the INTRUST KB
 embedded from `../kb/*.md`). Needs `ANTHROPIC_API_KEY` set on the project. The endpoint is unauthenticated —
 fine for an internal, synthetic-data tool; don't share the link beyond the intended reviewers.
+
+The page renders Markdown (bold/bullets, no raw asterisks), shows each answer's **round-trip latency**,
+and — for any question that matches one of the 25 — displays the **ideal answer** (the grader's answer
+key) inline for side-by-side comparison. **Load the 25** fills the box with the curated set. The curated
+Q&A comes from `lib/questions.js`, which mirrors `../curated-questions.md` — keep the two in sync when you
+edit the answer key.
 
 **Regenerate `lib/kb.js`** when the KB docs change:
 ```bash
