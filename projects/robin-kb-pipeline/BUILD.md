@@ -12,6 +12,37 @@
 
 ---
 
+### 2026-07-23 — Session 2
+
+**Status after session:** on track (console UI built; needs env + first live publish to fully exercise)
+
+**What we did:**
+- Turned the cleaner page into the **single-pane-of-glass console** (`public/index.html`): a numbered
+  **Clean → QA → Publish** pipeline nav (Rams/Vignelli — one job per tab, read left-to-right).
+  - **Clean** tab = the existing cleaner; each reviewed article gains a **→ Send to Publish** button
+    (disabled with "Fix PII to publish" when a fatal flag is present).
+  - **QA** tab = the Robin Q Tester embedded (iframe of `voiceagents-seven/robin-q-tester`) + open-in-tab link.
+  - **Publish** tab = live registry from `/api/kb_list`: "Ready to publish" (staged, each with a
+    **Publish to Robin** button → `/api/publish {id}`), "Live in Robin's KB", and a superseded History.
+- New `api/approve.js` — stages a cleaned article into `kb_articles` as `state='approved'` (one staged
+  row per plan+slug; idempotent by checksum; no-op if identical content is already live).
+- All syntax-checked; deterministic-guard tests still green.
+
+**What broke / surprised us:**
+- Nothing. QA is embedded via iframe to avoid cross-project CORS (keeps one source of truth for the tester).
+
+**Decisions made:**
+- Human gate = the two clicks: **Send to Publish** (Clean) stages; **Publish to Robin** (Publish) goes live.
+- QA tab embeds the deployed tester rather than duplicating its UI.
+
+**Next session:**
+> Add the four env vars to `voiceagents-qewy`, then **first live publish** to verify the `attachToAgent`
+> payload against the real ElevenLabs API (fix `lib/elevenlabs.js` if the knowledge_base/usage_mode shape
+> differs) and confirm Robin retrieves the doc on a call. Then decide + add the **console security gate**
+> (Vercel Password Protection preferred) before it holds real content.
+
+---
+
 ### 2026-07-23 — Session 1
 
 **Status after session:** on track (backend spine built; needs env + one live verification)

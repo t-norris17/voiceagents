@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Content Cleaner — Robin-ready / KCS gold</title>
+<title>Robin Content Console</title>
 <style>
   :root{
     --paper:#f2f0ea; --ink:#17181c; --sub:#6c7075; --faint:#a29e95;
@@ -23,12 +23,26 @@
   }
   *{ box-sizing:border-box; }
   body{ margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans); line-height:1.55; -webkit-font-smoothing:antialiased; }
-  .wrap{ max-width:900px; margin:0 auto; padding:clamp(24px,5vw,52px) clamp(18px,4vw,32px) 72px; }
+  .wrap{ max-width:960px; margin:0 auto; padding:clamp(24px,5vw,52px) clamp(18px,4vw,32px) 72px; }
   header{ border-bottom:2px solid var(--ink); padding-bottom:14px; }
   h1{ font-size:1.5rem; margin:0; letter-spacing:.02em; text-transform:uppercase; }
   h1 .dot{ color:var(--accent); }
   .tag{ font-family:var(--mono); font-size:.66rem; text-transform:uppercase; letter-spacing:.16em; color:var(--accent); }
   .lede{ color:var(--sub); font-size:.95rem; margin:8px 0 0; }
+
+  /* pipeline nav — read left to right: Clean → QA → Publish */
+  .pipe{ display:flex; align-items:stretch; margin:22px 0 6px; flex-wrap:wrap; }
+  .step{ background:none; border:1px solid var(--line); border-radius:12px; padding:11px 16px; text-align:left; display:flex; flex-direction:column; gap:2px; flex:1; min-width:150px; cursor:pointer; }
+  .step .num{ font-family:var(--mono); font-size:.62rem; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); }
+  .step .name{ font-weight:700; font-size:1.02rem; }
+  .step .sub{ font-family:var(--mono); font-size:.63rem; color:var(--faint); text-transform:uppercase; letter-spacing:.05em; }
+  .step.active{ border-color:var(--accent); background:var(--card); box-shadow:inset 0 -2px 0 var(--accent); }
+  .step.active .num{ color:var(--accent); } .step.active .name{ color:var(--ink); }
+  .arrow{ align-self:center; color:var(--faint); padding:0 8px; font-size:1.1rem; }
+  @media (max-width:620px){ .arrow{ display:none; } .step{ min-width:100%; margin-bottom:6px; } }
+
+  .tabpanel{ display:none; } .tabpanel.active{ display:block; }
+  .panelintro{ color:var(--sub); font-size:.95rem; margin:18px 0 4px; }
 
   label.lbl{ display:block; font-family:var(--mono); font-size:.66rem; text-transform:uppercase; letter-spacing:.14em; color:var(--sub); margin:22px 0 7px; }
   textarea,input[type=text]{ width:100%; background:var(--card); color:var(--ink); border:1px solid var(--line); border-radius:10px; padding:11px 13px; font:inherit; font-size:.92rem; }
@@ -44,6 +58,7 @@
   .ghost{ background:none; border:1px solid var(--line); border-radius:999px; padding:8px 15px; color:var(--sub); }
   .ghost:hover{ border-color:var(--accent); color:var(--accent); }
   .note{ font-family:var(--mono); font-size:.7rem; color:var(--faint); }
+  .note a{ color:var(--sub); }
 
   #status{ margin-top:22px; font-family:var(--mono); font-size:.8rem; color:var(--sub); }
   @media (prefers-reduced-motion:no-preference){ .dots::after{ content:''; animation:d 1.2s steps(4,end) infinite; } }
@@ -77,10 +92,11 @@
   .md p{ margin:0 0 .6em; } .md strong{ font-weight:700; } .md em{ font-style:italic; }
   .md ul{ margin:.3em 0 .6em; padding-left:1.15em; } .md li{ margin:.15em 0; }
   .md blockquote{ margin:.4em 0; padding-left:12px; border-left:3px solid var(--accent); color:var(--sub); }
-  .cardfoot{ margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; }
+  .cardfoot{ margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
   .dl{ background:none; border:1px solid var(--line); border-radius:999px; padding:5px 13px; font-family:var(--mono); font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:var(--sub); }
   .dl:hover{ border-color:var(--accent); color:var(--accent); }
-  pre.report{ background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px 16px; overflow-x:auto; font-family:var(--mono); font-size:.78rem; white-space:pre-wrap; }
+  .send{ background:none; border:1px solid var(--accent); border-radius:999px; padding:5px 13px; font-family:var(--mono); font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:var(--accent); }
+  .send:disabled{ opacity:.55; cursor:default; }
   .rsec{ margin:16px 0; }
   .rsec h3{ font-family:var(--mono); font-size:.66rem; text-transform:uppercase; letter-spacing:.1em; color:var(--sub); margin:0 0 8px; }
   .rscroll{ overflow-x:auto; }
@@ -95,52 +111,116 @@
   .muted{ color:var(--faint); font-size:.87rem; }
   .qgroup{ margin:0 0 14px; }
   .qgroup .qt{ font-weight:700; font-size:.92rem; margin-bottom:4px; }
+
+  /* QA + Publish */
+  .qaframe{ margin-top:14px; }
+  .qaframe iframe{ width:100%; height:78vh; border:1px solid var(--line); border-radius:12px; background:var(--card); }
+  .pubrow{ border:1px solid var(--line); border-radius:12px; background:var(--card); padding:14px 16px; margin-bottom:12px; }
+  .pubrow.live{ border-color:var(--goodln); }
+  .pubhead{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; }
+  .pubtitle{ font-weight:700; font-size:1rem; }
+  .pubmeta{ font-family:var(--mono); font-size:.7rem; color:var(--faint); margin-top:4px; }
+  .pill{ font-family:var(--mono); font-size:.6rem; text-transform:uppercase; letter-spacing:.08em; padding:3px 9px; border-radius:999px; border:1px solid var(--line); color:var(--sub); white-space:nowrap; }
+  .pill.published{ background:var(--good); border-color:var(--goodln); color:var(--goodtx); }
+  .pill.approved{ background:var(--warn); border-color:var(--warnln); color:var(--warntx); }
+  .pill.superseded{ color:var(--faint); }
+  details summary{ cursor:pointer; font-family:var(--mono); font-size:.72rem; color:var(--sub); margin:10px 0; }
+
   footer{ margin-top:44px; border-top:1px solid var(--line); padding-top:14px; font-family:var(--mono); font-size:.68rem; color:var(--faint); }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <div class="tag">Robin workbench · KCS gold</div>
-    <h1>Content Cleaner<span class="dot">.</span></h1>
-    <p class="lede">Drop in a messy user guide or SOP. It proposes clean, <b>KCS-gold, Robin-ready</b>
-      knowledge articles — one topic each, voice-friendly, grounded — plus a report of what it dropped
-      and what the source doesn't answer. <b>Nothing is published:</b> you review and approve, then
-      download the markdown for the Knowledge Base.</p>
+    <div class="tag">Robin · Content Console</div>
+    <h1>Robin Content Console<span class="dot">.</span></h1>
+    <p class="lede">One place to take a messy source doc all the way to Robin: <b>clean</b> it into
+      knowledge articles, <b>test</b> how she answers, and <b>publish</b> it live. Nothing reaches
+      Robin without your click.</p>
   </header>
 
-  <div class="fields">
-    <div class="full">
-      <label class="lbl" for="src">Raw source text</label>
-      <textarea id="src" placeholder="Paste the raw guide / SOP text here, or use Upload for a .txt/.md file. (PDF? Extract text first — see the note below.)"></textarea>
-    </div>
-    <div>
-      <label class="lbl" for="env">Applies to</label>
-      <input type="text" id="env" placeholder="INTRUST 401(k) Plan">
-    </div>
-    <div>
-      <label class="lbl" for="source">Source <span style="text-transform:none;letter-spacing:0">(optional)</span></label>
-      <input type="text" id="source" placeholder="2025 INTRUST Enrollment Packet">
-    </div>
-  </div>
+  <nav class="pipe" id="pipe">
+    <button class="step active" data-tab="clean"><span class="num">Step 1</span><span class="name">Clean</span><span class="sub">paste → clean → review</span></button>
+    <span class="arrow">→</span>
+    <button class="step" data-tab="qa"><span class="num">Step 2</span><span class="name">QA</span><span class="sub">test Robin's answers</span></button>
+    <span class="arrow">→</span>
+    <button class="step" data-tab="publish"><span class="num">Step 3</span><span class="name">Publish</span><span class="sub">push live to Robin</span></button>
+  </nav>
 
-  <div class="row">
-    <button class="run" id="run">Clean it</button>
-    <label class="ghost" for="file" style="cursor:pointer">Upload .txt/.md</label>
-    <input type="file" id="file" accept=".txt,.md,.markdown,.text,text/plain" style="display:none">
-    <span class="note">PDF? Extract text first: <span style="user-select:all">python3 -c "import fitz,sys;print(chr(10).join(p.get_text() for p in fitz.open(sys.argv[1])))" file.pdf &gt; raw.txt</span></span>
-  </div>
+  <!-- STEP 1 — CLEAN -->
+  <section class="tabpanel active" id="p-clean">
+    <p class="panelintro">Drop in a messy guide or SOP. It proposes clean, <b>KCS-gold, Robin-ready</b>
+      articles — one topic each, voice-friendly, grounded — plus a report of what it dropped and what
+      the source doesn't answer. Review each, then <b>Send to Publish</b>.</p>
 
-  <div id="status"></div>
-  <div id="out"></div>
+    <div class="fields">
+      <div class="full">
+        <label class="lbl" for="src">Raw source text</label>
+        <textarea id="src" placeholder="Paste the raw guide / SOP text here, or use Upload for a .txt/.md file. (PDF? Extract text first — see the note below.)"></textarea>
+      </div>
+      <div>
+        <label class="lbl" for="env">Applies to</label>
+        <input type="text" id="env" placeholder="INTRUST 401(k) Plan">
+      </div>
+      <div>
+        <label class="lbl" for="source">Source <span style="text-transform:none;letter-spacing:0">(optional)</span></label>
+        <input type="text" id="source" placeholder="2025 INTRUST Enrollment Packet">
+      </div>
+    </div>
 
-  <footer>Content Cleaner · KCS v6 + voice-RAG · proposes; a human approves before KB upload · synthetic test data</footer>
+    <div class="row">
+      <button class="run" id="run">Clean it</button>
+      <label class="ghost" for="file" style="cursor:pointer">Upload .txt/.md</label>
+      <input type="file" id="file" accept=".txt,.md,.markdown,.text,text/plain" style="display:none">
+      <span class="note">PDF? Extract text first: <span style="user-select:all">python3 -c "import fitz,sys;print(chr(10).join(p.get_text() for p in fitz.open(sys.argv[1])))" file.pdf &gt; raw.txt</span></span>
+    </div>
+
+    <div id="status"></div>
+    <div id="out"></div>
+  </section>
+
+  <!-- STEP 2 — QA -->
+  <section class="tabpanel" id="p-qa">
+    <p class="panelintro">Pressure-test Robin's answers without placing a call — same model, same
+      knowledge she uses on the line. Paste questions, compare to the answer key, and flag any answer
+      for review.</p>
+    <div class="qaframe">
+      <iframe src="https://voiceagents-seven.vercel.app/robin-q-tester" title="Robin Q Tester" loading="lazy"></iframe>
+    </div>
+    <p class="note"><a href="https://voiceagents-seven.vercel.app/robin-q-tester" target="_blank" rel="noopener">Open the Q Tester in its own tab ↗</a></p>
+  </section>
+
+  <!-- STEP 3 — PUBLISH -->
+  <section class="tabpanel" id="p-publish">
+    <p class="panelintro">Push approved articles into Robin's ElevenLabs knowledge base. Staged
+      articles wait here until you publish; published articles are live for retrieval on her calls.
+      Robin retrieves them natively — no database call mid-conversation.</p>
+    <div class="row">
+      <button class="ghost" id="pubrefresh">Refresh</button>
+      <span class="note" id="pubmeta"></span>
+    </div>
+    <div id="pubout"></div>
+  </section>
+
+  <footer>Robin Content Console · Clean (KCS v6 + voice-RAG) · QA · Publish (Supabase → ElevenLabs KB) · a human approves before anything goes live · synthetic test data</footer>
 </div>
 
 <script>
   const $ = (s, r=document) => r.querySelector(s);
+  const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
   const statusEl = $("#status"), out = $("#out"), runBtn = $("#run");
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; };
+  let CURRENT_META = null; // {slug, environment, source} from the last clean run
 
+  // ---------- top-level pipeline nav ----------
+  function switchTab(name){
+    $$("#pipe .step").forEach(s=>s.classList.toggle("active", s.dataset.tab===name));
+    $$(".tabpanel").forEach(p=>p.classList.toggle("active", p.id==="p-"+name));
+    if(name==="publish") loadPublish();
+  }
+  $$("#pipe .step").forEach(s=>s.addEventListener("click", ()=>switchTab(s.dataset.tab)));
+
+  // ---------- clean ----------
   $("#file").addEventListener("change", (e)=>{
     const f = e.target.files[0]; if(!f) return;
     const r = new FileReader();
@@ -148,7 +228,6 @@
     r.readAsText(f);
   });
 
-  // minimal, safe markdown -> html (escape first)
   function md(text){
     let s = String(text).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
     s = s.replace(/\*\*([^*]+?)\*\*/g,"<strong>$1</strong>").replace(/(^|[^*])\*(?!\s)([^*\n]+?)\*(?!\*)/g,"$1<em>$2</em>");
@@ -182,6 +261,20 @@
     const box=document.createElement("div"); box.append(bar, panels); return box;
   }
 
+  async function approve(a, btn){
+    const meta = CURRENT_META || {};
+    if(!meta.environment){ btn.textContent="No plan set"; return; }
+    btn.disabled = true; const orig = btn.textContent; btn.textContent = "Staging…";
+    try{
+      const payload = { article: { plan_id: meta.slug, slug: a.slug, title: a.title, environment: meta.environment,
+        body_md: a.md, source: meta.source || null, coverage_flags: a.coverage_flags || [], candidate_questions: a.candidate_questions || [] } };
+      const res = await fetch("/api/approve", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
+      const d = await res.json().catch(()=>({error:"bad response"}));
+      if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
+      btn.textContent = d.already_published ? "✓ Already live" : "✓ Staged — see Publish";
+    }catch(e){ btn.disabled=false; btn.textContent="Failed — retry"; btn.title=e.message; setTimeout(()=>btn.textContent=orig,2600); }
+  }
+
   function articleCard(a){
     const c = document.createElement("div");
     const fatal = a.findings.some(f=>f.severity==="fatal");
@@ -198,6 +291,10 @@
     $(".ctitle", c).textContent = a.title;
     $(".md", c).innerHTML = md(a.md.replace(/^#[^\n]*\n+/, "")); // card already shows the title
     $(".dl", c).addEventListener("click", ()=>download(a.slug+".md", a.md));
+    const send = el("button", "send", fatal ? "Fix PII to publish" : "→ Send to Publish");
+    if(fatal){ send.disabled = true; send.title = "This article has a PII flag — fix the source before publishing."; }
+    else send.addEventListener("click", ()=>approve(a, send));
+    $(".cardfoot", c).append(send);
     return c;
   }
 
@@ -219,8 +316,6 @@
     finally{ runBtn.disabled=false; }
   }
 
-  const el = (tag, cls, text) => { const e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; };
-
   function rtable(head, rows){
     const scroll = el("div", "rscroll"), t = el("table", "rtable");
     t.innerHTML = `<thead><tr><th>${head[0]}</th><th>${head[1]}</th></tr></thead>`;
@@ -235,7 +330,6 @@
     if(d.dropped && d.dropped.length) s1.append(rtable(["Cut", "Reason"], d.dropped.map(x=>[x.content, x.reason])));
     else s1.append(el("p", "muted", "Nothing dropped."));
     box.append(s1);
-
     const s2 = el("div", "rsec"); s2.append(el("h3", null, "Validation flags"));
     const withF = d.articles.filter(a=>a.findings && a.findings.length);
     if(withF.length) withF.forEach(a=>{
@@ -244,7 +338,6 @@
       s2.append(g);
     }); else s2.append(el("p", "muted", "No flags."));
     box.append(s2);
-
     if(d.terminology_notes && d.terminology_notes.length){
       const s3 = el("div", "rsec"); s3.append(el("h3", null, "Terminology normalized"));
       s3.append(rtable(["From", "To"], d.terminology_notes.map(x=>[x.from, x.to]))); box.append(s3);
@@ -287,8 +380,8 @@
 
   function render(d){
     statusEl.textContent = "";
+    CURRENT_META = d.meta || null;
     const s = d.summary;
-    // articles panel
     const arts = document.createElement("div");
     const sum = document.createElement("div"); sum.className="summary";
     sum.innerHTML = `<span class="chip">${s.articles} articles</span>`
@@ -296,29 +389,100 @@
       + `<span class="chip">${s.warns} review flags</span>`
       + (s.criticAvg!=null?`<span class="chip">critic avg ${s.criticAvg.toFixed(1)}/5</span>`:"");
     arts.append(sum);
+    arts.append(el("p", "note", "Review each article, then “Send to Publish” to stage it for Step 3."));
     d.articles.forEach(a=>arts.append(articleCard(a)));
 
-    const dropNode = buildDrop(d);
-    const covNode = buildCoverage(d);
-    const qNode = buildQuestions(d);
-
     const dlAll = document.createElement("div"); dlAll.className="cardfoot"; dlAll.style.marginTop="4px";
-    const b1=document.createElement("button"); b1.className="dl"; b1.textContent="↓ drop-report.md"; b1.onclick=()=>download("_drop-report.md", d.reports.drop);
-    const b2=document.createElement("button"); b2.className="dl"; b2.textContent="↓ coverage-map.md"; b2.onclick=()=>download("_coverage-map.md", d.reports.coverage);
-    const b3=document.createElement("button"); b3.className="dl"; b3.textContent="↓ candidate-questions.md"; b3.onclick=()=>download("_candidate-questions.md", d.reports.questions);
+    const b1=el("button","dl","↓ drop-report.md"); b1.onclick=()=>download("_drop-report.md", d.reports.drop);
+    const b2=el("button","dl","↓ coverage-map.md"); b2.onclick=()=>download("_coverage-map.md", d.reports.coverage);
+    const b3=el("button","dl","↓ candidate-questions.md"); b3.onclick=()=>download("_candidate-questions.md", d.reports.questions);
     dlAll.append(b1,b2,b3);
 
+    out.innerHTML = "";
     out.append(tabs([
       { label:`Articles (${d.articles.length})`, node: arts },
-      { label:"Drop report", node: dropNode },
-      { label:"Coverage map", node: covNode },
-      { label:"Candidate Q's", node: qNode },
+      { label:"Drop report", node: buildDrop(d) },
+      { label:"Coverage map", node: buildCoverage(d) },
+      { label:"Candidate Q's", node: buildQuestions(d) },
       { label:"Downloads", node: dlAll },
     ]));
     out.style.display="block";
   }
 
   runBtn.addEventListener("click", run);
+
+  // ---------- publish ----------
+  function pubCard(r){
+    const live = r.state === "published";
+    const c = el("div", "pubrow" + (live ? " live" : ""));
+    const head = el("div", "pubhead");
+    head.append(el("span", "pubtitle", r.title));
+    head.append(el("span", "pill " + r.state, r.state));
+    c.append(head);
+    const doc = r.elevenlabs_document_id ? ` · doc ${String(r.elevenlabs_document_id).slice(0,8)}…` : "";
+    const idx = live ? (r.elevenlabs_rag_indexed ? " · indexed" : " · indexing…") : "";
+    c.append(el("div", "pubmeta", `${r.slug} · v${r.version}${doc}${idx}`));
+    if(r.state === "approved"){
+      const foot = el("div", "cardfoot");
+      const b = el("button", "run", "Publish to Robin");
+      b.addEventListener("click", ()=>publishRow(r.id, b, c));
+      foot.append(b);
+      c.append(foot);
+    }
+    return c;
+  }
+
+  async function publishRow(id, btn, card){
+    btn.disabled = true; const orig = btn.textContent; btn.textContent = "Publishing…";
+    try{
+      const res = await fetch("/api/publish", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id }) });
+      const d = await res.json().catch(()=>({error:"bad response"}));
+      if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
+      loadPublish();
+    }catch(e){
+      btn.disabled=false; btn.textContent=orig;
+      const err = el("div","flag warn","⚠ "+e.message); err.style.marginTop="8px"; card.append(err);
+    }
+  }
+
+  function renderPublish(rows){
+    const box = $("#pubout"); box.innerHTML = "";
+    const approved = rows.filter(r=>r.state==="approved");
+    const published = rows.filter(r=>r.state==="published");
+    const superseded = rows.filter(r=>r.state==="superseded");
+    $("#pubmeta").textContent = `${published.length} live · ${approved.length} staged`;
+
+    const s1 = el("div", "rsec"); s1.append(el("h3", null, "Ready to publish"));
+    if(approved.length) approved.forEach(r=>s1.append(pubCard(r)));
+    else s1.append(el("p", "muted", "Nothing staged. Clean a guide in Step 1, then “Send to Publish”."));
+    box.append(s1);
+
+    const s2 = el("div", "rsec"); s2.append(el("h3", null, "Live in Robin's knowledge base"));
+    if(published.length) published.forEach(r=>s2.append(pubCard(r)));
+    else s2.append(el("p", "muted", "No articles published yet."));
+    box.append(s2);
+
+    if(superseded.length){
+      const det = document.createElement("details");
+      det.append(el("summary", null, `History — ${superseded.length} superseded`));
+      superseded.forEach(r=>det.append(pubCard(r)));
+      box.append(det);
+    }
+  }
+
+  async function loadPublish(){
+    const box = $("#pubout"); box.innerHTML = `<p class="muted">Loading…</p>`; $("#pubmeta").textContent = "";
+    try{
+      const res = await fetch("/api/kb_list");
+      const d = await res.json().catch(()=>({error:"bad response"}));
+      if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
+      renderPublish(d.rows || []);
+    }catch(e){
+      box.innerHTML = "";
+      box.append(el("p","muted","Publish isn't configured yet — "+e.message+". Add SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ELEVENLABS_API_KEY and ELEVENLABS_AGENT_ID to this Vercel project, then Refresh."));
+    }
+  }
+  $("#pubrefresh").addEventListener("click", loadPublish);
 </script>
 </body>
 </html>
