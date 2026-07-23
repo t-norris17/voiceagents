@@ -72,26 +72,31 @@ experience problems a scripted demo hides.
   reviewed.
 - Not: multi-plan / multi-employer — one enrollment guide.
 
+## Locked decisions (2026-07-23)
+
+1. **Balances: synthetic** for the experiment (assigned test values, not real financial data).
+2. **Consent: opt-in.** Testers give consent to participate; AI/recording disclosure at call start.
+3. **Verification: assigned Member ID + DOB** (no SSN in the stack at all). **Recommended refinement:**
+   issue each tester a *synthetic* DOB too (printed on their credential card) so the verification DB
+   holds **zero real PII**, testing the exact flow while removing the PII blocker.
+4. **Supabase: no existing project holds voice-agent data** (checked; `lumio-demo` is a different
+   app). Provision a **dedicated project** for isolation + clean teardown. Cost: **$10/mo** on the
+   Pro org. *(Pending Tanner's go-ahead before creating.)*
+
 ## Open questions
 
-- [ ] **Real vs. synthetic for the 50:** real identity fields (SSN last-4 + DOB) are needed to test
-      real verification, but are **balances** real or assigned test values? (Recommend synthetic
-      balances mapped to real testers unless compliance clears real ones.)
-- [ ] **Who owns compliance sign-off**, the consent form, and the disclosure wording? Blocker before
-      loading real data.
-- [ ] **Verification fields:** SSN last-4 + DOB (matches the demo), or an assigned member ID + DOB
-      (lower PII)? 
-- [ ] **Success thresholds:** confirm the exact pass bars (the % above are proposed defaults).
+- [ ] **Success thresholds:** confirm the exact pass bars (the % in Success criteria are proposed
+      defaults).
 - [ ] **Quality rubric + reviewer:** what makes an answer "acceptable," and who reviews the flagged
       ones?
 - [ ] **Sentiment source:** ElevenLabs analysis vs. an LLM pass over the transcript (recommend LLM
       pass for control + consistency with the quality grader).
-- [ ] **Retention:** how long do we keep transcripts/PII after the experiment, and who can see the
-      dashboard?
-- [ ] **Enrollment guide:** shape of the "~25 questions + potential answers" you'll provide — is that
-      the eval set (ground truth) or also the KB content? (Recommend: the *guide* goes in the KB;
-      the 25 Q&A are the eval set + an optional curated FAQ doc.)
+- [ ] **Retention:** how long do we keep transcripts after the experiment, and who can see the
+      dashboard? (Transcripts of real testers may contain incidental PII even with a clean DB.)
+- [ ] **Enrollment guide:** is the "~25 questions + potential answers" the eval set, the KB content,
+      or both? (Recommend: the *guide* goes in the KB; the 25 Q&A are the eval set + an optional
+      curated FAQ doc.)
 
 ---
 
-*Scope locked: not yet*
+*Scope locked: pending Supabase go-ahead + threshold confirmation*
