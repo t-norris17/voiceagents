@@ -22,6 +22,28 @@ answering capability questions — don't rely on memory. Procedures are **Alpha*
 
 - Upload docs (e.g. corrected KBAs); free-form procedures ground their answers on them.
 - Keep a mapping of KBA → procedure so updates propagate.
+- **Retrieval is native and in-runtime** (ElevenLabs does the embedding + retrieval during the
+  call — they publish a "RAG engineered 50% faster" post). So a *managed* KB should **publish into
+  ElevenLabs' KB**, not have the agent query an external DB mid-call (that adds a round-trip).
+
+### Knowledge Base API (verified vs live docs, 2026-07-23)
+
+Programmatic KB management exists — you can publish articles from code, no dashboard upload needed:
+- **Create from text:** `POST /v1/convai/knowledge-base/text` with `{ text, name? }` → returns
+  `{ id, name }`. Auth header `xi-api-key`. Also **create-from-file** and **create-from-url**.
+- **Lifecycle:** List / Get / Update / Delete document endpoints exist (manage versions/removals).
+- **RAG index (required for retrieval mode):** `POST /v1/convai/knowledge-base/{id}/rag-index`
+  (pick an embedding model, e.g. `multilingual_e5_large_instruct`) triggers indexing; poll
+  `GET …/rag-index` for status. `GET /v1/convai/knowledge-base/rag-index` gives a size overview.
+- **Attach to an agent:** call **Update agent** (`PATCH /v1/convai/agents/{agent_id}`) and add the
+  document to the agent's `knowledge_base`, choosing a **usage mode**: **Full context** (whole doc
+  in the prompt — small docs only) or **RAG / Auto** (indexed ahead of time; only relevant passages
+  retrieved per query — default, best for many/large docs).
+- **Publish flow (Architecture A):** create-from-text → compute rag-index → attach to agent. Robin
+  then retrieves natively at call time — **no added call-time latency**, no external DB in the loop.
+- Docs: `/docs/api-reference/knowledge-base/create-from-text`,
+  `/docs/eleven-agents/api-reference/knowledge-base/compute-rag-index`,
+  `/docs/eleven-agents/customization/knowledge-base/rag`, `/docs/api-reference/agents/update`.
 
 ## Tools (actions mid-call)
 
