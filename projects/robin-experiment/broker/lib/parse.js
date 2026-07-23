@@ -1,5 +1,5 @@
 // Input normalizers for spoken phone input (member ID + date of birth).
-// Callers say "N E one zero zero zero one" or "January 1st 1962" — normalize both.
+// Callers say "one zero zero zero one" or "January 1st 1962" — normalize both.
 
 const NUMWORDS = {
   zero: "0", oh: "0", one: "1", two: "2", three: "3", four: "4", five: "5",
@@ -13,12 +13,11 @@ function wordsToDigits(s) {
     .replace(/[a-z]+/g, (w) => (w in NUMWORDS ? NUMWORDS[w] : w));
 }
 
-// Member ID normalizer -> canonical "NE-#####".
-// Accepts "NE-10001", "ne 10001", "N E one zero zero zero one", "10001".
+// Member ID normalizer -> a plain digit string (Member IDs are 5-digit numbers).
+// Accepts "10002", "1 0 0 0 2", "one zero zero zero two".
 export function normMemberId(raw) {
   const digits = wordsToDigits(raw).replace(/\D/g, "");
-  if (!digits) return null;
-  return `NE-${digits}`;
+  return digits || null;
 }
 
 const MONTHS = {

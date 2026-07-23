@@ -108,7 +108,7 @@ the actual words.
 
   | Identifier | Data type | Required | Description |
   |---|---|---|---|
-  | `member_id` | String | Yes | The caller's assigned Member ID (e.g. NE-10002), as spoken. |
+  | `member_id` | String | Yes | The caller's 5-digit Member ID (e.g. 10002), as spoken. |
   | `dob` | String | Yes | The caller's date of birth as stated (any format). |
 
 - **Returns:** `{ verified, subject_ref, first_name, consented }`. Read `verified`; keep `subject_ref`

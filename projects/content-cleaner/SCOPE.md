@@ -33,6 +33,38 @@ and drop noise → rewrite each to the KCS-gold shape → validate against a che
 report and a coverage map**. **Human-in-the-loop: it proposes, a person approves before KB upload —
 never auto-publish.**
 
+## KCS-gold north star (the target shape)
+
+Anchored to **KCS v6** from the Consortium for Service Innovation — the recognized standard for
+support-knowledge articles — adapted for a voice-agent RAG KB. Every cleaned doc must hit this.
+
+**KCS article structure** (the canonical sections):
+- **Title** — findable, phrased the way a participant would ask ("Can I take a loan from my 401(k)?").
+- **Issue** — the participant's question/need in **their own words and context** (findability comes
+  from matching how people actually ask, not internal jargon).
+- **Environment** — what it applies to: the plan/product/process (here, the INTRUST 401(k) Plan; in
+  production, scoped by `plan_id`).
+- **Resolution** — the grounded, complete, actionable answer (the responder's perspective).
+- **Cause** — the "why," when it helps the reader.
+- **Metadata / article state** — source, `plan_id`, effective date, review owner, and a **state**
+  (Work-in-Progress → Approved → Published) so drafts never reach the KB.
+
+**KCS content standards** (non-negotiable):
+- Written in the **requestor's words**; **"just enough"** — a complete thought, not an essay.
+- **Consistent structure** (drives findability *and* readability).
+- **No requestor-specific PII** — no member names, contact info, entitlement, or specific locations.
+- **Content health** — accurate, and reviewed through use ("reuse is review"); lifecycle-managed by state.
+
+**Voice-RAG overlays** (our additions on top of KCS, because Robin *speaks* the answer):
+- **Self-contained** — no "see the section above," no UI gestures ("click the gear icon") that break
+  when read aloud.
+- **Read-aloud-friendly** — no tables/lists that don't speak; spell out phone numbers.
+- **Coverage flags** — state explicitly what the source does *not* cover, so Robin routes to a
+  specialist instead of inventing (our extension of KCS confidence/state).
+
+Source: Consortium for Service Innovation, KCS v6 Practices Guide — *The KCS Article* and *Technique
+5.1: KCS Article Structure* (`library.serviceinnovation.org`).
+
 ## Success criteria
 
 - [ ] **Reproduces the hand cleanup:** given the raw INTRUST packet, the cleaner produces docs at
@@ -71,11 +103,8 @@ answers and confident nonsense, and it feeds every project's KB.
 
 ## Open questions
 
-- [ ] **The KCS-gold rubric — lock the exact criteria.** Draft: one topic per doc · question-oriented
-      headings · self-contained (no cross-refs) · voice-friendly (no read-aloud-hostile tables/UI
-      gestures; spell out phone numbers) · normalized terminology · explicit coverage flags · PII-clean
-      · retrieval-friendly title + metadata (source, plan_id, effective date, review owner). Confirm /
-      adjust against how your team defines KCS gold.
+- [ ] **KCS rubric is locked to KCS v6** (see the north-star section) — the only open call is whether
+      your team layers any house-specific standards on top of the Consortium's.
 - [ ] **Input formats first:** PDF (already solved via PyMuPDF) — add Word / HTML / plain text / a URL
       fetcher?
 - [ ] **Where it runs:** a CLI in the repo (Node or Python), a broker endpoint, or a small artifact UI
