@@ -69,11 +69,14 @@ CLEANED ARTICLES TO REVIEW:
 ${articlesBlock}
 
 Review each article per your instructions. Return ONLY the structured JSON.`;
+  // Critic runs on Sonnet at medium effort — it REVIEWS (grounding/coverage), it doesn't
+  // generate, so the premium tier isn't needed here. The rewrite stays on Opus. This is the
+  // main cost lever: it roughly halves the per-run Opus spend with negligible quality loss.
   const res = await client.messages.create({
-    model: "claude-opus-4-8",
+    model: "claude-sonnet-5",
     max_tokens: 8000,
     thinking: { type: "adaptive" },
-    output_config: { effort: "high", format: { type: "json_schema", schema: CRITIC_SCHEMA } },
+    output_config: { effort: "medium", format: { type: "json_schema", schema: CRITIC_SCHEMA } },
     system: CRITIC_SYSTEM,
     messages: [{ role: "user", content: user }],
   });
