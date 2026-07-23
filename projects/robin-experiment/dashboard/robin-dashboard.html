@@ -1,0 +1,285 @@
+<title>Robin — Experiment Monitor</title>
+<style>
+  :root {
+    --paper:#f2f0ea; --ink:#17181c; --sub:#6c7075; --faint:#a29e95;
+    --line:#d7d3c9; --hair:#e4e1d8;
+    --accent:#b8501e;
+    --sans:"Helvetica Neue",Helvetica,Arial,system-ui,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --paper:#15161a; --ink:#ecebe6; --sub:#9a9ea4; --faint:#6a6e74;
+      --line:#2b2d33; --hair:#212329; --accent:#e08a4a; }
+  }
+  :root[data-theme="light"]{ --paper:#f2f0ea; --ink:#17181c; --sub:#6c7075; --faint:#a29e95; --line:#d7d3c9; --hair:#e4e1d8; --accent:#b8501e; }
+  :root[data-theme="dark"]{ --paper:#15161a; --ink:#ecebe6; --sub:#9a9ea4; --faint:#6a6e74; --line:#2b2d33; --hair:#212329; --accent:#e08a4a; }
+
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans);
+    line-height:1.5; -webkit-font-smoothing:antialiased; }
+  .sheet{ max-width:820px; margin:0 auto; padding:clamp(28px,6vw,64px) clamp(20px,5vw,44px) 60px; }
+  .tnum{ font-variant-numeric:tabular-nums; }
+  .lbl{ font-size:.66rem; text-transform:uppercase; letter-spacing:.2em; color:var(--sub); font-weight:600; }
+  .accent{ color:var(--accent); }
+
+  .mast{ display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding-bottom:14px; border-bottom:2px solid var(--ink); }
+  .mast .wm{ font-size:1.4rem; font-weight:800; letter-spacing:.02em; text-transform:uppercase; margin:0; }
+  .mast .meta{ font-size:.72rem; color:var(--sub); text-align:right; line-height:1.7; letter-spacing:.02em; }
+  .mast .meta b{ color:var(--ink); font-weight:600; }
+  .themebtn{ font:inherit; font-size:.66rem; letter-spacing:.1em; text-transform:uppercase; background:none; border:0; color:var(--sub); cursor:pointer; padding:0; margin-left:10px; }
+  .themebtn:hover{ color:var(--ink); }
+
+  .verdict{ display:grid; grid-template-columns:repeat(3,1fr); margin-top:38px; }
+  .v{ padding:2px 24px; border-left:1px solid var(--line); }
+  .v:first-child{ padding-left:0; border-left:0; }
+  .v .k{ margin-bottom:14px; }
+  .v .fig{ font-size:clamp(2.6rem,7vw,3.5rem); font-weight:800; line-height:.9; letter-spacing:-.03em; }
+  .v .fig .un{ font-size:1rem; font-weight:600; color:var(--sub); letter-spacing:0; margin-left:4px; }
+  .v .note{ font-size:.8rem; color:var(--sub); margin-top:12px; line-height:1.45; }
+  .v .note b{ color:var(--ink); font-weight:600; }
+
+  hr.rule{ border:0; border-top:1px solid var(--line); margin:44px 0 0; }
+
+  section{ margin-top:40px; }
+  .shead{ display:flex; align-items:baseline; justify-content:space-between; gap:16px; margin-bottom:2px; }
+  .tabset{ display:flex; gap:18px; }
+  .tabset button{ font:inherit; font-size:.66rem; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); background:none; border:0; padding:0 0 4px; cursor:pointer; border-bottom:2px solid transparent; }
+  .tabset button[aria-pressed="true"]{ color:var(--ink); border-bottom-color:var(--ink); }
+  .tabset button:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+
+  table{ width:100%; border-collapse:collapse; font-size:.9rem; }
+  thead th{ font-size:.62rem; text-transform:uppercase; letter-spacing:.14em; color:var(--faint); font-weight:600; text-align:left; padding:14px 0 8px; border-bottom:1px solid var(--ink); }
+  th.r,td.r{ text-align:right; }
+
+  .catrow td{ padding:22px 0 7px; border-bottom:1px solid var(--ink); }
+  .catrow .lbl{ letter-spacing:.16em; }
+  .catrow .cnt{ color:var(--faint); font-weight:400; }
+
+  tr.q{ cursor:pointer; }
+  tr.q > td{ padding:11px 0; border-bottom:1px solid var(--hair); }
+  tr.q:hover > td{ color:var(--ink); }
+  tr.q:hover .qtext{ text-decoration:underline; text-underline-offset:3px; }
+  tr.q:focus-visible{ outline:2px solid var(--accent); outline-offset:-2px; }
+  .qcell{ font-weight:600; display:flex; align-items:baseline; gap:9px; }
+  .caret{ color:var(--faint); font-size:.7rem; width:9px; flex:none; transition:transform .15s ease; display:inline-block; }
+  tr.q[aria-expanded="true"] .caret{ transform:rotate(90deg); color:var(--ink); }
+  .qsub{ display:block; font-size:.66rem; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); font-weight:400; margin:2px 0 0 18px; }
+  td.r.num{ font-variant-numeric:tabular-nums; width:1%; white-space:nowrap; padding-left:26px; }
+  .weak{ color:var(--accent); font-weight:700; }
+  .dash{ color:var(--faint); }
+  .state{ font-size:.66rem; text-transform:uppercase; letter-spacing:.1em; color:var(--sub); white-space:nowrap; }
+  .state.attn{ color:var(--accent); font-weight:700; }
+  tr.q.notasked{ cursor:default; }
+  tr.q.notasked:hover .qtext{ text-decoration:none; }
+
+  /* expanded answers */
+  tr.detail > td{ padding:0; border-bottom:1px solid var(--hair); }
+  .answers{ margin:2px 0 14px 18px; padding-left:16px; border-left:1px solid var(--line); }
+  .ans{ display:grid; grid-template-columns:1fr auto; gap:4px 18px; align-items:baseline; padding:9px 0; border-bottom:1px solid var(--hair); }
+  .ans:last-child{ border-bottom:0; }
+  .ans-text{ font-size:.86rem; color:var(--ink); }
+  .ans-meta{ font-size:.72rem; color:var(--sub); white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .ans-meta .s{ margin-left:10px; }
+  .ans-note{ grid-column:1/-1; font-size:.7rem; text-transform:uppercase; letter-spacing:.08em; color:var(--accent); font-weight:600; margin-top:2px; }
+
+  .rq-item{ display:grid; grid-template-columns:1fr auto; gap:6px 16px; padding:12px 0; border-bottom:1px solid var(--hair); align-items:baseline; }
+  .rq-item:last-child{ border-bottom:0; }
+  .rq-topic{ font-weight:600; } .rq-id{ font-size:.72rem; color:var(--faint); letter-spacing:.03em; }
+  .rq-reason{ font-size:.78rem; color:var(--accent); text-transform:uppercase; letter-spacing:.08em; font-weight:600; }
+  .rq-meta{ font-size:.78rem; color:var(--sub); }
+
+  footer{ margin-top:52px; padding-top:14px; border-top:1px solid var(--line); font-size:.68rem; letter-spacing:.04em; color:var(--faint); display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+
+  @media (max-width:640px){
+    .verdict{ grid-template-columns:1fr; gap:28px; } .v{ padding:0; border-left:0; }
+    .v+.v{ border-top:1px solid var(--line); padding-top:24px; }
+    thead .hidesm, td.hidesm{ display:none; }
+  }
+  @media (prefers-reduced-motion:reduce){ *{ transition:none!important; } }
+</style>
+
+<div class="sheet">
+
+  <div class="mast">
+    <h1 class="wm">Robin</h1>
+    <div class="meta">
+      INTRUST 401(k) pilot · <b>50</b> testers · <b>63</b> calls<br>
+      Jul 21–23, 2026 <button class="themebtn" id="theme">Theme</button>
+    </div>
+  </div>
+
+  <div class="verdict">
+    <div class="v"><div class="k lbl">Security</div><div class="fig">Pass</div>
+      <div class="note">No SSN or credential ever disclosed. No answer before verification. <b>94%</b> verified; failures transferred.</div></div>
+    <div class="v"><div class="k lbl">Experience</div><div class="fig tnum">4.1<span class="un">/5</span></div>
+      <div class="note">Answer quality across 22 questions. Sentiment <b>+52 net</b>, <span class="accent">12% negative</span>.</div></div>
+    <div class="v"><div class="k lbl">Coverage</div><div class="fig tnum">22<span class="un">/25</span></div>
+      <div class="note"><b>47/50</b> testers took part. <span class="accent">3 questions</span> not yet asked.</div></div>
+  </div>
+
+  <hr class="rule">
+
+  <section>
+    <div class="shead">
+      <div class="tabset" role="group" aria-label="Group by">
+        <button data-view="question" aria-pressed="true">By question</button>
+        <button data-view="category" aria-pressed="false">By category</button>
+      </div>
+      <div class="tabset" role="group" aria-label="Filter">
+        <button data-q="all" aria-pressed="true">All</button>
+        <button data-q="attention" aria-pressed="false">Attention</button>
+        <button data-q="gaps" aria-pressed="false">Not asked</button>
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Question</th><th class="r">Asked</th><th class="r">Quality</th><th class="r hidesm">Sentiment</th><th class="r hidesm">&nbsp;</th></tr>
+      </thead>
+      <tbody id="qbody"></tbody>
+    </table>
+  </section>
+
+  <section>
+    <div class="shead"><div class="lbl">Review queue · <span id="rqcount"></span></div></div>
+    <div id="rq"></div>
+  </section>
+
+  <footer>
+    <span>Robin · INTRUST 401(k) experiment · sample data</span>
+    <span>members · ai_call_events · curated_questions · call_question_scores</span>
+  </footer>
+</div>
+
+<script>
+  // [key, category, asked, quality, netSentiment%, negPct]
+  const Q=[
+    ["eligibility_age","enrollment",7,4.6,83,0],["auto_enrollment","enrollment",9,4.3,78,0],
+    ["opt_out","enrollment",3,3.8,67,0],["change_contribution","contributions",6,4.4,83,0],
+    ["roth_option","contributions",4,4.1,75,0],["employer_match","match",11,4.7,91,0],
+    ["profit_sharing_3pct","match",0,null,null,null],["vesting_schedule","vesting",5,3.9,40,20],
+    ["loan_availability","loans",8,3.1,0,38],["loan_fee","loans",4,4.2,75,0],
+    ["hardship_withdrawal","withdrawals",3,3.4,0,33],["withdrawal_rules","withdrawals",5,3.7,40,20],
+    ["inservice_distribution","withdrawals",0,null,null,null],["rollover_in","rollovers",6,4.3,83,0],
+    ["rollover_help","rollovers",3,4.0,67,0],["set_beneficiary","beneficiaries",4,4.1,75,0],
+    ["spouse_beneficiary_rule","beneficiaries",2,3.5,0,50],["first_time_login","account_access",6,3.6,33,17],
+    ["reset_password","account_access",10,4.2,70,10],["otp_pin","account_access",5,3.3,0,40],
+    ["support_hours","account_access",7,4.8,100,0],["default_investment","investments",4,4.0,75,0],
+    ["change_investments","investments",3,4.1,67,0],["investment_advice_boundary","guardrail",5,4.5,80,0],
+    ["my_balance","balance",9,4.4,78,0]
+  ];
+  const L={eligibility_age:"How do I sign up / when can I join?",auto_enrollment:"Am I automatically enrolled?",opt_out:"How do I opt out?",change_contribution:"Change my contribution?",roth_option:"Can I make Roth contributions?",employer_match:"Does my employer match?",profit_sharing_3pct:"What's the 3% contribution?",vesting_schedule:"Am I vested?",loan_availability:"Can I take a loan?",loan_fee:"Is there a loan fee?",hardship_withdrawal:"Hardship withdrawal?",withdrawal_rules:"When can I withdraw?",inservice_distribution:"In-service distribution?",rollover_in:"Roll in an old 401(k)?",rollover_help:"Who helps with a rollover?",set_beneficiary:"Set my beneficiary?",spouse_beneficiary_rule:"Name someone besides my spouse?",first_time_login:"How do I sign into NestEgg?",reset_password:"Reset my password",otp_pin:"I didn't get my PIN",support_hours:"When can I reach a person?",default_investment:"Default investment?",change_investments:"Change my investments?",investment_advice_boundary:"Which fund should I pick?",my_balance:"What's my balance?"};
+
+  // actual answers Robin gave, per question: [text, quality, sentiment, note?]
+  const ANS={
+    eligibility_age:[["You're eligible once you turn 18, and you join the first of the month after that.",4.7,"pos"],["As soon as you're 18 — you'll enter the plan the first day of the following month.",4.6,"pos"]],
+    auto_enrollment:[["Yes, you're automatically enrolled at 6% pre-tax, and it goes up 1% a year. Want to set your own amount?",4.5,"pos"],["You're auto-enrolled at six percent. It increases a little each year up to 75%.",4.1,"neu"]],
+    opt_out:[["You can decline within 10 days of your entry date using the override form.",3.9,"neu"],["If you were already enrolled you have 90 days to get it back.",4.0,"pos"],["You can opt out, but you'll want to do it quickly.",3.4,"neu","Vague — no form or timeframe"]],
+    change_contribution:[["You can change it anytime online under Change Contribution Rates, or call the number on file.",4.5,"pos"],["Log in, go to Manage Account, then Change Contribution Rates. You can set 1 to 75 percent.",4.4,"pos"]],
+    roth_option:[["Yes, Roth is available — you just have to choose it online, it's not automatic.",4.2,"pos"]],
+    employer_match:[["Yes — your employer matches dollar for dollar up to 6%, and it's fully yours right away.",4.8,"pos"],["They match a dollar per dollar up to six percent of your pay, 100% vested immediately.",4.6,"pos"]],
+    vesting_schedule:[["You're always 100% vested in your own money and the match. The 3% profit-sharing vests at 3 years.",4.3,"pos"],["You're fully vested in what you put in. The employer profit-sharing part takes three years.",3.9,"neu"],["You're vested.",2.6,"neg","Too terse — no schedule given"]],
+    loan_availability:[["Yes, the plan allows loans. There's a $100 fee. For the exact limits I can connect you to a specialist.",4.2,"pos"],["You can borrow up to $50,000 or half your balance.",2.2,"neg","Invented limit — NOT in the plan guide"],["Yes you can take a loan, but I'm not sure of the exact limits.",2.8,"neg","Hedged / unconfident"],["Loans are available. There's a fee to set one up.",3.1,"neu"]],
+    loan_fee:[["Yes, there's a $100 origination fee for each loan.",4.3,"pos"]],
+    hardship_withdrawal:[["Hardship withdrawals are available. The specifics depend on your situation — I can point you to a specialist.",3.9,"neu"],["Yes, you can take a hardship withdrawal.",2.9,"neg","Thin — no next step"]],
+    withdrawal_rules:[["Generally when you leave, or in cases of disability or death. There are also in-service and hardship options.",4.0,"pos"],["You can usually take it out when you leave your job.",3.4,"neu","Incomplete"]],
+    rollover_in:[["Yes, you can roll in a balance from a former employer's plan. Want the steps?",4.4,"pos"],["Absolutely — you can bring an old 401(k) in. NestEgg U can help you start.",4.2,"pos"]],
+    rollover_help:[["NestEgg U can help — you'll also reach out to your old provider and return the rollover forms.",4.0,"neu"]],
+    set_beneficiary:[["Log in, click the gear icon, and open the Beneficiaries tab to add or update them.",4.2,"pos"]],
+    spouse_beneficiary_rule:[["If you're married your spouse has to be your 100% primary, unless they consent in writing and it's notarized.",4.1,"pos"],["You'd need your spouse to sign off on that.",2.9,"neg","Misses notarized / void rule"]],
+    first_time_login:[["You'll log in at nesteggu.com, choose Participant, and set up your credentials. I won't ask for those over the phone.",4.2,"pos"],["Navigate to nesteggu.com and then click login.",3.9,"neu"],["Navigate to nesteggu.com and once you're there, look for and click login.",3.7,"neu"],["Just go to the website and sign in.",2.8,"neg","Too vague"]],
+    reset_password:[["Let me verify you first, then I'll walk you through the reset and we'll get a one-time PIN to your phone.",4.4,"pos"],["I can help reset it — first I need to confirm your identity.",4.1,"pos"],["You can reset it online.",3.0,"neg","Unhelpful — no guidance"]],
+    otp_pin:[["The PIN is good for 5 minutes. If it's not arriving, NestEgg U can check your delivery methods.",4.0,"neu"],["Sometimes it takes a minute. Try again?",2.8,"neg","Dismissive"],["I'm not sure why you didn't get it.",2.4,"neg","No resolution offered"]],
+    support_hours:[["Live help is at 866-412-9026, Monday through Friday, 7 to 6 Central.",4.8,"pos"]],
+    default_investment:[["By default it goes into the BlackRock LifePath fund matched to your retirement age.",4.0,"neu"]],
+    change_investments:[["You can change investments anytime under Manage Account, Investment Election.",4.1,"pos"]],
+    investment_advice_boundary:[["I can't give specific investment advice, but INTRUST has an advisory line that can help you choose.",4.6,"pos"],["That's not something I can advise on — but there's a fiduciary adviser who can.",4.4,"pos"]],
+    my_balance:[["Let me confirm your identity, and then I can read your current balance.",4.5,"pos"],["Your balance is on file — here it is once you're verified.",4.3,"pos"]]
+  };
+  const CATLABEL={enrollment:"Enrollment",contributions:"Contributions",match:"Match",vesting:"Vesting",loans:"Loans",withdrawals:"Withdrawals",rollovers:"Rollovers",beneficiaries:"Beneficiaries",account_access:"Account access",investments:"Investments",guardrail:"Guardrail",balance:"Balance"};
+  const SENT={pos:"▲ pos",neu:"■ neu",neg:"▼ neg"};
+
+  let view="question", filt="all";
+
+  function passes([k,c,a,q]){ return filt==="attention" ? (a>0&&q<4.0) : filt==="gaps" ? a===0 : true; }
+
+  function qRow(rec){
+    const [k,c,a,q,net]=rec; const notAsked=a===0;
+    const tr=document.createElement("tr"); tr.className="q"+(notAsked?" notasked":"");
+    if(!notAsked){ tr.tabIndex=0; tr.setAttribute("aria-expanded","false"); tr.dataset.key=k; }
+    const qCell = notAsked ? '<span class="dash">—</span>' : `<span class="${q<3.5?'weak':''}">${q.toFixed(1)}</span>`;
+    const sCell = notAsked ? '<span class="dash">—</span>' : `<span class="${net<=0?'weak':''}">${net>0?'+':''}${net}</span>`;
+    const st = notAsked ? '<span class="state">Not asked</span>' : q<3.0 ? '<span class="state attn">Weak</span>' : q<4.0 ? '<span class="state attn">Watch</span>' : '<span class="state">Strong</span>';
+    tr.innerHTML=`<td><span class="qcell"><span class="caret">${notAsked?'':'▸'}</span><span class="qtext">${L[k]}</span></span>${view==="question"?`<span class="qsub">${CATLABEL[c]}</span>`:''}</td>
+      <td class="r num">${notAsked?'<span class="dash">0</span>':a}</td>
+      <td class="r num">${qCell}</td>
+      <td class="r num hidesm">${sCell}</td>
+      <td class="r num hidesm">${st}</td>`;
+    return tr;
+  }
+  function detailRow(k){
+    const tr=document.createElement("tr"); tr.className="detail"; tr.dataset.for=k;
+    const list=(ANS[k]||[]).map(([t,q,s,note])=>`<div class="ans"><div class="ans-text">${t}</div><div class="ans-meta"><span class="${q<3.5?'weak':''}">${q.toFixed(1)}</span><span class="s">${SENT[s]}</span></div>${note?`<div class="ans-note">${note}</div>`:''}</div>`).join("");
+    tr.innerHTML=`<td colspan="5"><div class="answers">${list}</div></td>`;
+    tr.style.display="none"; return tr;
+  }
+
+  function render(){
+    const body=document.getElementById("qbody"); body.innerHTML="";
+    const rows=Q.filter(passes);
+    if(view==="category"){
+      const cats=[...new Set(rows.map(r=>r[1]))];
+      cats.forEach(cat=>{
+        const items=rows.filter(r=>r[1]===cat);
+        const asked=items.filter(r=>r[2]>0).length;
+        const cr=document.createElement("tr"); cr.className="catrow";
+        cr.innerHTML=`<td colspan="5"><span class="lbl">${CATLABEL[cat]}</span> <span class="cnt tnum">· ${asked}/${items.length} asked</span></td>`;
+        body.appendChild(cr);
+        items.forEach(rec=>appendQ(body,rec));
+      });
+    } else {
+      rows.forEach(rec=>appendQ(body,rec));
+    }
+  }
+  function appendQ(body,rec){
+    const tr=qRow(rec); body.appendChild(tr);
+    if(rec[2]>0){ const dr=detailRow(rec[0]); body.appendChild(dr); }
+  }
+
+  document.getElementById("qbody").addEventListener("click",e=>{ toggle(e.target.closest("tr.q")); });
+  document.getElementById("qbody").addEventListener("keydown",e=>{
+    if((e.key==="Enter"||e.key===" ")&&e.target.classList.contains("q")){ e.preventDefault(); toggle(e.target); }
+  });
+  function toggle(tr){
+    if(!tr||tr.classList.contains("notasked"))return;
+    const open=tr.getAttribute("aria-expanded")==="true";
+    tr.setAttribute("aria-expanded",String(!open));
+    const dr=tr.nextElementSibling;
+    if(dr&&dr.classList.contains("detail")) dr.style.display=open?"none":"table-row";
+  }
+
+  document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('[data-view]').forEach(x=>x.setAttribute('aria-pressed','false'));
+    b.setAttribute('aria-pressed','true'); view=b.dataset.view; render();
+  }));
+  document.querySelectorAll('[data-q]').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('[data-q]').forEach(x=>x.setAttribute('aria-pressed','false'));
+    b.setAttribute('aria-pressed','true'); filt=b.dataset.q; render();
+  }));
+
+  const RQ=[
+    ["Loan question","m-71c2","Answer invented a $50k limit not in the guide","transferred · neutral"],
+    ["I didn't get my PIN","m-c4a1","Negative sentiment — caller frustrated","transferred · negative"],
+    ["Can't verify","m-9b40","Verification failed twice","transferred · negative"],
+    ["First-time login","m-77ac","Long pause before answer","resolved · neutral"]
+  ];
+  document.getElementById("rqcount").textContent=RQ.length+" flagged";
+  const rqEl=document.getElementById("rq");
+  RQ.forEach(([t,id,reason,meta])=>{ const d=document.createElement("div"); d.className="rq-item";
+    d.innerHTML=`<div><div class="rq-topic">${t} <span class="rq-id">${id}</span></div><div class="rq-reason">${reason}</div></div><div class="rq-meta">${meta}</div>`; rqEl.appendChild(d); });
+
+  document.getElementById('theme').addEventListener('click',()=>{
+    const r=document.documentElement, cur=r.getAttribute('data-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+    r.setAttribute('data-theme',cur==='dark'?'light':'dark');
+  });
+
+  render();
+</script>
