@@ -101,20 +101,23 @@ answers and confident nonsense, and it feeds every project's KB.
   them from the model's own knowledge.
 - Not RAG/vector infrastructure (that's the KB's job).
 
-## Open questions
+## Decisions (locked 2026-07-23)
 
-- [ ] **KCS rubric is locked to KCS v6** (see the north-star section) — the only open call is whether
-      your team layers any house-specific standards on top of the Consortium's.
-- [ ] **Input formats first:** PDF (already solved via PyMuPDF) — add Word / HTML / plain text / a URL
-      fetcher?
-- [ ] **Where it runs:** a CLI in the repo (Node or Python), a broker endpoint, or a small artifact UI
-      so non-technical reviewers can paste content and get clean output + report?
-- [ ] **Review UX:** a plain report file, or a side-by-side (raw → cleaned, with drops highlighted)
-      artifact for the reviewer?
-- [ ] **Synergy:** should it also propose a **candidate Q&A eval set** from the cleaned content (like
-      the 25 questions), so cleaning a plan and seeding its test set are one step?
-- [ ] **Chunking:** per-topic files (current approach) vs. explicit chunk markers for the KB.
+- [x] **KCS rubric = KCS v6**, with the **voice-RAG overlays** (self-contained, read-aloud-friendly,
+      coverage flags) as the only house layer for v1. No extra house-specific standards yet.
+- [x] **Input v1 = plain text / markdown.** PDF is a pre-step: extract with PyMuPDF to text, then feed
+      the text in (same path used to make the INTRUST KB). Word / HTML / URL fetch = later.
+- [x] **Runs as a Node CLI** in `content-cleaner/cleaner/`, reusing the broker's `@anthropic-ai/sdk`
+      stack. Run in-session (no local Node needed for the reviewer); the reviewer reads the output +
+      report in the PR diff and approves. A paste-in web UI can wrap it later.
+- [x] **Review UX v1 = markdown reports**: cleaned per-topic docs **plus** `_drop-report.md` (what was
+      cut and why) and `_coverage-map.md` (topics covered + explicit gaps). Side-by-side artifact = later.
+- [x] **Q&A synergy = yes.** Each cleaned article carries **candidate questions**, so cleaning a plan
+      also seeds its eval set (feeds the `curated-questions` pattern). Emitted as `_candidate-questions.md`.
+- [x] **Chunking = per-topic files** (matches `robin-experiment/kb/`).
+- [x] **Model = Claude Opus 4.8** for the rewrite + critic — this is a build-time quality step, not
+      latency-bound, so we spend for the best rewrite (Robin still *answers* on Haiku).
 
 ---
 
-*Scope locked: not yet*
+*Scope locked: 2026-07-23*

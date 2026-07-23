@@ -1,0 +1,14 @@
+{
+  "name": "content-cleaner",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Turns raw source text into KCS-gold, Robin-ready KB articles + a reviewer report. Proposes; a human approves before KB upload.",
+  "bin": { "content-cleaner": "clean.js" },
+  "scripts": {
+    "clean": "node clean.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "latest"
+  }
+}
