@@ -1,7 +1,7 @@
 # SCOPE — Robin KB Pipeline (publish + single pane of glass)
 
 **Slug:** robin-kb-pipeline
-**Status:** draft
+**Status:** active
 **Created:** 2026-07-23
 **Effort:** L
 **Owner:** Tanner
@@ -74,28 +74,35 @@ cleaner's shape is fresh, avoids re-learning it later.
 - Not re-implementing the cleaner or the Q tester — the console **embeds/links** them.
 - Not multi-agent / multi-plan rollout mechanics beyond scoping rows by `plan_id` (that's phase 2).
 
-## Open questions
+## Decisions (locked 2026-07-23)
 
-- [ ] **Usage mode:** attach articles as **RAG/Auto** (indexed, retrieve relevant passages) vs
-      **Full context** (whole doc in prompt)? RAG scales to many docs; Full-context is simplest for a
-      handful. Likely RAG once we have >a few articles. → SPEC decides; default RAG.
-- [ ] **Embedding model** for `rag-index` (e.g. `multilingual_e5_large_instruct`) — pick one and pin it.
-- [ ] **Agent targeting:** where does the ElevenLabs `agent_id` come from — env var per environment?
-      One Robin agent for the experiment, so likely a single `ELEVENLABS_AGENT_ID`.
-- [ ] **Supabase `kb_articles` schema:** columns (id, plan_id, slug, title, environment, body_md,
-      source, version, state, elevenlabs_document_id, published_at, published_by, checksum). Confirm in SPEC.
-- [ ] **Versioning/supersede:** on re-publish of the same slug+plan, do we delete+recreate the
-      ElevenLabs doc, or create new + detach old? (API supports update/delete — SPEC picks the flow.)
-- [ ] **Where publish runs:** extend the cleaner project (`voiceagents-qewy`) with `/api/publish`
-      (needs `ELEVENLABS_API_KEY` + Supabase service key added there), or the broker? Cleaner is the
-      natural home since the article originates there.
-- [ ] **Console hosting:** one new app that embeds all three tabs, or a shell that iframes/links the
-      existing cleaner + tester pages? (Cross-project embedding vs. one unified deploy — SPEC decides.)
-- [ ] **Approval source of truth:** does "approved" live in `kb_articles.state`, and does the cleaner
-      write a `draft`/`approved` row at review time, with Publish flipping to `published`?
-- [ ] **Security gate** for the console (Vercel Password Protection vs shared token) — decide before it
-      holds real content; tracked as its own small task.
+- [x] **Usage mode = RAG / Auto** — articles are RAG-indexed and retrieved per query. Scales past a
+      handful of docs; matches how Robin already retrieves.
+- [x] **Embedding model = `multilingual_e5_large_instruct`** — pinned for `rag-index`.
+- [x] **Agent targeting = single `ELEVENLABS_AGENT_ID`** env var (one Robin agent for the experiment).
+- [x] **Publish runs in the cleaner project** (`voiceagents-qewy`) as `/api/publish`. Needs
+      `ELEVENLABS_API_KEY`, `ELEVENLABS_AGENT_ID`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` added
+      to that Vercel project.
+- [x] **Console = the cleaner app's shell with three tabs — Clean / QA / Publish.** One deploy, one
+      URL. The QA tab reuses the broker's `/api/ask`; Publish reads/writes `kb_articles`.
+- [x] **State model = `kb_articles.state`** (`draft` → `approved` → `published`, plus `superseded`).
+      The cleaner writes `approved` rows on approval; **Publish** flips to `published` and stamps the
+      ElevenLabs `document_id`.
+- [x] **Supabase `kb_articles`** columns confirmed (see SPEC): id, plan_id, slug, title, environment,
+      body_md, source, coverage_flags, candidate_questions, version, state, elevenlabs_document_id,
+      elevenlabs_rag_indexed, checksum, published_at, published_by, timestamps. RLS on, service-role only.
+- [x] **Supersede on re-publish:** a new version of the same (plan_id, slug) marks the prior
+      `published` row `superseded` and detaches/removes its ElevenLabs doc, then publishes the new one.
+      Exact create-new-vs-update flow finalized in SPEC.
+
+## Still open (not blocking the first build step)
+
+- [ ] **Security gate** for the console — Vercel Password Protection (preferred) vs a shared token.
+      Decide before it holds real content; tracked as its own task.
+- [ ] **Attach payload shape:** the exact `PATCH /v1/convai/agents/{id}` body to add a KB doc needs
+      verifying against the live API with the real key/agent (create-from-text + rag-index are
+      well-documented; the attach body is the one thing to confirm on first real publish).
 
 ---
 
-*Scope locked: not yet*
+*Scope locked: 2026-07-23*
