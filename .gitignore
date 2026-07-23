@@ -6,3 +6,8 @@
 # Node / Vercel
 node_modules/
 .vercel/
+
+# Downloaded call transcripts — may contain real caller PII, never commit
+transcripts/
+**/transcripts/
+robin-calls/
