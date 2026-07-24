@@ -280,37 +280,87 @@
   async function approve(a, btn){
     const meta = CURRENT_META || {};
     if(!meta.environment){ btn.textContent="No plan set"; return; }
-    btn.disabled = true; const orig = btn.textContent; btn.textContent = "Staging…";
+    btn.disabled = true; btn.textContent = "Staging…";
     try{
       const payload = { article: { plan_id: meta.slug, slug: a.slug, title: a.title, environment: meta.environment,
         body_md: a.md, source: meta.source || null, coverage_flags: a.coverage_flags || [], candidate_questions: a.candidate_questions || [] } };
       const res = await fetch("/api/approve", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
       const d = await res.json().catch(()=>({error:"bad response"}));
       if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
-      btn.textContent = d.already_published ? "✓ Already live" : "✓ Staged — see Publish";
-    }catch(e){ btn.disabled=false; btn.textContent="Failed — retry"; btn.title=e.message; setTimeout(()=>btn.textContent=orig,2600); }
+      btn.textContent = d.already_published ? "✓ Already live — re-send" : "✓ Sent — click to re-send";
+      btn.title = "Re-send to update the staged copy in Publish";
+    }catch(e){ btn.textContent="⚠ Failed — retry"; btn.title=e.message; }
+    finally{ btn.disabled = false; } // stays clickable so you can re-send
   }
 
+  const SSN_RE = /\b\d{3}[-.\s]?\d{2}[-.\s]?\d{4}\b/; // client mirror of the PII guard
+
   function articleCard(a){
-    const c = document.createElement("div");
-    const fatal = a.findings.some(f=>f.severity==="fatal");
-    c.className = "card" + (fatal?" hasfatal":"");
-    const score = a.review ? `critic ${a.review.score}/5` : "";
-    const flags = a.findings.map(f=>`<div class="flag ${f.severity}">${f.severity==="fatal"?"⛔":"⚠"} ${f.kind} — ${f.detail}</div>`).join("");
-    const issues = (a.review && a.review.issues && a.review.issues.length) ? `<ul class="issues">${a.review.issues.map(i=>`<li>${i}</li>`).join("")}</ul>` : "";
+    const c = el("div", "card");
     c.innerHTML = `
-      <div class="chead"><span class="ctitle"></span><span class="score">${score}</span></div>
-      ${flags?`<div class="flags">${flags}</div>`:""}
-      ${issues}
+      <div class="chead"><span class="ctitle"></span><span class="score"></span></div>
+      <div class="flagbox"></div>
+      <div class="issuebox"></div>
       <div class="md"></div>
-      <div class="cardfoot"><button class="dl">↓ ${a.slug}.md</button></div>`;
-    $(".ctitle", c).textContent = a.title;
-    $(".md", c).innerHTML = md(a.md.replace(/^[^\n]*\n+/, "")); // drop the title line — card already shows it
-    $(".dl", c).addEventListener("click", ()=>download(a.slug+".md", a.md));
-    const send = el("button", "send", fatal ? "Fix PII to publish" : "→ Send to Publish");
-    if(fatal){ send.disabled = true; send.title = "This article has a PII flag — fix the source before publishing."; }
-    else send.addEventListener("click", ()=>approve(a, send));
-    $(".cardfoot", c).append(send);
+      <div class="cardfoot"></div>`;
+
+    function paint(){
+      const fatal = a.findings.some(f=>f.severity==="fatal");
+      c.classList.toggle("hasfatal", fatal);
+      $(".ctitle", c).textContent = a.title;
+      $(".score", c).textContent = a.review ? `critic ${a.review.score}/5` : "";
+      $(".flagbox", c).innerHTML = a.findings.length
+        ? `<div class="flags">${a.findings.map(f=>`<div class="flag ${f.severity}">${f.severity==="fatal"?"⛔":"⚠"} ${f.kind} — ${f.detail}</div>`).join("")}</div>` : "";
+      $(".issuebox", c).innerHTML = (a.review && a.review.issues && a.review.issues.length)
+        ? `<ul class="issues">${a.review.issues.map(i=>`<li>${i}</li>`).join("")}</ul>` : "";
+      $(".md", c).innerHTML = md(a.md.replace(/^[^\n]*\n+/, "")); // drop the title line — card shows it
+      paintFoot(fatal);
+    }
+
+    function paintFoot(fatal){
+      const foot = $(".cardfoot", c); foot.innerHTML = "";
+      const dl = el("button", "dl", "↓ " + a.slug + ".md"); dl.onclick = ()=>download(a.slug+".md", a.md);
+      const edit = el("button", "dl", "✎ Edit"); edit.onclick = startEdit;
+      const refine = el("button", "dl", "↻ Refine"); refine.onclick = doRefine;
+      const send = el("button", "send", fatal ? "Fix PII to publish" : "→ Send to Publish");
+      if(fatal){ send.disabled = true; send.title = "This article has a PII flag — Edit it out before publishing."; }
+      else send.onclick = ()=>approve(a, send);
+      foot.append(dl, edit, refine, send);
+    }
+
+    function startEdit(){
+      const ta = el("textarea"); ta.value = a.md; ta.style.minHeight = "240px";
+      $(".md", c).replaceWith(ta);
+      const foot = $(".cardfoot", c); foot.innerHTML = "";
+      const save = el("button", "run", "Save"); save.onclick = ()=>{
+        const body = ta.value.trim();
+        if(SSN_RE.test(body)){ alert("That looks like it contains an SSN-shaped number. Remove it before saving."); return; }
+        a.md = body; a.findings = a.findings.filter(f=>f.severity!=="fatal"); // cleared PII by editing
+        ta.replaceWith(el("div", "md")); paint();
+      };
+      const cancel = el("button", "dl", "Cancel"); cancel.onclick = ()=>{ ta.replaceWith(el("div", "md")); paint(); };
+      foot.append(save, cancel);
+      ta.focus();
+    }
+
+    async function doRefine(){
+      const foot = $(".cardfoot", c); foot.innerHTML = `<span class="spin dots">Refining</span>`;
+      const meta = CURRENT_META || {};
+      const issues = (a.review?.issues || []).concat(a.findings.filter(f=>f.severity!=="fatal").map(f=>f.detail));
+      try{
+        const res = await fetch("/api/refine", { method:"POST", headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({ article: { slug:a.slug, title:a.title, environment: meta.environment || "", source: meta.source || null, body_md: a.md, issues } }) });
+        const d = await res.json().catch(()=>({error:"bad response"}));
+        if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
+        a.md = d.md || a.md;
+        a.findings = d.findings || a.findings;
+        if(d.review) a.review = d.review;
+        if(d.candidate_questions) a.candidate_questions = d.candidate_questions;
+        paint();
+      }catch(e){ paint(); const err = el("div","flag warn","⚠ refine failed: "+e.message); err.style.marginTop="8px"; c.append(err); }
+    }
+
+    paint();
     return c;
   }
 
@@ -486,16 +536,36 @@
     return c;
   }
 
-  async function publishRow(id, btn, card){
-    btn.disabled = true; const orig = btn.textContent; btn.textContent = "Publishing…";
-    try{
-      const res = await fetch("/api/publish", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id }) });
-      const d = await res.json().catch(()=>({error:"bad response"}));
-      if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
-      loadPublish();
-    }catch(e){
-      btn.disabled=false; btn.textContent=orig;
-      const err = el("div","flag warn","⚠ "+e.message); err.style.marginTop="8px"; card.append(err);
+  // Publishes are SERIALIZED through one chain. Each publish attaches its doc to the agent by
+  // read-modify-write, so running them concurrently makes the last write win (only the last doc
+  // attaches). The queue makes each publish see the previous one's result. Reload once when it drains.
+  let _pubChain = Promise.resolve();
+  let _pubActive = 0;
+  let _pubFails = [];
+
+  function publishRow(id, btn, card){
+    _pubActive++;
+    if(btn){ btn.disabled = true; btn.textContent = "Queued…"; }
+    _pubChain = _pubChain.then(async ()=>{
+      if(btn && document.body.contains(btn)) btn.textContent = "Publishing…";
+      try{
+        const res = await fetch("/api/publish", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id }) });
+        const d = await res.json().catch(()=>({error:"bad response"}));
+        if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
+      }catch(e){ _pubFails.push(e.message); }
+    }).finally(()=>{
+      _pubActive--;
+      if(_pubActive === 0) drainPublish();
+    });
+  }
+
+  async function drainPublish(){
+    const fails = _pubFails.slice(); _pubFails = [];
+    await loadPublish();
+    if(fails.length){
+      const box = $("#pubout");
+      const b = el("div", "flag warn", `⚠ ${fails.length} publish${fails.length>1?"es":""} failed: ${fails.join("; ")}. Those stayed in “Ready to publish” — click Publish to retry.`);
+      b.style.marginBottom = "12px"; box.insertBefore(b, box.firstChild);
     }
   }
 
@@ -521,10 +591,17 @@
     $("#pubmeta").textContent = `${published.length} live · ${approved.length} staged`;
 
     const s1 = el("div", "rsec"); s1.append(el("h3", null, "Ready to publish"));
-    if(approved.length) approved.forEach(r=>{
-      const similar = published.filter(p=>p.slug !== r.slug && similarTitle(p.title, r.title) >= 0.5).map(p=>p.title);
-      s1.append(pubCard(r, similar));
-    });
+    if(approved.length){
+      const bar = el("div", "cardfoot"); bar.style.marginBottom = "10px";
+      const allBtn = el("button", "run", `Publish all ${approved.length}`);
+      allBtn.onclick = ()=>{ allBtn.disabled = true; allBtn.textContent = "Publishing all…"; approved.forEach(r=>publishRow(r.id, null, null)); };
+      bar.append(allBtn, el("span", "note", "published one at a time — safe to queue"));
+      s1.append(bar);
+      approved.forEach(r=>{
+        const similar = published.filter(p=>p.slug !== r.slug && similarTitle(p.title, r.title) >= 0.5).map(p=>p.title);
+        s1.append(pubCard(r, similar));
+      });
+    }
     else s1.append(el("p", "muted", "Nothing staged. Clean a guide in Step 1, then “Send to Publish”."));
     box.append(s1);
 
