@@ -57,9 +57,12 @@ export async function attachToAgent(agentId, documentId, name, { usageMode = "au
   if (current.some((d) => d.id === documentId)) return { already: true };
   const entry = { type: "text", id: documentId, name, usage_mode: usageMode };
   const knowledge_base = [...current, entry];
+  // PATCH ONLY the field we change. Echoing the whole prompt back drags along both `tools` and
+  // `tool_ids`, which ElevenLabs rejects ("cannot specify both tools and tool IDs"). Deep-merge
+  // updates just knowledge_base and leaves tools/prompt untouched.
   await el(`/v1/convai/agents/${agentId}`, {
     method: "PATCH",
-    body: { conversation_config: { agent: { prompt: { ...prompt, knowledge_base } } } },
+    body: { conversation_config: { agent: { prompt: { knowledge_base } } } },
   });
   return { attached: true, count: knowledge_base.length };
 }
@@ -73,7 +76,7 @@ export async function detachFromAgent(agentId, documentId) {
   if (knowledge_base.length === current.length) return { changed: false };
   await el(`/v1/convai/agents/${agentId}`, {
     method: "PATCH",
-    body: { conversation_config: { agent: { prompt: { ...prompt, knowledge_base } } } },
+    body: { conversation_config: { agent: { prompt: { knowledge_base } } } },
   });
   return { changed: true };
 }
