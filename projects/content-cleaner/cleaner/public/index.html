@@ -170,9 +170,9 @@
 
     <div class="row">
       <button class="run" id="run">Clean it</button>
-      <label class="ghost" for="file" style="cursor:pointer">Upload .txt/.md</label>
-      <input type="file" id="file" accept=".txt,.md,.markdown,.text,text/plain" style="display:none">
-      <span class="note">PDF? Extract text first: <span style="user-select:all">python3 -c "import fitz,sys;print(chr(10).join(p.get_text() for p in fitz.open(sys.argv[1])))" file.pdf &gt; raw.txt</span></span>
+      <label class="ghost" for="file" style="cursor:pointer">Upload a file</label>
+      <input type="file" id="file" accept=".txt,.md,.markdown,.text,.pdf,.docx" style="display:none">
+      <span class="note">Accepts .txt, .md, .pdf, .docx — text is extracted for you</span>
     </div>
 
     <div id="status"></div>
@@ -221,11 +221,27 @@
   $$("#pipe .step").forEach(s=>s.addEventListener("click", ()=>switchTab(s.dataset.tab)));
 
   // ---------- clean ----------
-  $("#file").addEventListener("change", (e)=>{
+  $("#file").addEventListener("change", async (e)=>{
     const f = e.target.files[0]; if(!f) return;
-    const r = new FileReader();
-    r.onload = ()=>{ $("#src").value = r.result; statusEl.textContent = `Loaded ${f.name} (${(f.size/1024|0)} KB).`; };
-    r.readAsText(f);
+    const name = f.name.toLowerCase();
+    const isText = /\.(txt|md|markdown|text)$/.test(name) || f.type === "text/plain";
+    if(isText){
+      const r = new FileReader();
+      r.onload = ()=>{ $("#src").value = r.result; statusEl.textContent = `Loaded ${f.name} (${(f.size/1024|0)} KB).`; };
+      r.readAsText(f);
+      e.target.value = "";
+      return;
+    }
+    // .pdf / .docx → server-side extraction
+    statusEl.innerHTML = `<span class="dots">Extracting text from ${f.name}</span>`;
+    try{
+      const res = await fetch("/api/extract", { method:"POST", headers:{ "x-filename": f.name }, body: f });
+      const d = await res.json().catch(()=>({error:"bad response"}));
+      if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
+      $("#src").value = d.text;
+      statusEl.textContent = `Extracted ${d.chars.toLocaleString()} characters from ${f.name} (${d.kind}). Review it, set “Applies to”, then Clean it.`;
+    }catch(err){ statusEl.textContent = "Couldn't read that file: " + err.message; }
+    finally{ e.target.value = ""; }
   });
 
   function md(text){
