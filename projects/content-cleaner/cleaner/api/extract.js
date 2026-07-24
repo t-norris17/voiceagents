@@ -33,6 +33,15 @@ function detect(buf, filename) {
   return "unknown";
 }
 
+// Strip characters that carry no readable content: C0/C1 control codes (except \t \n \r), soft hyphen,
+// zero-width + bidi marks, word joiner, and the BOM. Broken-font or scanned PDFs emit these where real
+// text should be, and JS .trim() does NOT remove most of them — so without this they survive as
+// "blank text" that silently sails through the emptiness check below.
+const INVISIBLE = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F­​-‏‪-‮⁠﻿]/g;
+function stripInvisible(s) {
+  return String(s).replace(INVISIBLE, "");
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
   try {
@@ -53,8 +62,18 @@ export default async function handler(req, res) {
       return res.status(415).json({ error: "unsupported file type — use .pdf, .docx, .txt, or .md" });
     }
 
-    text = text.replace(/\r\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
-    if (!text) return res.status(422).json({ error: `no text found in the ${kind} (is it a scanned image?)` });
+    // Some PDFs have no real text layer — scanned images, or subset fonts whose glyphs map to NUL /
+    // zero-width characters. pdf-parse then emits a wall of newlines and invisible chars that survive
+    // .trim(), so a naive "is it empty?" check would pass them through as blank text. Strip the junk
+    // first, then require some real printable content before we accept it.
+    text = stripInvisible(text)
+      .replace(/\r\n/g, "\n")
+      .replace(/[ \t]+\n/g, "\n") // drop trailing spaces so all-whitespace lines collapse cleanly
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+    if (text.replace(/\s/g, "").length < 20)
+      return res.status(422).json({ error: `no extractable text in the ${kind} — it looks scanned or image-based, or its fonts carry no text layer. OCR it (or paste the text) and try again.` });
+
     return res.status(200).json({ text, chars: text.length, kind });
   } catch (e) {
     return res.status(500).json({ error: String(e.message || e) });
