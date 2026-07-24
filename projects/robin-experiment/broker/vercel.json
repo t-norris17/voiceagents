@@ -2,5 +2,8 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "redirects": [
     { "source": "/", "destination": "/robin-q-tester", "permanent": false }
-  ]
+  ],
+  "functions": {
+    "api/grade.js": { "maxDuration": 120 }
+  }
 }

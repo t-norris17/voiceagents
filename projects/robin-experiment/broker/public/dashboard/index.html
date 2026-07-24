@@ -311,9 +311,19 @@
     });
   }
 
+  // Grade any not-yet-scored calls, then show the (possibly updated) metrics. Grading is a cheap
+  // no-op once everything is scored, so it's safe to run on every refresh.
+  async function tick(){
+    await load();                              // show current state immediately
+    try{
+      const r = await fetch("/api/grade", { method:"POST" });
+      const g = await r.json().catch(()=>null);
+      if (g && g.graded > 0) await load();     // new calls got scored — refresh the grid
+    }catch(_){}
+  }
   wireTheme();
-  load();
-  setInterval(load, 30000); // live refresh every 30s
+  tick();
+  setInterval(tick, 30000); // refresh + grade any new calls every 30s
 </script>
 </body>
 </html>
