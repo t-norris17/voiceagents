@@ -8,7 +8,10 @@ import pdfParse from "pdf-parse/lib/pdf-parse.js"; // /lib path skips the packag
 
 export const config = { api: { bodyParser: false } };
 
-const MAX_BYTES = 8 * 1024 * 1024; // 8 MB raw upload cap
+// Vercel rejects a function request body over 4.5 MB at the platform layer (413) before our code
+// runs, so a higher cap here is meaningless — keep it just under the platform limit. The Clean-tab
+// uploader also guards on file size client-side so the user gets a clear message, not a raw 413.
+const MAX_BYTES = 4.4 * 1024 * 1024;
 
 function readRaw(req) {
   return new Promise((resolve, reject) => {

@@ -232,11 +232,21 @@
       e.target.value = "";
       return;
     }
+    // Vercel caps a function request body at 4.5 MB, so a big PDF is rejected by the platform
+    // (a non-JSON 413) before our code runs — which would surface as a confusing "bad response".
+    // Catch it here with a clear, actionable message instead.
+    const UPLOAD_LIMIT = 4.4 * 1024 * 1024;
+    if(f.size > UPLOAD_LIMIT){
+      statusEl.textContent = `That file is ${(f.size/1024/1024).toFixed(1)} MB — over the 4.5 MB upload limit. Split it, or paste just the section you need (a text-heavy plan doc is usually only a few pages of real content).`;
+      e.target.value = ""; return;
+    }
     // .pdf / .docx → server-side extraction
     statusEl.innerHTML = `<span class="dots">Extracting text from ${f.name}</span>`;
     try{
       const res = await fetch("/api/extract", { method:"POST", headers:{ "x-filename": f.name }, body: f });
-      const d = await res.json().catch(()=>({error:"bad response"}));
+      const d = await res.json().catch(()=>({ error: res.status===413
+        ? "file too large for upload (4.5 MB limit)"
+        : "the server didn't return readable data — the file may be too large or too complex to extract" }));
       if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
       $("#src").value = d.text;
       statusEl.textContent = `Extracted ${d.chars.toLocaleString()} characters from ${f.name} (${d.kind}). Review it, set “Applies to”, then Clean it.`;
