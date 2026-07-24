@@ -4,6 +4,42 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Robin Content Console</title>
+<script type="module">
+  // Client-side PDF text extraction. The file is read in the visitor's browser and never uploaded,
+  // so there's no 4.5 MB serverless body limit and no function timeout — full plan documents work.
+  // pdf.js is vendored under /vendor (served by this app, not a third-party CDN).
+  import * as pdfjsLib from "/vendor/pdf.min.mjs";
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "/vendor/pdf.worker.min.mjs";
+
+  // Strip characters that carry no readable content (mirrors api/extract.js): C0/C1 controls
+  // (except tab/newline/CR), soft hyphen, zero-width + bidi marks, word joiner, BOM.
+  const stripInvisible = (s) =>
+    s.replace(/\p{Cf}/gu, "").replace(/\p{Cc}/gu, (c) => (c === "\t" || c === "\n" || c === "\r" ? c : ""));
+
+  // -> { text, chars, pages }. Throws a clear error if the PDF has no real text layer
+  // (scanned/image or dead fonts), so the caller can show the same "OCR it" message the server does.
+  window.pdfExtract = async function (file, onProgress) {
+    const data = new Uint8Array(await file.arrayBuffer());
+    const pdf = await pdfjsLib.getDocument({ data }).promise;
+    const pages = [];
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      let s = "";
+      for (const it of content.items) { s += it.str; if (it.hasEOL) s += "\n"; }
+      pages.push(s);
+      if (onProgress) onProgress(i, pdf.numPages);
+    }
+    const text = stripInvisible(pages.join("\n\n"))
+      .replace(/\r\n/g, "\n")
+      .replace(/[ \t]+\n/g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+    if (text.replace(/\s/g, "").length < 20)
+      throw new Error("no extractable text — this PDF looks scanned or image-based (no text layer). OCR it, or paste the text.");
+    return { text, chars: text.length, pages: pdf.numPages };
+  };
+</script>
 <style>
   :root{
     --paper:#f2f0ea; --ink:#17181c; --sub:#6c7075; --faint:#a29e95;
@@ -172,7 +208,7 @@
       <button class="run" id="run">Clean it</button>
       <label class="ghost" for="file" style="cursor:pointer">Upload a file</label>
       <input type="file" id="file" accept=".txt,.md,.markdown,.text,.pdf,.docx" style="display:none">
-      <span class="note">Accepts .txt, .md, .pdf, .docx — text is extracted for you</span>
+      <span class="note">Accepts .txt, .md, .pdf, .docx — PDFs are read in your browser (any size); text is extracted for you</span>
     </div>
 
     <div id="status"></div>
@@ -232,15 +268,25 @@
       e.target.value = "";
       return;
     }
-    // Vercel caps a function request body at 4.5 MB, so a big PDF is rejected by the platform
-    // (a non-JSON 413) before our code runs — which would surface as a confusing "bad response".
-    // Catch it here with a clear, actionable message instead.
+    // PDF → extract in the browser (no upload, so no 4.5 MB body limit and no serverless timeout).
+    if(name.endsWith(".pdf") || f.type === "application/pdf"){
+      if(typeof window.pdfExtract !== "function"){ statusEl.textContent = "PDF reader is still loading — give it a second and try again."; e.target.value=""; return; }
+      statusEl.innerHTML = `<span class="dots">Reading ${f.name} in your browser</span>`;
+      try{
+        const d = await window.pdfExtract(f, (i,n)=>{ statusEl.innerHTML = `<span class="dots">Reading ${f.name} — page ${i} of ${n}</span>`; });
+        $("#src").value = d.text;
+        statusEl.textContent = `Extracted ${d.chars.toLocaleString()} characters from ${f.name} (${d.pages} pages, read in your browser). Review it, set “Applies to”, then Clean it.`;
+      }catch(err){ statusEl.textContent = "Couldn't read that PDF: " + err.message; }
+      finally{ e.target.value = ""; }
+      return;
+    }
+    // DOCX → server-side extraction (mammoth). Still subject to Vercel's 4.5 MB request-body limit,
+    // so guard on size client-side to give a clear message instead of a raw non-JSON 413.
     const UPLOAD_LIMIT = 4.4 * 1024 * 1024;
     if(f.size > UPLOAD_LIMIT){
-      statusEl.textContent = `That file is ${(f.size/1024/1024).toFixed(1)} MB — over the 4.5 MB upload limit. Split it, or paste just the section you need (a text-heavy plan doc is usually only a few pages of real content).`;
+      statusEl.textContent = `That .docx is ${(f.size/1024/1024).toFixed(1)} MB — over the 4.5 MB upload limit. Save it as a PDF (read in-browser, no limit) or paste the text.`;
       e.target.value = ""; return;
     }
-    // .pdf / .docx → server-side extraction
     statusEl.innerHTML = `<span class="dots">Extracting text from ${f.name}</span>`;
     try{
       const res = await fetch("/api/extract", { method:"POST", headers:{ "x-filename": f.name }, body: f });
