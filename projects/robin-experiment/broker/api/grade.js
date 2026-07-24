@@ -24,8 +24,8 @@ const SCHEMA = {
           question_key: { type: "string", description: "Exactly one of the provided question keys." },
           answer_text: { type: "string", description: "What Robin actually said in response, from the transcript." },
           quality_score: { type: "number", description: "1.0-5.0: how well Robin's answer matches the ideal — grounded, complete, correct, not invented. 5 ideal, 1 wrong/harmful." },
-          quality_rating: { type: "string", enum: ["excellent", "good", "fair", "weak", "poor"] },
-          sentiment: { type: "string", enum: ["positive", "neutral", "negative", "mixed"] },
+          quality_rating: { type: "string", enum: ["good", "partial", "wrong", "unrated"], description: "good = answered well; partial = incomplete/hedged; wrong = incorrect/invented; unrated = can't tell." },
+          sentiment: { type: "string", enum: ["positive", "neutral", "negative"] },
           sentiment_score: { type: "number", description: "-1.0 to 1.0 caller sentiment around this exchange." },
           note: { type: "string", description: "Short flag ONLY if the answer is off (invented figure, hedged, wrong, incomplete). Empty string if fine." },
         },
@@ -65,8 +65,8 @@ function serializeTranscript(t) {
     .join("\n");
 }
 
-const RATINGS = new Set(["excellent", "good", "fair", "weak", "poor"]);
-const SENTS = new Set(["positive", "neutral", "negative", "mixed"]);
+const RATINGS = new Set(["good", "partial", "wrong", "unrated"]);
+const SENTS = new Set(["positive", "neutral", "negative"]);
 const clampScore = (v) => { const n = Number(v); return Number.isFinite(n) ? Math.min(5, Math.max(1, n)) : null; };
 const clampSent = (v) => { const n = Number(v); return Number.isFinite(n) ? Math.min(1, Math.max(-1, n)) : null; };
 
@@ -113,7 +113,7 @@ Grade this call. Return only the questions the caller actually asked, scored, pl
       quality_rating: RATINGS.has(a.quality_rating) ? a.quality_rating : null,
       sentiment: SENTS.has(a.sentiment) ? a.sentiment : null,
       sentiment_score: clampSent(a.sentiment_score),
-      graded_by: "auto",
+      graded_by: "llm",
       reviewed: false,
       reviewer_note: String(a.note || "").trim() || null,
     }));
