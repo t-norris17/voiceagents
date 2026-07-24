@@ -14,7 +14,7 @@ const CROSSREF_RE = /\b(see|refer to|as (noted|mentioned|shown|described))\b[^.]
 const GESTURE_RE = /\b(click|tap|press)\b[^.]*\b(icon|button|gear|dropdown|drop-down|menu|link)\b/i;
 const TABLEROW_RE = /^\s*\|.*\|\s*$/m;                        // markdown table row
 const BARE_PHONE_RE = /\b\d{10}\b/;                          // 10 digits with no separators (hard to speak)
-const RESOLUTION_MAX = 1200;                                  // "just enough" soft ceiling (chars)
+const RESOLUTION_MAX = 2600;                                  // "just enough" soft ceiling (chars) — a rich, multi-section article is fine; this only flags a runaway
 
 // Scan one rendered article. Returns findings [{severity,kind,detail}]. severity: "fatal" | "warn".
 export function deterministicScan(md, article) {
