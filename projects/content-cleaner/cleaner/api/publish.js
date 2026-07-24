@@ -68,9 +68,16 @@ export default async function handler(req, res) {
 
     // --- ElevenLabs: create -> index -> attach (any failure leaves the DB untouched) ---
     const doc = await createFromText(body_md, name);
-    await computeRagIndex(doc.id);
-    await attachToAgent(agentId, doc.id, name, { usageMode: "auto" });
-    const indexed = await bestEffortIndexed(doc.id);
+    let indexed = false;
+    try {
+      await computeRagIndex(doc.id);
+      await attachToAgent(agentId, doc.id, name, { usageMode: "auto" });
+      indexed = await bestEffortIndexed(doc.id);
+    } catch (err) {
+      // Don't leak an unattached document on failure — delete it, then surface the error.
+      try { await deleteDocument(doc.id); } catch (_) {}
+      throw err;
+    }
 
     // --- supersede prior published (detach + delete their stale ElevenLabs docs) ---
     for (const p of published) {
