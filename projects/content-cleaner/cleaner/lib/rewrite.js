@@ -71,13 +71,21 @@ Drop the noise (record each drop). Flag what the source does not cover. Return O
 
   const res = await client.messages.create({
     model: "claude-opus-4-8",
-    max_tokens: 16000,
+    max_tokens: 32000,
     thinking: { type: "adaptive" },
     output_config: { effort: "high", format: { type: "json_schema", schema: SCHEMA } },
     system: REWRITE_SYSTEM,
     messages: [{ role: "user", content: user }],
   });
+  // If the model ran out of output budget, the structured JSON is truncated mid-string and
+  // JSON.parse would throw a cryptic "unterminated string" — give an actionable message instead.
+  if (res.stop_reason === "max_tokens")
+    throw new Error("This document produced more cleaned content than fits in one pass. Clean it in smaller sections — a few pages or topics at a time — then publish each.");
   const text = res.content.find((b) => b.type === "text");
   if (!text) throw new Error("rewrite returned no text block");
-  return JSON.parse(text.text);
+  try {
+    return JSON.parse(text.text);
+  } catch (e) {
+    throw new Error("Couldn't parse the cleaned output — it may have been cut off. Try a smaller section of the document. (" + String(e.message || e) + ")");
+  }
 }
