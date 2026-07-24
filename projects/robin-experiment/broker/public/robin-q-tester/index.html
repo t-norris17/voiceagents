@@ -133,6 +133,12 @@ What happens to my plan if I leave?"></textarea>
     CURATED.forEach(x => IDEALS.set(norm(x.q), x.ideal));
   }).catch(()=>{ loadBtn.disabled = true; });
 
+  // Prefill from ?qs= (used by the cleaner's "Test these in QA" button — one question per line).
+  try{
+    const pre = new URLSearchParams(location.search).get("qs");
+    if(pre){ $("#qs").value = pre.split("\n").map(s=>s.trim()).filter(Boolean).join("\n"); }
+  }catch(_){}
+
   // ---- tiny, safe markdown renderer (escape first, then **bold** / *italic* / - bullets) ----
   function md(text){
     let s = String(text).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");

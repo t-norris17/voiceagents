@@ -1,18 +1,31 @@
 // POST /api/ask  { question }  ->  { answer }
-// Phase-1 text test tool. Answers a plan question the way Robin would — grounded in
-// the embedded INTRUST Knowledge Base — so the boss can pressure-test answer quality
-// and variation WITHOUT placing a call. Uses the same model Robin runs on
+// Phase-1 text test tool. Answers a plan question the way Robin would — grounded in Robin's
+// PUBLISHED knowledge base (the kb_articles she's actually serving), so the tester reflects
+// what she truly knows RIGHT NOW and stays current as you publish more. Falls back to the
+// embedded static KB when nothing is published yet. Uses the same model Robin runs on
 // (Haiku 4.5) at a similar temperature, so this reflects Robin's actual brain.
 import Anthropic from "@anthropic-ai/sdk";
-import { KB } from "../lib/kb.js";
+import { KB as STATIC_KB } from "../lib/kb.js";
 import { qaSystem } from "../lib/robin-prompt.js";
+import { sb } from "../lib/supabase.js";
 
 const client = new Anthropic(); // ANTHROPIC_API_KEY
 
-// Robin's REAL answer behavior (from lib/robin-prompt.js, mirroring the production prompt),
-// in an already-verified text context. This is what keeps the tester's brevity/tone true to
-// how Robin actually answers on a call.
-const SYSTEM = qaSystem(KB);
+// The live KB = the published articles. Cached 60s so we don't hit Supabase on every question.
+let _kb = { text: null, at: 0 };
+async function currentKB() {
+  const now = Date.now();
+  if (_kb.text && now - _kb.at < 60000) return _kb.text;
+  try {
+    const rows = await sb(`kb_articles?state=eq.published&select=body_md&order=updated_at.desc`);
+    if (rows && rows.length) {
+      const text = rows.map((r) => r.body_md).join("\n\n---\n\n");
+      _kb = { text, at: now };
+      return text;
+    }
+  } catch (_) { /* fall through to static */ }
+  return STATIC_KB;
+}
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
@@ -25,7 +38,7 @@ export default async function handler(req, res) {
       model: "claude-haiku-4-5",
       max_tokens: 512,
       temperature: 0.5, // mirror Robin's voice temp — gives natural variation on resend
-      system: SYSTEM,
+      system: qaSystem(await currentKB()),
       messages: [{ role: "user", content: q }],
     });
 
