@@ -4,6 +4,7 @@
     "api/clean.js": { "maxDuration": 300 },
     "api/publish.js": { "maxDuration": 60 },
     "api/unpublish.js": { "maxDuration": 30 },
+    "api/refine.js": { "maxDuration": 60 },
     "api/extract.js": { "maxDuration": 30 }
   }
 }
