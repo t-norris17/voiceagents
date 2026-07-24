@@ -55,7 +55,7 @@ test("bare 10-digit phone run is a warn", () => {
 });
 
 test("over-long resolution is a warn (just-enough)", () => {
-  const long = "a".repeat(1300);
+  const long = "a".repeat(2700);
   const f = deterministicScan("ok", { resolution: long, coverage_flags: ["y"] });
   assert.ok(kinds(f).includes("length"));
 });
@@ -88,9 +88,25 @@ test("articleToMarkdown renders title, resolution, coverage; omits empty cause a
     },
     { source: "2025 INTRUST Enrollment Packet" }
   );
-  assert.match(md, /# INTRUST 401\(k\) Plan — Can I take a loan/);
+  assert.match(md, /^INTRUST 401\(k\) Plan — Can I take a loan/m, "plain title line, no # heading");
   assert.match(md, /Yes, the plan allows loans\./, "resolution body present");
   assert.match(md, /route to a specialist/i);
   assert.doesNotMatch(md, /## Answer/, "the generic Answer header is dropped");
   assert.doesNotMatch(md, /## Why/, "empty cause must be omitted");
+  assert.doesNotMatch(md, /[#*`]/, "plain text only — no markdown symbols");
+});
+
+test("stripMd removes markdown the model may slip in", () => {
+  const md = articleToMarkdown({
+    environment: "Test Plan",
+    title: "How does it work?",
+    issue: "x",
+    resolution: "# Heading\n\n**Bold answer** with *emphasis* and `code`.\n\n## Next steps\nDo the thing.",
+    cause: "",
+    coverage_flags: [],
+  }, {});
+  assert.doesNotMatch(md, /[#*`]/, "no markdown symbols survive");
+  assert.match(md, /Bold answer with emphasis and code\./);
+  assert.match(md, /^Heading$/m);
+  assert.match(md, /^Next steps$/m);
 });

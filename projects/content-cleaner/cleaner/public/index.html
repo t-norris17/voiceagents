@@ -305,7 +305,7 @@
       <div class="md"></div>
       <div class="cardfoot"><button class="dl">↓ ${a.slug}.md</button></div>`;
     $(".ctitle", c).textContent = a.title;
-    $(".md", c).innerHTML = md(a.md.replace(/^#[^\n]*\n+/, "")); // card already shows the title
+    $(".md", c).innerHTML = md(a.md.replace(/^[^\n]*\n+/, "")); // drop the title line — card already shows it
     $(".dl", c).addEventListener("click", ()=>download(a.slug+".md", a.md));
     const send = el("button", "send", fatal ? "Fix PII to publish" : "→ Send to Publish");
     if(fatal){ send.disabled = true; send.title = "This article has a PII flag — fix the source before publishing."; }
