@@ -25,6 +25,37 @@ function verifySig(raw, header, secret) {
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
+// The Data Collection fields are LLM-generated free text ("Verified", "Resolved", ...), but the
+// table enforces a fixed lowercase vocabulary. Normalize into it so a row is never rejected on a
+// case/wording mismatch; anything unmapped falls back safely (the raw value stays in raw_payload).
+const ENUM = {
+  auth_outcome: {
+    fallback: "not_attempted",
+    map: { verified: "verified", authenticated: "verified", success: "verified", pass: "verified", yes: "verified",
+           failed: "failed", "not verified": "failed", unverified: "failed", denied: "failed", "failed verification": "failed", no: "failed",
+           not_attempted: "not_attempted", "not attempted": "not_attempted", none: "not_attempted", na: "not_attempted" },
+  },
+  outcome: {
+    fallback: "unknown",
+    map: { resolved: "resolved", completed: "resolved", answered: "resolved", success: "resolved",
+           transferred: "transferred", transfer: "transferred", escalated: "transferred",
+           abandoned: "abandoned", dropped: "abandoned", hangup: "abandoned", "hung up": "abandoned",
+           unknown: "unknown" },
+  },
+  overall_sentiment: {
+    fallback: null,
+    map: { positive: "positive", neutral: "neutral", negative: "negative", mixed: "mixed" },
+  },
+};
+function coerce(kind, v) {
+  const n = String(v ?? "").trim().toLowerCase();
+  const e = ENUM[kind];
+  if (!n) return e.fallback;
+  if (e.map[n]) return e.map[n];
+  for (const [k, val] of Object.entries(e.map)) if (n.includes(k)) return val; // contains a known token
+  return e.fallback;
+}
+
 // Guard against an invalid/odd unix value — new Date(NaN).toISOString() throws, which would 500.
 function safeIso(unix) {
   const n = Number(unix);
@@ -64,11 +95,11 @@ export default async function handler(req, res) {
       started_at: safeIso(meta.start_time_unix_secs ?? meta.start_time_unix),
       duration_seconds: Number.isFinite(Number(meta.call_duration_secs)) ? Math.round(Number(meta.call_duration_secs)) : null,
       topic: pick("topic"),
-      outcome: pick("outcome") || "unknown",
+      outcome: coerce("outcome", pick("outcome")),
       transfer_reason: pick("transfer_reason"),
-      auth_outcome: pick("auth_outcome") || "not_attempted",
+      auth_outcome: coerce("auth_outcome", pick("auth_outcome")),
       subject_ref: pick("subject_ref"),
-      overall_sentiment: pick("caller_sentiment"), // existing column; the rest of the DC fields ride along in raw_payload
+      overall_sentiment: coerce("overall_sentiment", pick("caller_sentiment")), // existing column; the rest of the DC fields ride along in raw_payload
       transcript: Array.isArray(d.transcript) ? d.transcript : null,
       raw_payload: evt,
     };
