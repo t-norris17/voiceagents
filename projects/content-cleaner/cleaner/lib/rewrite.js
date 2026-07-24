@@ -69,14 +69,20 @@ ${rawText}
 Segment this into KCS-gold, Robin-ready articles per your instructions. One topic per article.
 Drop the noise (record each drop). Flag what the source does not cover. Return ONLY the structured JSON.`;
 
-  const res = await client.messages.create({
-    model: "claude-opus-4-8",
-    max_tokens: 32000,
-    thinking: { type: "adaptive" },
-    output_config: { effort: "high", format: { type: "json_schema", schema: SCHEMA } },
-    system: REWRITE_SYSTEM,
-    messages: [{ role: "user", content: user }],
-  });
+  // Stream the call: at a 32k-token budget the SDK refuses the non-streaming path (the request
+  // could exceed its 10-minute ceiling). Streaming lifts that guard; finalMessage() reassembles
+  // the complete response, so the stop_reason check and parsing below are unchanged. The actual
+  // call finishes well within the function's maxDuration — the ceiling is a budget estimate.
+  const res = await client.messages
+    .stream({
+      model: "claude-opus-4-8",
+      max_tokens: 32000,
+      thinking: { type: "adaptive" },
+      output_config: { effort: "high", format: { type: "json_schema", schema: SCHEMA } },
+      system: REWRITE_SYSTEM,
+      messages: [{ role: "user", content: user }],
+    })
+    .finalMessage();
   // If the model ran out of output budget, the structured JSON is truncated mid-string and
   // JSON.parse would throw a cryptic "unterminated string" — give an actionable message instead.
   if (res.stop_reason === "max_tokens")
