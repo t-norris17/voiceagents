@@ -428,7 +428,17 @@
   runBtn.addEventListener("click", run);
 
   // ---------- publish ----------
-  function pubCard(r){
+  // Cheap semantic-duplicate check: two articles on the same topic under DIFFERENT slugs won't be
+  // deduped by (plan_id, slug), so warn when a staged article's title overlaps a live one's.
+  function titleTokens(t){ return new Set(String(t||"").toLowerCase().replace(/[^a-z0-9 ]/g," ").split(/\s+/).filter(w=>w.length>3)); }
+  function similarTitle(a, b){
+    const A = titleTokens(a), B = titleTokens(b);
+    if(!A.size || !B.size) return 0;
+    let inter = 0; A.forEach(x=>{ if(B.has(x)) inter++; });
+    return inter / (A.size + B.size - inter); // Jaccard
+  }
+
+  function pubCard(r, similar){
     const live = r.state === "published";
     const c = el("div", "pubrow" + (live ? " live" : ""));
     const head = el("div", "pubhead");
@@ -438,11 +448,22 @@
     const doc = r.elevenlabs_document_id ? ` · doc ${String(r.elevenlabs_document_id).slice(0,8)}…` : "";
     const idx = live ? (r.elevenlabs_rag_indexed ? " · indexed" : " · indexing…") : "";
     c.append(el("div", "pubmeta", `${r.slug} · v${r.version}${doc}${idx}`));
+
     if(r.state === "approved"){
+      if(similar && similar.length){
+        const w = el("div", "flag warn", `⚠ Looks similar to a live article: ${similar.join(", ")}. This has a different slug, so publishing won't replace it — publish anyway, or Unpublish the old one below.`);
+        w.style.marginTop = "8px"; c.append(w);
+      }
       const foot = el("div", "cardfoot");
       const b = el("button", "run", "Publish to Robin");
       b.addEventListener("click", ()=>publishRow(r.id, b, c));
       foot.append(b);
+      c.append(foot);
+    } else if(r.state === "published"){
+      const foot = el("div", "cardfoot");
+      const u = el("button", "dl", "✕ Unpublish");
+      u.addEventListener("click", ()=>unpublishRow(r.id, u, c));
+      foot.append(u);
       c.append(foot);
     }
     return c;
@@ -461,6 +482,20 @@
     }
   }
 
+  async function unpublishRow(id, btn, card){
+    if(!confirm("Remove this article from Robin's knowledge base? It will be detached and deleted in ElevenLabs.")) return;
+    btn.disabled = true; const orig = btn.textContent; btn.textContent = "Removing…";
+    try{
+      const res = await fetch("/api/unpublish", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id }) });
+      const d = await res.json().catch(()=>({error:"bad response"}));
+      if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
+      loadPublish();
+    }catch(e){
+      btn.disabled=false; btn.textContent=orig;
+      const err = el("div","flag warn","⚠ "+e.message); err.style.marginTop="8px"; card.append(err);
+    }
+  }
+
   function renderPublish(rows){
     const box = $("#pubout"); box.innerHTML = "";
     const approved = rows.filter(r=>r.state==="approved");
@@ -469,19 +504,22 @@
     $("#pubmeta").textContent = `${published.length} live · ${approved.length} staged`;
 
     const s1 = el("div", "rsec"); s1.append(el("h3", null, "Ready to publish"));
-    if(approved.length) approved.forEach(r=>s1.append(pubCard(r)));
+    if(approved.length) approved.forEach(r=>{
+      const similar = published.filter(p=>p.slug !== r.slug && similarTitle(p.title, r.title) >= 0.5).map(p=>p.title);
+      s1.append(pubCard(r, similar));
+    });
     else s1.append(el("p", "muted", "Nothing staged. Clean a guide in Step 1, then “Send to Publish”."));
     box.append(s1);
 
     const s2 = el("div", "rsec"); s2.append(el("h3", null, "Live in Robin's knowledge base"));
-    if(published.length) published.forEach(r=>s2.append(pubCard(r)));
+    if(published.length) published.forEach(r=>s2.append(pubCard(r, [])));
     else s2.append(el("p", "muted", "No articles published yet."));
     box.append(s2);
 
     if(superseded.length){
       const det = document.createElement("details");
       det.append(el("summary", null, `History — ${superseded.length} superseded`));
-      superseded.forEach(r=>det.append(pubCard(r)));
+      superseded.forEach(r=>det.append(pubCard(r, [])));
       box.append(det);
     }
   }
