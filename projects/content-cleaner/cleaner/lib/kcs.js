@@ -19,7 +19,8 @@ knowledge — record it as a coverage flag so Robin routes to a specialist inste
 - resolution: the FULL article body — write it as a natural knowledge-base article a voice agent can
   speak from, NOT a terse blurb and NOT a form. Lead with the direct answer in one or two sentences,
   then give the useful detail. When the answer has multiple distinct parts, organize them under SHORT
-  bold subheadings (e.g. **What the plan accepts**, **Direct vs. indirect rollover**, **How to start**).
+  PLAIN heading lines — just the words on their own line (e.g. a line reading "What the plan accepts",
+  then its paragraph). NO markdown symbols anywhere: no "#", no "**bold**", no "*italic*", no backticks.
   Keep every concrete detail the source gives — figures, phone numbers, steps, deadlines. Warm, plain-
   spoken, specific. Do NOT restate the question as an "Issue:" line and do NOT add a "not covered"
   section — those are handled separately. Length must MATCH what the source supports: a rich source
@@ -41,6 +42,9 @@ knowledge — record it as a coverage flag so Robin routes to a specialist inste
   Restate the needed fact inline.
 - Read-aloud-friendly: NO markdown tables and NO UI gestures ("click the gear icon," "tap the button").
   Describe the action in words a person can follow by ear ("log in and open Beneficiaries").
+- PLAIN TEXT ONLY: the knowledge base stores and Robin reads plain text — do NOT use markdown symbols.
+  No "#" headings, no "**bold**" or "*italic*", no backticks, no "|" tables. Use a short heading LINE
+  (just the words) followed by its paragraph. It should read cleanly aloud, verbatim.
 - Coverage flags: state explicitly what the source does NOT cover, so Robin routes to a specialist.
 
 === WHAT TO DROP (record each in "dropped") ===
@@ -64,26 +68,35 @@ words title/issue; (3) coverage completeness — are gaps that a participant wou
 (4) "just enough" — complete but not bloated. Do NOT re-flag tables/cross-refs/PII (code handles those).
 Return ONLY via the structured tool.`;
 
-// Article object -> Robin-ready markdown. Natural knowledge-article shape: title, a light metadata
-// line, the article body (the model writes it with its own bold subheadings), and — folded into a
-// quiet sentence, not a clinical section — a routing note for what the source doesn't cover. The
-// "Issue:" label and "Not covered here" heading are deliberately NOT rendered; that data lives in
-// the structured result and the coverage/drop reports.
+// Article object -> Robin-ready PLAIN TEXT. ElevenLabs' KB stores/displays plain text and Robin reads
+// it raw, so we emit NO markdown symbols: a plain title line, a light metadata line, the article body
+// (plain heading lines the model wrote), and — folded into a quiet sentence — a routing note for what
+// the source doesn't cover. stripMd() is a safety net that removes any markdown the model slipped in
+// (**bold**, *italic*, # headings, `code`). The "Issue:" label and "Not covered" heading are not
+// rendered; that data lives in the structured result and the coverage/drop reports.
+export function stripMd(s) {
+  return String(s)
+    .replace(/\*\*(.+?)\*\*/g, "$1")                          // **bold** -> bold
+    .replace(/(^|[^*])\*(?!\s)([^*\n]+?)\*(?!\*)/g, "$1$2")    // *italic* -> italic
+    .replace(/^\s{0,3}#{1,6}\s+/gm, "")                        // # heading -> heading
+    .replace(/`([^`]+)`/g, "$1");                              // `code` -> code
+}
+
 export function articleToMarkdown(a, meta = {}) {
   const lines = [];
-  lines.push(`# ${a.environment} — ${a.title}`);
+  lines.push(`${a.environment} — ${a.title}`);
   lines.push("");
   const bits = [`Plan: ${a.environment}`];
   if (meta.source) bits.push(`Source: ${meta.source}`);
   bits.push("voice-agent knowledge article");
-  lines.push(`*${bits.join(" · ")}*`);
+  lines.push(bits.join(" · "));
   lines.push("");
-  lines.push(a.resolution.trim());
+  lines.push(stripMd(a.resolution).trim());
   lines.push("");
-  if (a.cause && a.cause.trim()) { lines.push(a.cause.trim()); lines.push(""); }
+  if (a.cause && a.cause.trim()) { lines.push(stripMd(a.cause).trim()); lines.push(""); }
   if (Array.isArray(a.coverage_flags) && a.coverage_flags.length) {
-    const gaps = a.coverage_flags.map((f) => String(f).trim().replace(/[.;]+$/, "")).join("; ");
-    lines.push(`*If a caller needs specifics beyond this, route to a specialist rather than guess: ${gaps}.*`);
+    const gaps = a.coverage_flags.map((f) => stripMd(f).trim().replace(/[.;]+$/, "")).join("; ");
+    lines.push(`If a caller needs specifics beyond this, route to a specialist rather than guess: ${gaps}.`);
     lines.push("");
   }
   return lines.join("\n").replace(/\n{3,}/g, "\n\n").trim() + "\n";
