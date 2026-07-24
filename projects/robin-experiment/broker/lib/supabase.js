@@ -17,5 +17,9 @@ export async function sb(path, { method = "GET", body, prefer } = {}) {
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) throw new Error(`supabase ${res.status}: ${await res.text()}`);
-  return res.status === 204 ? null : res.json();
+  // A "return=minimal" write comes back empty (201/200/204, no body). Don't call res.json() on
+  // an empty body — it throws "Unexpected end of JSON input" and turns a successful write into a
+  // 500 (which made the post-call webhook look failed and get retried). Parse only when there's text.
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
 }
