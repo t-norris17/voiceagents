@@ -16,11 +16,21 @@ knowledge — record it as a coverage flag so Robin routes to a specialist inste
   not internal jargon.
 - issue: the participant's question/need in THEIR words and context.
 - environment: what it applies to (the plan/product) — you will be given this; use it verbatim.
-- resolution: the grounded, complete, actionable answer from the responder's perspective.
-- cause: the "why," ONLY when it helps the reader. Omit (empty string) if it adds nothing.
+- resolution: the FULL article body — write it as a natural knowledge-base article a voice agent can
+  speak from, NOT a terse blurb and NOT a form. Lead with the direct answer in one or two sentences,
+  then give the useful detail. When the answer has multiple distinct parts, organize them under SHORT
+  bold subheadings (e.g. **What the plan accepts**, **Direct vs. indirect rollover**, **How to start**).
+  Keep every concrete detail the source gives — figures, phone numbers, steps, deadlines. Warm, plain-
+  spoken, specific. Do NOT restate the question as an "Issue:" line and do NOT add a "not covered"
+  section — those are handled separately. Length must MATCH what the source supports: a rich source
+  gets a rich, multi-section article; a one-line source gets a short one. NEVER pad with invented
+  detail to look fuller.
+- cause: the "why," ONLY when a short reason genuinely helps — and prefer to weave it into the
+  resolution. Omit (empty string) otherwise.
 
 === KCS CONTENT STANDARDS (non-negotiable) ===
-- Requestor's words; "just enough" — a complete thought, NOT an essay. Trim boilerplate and marketing.
+- Requestor's words; "just enough" = as complete as the SOURCE supports — a genuinely useful article,
+  never invented padding, never boilerplate/marketing. Not a stub, and not filler.
 - Consistent structure across articles (drives findability and readability).
 - NO requestor-specific PII — no member names, contact info, entitlement, account numbers, or specific
   locations. (System/plan phone numbers and public URLs are fine.)
@@ -54,24 +64,26 @@ words title/issue; (3) coverage completeness — are gaps that a participant wou
 (4) "just enough" — complete but not bloated. Do NOT re-flag tables/cross-refs/PII (code handles those).
 Return ONLY via the structured tool.`;
 
-// Article object -> Robin-ready markdown, matching robin-experiment/kb/ style.
+// Article object -> Robin-ready markdown. Natural knowledge-article shape: title, a light metadata
+// line, the article body (the model writes it with its own bold subheadings), and — folded into a
+// quiet sentence, not a clinical section — a routing note for what the source doesn't cover. The
+// "Issue:" label and "Not covered here" heading are deliberately NOT rendered; that data lives in
+// the structured result and the coverage/drop reports.
 export function articleToMarkdown(a, meta = {}) {
   const lines = [];
   lines.push(`# ${a.environment} — ${a.title}`);
   lines.push("");
-  const src = meta.source ? `*Source: ${meta.source}. Participant-facing summary for Robin's Knowledge Base.*` : "";
-  if (src) { lines.push(src); lines.push(""); }
-  if (a.issue) { lines.push(`**Issue:** ${a.issue}`); lines.push(""); }
+  const bits = [`Plan: ${a.environment}`];
+  if (meta.source) bits.push(`Source: ${meta.source}`);
+  bits.push("voice-agent knowledge article");
+  lines.push(`*${bits.join(" · ")}*`);
+  lines.push("");
   lines.push(a.resolution.trim());
   lines.push("");
-  if (a.cause && a.cause.trim()) {
-    lines.push("## Why");
-    lines.push(a.cause.trim());
-    lines.push("");
-  }
+  if (a.cause && a.cause.trim()) { lines.push(a.cause.trim()); lines.push(""); }
   if (Array.isArray(a.coverage_flags) && a.coverage_flags.length) {
-    lines.push("## Not covered here (route to a specialist)");
-    for (const f of a.coverage_flags) lines.push(`- ${f}`);
+    const gaps = a.coverage_flags.map((f) => String(f).trim().replace(/[.;]+$/, "")).join("; ");
+    lines.push(`*If a caller needs specifics beyond this, route to a specialist rather than guess: ${gaps}.*`);
     lines.push("");
   }
   return lines.join("\n").replace(/\n{3,}/g, "\n\n").trim() + "\n";
