@@ -185,7 +185,7 @@
       knowledge she uses on the line. Paste questions, compare to the answer key, and flag any answer
       for review.</p>
     <div class="qaframe">
-      <iframe src="https://voiceagents-seven.vercel.app/robin-q-tester" title="Robin Q Tester" loading="lazy"></iframe>
+      <iframe id="qaframe" src="https://voiceagents-seven.vercel.app/robin-q-tester" title="Robin Q Tester" loading="lazy"></iframe>
     </div>
     <p class="note"><a href="https://voiceagents-seven.vercel.app/robin-q-tester" target="_blank" rel="noopener">Open the Q Tester in its own tab ↗</a></p>
   </section>
@@ -383,7 +383,17 @@
   }
 
   function buildQuestions(d){
-    const box = document.createElement("div"); let any = false;
+    const box = document.createElement("div");
+    const all = d.articles.flatMap(a=>a.candidate_questions || []);
+    if(all.length){
+      const bar = el("div", "cardfoot"); bar.style.marginBottom = "12px";
+      const b = el("button", "send", `→ Test these ${all.length} questions in QA`);
+      b.addEventListener("click", ()=>testInQA(all));
+      bar.append(b);
+      bar.append(el("span", "note", "opens the QA tab prefilled — answered against Robin's live published knowledge"));
+      box.append(bar);
+    }
+    let any = false;
     d.articles.forEach(a=>{
       if(!a.candidate_questions || !a.candidate_questions.length) return;
       any = true;
@@ -392,6 +402,13 @@
     });
     if(!any) box.append(el("p", "muted", "No candidate questions."));
     return box;
+  }
+
+  // Carry the cleaned articles' candidate questions into the QA tab (prefill via ?qs=) and switch to it.
+  function testInQA(questions){
+    const frame = $("#qaframe");
+    if(frame) frame.src = "https://voiceagents-seven.vercel.app/robin-q-tester?qs=" + encodeURIComponent(questions.join("\n"));
+    switchTab("qa");
   }
 
   function render(d){
