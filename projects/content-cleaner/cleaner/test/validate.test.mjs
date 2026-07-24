@@ -88,9 +88,11 @@ test("articleToMarkdown renders title, resolution, coverage; omits empty cause a
     },
     { source: "2025 INTRUST Enrollment Packet" }
   );
-  assert.match(md, /^INTRUST 401\(k\) Plan — Can I take a loan/m, "plain title line, no # heading");
+  assert.match(md, /^Can I take a loan from my 401\(k\)\?/m, "leads with the question, no plan prefix");
   assert.match(md, /Yes, the plan allows loans\./, "resolution body present");
   assert.match(md, /route to a specialist/i);
+  assert.doesNotMatch(md, /^Plan:/m, "no metadata/plan line in the body");
+  assert.doesNotMatch(md, /voice-agent knowledge article/, "no boilerplate label in the body");
   assert.doesNotMatch(md, /## Answer/, "the generic Answer header is dropped");
   assert.doesNotMatch(md, /## Why/, "empty cause must be omitted");
   assert.doesNotMatch(md, /[#*`]/, "plain text only — no markdown symbols");

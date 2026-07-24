@@ -68,10 +68,12 @@ words title/issue; (3) coverage completeness — are gaps that a participant wou
 (4) "just enough" — complete but not bloated. Do NOT re-flag tables/cross-refs/PII (code handles those).
 Return ONLY via the structured tool.`;
 
-// Article object -> Robin-ready PLAIN TEXT. ElevenLabs' KB stores/displays plain text and Robin reads
-// it raw, so we emit NO markdown symbols: a plain title line, a light metadata line, the article body
-// (plain heading lines the model wrote), and — folded into a quiet sentence — a routing note for what
-// the source doesn't cover. stripMd() is a safety net that removes any markdown the model slipped in
+// Article object -> Robin-ready PLAIN TEXT. Each block leads with the participant's QUESTION (verbatim),
+// because that's the embedding bait — the chunk retrieves on how a caller actually asks — then the
+// answer directly underneath, then a quiet routing sentence for what the source doesn't cover.
+// Deliberately NO metadata/provenance line in the body: the plan is implicit (Robin is a plan-scoped
+// agent, so repeating it just dilutes the chunk), and the source lives in the kb_articles row, not in
+// text Robin reads aloud. stripMd() is a safety net that strips any markdown the model slipped in
 // (**bold**, *italic*, # headings, `code`). The "Issue:" label and "Not covered" heading are not
 // rendered; that data lives in the structured result and the coverage/drop reports.
 export function stripMd(s) {
@@ -84,12 +86,7 @@ export function stripMd(s) {
 
 export function articleToMarkdown(a, meta = {}) {
   const lines = [];
-  lines.push(`${a.environment} — ${a.title}`);
-  lines.push("");
-  const bits = [`Plan: ${a.environment}`];
-  if (meta.source) bits.push(`Source: ${meta.source}`);
-  bits.push("voice-agent knowledge article");
-  lines.push(bits.join(" · "));
+  lines.push(String(a.title || "").trim()); // the question, verbatim — leads the chunk
   lines.push("");
   lines.push(stripMd(a.resolution).trim());
   lines.push("");
