@@ -81,7 +81,7 @@ Drop the noise (record each drop). Flag what the source does not cover. Return O
       output_config: { effort: "high", format: { type: "json_schema", schema: SCHEMA } },
       system: REWRITE_SYSTEM,
       messages: [{ role: "user", content: user }],
-    })
+    }, { timeout: 280000 }) // bound the wait just under the 300s function cap, not the SDK's 600s default
     .finalMessage();
   // If the model ran out of output budget, the structured JSON is truncated mid-string and
   // JSON.parse would throw a cryptic "unterminated string" — give an actionable message instead.
