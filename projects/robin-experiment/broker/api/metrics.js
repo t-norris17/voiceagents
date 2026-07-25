@@ -46,11 +46,13 @@ const sentBucket = (s) => {
 export default async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).json({ error: "GET only" });
   try {
-    const [events, questions, scores, memberAgg] = await Promise.all([
+    const [events, questions, scores, memberAgg, asked, gapStatus] = await Promise.all([
       sb(`ai_call_events?provider=eq.elevenlabs&select=conversation_id,started_at,duration_seconds,topic,outcome,transfer_reason,auth_outcome,subject_ref,overall_sentiment,security_flag,security_detail&order=started_at.desc.nullslast`),
       sb(`curated_questions?active=eq.true&select=question_key,category,question_text,sort_order&order=sort_order.asc`),
       sb(`call_question_scores?select=conversation_id,question_key,asked,answer_text,quality_score,quality_rating,sentiment,reviewed,reviewer_note`),
       sb(`members?select=consented`),
+      sb(`call_questions?select=conversation_id,canonical_key,canonical_question,category,asked_text,answered,fail_reason,matched_question_key`),
+      sb(`gap_requests?select=canonical_key,status,note,resolved_slug`),
     ]);
 
     const totalTesters = memberAgg.length;
@@ -141,6 +143,64 @@ export default async function handler(req, res) {
     for (const s of scored.filter((s) => num(s.quality_score) != null && num(s.quality_score) < 3.0))
       review.push({ topic: LABEL[s.question_key] || s.question_key, ref: s.conversation_id, reason: s.reviewer_note || "Weak answer (quality < 3.0)", meta: `quality ${num(s.quality_score).toFixed(1)}` });
 
+    // ---- Utilization: of every question callers actually asked Robin, how many did she answer? ----
+    // Robin is the front door, so this is a top-of-funnel read — but the denominator is only the calls
+    // ROUTED to her, which the dashboard states explicitly so the number is never over-claimed.
+    const totalAsked = asked.length;
+    const answeredCount = asked.filter((a) => a.answered).length;
+    const byReason = {};
+    for (const a of asked) if (!a.answered) byReason[a.fail_reason || "no_content"] = (byReason[a.fail_reason || "no_content"] || 0) + 1;
+
+    // Unanswered questions grouped into a demand-ranked content queue.
+    const statusBy = new Map(gapStatus.map((g) => [g.canonical_key, g]));
+    const gapMap = new Map();
+    for (const a of asked) {
+      if (a.answered) continue;
+      const g = gapMap.get(a.canonical_key) || {
+        canonical_key: a.canonical_key,
+        question: a.canonical_question,
+        category: a.category,
+        count: 0,
+        reasons: {},
+        samples: [],
+        calls: [],
+      };
+      g.count++;
+      const r = a.fail_reason || "no_content";
+      g.reasons[r] = (g.reasons[r] || 0) + 1;
+      if (a.asked_text && g.samples.length < 3) g.samples.push(a.asked_text);
+      if (a.conversation_id) g.calls.push(a.conversation_id);
+      gapMap.set(a.canonical_key, g);
+    }
+    const gaps = [...gapMap.values()]
+      .map((g) => {
+        const st = statusBy.get(g.canonical_key);
+        // The dominant reason drives what a human should DO about it.
+        const top = Object.entries(g.reasons).sort((a, b) => b[1] - a[1])[0];
+        return {
+          ...g,
+          top_reason: top ? top[0] : "no_content",
+          status: st?.status || "new",
+          note: st?.note || null,
+          resolved_slug: st?.resolved_slug || null,
+        };
+      })
+      // "Write an article" gaps first — guardrail/out-of-scope aren't content problems.
+      .sort((a, b) => {
+        const actionable = (x) => (x.top_reason === "no_content" || x.top_reason === "not_retrieved" ? 0 : 1);
+        return actionable(a) - actionable(b) || b.count - a.count;
+      });
+
+    const utilization = {
+      total_asked: totalAsked,
+      answered: answeredCount,
+      pct: totalAsked ? Math.round((answeredCount / totalAsked) * 100) : null,
+      by_reason: byReason,
+      // Content-addressable share: excludes guardrail declines and out-of-scope, which no article fixes.
+      addressable_gap: (byReason.no_content || 0) + (byReason.not_retrieved || 0),
+      denominator_note: "questions asked on calls routed to Robin",
+    };
+
     const recent = events.slice(0, 20).map((e) => ({
       conversation_id: e.conversation_id,
       started_at: e.started_at,
@@ -156,7 +216,8 @@ export default async function handler(req, res) {
     return res.status(200).json({
       generated_at: new Date().toISOString(),
       window: { members: totalTesters, consented, calls: events.length },
-      security, experience, coverage,
+      security, experience, coverage, utilization,
+      gaps,
       questions: qRows,
       recent_calls: recent,
       review_queue: review,
