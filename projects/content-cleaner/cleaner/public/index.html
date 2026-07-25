@@ -580,16 +580,87 @@
       const foot = el("div", "cardfoot");
       const b = el("button", "run", "Publish to Robin");
       b.addEventListener("click", ()=>publishRow(r.id, b, c));
-      foot.append(b);
+      const e = el("button", "ghost", "Edit");
+      e.addEventListener("click", ()=>openArticleEditor(r, c, e));
+      foot.append(b, e);
       c.append(foot);
     } else if(r.state === "published"){
       const foot = el("div", "cardfoot");
+      const e = el("button", "ghost", "Edit");
+      e.addEventListener("click", ()=>openArticleEditor(r, c, e));
       const u = el("button", "dl", "✕ Unpublish");
       u.addEventListener("click", ()=>unpublishRow(r.id, u, c));
-      foot.append(u);
+      foot.append(e, u);
       c.append(foot);
     }
     return c;
+  }
+
+  // Pull a live (or staged) article back into an editor, revise it, and push the revision to Robin.
+  // Saving routes through /api/approve — so the PII guard and version bump apply exactly as they do
+  // for a freshly cleaned article — then publishes, which supersedes the old ElevenLabs doc (same slug).
+  async function openArticleEditor(r, card, btn){
+    if(card.querySelector(".artedit")) return; // already open
+    btn.disabled = true; const orig = btn.textContent; btn.textContent = "Loading…";
+    let a;
+    try{
+      const res = await fetch("/api/kb_article?id=" + encodeURIComponent(r.id));
+      const d = await res.json().catch(()=>({error:"bad response"}));
+      if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
+      a = d.article;
+    }catch(e){
+      btn.disabled=false; btn.textContent=orig;
+      const err = el("div","flag warn","⚠ Couldn't load the article: "+e.message);
+      err.style.marginTop="8px"; card.append(err); return;
+    }
+    btn.textContent = orig; // stays disabled while the editor is open
+
+    const wrap = el("div", "artedit");
+    wrap.style.marginTop = "10px";
+    const ta = document.createElement("textarea");
+    ta.value = a.body_md || "";
+    ta.style.minHeight = "260px";
+    wrap.append(el("label", "lbl", "Article text — edit, then save to push the revision to Robin"), ta);
+
+    const foot = el("div", "cardfoot");
+    const save = el("button", "run", "Save & republish");
+    const cancel = el("button", "ghost", "Cancel");
+    const note = el("span", "note", `${a.slug} · v${a.version} — saving publishes a new version and replaces the live one`);
+    foot.append(save, cancel, note);
+    wrap.append(foot);
+    card.append(wrap);
+    ta.focus();
+
+    cancel.addEventListener("click", ()=>{ wrap.remove(); btn.disabled=false; });
+
+    save.addEventListener("click", async ()=>{
+      const body_md = ta.value.trim();
+      if(!body_md){ alert("The article can't be empty."); return; }
+      save.disabled = true; cancel.disabled = true; save.textContent = "Saving…";
+      try{
+        const article = {
+          plan_id: a.plan_id, slug: a.slug, title: a.title, environment: a.environment,
+          body_md, source: a.source, coverage_flags: a.coverage_flags || [],
+          candidate_questions: a.candidate_questions || [],
+        };
+        const res = await fetch("/api/approve", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ article }) });
+        const d = await res.json().catch(()=>({error:"bad response"}));
+        if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
+        if(d.already_published){
+          save.disabled=false; cancel.disabled=false; save.textContent="Save & republish";
+          const same = el("div","flag warn","No changes — this text is already live.");
+          same.style.marginTop="8px"; wrap.append(same); return;
+        }
+        const stagedId = d.staged && d.staged.id;
+        if(!stagedId) throw new Error("saved, but no staged article came back — check the Publish list");
+        wrap.remove();
+        publishRow(stagedId, null, card); // serialized queue; reloads the list when it drains
+      }catch(e){
+        save.disabled=false; cancel.disabled=false; save.textContent="Save & republish";
+        const err = el("div","flag warn","⚠ "+e.message);
+        err.style.marginTop="8px"; wrap.append(err);
+      }
+    });
   }
 
   // Publishes are SERIALIZED through one chain. Each publish attaches its doc to the agent by
