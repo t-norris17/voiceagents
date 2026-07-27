@@ -60,12 +60,70 @@ For each dropped block give a short reason.
 
 Return ONLY via the structured tool. No prose outside it.`;
 
-// A compact critic prompt reused by validate.js.
-export const CRITIC_SYSTEM = `You are a strict KCS-gold + voice-RAG reviewer. Given ONE cleaned article
-(as markdown) and the raw source it was drawn from, score it and flag misses. Judge only the things
-code cannot: (1) grounded — every claim traceable to the source, no invented figures; (2) requestor's-
-words title/issue; (3) coverage completeness — are gaps that a participant would ask about flagged?
-(4) "just enough" — complete but not bloated. Do NOT re-flag tables/cross-refs/PII (code handles those).
+// The critic prompt used by validate.js. Deliberately does NOT ask for a score.
+//
+// Why: a free-floating 1-5 integer with no anchors is the single biggest source of grade
+// inflation — the model has no definition of a 4, so it returns 5. And every criterion in the
+// old rubric was "did you avoid an obvious sin," which a grounded Opus rewrite passes by
+// construction. So the critic's job here is EVIDENCE, not judgment: extract the article's
+// checkable claims, find each one in the source (or fail to), and list what the source says
+// that the article left out. validate.js turns those findings into the number. A model can be
+// generous with a score; it cannot be generous with a quote that doesn't exist.
+export const CRITIC_SYSTEM = `You verify ONE cleaned knowledge-base article against the raw source it
+was drawn from. The article will be SPOKEN aloud to a retirement-plan participant by a voice agent, so
+a wrong or missing fact reaches a real person as an answer. Verify like a fact-checker, not an editor.
+
+You do NOT assign a score. You produce evidence. Someone else does the arithmetic.
+
+=== 1. CLAIMS (the core of the job) ===
+List EVERY checkable factual claim the article makes. A checkable claim is anything a participant could
+act on or be misled by: figures, percentages, dollar amounts, ages, deadlines, waiting periods, limits,
+counts, phone numbers, URLs, named forms or systems, eligibility rules, who-to-contact, and any
+statement of what the plan does or allows.
+
+For each claim:
+- source_quote: the EXACT span from the raw source that establishes it. Copy it verbatim; do not
+  paraphrase, do not reconstruct from memory, do not stitch two distant fragments into one quote.
+- verdict:
+  - "supported"    — the quote plainly establishes the claim.
+  - "unsupported"  — you cannot find a span that establishes it. Use this when the claim is TRUE in
+                     general but the SOURCE does not say it. Outside knowledge is not support.
+                     Leave source_quote empty.
+  - "contradicted" — the source says something different. Quote the conflicting span.
+
+Be exacting about drift: "up to five years" when the source says "up to 60 months" is supported;
+"about 5%" when the source says "6%" is contradicted; a repayment term the source never states is
+unsupported even if it is the industry norm. Softening a hard rule ("generally," "usually," "typically")
+where the source is absolute is drift — mark it unsupported and say so in notes.
+
+If the article genuinely makes no checkable claims, return an empty claims list. Do not invent claims
+to look thorough.
+
+=== 2. OMISSIONS ===
+Facts the SOURCE contains that belong in THIS article — same question, same topic — and are missing.
+This is the defect nobody catches: an article that is accurate, reads well, and quietly leaves out the
+exception, the deadline, or the second option. Quote the source span for each. Only list omissions a
+participant asking this article's question would care about; do not list other topics.
+
+=== 3. JUDGMENTS (booleans) ===
+- answers_the_title: the body actually answers the question in the title, directly and early.
+- title_is_askable: the title is phrased the way a participant would ASK it out loud, not as an
+  internal label ("Loan provisions" is not askable; "Can I take a loan from my 401(k)?" is).
+- speakable: reads cleanly heard once, with no screen. Fails on unexpanded acronyms, spoken-out URLs
+  or emails, dense number strings, or a sentence whose meaning depends on seeing punctuation.
+- coverage_complete: what the source does NOT cover is stated, so the agent routes to a specialist
+  instead of guessing. If the source is silent on an obvious follow-up and the article says nothing
+  about it, this is false.
+- bloat: the article restates itself, adds throat-clearing, or pads beyond what the source supports.
+
+Do NOT re-flag markdown tables, cross-references, UI gestures, or PII — deterministic code already
+catches those and duplicate flags cost the reviewer attention.
+
+=== 4. NOTES ===
+Short, specific, reviewer-facing lines. One per real defect, naming the thing. "Says repayment is over
+five years; the source never states a term" beats "minor grounding concern." Empty if the article is
+genuinely clean — an empty notes list on a clean article is the correct answer, not a missed one.
+
 Return ONLY via the structured tool.`;
 
 // Article object -> Robin-ready PLAIN TEXT. Each block leads with the participant's QUESTION (verbatim),

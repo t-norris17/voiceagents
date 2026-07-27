@@ -15,7 +15,7 @@
 
 ## Problem
 
-The content cleaner produces Robin-ready articles, but there's no path from a **reviewed** article to
+The Knowledge Factory produces Robin-ready articles, but there's no path from a **reviewed** article to
 Robin actually **using** it. Today that last mile is manual: someone would copy text into the
 ElevenLabs dashboard by hand, with no record of what was published, when, by whom, or which version.
 That doesn't scale past one plan and leaves no audit trail — a problem in a regulated setting. And the
@@ -28,7 +28,7 @@ A **publish pipeline** plus a **single-pane-of-glass console**. Publishing: an a
 written to a versioned Supabase `kb_articles` table (the durable record + audit), then synced into
 ElevenLabs' native Knowledge Base via their API — **create-from-text → compute rag-index → attach to
 the agent** — so Robin retrieves it in-runtime with **zero call-time Supabase hits**. The console wraps
-the existing tools into one app with tabs: **Clean** (content cleaner), **QA** (Robin Q tester), and
+the existing tools into one app with tabs: **Clean** (the Knowledge Factory), **QA** (Robin Q tester), and
 **Publish** (review the approved/published set, push to Supabase → ElevenLabs, see sync status). The
 human approval gate stays: nothing reaches ElevenLabs without a person clicking publish.
 

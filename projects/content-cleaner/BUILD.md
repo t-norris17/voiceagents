@@ -1,4 +1,4 @@
-# BUILD — Content Cleaner (Robin-ready / KCS gold)
+# BUILD — The Knowledge Factory (Robin-ready / KCS gold)
 
 **Slug:** content-cleaner · **Reads:** [`SCOPE.md`](./SCOPE.md) · [`SPEC.md`](./SPEC.md)
 
@@ -82,10 +82,65 @@ Deploy the door, paste `enrollment.txt` (the raw INTRUST packet) with env "INTRU
 then compare the article tab against the hand-made `robin-experiment/kb/*.md` and eyeball the drop
 report (Schwab/fee tables should be there, not in the docs) and the "no PII" chip. That's the v1 gate.
 
+## Grading: evidence, not opinion
+
+The first critic scored almost everything 5/5. It wasn't that the rewrites were flawless — the rubric
+couldn't fail. Four "did you avoid an obvious sin" booleans (grounded / requestor's-words /
+coverage-complete / just-enough), which a rewrite explicitly instructed not to invent passes by
+construction, plus a free-floating 1-5 integer with **no anchors**, graded in **one batch call** over
+every article at once. Nothing defined a 4, so the model returned 5.
+
+The fix removes the model's ability to be generous. `CRITIC_SYSTEM` no longer asks for a score at all:
+
+1. **Claims.** Every checkable fact the article states — figures, deadlines, limits, phone numbers,
+   eligibility rules — each with the **verbatim span of the source** that establishes it, or a verdict
+   of `unsupported` (true in general, but your document doesn't say it) / `contradicted`.
+2. **Omissions.** Facts the source contains that belong in *this* article and are missing. The defect
+   nobody catches: accurate, well-written, quietly missing the exception.
+3. **Judgments.** answers_the_title / title_is_askable / speakable / coverage_complete / bloat.
+
+`scoreReview()` in `lib/validate.js` does the arithmetic — contradiction −3, unsupported claim −2,
+omission −1 (capped at 2), wrong-topic body −2, style defects −1 each, floored at 1. A model can be
+generous with a score; it can't be generous with a quote that doesn't exist.
+
+Each article gets its **own** critic call (`critiqueOne`) with the raw source as a cached prompt block
+— the first call warms the cache, the rest fan out — so one call's attention isn't spread across ten
+articles. Sonnet at `effort: "high"`.
+
+- `npm test` — `test/score.test.mjs` pins the arithmetic. No API key needed.
+- `npm run calibrate` — `tools/calibrate-critic.mjs` feeds the **live** critic seven synthetic articles
+  with planted defects (a fee changed $75→$100, an invented repayment term, a dropped 90-day rule, an
+  absolute hedged into "generally", a jargon title, a body answering the wrong question) and exits 1 if
+  the grader waves them through. Re-run it after any change to `CRITIC_SYSTEM` or the weights.
+  Everything in it is fictional — no real plan, no member data.
+
+## The review room
+
+The Articles tab is a triage surface, not a list:
+
+- **Filters** — All / ⛔ PII blocked / ⚠ Needs a look / ✓ Clean 5/5, with counts.
+- **Worst-first ordering**, lowest score first within a bucket. Clean cards fold.
+- **An unscored article is "needs a look", never clean.** Silence from the critic is not a pass.
+- **Send all clean (n)** stages every 5/5 card with no flags, serialized, re-checking triage at click
+  time; then a handoff bar into Step 3.
+- **Receipts** — each card opens to show every claim next to the source text backing it (or
+  "no matching text in your document"), and the score's arithmetic on hover.
+- The last run is kept in `localStorage` for a day (local only) so a stray refresh doesn't burn a
+  clean pass.
+
+## Name
+
+The app is **The Knowledge Factory** (was "Robin Content Console" / "Content Cleaner"). The directory
+stays `projects/content-cleaner/` on purpose — the Vercel project's **Root Directory** setting points
+at `projects/content-cleaner/cleaner`, so renaming the folder would break the deployment. Rename the
+path only alongside a Vercel settings change.
+
 ## Next session
 
+- **Watch the scores fall.** Articles that used to be 5/5 will land at 3-4 with a named omission. That's
+  the grader working. If `npm run calibrate` still averages > 4.5 on deliberately broken articles, the
+  weights need another turn — it prints a warning when that happens.
 - Run the acceptance test through the deployed door; tune `lib/kcs.js` prompts if drops/coverage differ
   from the hand-made KB.
-- Optional: per-topic chunked rewrite (removes the timeout risk / enables progress streaming);
-  PDF/Word/HTML/URL ingestion; auto-seed the eval set from `_candidate-questions.md` into a plan's
-  `curated_questions`.
+- Optional: auto-seed the eval set from `_candidate-questions.md` into a plan's `curated_questions`;
+  a "refine all flagged" batch to mirror "send all clean"; HTML/URL ingestion.

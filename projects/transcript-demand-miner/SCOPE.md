@@ -14,7 +14,7 @@ Robin's knowledge base was built from a single enrollment packet and evaluated a
 
 ## Solution
 
-A batch "demand miner" that (1) scrubs PII from the transcripts, (2) extracts each caller's question(s)/intent, (3) clusters them into canonical questions ranked by how often they're asked, and (4) cross-references current KB coverage. It emits two things: demand-weighted candidates for the eval set, and a prioritized content backlog. Transcripts are treated strictly as a **demand and phrasing signal — not as content truth**; the actual answers are still authored from grounded sources through the existing content cleaner. This turns content work from guesswork into demand-ranked ROI.
+A batch "demand miner" that (1) scrubs PII from the transcripts, (2) extracts each caller's question(s)/intent, (3) clusters them into canonical questions ranked by how often they're asked, and (4) cross-references current KB coverage. It emits two things: demand-weighted candidates for the eval set, and a prioritized content backlog. Transcripts are treated strictly as a **demand and phrasing signal — not as content truth**; the actual answers are still authored from grounded sources through the Knowledge Factory. This turns content work from guesswork into demand-ranked ROI.
 
 ## Success criteria
 
@@ -30,7 +30,7 @@ The KB is ~5/25 covered and we're choosing what to build next by intuition. The 
 ## Constraints
 
 - **Regulated financial services.** Transcripts contain real member PII. A scrub/redaction pass is **step zero and non-negotiable**; only scrubbed data flows downstream. Raw or scrubbed transcript text never gets committed to the repo — code only; data lives in Supabase/local.
-- Reuse the existing stack (Supabase, Vercel/Node, Anthropic SDK, the content cleaner). No new heavyweight dependencies without cause.
+- Reuse the existing stack (Supabase, Vercel/Node, Anthropic SDK, the Knowledge Factory). No new heavyweight dependencies without cause.
 - Batch, not real-time. Cost-bounded — 750 × LLM is fine if chunked and the cheap model does the bulk.
 - **Demand signal, not content truth** — no ungrounded/agent-sourced content may reach Robin's KB.
 

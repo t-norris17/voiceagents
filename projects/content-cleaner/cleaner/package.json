@@ -1,15 +1,16 @@
 {
-  "name": "content-cleaner",
+  "name": "knowledge-factory",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Turns raw source text into KCS-gold, Robin-ready KB articles + a reviewer report. Proposes; a human approves before KB upload.",
+  "description": "The Knowledge Factory — turns raw source documents into KCS-gold, Robin-ready KB articles, fact-checked claim by claim against the source. Proposes; a human approves before anything reaches the KB.",
   "bin": {
-    "content-cleaner": "clean.js"
+    "knowledge-factory": "clean.js"
   },
   "scripts": {
     "clean": "node clean.js",
-    "test": "node --test"
+    "test": "node --test",
+    "calibrate": "node tools/calibrate-critic.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "latest",

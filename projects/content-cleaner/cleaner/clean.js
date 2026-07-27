@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Content Cleaner CLI — raw source text -> KCS-gold, Robin-ready KB articles + reviewer report.
+// Knowledge Factory CLI — raw source text -> KCS-gold, Robin-ready KB articles + reviewer report.
 // It PROPOSES; a human approves before anything reaches the ElevenLabs KB.
 //
 // Usage:

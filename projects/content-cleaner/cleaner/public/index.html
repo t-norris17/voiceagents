@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Robin Content Console</title>
+<title>The Knowledge Factory · Robin</title>
 <script type="module">
   // Client-side PDF text extraction. The file is read in the visitor's browser and never uploaded,
   // so there's no 4.5 MB serverless body limit and no function timeout — full plan documents work.
@@ -147,6 +147,46 @@
   .dl:hover{ border-color:var(--accent); color:var(--accent); }
   .send{ background:none; border:1px solid var(--accent); border-radius:999px; padding:5px 13px; font-family:var(--mono); font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:var(--accent); }
   .send:disabled{ opacity:.55; cursor:default; }
+  /* triage bar: filters + bulk stage. Attention is a scarce resource — the bar exists so a
+     20-card run reads as "3 need you" instead of 20 identical blocks. */
+  .triage{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:14px 0 16px; padding-bottom:14px; border-bottom:1px solid var(--hair); }
+  .fchip{ background:none; border:1px solid var(--line); border-radius:999px; padding:5px 13px; font-family:var(--mono); font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:var(--sub); cursor:pointer; }
+  .fchip:hover:not(:disabled){ border-color:var(--accent); color:var(--accent); }
+  .fchip.on{ border-color:var(--accent); color:var(--accent); background:var(--card); font-weight:700; }
+  .fchip:disabled{ opacity:.35; cursor:default; }
+  .fchip.blocked.on{ border-color:var(--badln); color:var(--badtx); background:var(--bad); }
+  .bulk{ margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .stageall{ background:none; border:1px solid var(--accent); border-radius:999px; padding:5px 14px; font-family:var(--mono); font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:var(--accent); font-weight:700; }
+  .stageall:disabled{ opacity:.4; cursor:default; border-color:var(--line); color:var(--faint); font-weight:400; }
+  .handoff[hidden]{ display:none; }
+  .handoff{ border:1px solid var(--goodln); background:var(--good); color:var(--goodtx); border-radius:12px; padding:12px 16px; margin:0 0 14px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; font-size:.9rem; }
+  .handoff button{ background:none; border:1px solid var(--goodln); border-radius:999px; padding:5px 13px; font-family:var(--mono); font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:var(--goodtx); font-weight:700; }
+
+  .card[hidden]{ display:none; }
+  .card.collapsed{ padding:11px 18px; }
+  .card.collapsed .flagbox, .card.collapsed .issuebox, .card.collapsed .evidbox, .card.collapsed .md, .card.collapsed .cardfoot{ display:none; }
+  .chead{ cursor:default; }
+  .card.canfold .chead{ cursor:pointer; }
+  .tstamp{ font-family:var(--mono); font-size:.6rem; text-transform:uppercase; letter-spacing:.08em; padding:3px 9px; border-radius:999px; border:1px solid var(--line); color:var(--sub); white-space:nowrap; }
+  .tstamp.blocked{ background:var(--bad); border-color:var(--badln); color:var(--badtx); font-weight:700; }
+  .tstamp.attention{ background:var(--warn); border-color:var(--warnln); color:var(--warntx); }
+  .tstamp.clean{ background:var(--good); border-color:var(--goodln); color:var(--goodtx); }
+  .fold{ font-family:var(--mono); font-size:.66rem; color:var(--faint); display:none; }
+  .card.canfold .fold{ display:inline; }
+  .why{ font-family:var(--mono); font-size:.66rem; color:var(--faint); margin-top:6px; }
+
+  .evid{ margin:10px 0 2px; }
+  .evid summary{ font-family:var(--mono); font-size:.68rem; text-transform:uppercase; letter-spacing:.06em; color:var(--faint); }
+  .clist{ list-style:none; margin:8px 0 0; padding:0; display:grid; gap:7px; }
+  .cl{ display:grid; grid-template-columns:16px 1fr; gap:2px 8px; font-size:.86rem; }
+  .cl .v{ grid-row:1/3; font-family:var(--mono); color:var(--faint); }
+  .cl.supported .v{ color:var(--goodtx); }
+  .cl.unsupported .v, .cl.omitted .v{ color:var(--warntx); font-weight:700; }
+  .cl.contradicted .v{ color:var(--badtx); font-weight:700; }
+  .cl .cq{ font-size:.8rem; color:var(--faint); font-style:italic; }
+  .cl .cq.none{ color:var(--warntx); font-style:normal; font-family:var(--mono); font-size:.72rem; }
+  .cl.omitted .ct::before{ content:"left out: "; color:var(--warntx); font-family:var(--mono); font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; }
+
   .rsec{ margin:16px 0; }
   .rsec h3{ font-family:var(--mono); font-size:.66rem; text-transform:uppercase; letter-spacing:.1em; color:var(--sub); margin:0 0 8px; }
   .rscroll{ overflow-x:auto; }
@@ -182,8 +222,8 @@
 <body>
 <div class="wrap">
   <header>
-    <div class="tag">Robin · Content Console</div>
-    <h1>Robin Content Console<span class="dot">.</span></h1>
+    <div class="tag">Robin · Knowledge Factory</div>
+    <h1>The Knowledge Factory<span class="dot">.</span></h1>
     <p class="lede">One place to take a messy source doc all the way to Robin: <b>clean</b> it into
       knowledge articles, <b>test</b> how she answers, and <b>publish</b> it live. Nothing reaches
       Robin without your click.</p>
@@ -217,8 +257,10 @@
       <li><b>It can't invent a number.</b> If your document says the loan fee is $100, the card says $100. If
         your document never states the repayment term, the card says that isn't covered rather than
         supplying one.</li>
-      <li><b>A second model scores every card against your original document.</b> A card that drifts from the
-        source is flagged before it reaches you.</li>
+      <li><b>A second model fact-checks every card, claim by claim.</b> It pulls out each figure, deadline and
+        rule the card states and finds the exact sentence in your document that backs it up — or reports that
+        there isn't one. You can open any card and read the quotes it matched. The score is the arithmetic on
+        what it found, not an opinion.</li>
       <li><b>A card containing a member's name, Social Security number or account number cannot be saved.</b>
         It is blocked, not flagged.</li>
       <li><b>Nothing publishes on its own</b> — a person presses publish — and any card can be corrected or
@@ -317,7 +359,7 @@
     <div id="pubout"></div>
   </section>
 
-  <footer>Robin Content Console · Clean (KCS v6 + voice-RAG) · QA · Publish (Supabase → ElevenLabs KB) · a human approves before anything goes live · synthetic test data</footer>
+  <footer>The Knowledge Factory · Clean (KCS v6 + voice-RAG) · QA · Publish (Supabase → ElevenLabs KB) · a human approves before anything goes live · synthetic test data</footer>
 </div>
 
 <script>
@@ -425,16 +467,25 @@
     const box=document.createElement("div"); box.append(bar, panels); return box;
   }
 
-  async function approve(a, btn){
+  // One staging POST. Returns a result instead of touching the DOM, so a single card button and
+  // the bulk "stage all clean" run share exactly one code path (and one PII gate).
+  async function stageArticle(a){
     const meta = CURRENT_META || {};
-    if(!meta.environment){ btn.textContent="No plan set"; return; }
+    if(!meta.environment) throw new Error("no plan set");
+    const payload = { article: { plan_id: meta.slug, slug: a.slug, title: a.title, environment: meta.environment,
+      body_md: a.md, source: meta.source || null, coverage_flags: a.coverage_flags || [], candidate_questions: a.candidate_questions || [] } };
+    const res = await fetch("/api/approve", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
+    const d = await res.json().catch(()=>({error:"bad response"}));
+    if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
+    return d;
+  }
+
+  async function approve(a, btn){
+    if(!(CURRENT_META||{}).environment){ btn.textContent="No plan set"; return; }
     btn.disabled = true; btn.textContent = "Staging…";
     try{
-      const payload = { article: { plan_id: meta.slug, slug: a.slug, title: a.title, environment: meta.environment,
-        body_md: a.md, source: meta.source || null, coverage_flags: a.coverage_flags || [], candidate_questions: a.candidate_questions || [] } };
-      const res = await fetch("/api/approve", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
-      const d = await res.json().catch(()=>({error:"bad response"}));
-      if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
+      const d = await stageArticle(a);
+      a.staged = true;
       btn.textContent = d.already_published ? "✓ Already live — re-send" : "✓ Sent — click to re-send";
       btn.title = "Re-send to update the staged copy in Publish";
     }catch(e){ btn.textContent="⚠ Failed — retry"; btn.title=e.message; }
@@ -443,26 +494,99 @@
 
   const SSN_RE = /\b\d{3}[-.\s]?\d{2}[-.\s]?\d{4}\b/; // client mirror of the PII guard
 
+  // Three buckets, in the order a reviewer should spend attention on them.
+  //   blocked   — a PII fatal. Cannot be staged at all until it's edited.
+  //   attention — anything the graders found, OR an article the critic never scored. An
+  //               unverified article is NOT a clean one; silence from the critic is not a pass.
+  //   clean     — no findings, no critic issues, and a full 5/5 from the evidence-based score.
+  function triage(a){
+    if(a.findings.some(f=>f.severity==="fatal")) return "blocked";
+    if(a.findings.length) return "attention";
+    if(!a.review || typeof a.review.score !== "number") return "attention";
+    if(a.review.score < 5) return "attention";
+    if(a.review.issues && a.review.issues.length) return "attention";
+    return "clean";
+  }
+  const TRIAGE_LABEL = { blocked:"PII — blocked", attention:"needs a look", clean:"clean 5/5" };
+  const TRIAGE_RANK = { blocked:0, attention:1, clean:2 };
+
+  // "critic 4/5" on its own is a vibe. Showing how many claims were actually checked, and what
+  // each lost point was for, is what makes the number worth trusting (or worth arguing with).
+  function scoreLine(r){
+    if(!r || typeof r.score !== "number") return "not verified";
+    const n = r.counts || {};
+    const bits = [`critic ${r.score}/5`];
+    if(typeof n.claims === "number") bits.push(`${n.claims} claim${n.claims===1?"":"s"} checked`);
+    if(n.unsupported) bits.push(`${n.unsupported} unsupported`);
+    if(n.contradicted) bits.push(`${n.contradicted} contradicted`);
+    if(n.omissions) bits.push(`${n.omissions} omitted`);
+    return bits.join(" · ");
+  }
+  // The receipts. Every checkable claim the article makes, next to the exact words in YOUR
+  // document that back it up — or nothing, when the source never said it. This is the difference
+  // between "a model gave it 5/5" and "here is what was checked".
+  function esc(t){ return String(t==null?"":t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function evidenceHtml(r){
+    if(!r || !Array.isArray(r.claims) || !r.claims.length) return "";
+    const MARK = { supported:"✓", unsupported:"○", contradicted:"✕" };
+    const rows = r.claims.map(c=>`<li class="cl ${c.verdict}"><span class="v">${MARK[c.verdict]||"?"}</span>
+        <span class="ct">${esc(c.claim)}</span>
+        ${c.source_quote ? `<span class="cq">“${esc(c.source_quote)}”</span>`
+                         : `<span class="cq none">no matching text in your document</span>`}</li>`).join("");
+    const om = (r.omissions||[]).map(o=>`<li class="cl omitted"><span class="v">–</span>
+        <span class="ct">${esc(o.missing)}</span>
+        <span class="cq">“${esc(o.source_quote)}”</span></li>`).join("");
+    const n = r.counts || {};
+    return `<details class="evid"><summary>Evidence — ${n.claims} claim${n.claims===1?"":"s"} checked against your document</summary>
+      <ul class="clist">${rows}${om}</ul></details>`;
+  }
+
+  function scoreTitle(r){
+    if(!r) return "The critic didn't return a verdict for this article — review it yourself.";
+    if(!r.deductions || !r.deductions.length) return "Nothing found against it: no unsupported claims, no omissions, no style defects.";
+    return "5 minus " + r.deductions.map(d=>`${d.points} (${d.label})`).join(", ");
+  }
+
   function articleCard(a){
     const c = el("div", "card");
+    c.dataset.slug = a.slug;
     c.innerHTML = `
-      <div class="chead"><span class="ctitle"></span><span class="score"></span></div>
+      <div class="chead"><span class="ctitle"></span><span class="tstamp"></span><span class="score"></span><span class="fold"></span></div>
       <div class="flagbox"></div>
       <div class="issuebox"></div>
+      <div class="evidbox"></div>
       <div class="md"></div>
       <div class="cardfoot"></div>`;
 
+    // Clean cards start folded: the reviewer opens what they choose to read, instead of
+    // scrolling past twenty open articles to find the three that need them.
+    function setFold(folded){
+      c.classList.toggle("collapsed", folded);
+      $(".fold", c).textContent = folded ? "▸ show" : "▾ hide";
+    }
+    $(".chead", c).addEventListener("click", (e)=>{
+      if(!c.classList.contains("canfold")) return;
+      if(e.target.closest("button")) return;
+      setFold(!c.classList.contains("collapsed"));
+    });
+
     function paint(){
       const fatal = a.findings.some(f=>f.severity==="fatal");
+      const t = triage(a);
       c.classList.toggle("hasfatal", fatal);
+      c.dataset.triage = t;
+      c.classList.toggle("canfold", t === "clean");
       $(".ctitle", c).textContent = a.title;
-      $(".score", c).textContent = a.review ? `critic ${a.review.score}/5` : "";
+      const stamp = $(".tstamp", c); stamp.className = "tstamp " + t; stamp.textContent = TRIAGE_LABEL[t];
+      const sc = $(".score", c); sc.textContent = scoreLine(a.review); sc.title = scoreTitle(a.review);
       $(".flagbox", c).innerHTML = a.findings.length
         ? `<div class="flags">${a.findings.map(f=>`<div class="flag ${f.severity}">${f.severity==="fatal"?"⛔":"⚠"} ${f.kind} — ${f.detail}</div>`).join("")}</div>` : "";
       $(".issuebox", c).innerHTML = (a.review && a.review.issues && a.review.issues.length)
         ? `<ul class="issues">${a.review.issues.map(i=>`<li>${i}</li>`).join("")}</ul>` : "";
+      $(".evidbox", c).innerHTML = evidenceHtml(a.review);
       $(".md", c).innerHTML = md(a.md.replace(/^[^\n]*\n+/, "")); // drop the title line — card shows it
       paintFoot(fatal);
+      setFold(t === "clean");
     }
 
     function paintFoot(fatal){
@@ -470,7 +594,7 @@
       const dl = el("button", "dl", "↓ " + a.slug + ".md"); dl.onclick = ()=>download(a.slug+".md", a.md);
       const edit = el("button", "dl", "✎ Edit"); edit.onclick = startEdit;
       const refine = el("button", "dl", "↻ Refine"); refine.onclick = doRefine;
-      const send = el("button", "send", fatal ? "Fix PII to publish" : "→ Send to Publish");
+      const send = el("button", "send", fatal ? "Fix PII to publish" : (a.staged ? "✓ Sent — click to re-send" : "→ Send to Publish"));
       if(fatal){ send.disabled = true; send.title = "This article has a PII flag — Edit it out before publishing."; }
       else send.onclick = ()=>approve(a, send);
       foot.append(dl, edit, refine, send);
@@ -509,6 +633,7 @@
     }
 
     paint();
+    c._repaint = paint;   // bulk staging repaints the card so its button reflects "sent"
     return c;
   }
 
@@ -849,19 +974,112 @@
     switchTab("qa");
   }
 
+  // Triage bar + the article list. Cards are ordered worst-first (blocked, then needs-a-look,
+  // then clean) so the top of the page is always the work; the filter chips narrow it further,
+  // and "stage all clean" clears the bottom of the list in one action.
+  function buildTriage(articles){
+    const box = document.createElement("div");
+    const ordered = articles.slice().sort((x,y)=>{
+      const r = TRIAGE_RANK[triage(x)] - TRIAGE_RANK[triage(y)];
+      if(r) return r;
+      const sx = x.review?.score ?? 0, sy = y.review?.score ?? 0;
+      return sx - sy;                                     // within a bucket, lowest score first
+    });
+    const counts = { all: ordered.length, blocked:0, attention:0, clean:0 };
+    ordered.forEach(a=>counts[triage(a)]++);
+
+    const bar = el("div", "triage");
+    const handoff = el("div", "handoff"); handoff.hidden = true;
+    const list = document.createElement("div");
+    const cards = ordered.map(a=>{ const c = articleCard(a); c._article = a; list.append(c); return c; });
+
+    const FILTERS = [
+      ["all",       `All ${counts.all}`],
+      ["blocked",   `⛔ PII blocked ${counts.blocked}`],
+      ["attention", `⚠ Needs a look ${counts.attention}`],
+      ["clean",     `✓ Clean 5/5 ${counts.clean}`],
+    ];
+    let active = "all";
+    const chips = FILTERS.map(([key,label])=>{
+      const b = el("button", "fchip " + key + (key===active?" on":""), label);
+      if(key!=="all" && !counts[key]) b.disabled = true;
+      b.onclick = ()=>{
+        active = key;
+        bar.querySelectorAll(".fchip").forEach(x=>x.classList.remove("on"));
+        b.classList.add("on");
+        applyFilter();
+      };
+      return b;
+    });
+    function applyFilter(){
+      cards.forEach(c=>{ c.hidden = active !== "all" && c.dataset.triage !== active; });
+      const shown = cards.filter(c=>!c.hidden).length;
+      empty.hidden = shown > 0;
+    }
+    bar.append(...chips);
+
+    // Bulk stage — clean cards only, and it re-checks triage at click time so an article you
+    // just edited or refined is judged on its current state, not the state at render.
+    const wrap = el("div", "bulk");
+    const btn = el("button", "stageall", `→ Send all clean (${counts.clean})`);
+    const prog = el("span", "note", "");
+    btn.disabled = !counts.clean;
+    btn.title = counts.clean ? "Stages every card with no flags and a 5/5 — one at a time" : "Nothing is clean enough to send in bulk yet";
+    btn.onclick = async ()=>{
+      const targets = cards.filter(c=>triage(c._article)==="clean" && !c._article.staged);
+      if(!targets.length){ prog.textContent = "Everything clean is already staged."; return; }
+      btn.disabled = true;
+      let ok = 0; const failed = [];
+      for(let i=0;i<targets.length;i++){
+        const a = targets[i]._article;
+        prog.textContent = `Staging ${i+1} of ${targets.length}…`;
+        try{ await stageArticle(a); a.staged = true; ok++; }
+        catch(e){ failed.push(`${a.slug} (${e.message})`); }
+        targets[i]._repaint && targets[i]._repaint();
+      }
+      prog.textContent = failed.length ? `${ok} staged · ${failed.length} failed` : `${ok} staged`;
+      btn.textContent = `→ Send all clean (${counts.clean})`;
+      btn.disabled = cards.every(c=>triage(c._article)!=="clean" || c._article.staged);
+      if(failed.length){
+        const err = el("div","flag warn","⚠ Didn't stage: "+failed.join("; ")+" — open the card and use “Send to Publish” to retry.");
+        err.style.marginTop="8px"; box.insertBefore(err, list);
+      }
+      if(ok) showHandoff(ok);
+    };
+    wrap.append(btn, prog);
+    bar.append(wrap);
+
+    function showHandoff(n){
+      handoff.hidden = false;
+      handoff.innerHTML = "";
+      handoff.append(el("span", null, `${n} article${n===1?"":"s"} staged. They're waiting in Step 3 — nothing is live until you publish there.`));
+      const go = el("button", null, "Go to Publish →");
+      go.onclick = ()=>{ switchTab("publish"); window.scrollTo({top:0,behavior:"smooth"}); };
+      handoff.append(go);
+    }
+
+    const empty = el("p", "muted", "Nothing in this filter."); empty.hidden = true;
+    box.append(bar, handoff,
+      el("p", "note", "Ordered worst-first. Clean cards are folded — click one to read it. “Send to Publish” stages an article for Step 3; nothing goes live until you publish it there."),
+      empty, list);
+    applyFilter();
+    return box;
+  }
+
   function render(d){
     statusEl.textContent = "";
     CURRENT_META = d.meta || null;
     const s = d.summary;
     const arts = document.createElement("div");
     const sum = document.createElement("div"); sum.className="summary";
+    const tc = { blocked:0, attention:0, clean:0 }; d.articles.forEach(a=>tc[triage(a)]++);
     sum.innerHTML = `<span class="chip">${s.articles} articles</span>`
       + (s.fatal>0?`<span class="chip bad">⛔ ${s.fatal} PII — NOT safe to import</span>`:`<span class="chip good">✓ no PII</span>`)
-      + `<span class="chip">${s.warns} review flags</span>`
+      + (tc.attention?`<span class="chip">${tc.attention} need a look</span>`:"")
+      + `<span class="chip good">${tc.clean} clean</span>`
       + (s.criticAvg!=null?`<span class="chip">critic avg ${s.criticAvg.toFixed(1)}/5</span>`:"");
     arts.append(sum);
-    arts.append(el("p", "note", "Review each article, then “Send to Publish” to stage it for Step 3."));
-    d.articles.forEach(a=>arts.append(articleCard(a)));
+    arts.append(buildTriage(d.articles));
 
     const dlAll = document.createElement("div"); dlAll.className="cardfoot"; dlAll.style.marginTop="4px";
     const b1=el("button","dl","↓ drop-report.md"); b1.onclick=()=>download("_drop-report.md", d.reports.drop);
@@ -878,7 +1096,39 @@
       { label:"Downloads", node: dlAll },
     ]));
     out.style.display="block";
+    saveRun(d);
   }
+
+  // A clean pass is the expensive step in this app; losing it to a stray refresh or a closed tab
+  // means paying for it twice. Keep the last run in this browser (local only — it never leaves the
+  // machine) and offer it back for a day.
+  const RUN_KEY = "cleaner:lastrun";
+  const RUN_TTL = 24*60*60*1000;
+  function saveRun(d){
+    try{ localStorage.setItem(RUN_KEY, JSON.stringify({ at: Date.now(), d })); }
+    catch(_){ /* quota — a very large run just doesn't get cached */ }
+  }
+  function loadRun(){
+    try{
+      const v = JSON.parse(localStorage.getItem(RUN_KEY) || "null");
+      if(!v || !v.d || (Date.now() - v.at) > RUN_TTL) return null;
+      return v;
+    }catch(_){ return null; }
+  }
+  function offerRestore(){
+    const v = loadRun(); if(!v) return;
+    const mins = Math.round((Date.now() - v.at)/60000);
+    const when = mins < 60 ? `${mins || 1} min ago` : `${Math.round(mins/60)}h ago`;
+    const bar = el("div", "handoff");
+    bar.append(el("span", null, `Your last clean run (${v.d.articles.length} articles, ${when}) is still here.`));
+    const go = el("button", null, "Restore it");
+    go.onclick = ()=>{ bar.remove(); render(v.d); out.scrollIntoView({behavior:"smooth", block:"start"}); };
+    const no = el("button", null, "Discard");
+    no.onclick = ()=>{ localStorage.removeItem(RUN_KEY); bar.remove(); };
+    bar.append(go, no);
+    out.parentNode.insertBefore(bar, out);
+  }
+  offerRestore();
 
   runBtn.addEventListener("click", run);
 
