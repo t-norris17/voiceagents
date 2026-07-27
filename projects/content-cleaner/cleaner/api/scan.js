@@ -26,8 +26,9 @@ const SCHEMA = {
           topic: { type: "string", description: "Topic area in a word or two, e.g. loans, enrollment, investments, legal, tables." },
           recommend: { type: "boolean", description: "True if this section contains participant-facing plan knowledge a voice agent should be able to answer from." },
           reason: { type: "string", description: "Six words or fewer on why, e.g. 'participant-facing' or 'fund tables — not spoken answers'." },
+          continues_previous: { type: "boolean", description: "True if this is NOT a real new section but a continuation of the one before it — a page header/footer, a stray line, a repeated document title, or the rest of the previous topic. Scanned/OCR'd documents produce many of these." },
         },
-        required: ["i", "title", "topic", "recommend", "reason"],
+        required: ["i", "title", "topic", "recommend", "reason", "continues_previous"],
       },
     },
   },
@@ -46,6 +47,14 @@ beneficiaries, distributions, investment elections, account access.
 DO NOT RECOMMEND (false) sections that cannot become a spoken answer: fund performance and fee tables,
 ERISA rights statements and legal boilerplate, plan-amendment and trustee provisions, definitions and
 glossaries, signature pages, forms, tables of contents, and index or appendix material.
+
+MERGING MATTERS AS MUCH AS LABELLING. The segments come from crude heading detection over extracted text,
+and scanned or OCR'd documents split badly — repeated page headers and footers, the document's own title
+reappearing, running heads, stray capitalised lines, and topics broken across several segments. Set
+continues_previous = true for any segment that is not genuinely the start of a new topic, so it gets folded
+back into the section before it. Expect to merge aggressively: a real plan document has on the order of a
+dozen or two real sections, so if you are given many more than that, most of the extras are fragments. The
+first segment is never a continuation.
 
 When a section is ambiguous, lean toward recommending it — the human can uncheck it, and a wrongly skipped
 section is a silent gap in what the agent knows. Give every input segment exactly one entry, same index,
@@ -85,7 +94,7 @@ Triage every section.`;
     // Never lose a segment: if the model skipped one, fall back to recommending it so a real
     // section can't silently vanish from the picker.
     const byIdx = new Map((out.sections || []).map((s) => [Number(s.i), s]));
-    const sections = segs.map((s) => {
+    const sections = segs.map((s, idx) => {
       const m = byIdx.get(Number(s.i));
       return {
         i: s.i,
@@ -93,6 +102,8 @@ Triage every section.`;
         topic: String(m?.topic || "").slice(0, 40),
         recommend: m ? !!m.recommend : true,
         reason: String(m?.reason || "not classified — included by default").slice(0, 80),
+        // The first segment can never fold into a previous one.
+        continues_previous: idx > 0 && !!m?.continues_previous,
       };
     });
 

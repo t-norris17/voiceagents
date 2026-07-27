@@ -101,6 +101,15 @@
   @media (max-width:560px){ .seg{ grid-template-columns:auto 1fr; } .seg-meta{ grid-column:2; white-space:normal; } }
   .note a{ color:var(--sub); }
 
+  /* leadership explainer — prose, wider line-height, deliberately not mono */
+  .learn{ margin:24px 0 4px; padding:22px 24px; border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:12px; background:var(--card); }
+  .learn[hidden]{ display:none; }
+  .learn h2{ margin:0 0 6px; font-size:1.15rem; letter-spacing:.01em; }
+  .learn h3{ margin:22px 0 4px; font-size:.95rem; letter-spacing:.01em; }
+  .learn .lp{ margin:6px 0; font-size:.92rem; line-height:1.65; color:var(--sub); max-width:68ch; }
+  .learn .lp b{ color:var(--ink); }
+  .learn ul.lp{ padding-left:20px; } .learn ul.lp li{ margin:5px 0; }
+
   #status{ margin-top:22px; font-family:var(--mono); font-size:.8rem; color:var(--sub); }
   @media (prefers-reduced-motion:no-preference){ .dots::after{ content:''; animation:d 1.2s steps(4,end) infinite; } }
   @keyframes d{ 0%{content:''} 25%{content:'.'} 50%{content:'..'} 75%{content:'...'} }
@@ -178,7 +187,90 @@
     <p class="lede">One place to take a messy source doc all the way to Robin: <b>clean</b> it into
       knowledge articles, <b>test</b> how she answers, and <b>publish</b> it live. Nothing reaches
       Robin without your click.</p>
+    <div class="row" style="margin-top:10px">
+      <button class="ghost" id="learnbtn" aria-expanded="false" aria-controls="learn">How this works ↓</button>
+      <span class="note">a plain-English walkthrough of every stage</span>
+    </div>
   </header>
+
+  <!-- Leadership-level explainer. Collapsed by default so it never gets in the way of the work. -->
+  <section id="learn" class="learn" hidden>
+    <h2>How the Content Console works</h2>
+    <p class="lp">Robin is a voice agent that answers retirement-plan questions over the phone. She can only
+      answer from knowledge we give her. This tool is how a plan document becomes that knowledge — safely,
+      reviewably, and without anyone hand-writing articles from scratch.</p>
+    <p class="lp"><b>The principle behind the whole thing:</b> the machine does the drafting, a person does the
+      deciding. Nothing Robin says to a member gets there without a human approving it first.</p>
+
+    <h3>Stage 1 — Read the document</h3>
+    <p class="lp">You upload a PDF or Word file, or paste text. The file is read <b>inside your browser</b> — it
+      never leaves your machine — so document size isn't a limit. If a PDF turns out to be a scan (a picture of
+      words rather than words), the tool says so plainly, because there is nothing to read until it's been run
+      through OCR.</p>
+
+    <h3>Stage 2 — Decide what's worth using</h3>
+    <p class="lp">A 300-page plan document is mostly fund tables, legal boilerplate and glossaries — material no
+      one ever phones up to ask about. For large documents the tool takes a quick, inexpensive look, lists the
+      sections it found, and recommends which ones hold participant-facing knowledge. You tick and untick, see a
+      live estimate of time and cost, and only then commit. This is a <b>curation</b> step: you're deciding what
+      belongs in Robin's head, not letting a table of contents decide for you.</p>
+
+    <h3>Stage 3 — Rewrite it into answers</h3>
+    <p class="lp">The heavy step. Source material is written to be <i>read</i> — dense, cross-referenced, full of
+      tables. Robin needs material to be <i>spoken</i>. The tool rewrites each topic into a short, self-contained
+      article a person could say out loud, and it is <b>strictly grounded</b>: it only rewords what the document
+      actually says. Where the source is silent, it does not fill the gap from general knowledge — it records the
+      gap. That constraint is the single most important safety property here.</p>
+
+    <h3>Stage 4 — Check the work</h3>
+    <p class="lp">Two independent checks run on every article. A mechanical one looks for things code can catch
+      for certain — personal information, tables, phrasing that only makes sense on a screen. Then a second AI
+      model, which did not write the article, reviews it against the original and scores it: is every claim
+      traceable to the source, is anything missing, is it padded. Anything containing personal data is blocked
+      outright, not flagged.</p>
+
+    <h3>Stage 5 — Your review</h3>
+    <p class="lp">You see each proposed article with its score and any flags, and you can edit it directly or ask
+      for a revision. You also get three reports: what was <b>dropped</b> and why, a <b>coverage map</b> of what's
+      answered and what the source never addresses, and <b>candidate questions</b> members might ask about it.
+      That middle report matters most — it tells you what Robin still won't know.</p>
+
+    <h3>Stage 6 — Publish</h3>
+    <p class="lp">Approved articles go live into Robin's knowledge base. Publishing is versioned: republishing a
+      topic replaces the old version rather than leaving two competing answers, and anything can be pulled back
+      out. Live articles can be pulled back into the editor, corrected and republished without starting over.</p>
+
+    <h3>Stage 7 — Test and measure</h3>
+    <p class="lp">Before or after publishing you can ask Robin questions in writing and see how she answers from
+      what's actually live. Once real calls happen, every call is reviewed automatically: which questions were
+      asked, whether she answered them, and — when she didn't — whether it's because the knowledge is missing or
+      because it exists but wasn't found. Those two failures have completely different fixes. The result is a
+      utilisation figure and a ranked queue of the content she still needs.</p>
+
+    <h3>The quality standard we hold articles to</h3>
+    <p class="lp">The articles follow <b>KCS</b> — Knowledge-Centered Service — a methodology from the
+      <b>Consortium for Service Innovation</b>, used widely in support organisations. Its central insight is that
+      knowledge should be captured as a by-product of answering real demand, in the words the person actually
+      used, rather than written in advance by experts guessing what will be asked. Four ideas from it shape every
+      article here:</p>
+    <ul class="lp">
+      <li><b>The requester's words.</b> Articles are titled with the question a member would actually ask —
+        "Can I take a loan from my 401(k)?" — not internal jargon. This is also what makes the right article
+        get found when Robin searches.</li>
+      <li><b>Just enough.</b> Complete enough to answer, not padded. Length follows what the source supports.</li>
+      <li><b>Consistent structure.</b> Every article is shaped the same way, which is what makes a library of
+        them usable rather than a pile of documents.</li>
+      <li><b>Demand-driven.</b> Content is created in response to what people actually ask. That's why the gap
+        queue from real calls feeds back into this tool.</li>
+    </ul>
+    <p class="lp">On top of KCS we add rules specific to a <b>voice</b> agent: no tables, no "see the section
+      above", no "click the button" — an article has to make sense heard once, out loud, with no screen. And one
+      compliance rule that overrides everything: <b>no member's personal information ever enters an article.</b></p>
+
+    <h3>What this does not do</h3>
+    <p class="lp">It doesn't invent policy, interpret ambiguous plan language, or decide what's legally accurate —
+      those stay with people. It drafts from a source you chose, shows its work, and waits for your approval.</p>
+  </section>
 
   <nav class="pipe" id="pipe">
     <button class="step active" data-tab="clean"><span class="num">Step 1</span><span class="name">Clean</span><span class="sub">paste → clean → review</span></button>
@@ -260,6 +352,19 @@
     if(name==="publish") loadPublish();
   }
   $$("#pipe .step").forEach(s=>s.addEventListener("click", ()=>switchTab(s.dataset.tab)));
+
+  // ---------- "how this works" explainer ----------
+  (function(){
+    const btn = $("#learnbtn"), panel = $("#learn");
+    if(!btn || !panel) return;
+    btn.addEventListener("click", ()=>{
+      const open = panel.hasAttribute("hidden");
+      if(open){ panel.removeAttribute("hidden"); } else { panel.setAttribute("hidden",""); }
+      btn.setAttribute("aria-expanded", String(open));
+      btn.textContent = open ? "Hide how this works ↑" : "How this works ↓";
+      if(open) panel.scrollIntoView({ behavior:"smooth", block:"start" });
+    });
+  })();
 
   // ---------- clean ----------
   $("#file").addEventListener("change", async (e)=>{
@@ -497,6 +602,9 @@
     const agg = { articles:0, fatal:0, warns:0 };
     const seen = new Set(), dupes = [], fails = [];
     const reports = { drop:[], coverage:[], questions:[] };
+    // Everything the single-pass view needs, accumulated across sections so the Drop report,
+    // Coverage map and Candidate Q's tabs can be rebuilt at the end.
+    const merged = { meta:null, articles:[], dropped:[], coverage_gaps:[], terminology_notes:[] };
 
     const paintSummary = (done) => {
       sumEl.innerHTML = `<span class="chip">${agg.articles} articles</span>`
@@ -523,23 +631,32 @@
         agg.articles += (d.articles||[]).length;
         agg.fatal += d.summary?.fatal || 0;
         agg.warns += d.summary?.warns || 0;
+        merged.articles.push(...(d.articles||[]));
+        merged.dropped.push(...(d.dropped||[]));
+        merged.coverage_gaps.push(...(d.coverage_gaps||[]));
+        merged.terminology_notes.push(...(d.terminology_notes||[]));
+        if(!merged.meta) merged.meta = d.meta || null;
         if(d.reports){ reports.drop.push(d.reports.drop||""); reports.coverage.push(d.reports.coverage||""); reports.questions.push(d.reports.questions||""); }
       }catch(e){ fails.push(`section ${i+1}: ${e.message}`); }
       paintSummary(i+1);
     }
 
-    const dl = document.createElement("div"); dl.className="cardfoot"; dl.style.marginTop="10px";
+    // Everything's in — rebuild the full reviewable view. The streamed cards were progress; this is
+    // the same tabbed result a single-pass clean gives you (Drop report / Coverage map / Candidate Q's).
     const j = (a)=>a.filter(Boolean).join("\n\n---\n\n");
-    const b1=el("button","dl","↓ drop-report.md"); b1.onclick=()=>download("_drop-report.md", j(reports.drop));
-    const b2=el("button","dl","↓ coverage-map.md"); b2.onclick=()=>download("_coverage-map.md", j(reports.coverage));
-    const b3=el("button","dl","↓ candidate-questions.md"); b3.onclick=()=>download("_candidate-questions.md", j(reports.questions));
-    dl.append(b1,b2,b3); out.append(dl);
+    const scored = merged.articles.map(a=>a.review && a.review.score).filter(n=>typeof n === "number");
+    merged.summary = { articles: merged.articles.length, fatal: agg.fatal, warns: agg.warns,
+      criticAvg: scored.length ? scored.reduce((x,y)=>x+y,0)/scored.length : null };
+    merged.reports = { drop: j(reports.drop), coverage: j(reports.coverage), questions: j(reports.questions) };
+    render(merged);
 
-    if(fails.length){
-      const f = el("div","flag warn",`⚠ ${fails.length} section${fails.length>1?"s":""} failed and produced no articles: ${fails.join("; ")}. The rest completed — re-run just those sections by pasting them on their own.`);
-      f.style.marginTop="10px"; out.append(f);
+    if(dupes.length || fails.length){
+      const n = el("div","flag warn",
+        (fails.length ? `⚠ ${fails.length} section${fails.length>1?"s":""} failed and produced no articles: ${fails.join("; ")}. ` : "")
+        + (dupes.length ? `${dupes.length} topic${dupes.length>1?"s":""} appeared in more than one section (${[...new Set(dupes)].join(", ")}) — staging one replaces the other, so pick the better version.` : ""));
+      n.style.marginTop = "12px"; out.append(n);
     }
-    statusEl.textContent = `Done — ${agg.articles} articles from ${chunks.length - fails.length}/${chunks.length} sections.`;
+    statusEl.textContent = `Done — ${merged.articles.length} articles from ${chunks.length - fails.length}/${chunks.length} sections.`;
     runBtn.disabled=false;
   }
 
@@ -605,16 +722,32 @@
 
     statusEl.textContent = "";
     out.style.display="block"; out.innerHTML="";
-    const box = el("div","rsec");
-    box.append(el("h3", null, `Choose what to clean — ${sections.length} sections found`));
-    box.append(el("p","note", fromHeadings
-      ? "Uncheck anything that isn't participant-facing. Fund tables, legal boilerplate and glossaries start unchecked — the cleaner drops that material anyway, after you'd have paid to process it."
-      : "No clear headings were found, so the document was split by size. The labels describe what each part covers."));
-
-    const checks = [];
+    // Crude heading detection over a scanned document finds far more "sections" than really exist —
+    // repeated page headers, running heads, topics split across pages. The scan marks those, and they
+    // get folded back into the section before them so the list matches the document's real structure.
+    const kept = [];
     sections.forEach((sec)=>{
       const seg = segs[sec.i];
       if(!seg) return;
+      if(sec.continues_previous && kept.length){
+        const prev = kept[kept.length-1];
+        prev.seg = { title: prev.seg.title, text: prev.seg.text + "\n\n" + seg.text };
+        prev.folded = (prev.folded || 0) + 1;
+        return;
+      }
+      kept.push({ sec, seg, folded: 0 });
+    });
+    const foldedTotal = sections.length - kept.length;
+
+    const box = el("div","rsec");
+    box.append(el("h3", null, `Choose what to clean — ${kept.length} sections`));
+    box.append(el("p","note", fromHeadings
+      ? "Uncheck anything that isn't participant-facing. Fund tables, legal boilerplate and glossaries start unchecked — the cleaner drops that material anyway, after you'd have paid to process it."
+      : "No clear headings were found, so the document was split by size. The labels describe what each part covers."));
+    if(foldedTotal > 0) box.append(el("p","note", `${foldedTotal} fragment${foldedTotal>1?"s were":" was"} folded into the section above it — scanned documents split badly, so page headers and continued topics are merged back.`));
+
+    const checks = [];
+    kept.forEach(({sec, seg})=>{
       const row = el("label","seg");
       const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = !!sec.recommend;
       cb.addEventListener("change", updateEstimate);
