@@ -108,7 +108,7 @@
   .learn h3{ margin:22px 0 4px; font-size:.95rem; letter-spacing:.01em; }
   .learn .lp{ margin:6px 0; font-size:.92rem; line-height:1.65; color:var(--sub); max-width:68ch; }
   .learn .lp b{ color:var(--ink); }
-  .learn ul.lp{ padding-left:20px; } .learn ul.lp li{ margin:5px 0; }
+  .learn ul.lp, .learn ol.lp{ padding-left:20px; } .learn ul.lp li, .learn ol.lp li{ margin:6px 0; }
 
   #status{ margin-top:22px; font-family:var(--mono); font-size:.8rem; color:var(--sub); }
   @media (prefers-reduced-motion:no-preference){ .dots::after{ content:''; animation:d 1.2s steps(4,end) infinite; } }
@@ -194,82 +194,54 @@
   </header>
 
   <!-- Leadership-level explainer. Collapsed by default so it never gets in the way of the work. -->
+  <!-- Executive explainer. Deliberately short: what it is, what it does, why you can trust it. -->
   <section id="learn" class="learn" hidden>
-    <h2>How the Content Console works</h2>
-    <p class="lp">Robin is a voice agent that answers retirement-plan questions over the phone. She can only
-      answer from knowledge we give her. This tool is how a plan document becomes that knowledge — safely,
-      reviewably, and without anyone hand-writing articles from scratch.</p>
-    <p class="lp"><b>The principle behind the whole thing:</b> the machine does the drafting, a person does the
-      deciding. Nothing Robin says to a member gets there without a human approving it first.</p>
+    <h2>How this works</h2>
+    <p class="lp">Robin answers member questions on the phone. She can only answer from knowledge we give
+      her. This tool turns plan documents into that knowledge.</p>
+    <p class="lp"><b>The rule behind everything: the computer drafts, a person decides.</b> Nothing reaches a
+      member without someone approving it.</p>
 
-    <h3>Stage 1 — Read the document</h3>
-    <p class="lp">You upload a PDF or Word file, or paste text. The file is read <b>inside your browser</b> — it
-      never leaves your machine — so document size isn't a limit. If a PDF turns out to be a scan (a picture of
-      words rather than words), the tool says so plainly, because there is nothing to read until it's been run
-      through OCR.</p>
+    <h3>What it does</h3>
+    <ol class="lp">
+      <li><b>Reads your document.</b> Upload a plan document. If it's a scan — a picture of words rather than
+        words — it tells you, because there's nothing to read until it's been converted.</li>
+      <li><b>Writes the answers.</b> It turns each topic into a short answer Robin can say out loud. It only
+        rewords what your document says. Where the document is silent, it says so rather than filling the gap.</li>
+      <li><b>Waits for you.</b> You read each answer, fix anything, and approve what's good. Approved answers
+        go live. Anything can be corrected or switched off later.</li>
+    </ol>
 
-    <h3>Stage 2 — Decide what's worth using</h3>
-    <p class="lp">A 300-page plan document is mostly fund tables, legal boilerplate and glossaries — material no
-      one ever phones up to ask about. For large documents the tool takes a quick, inexpensive look, lists the
-      sections it found, and recommends which ones hold participant-facing knowledge. You tick and untick, see a
-      live estimate of time and cost, and only then commit. This is a <b>curation</b> step: you're deciding what
-      belongs in Robin's head, not letting a table of contents decide for you.</p>
-
-    <h3>Stage 3 — Rewrite it into answers</h3>
-    <p class="lp">The heavy step. Source material is written to be <i>read</i> — dense, cross-referenced, full of
-      tables. Robin needs material to be <i>spoken</i>. The tool rewrites each topic into a short, self-contained
-      article a person could say out loud, and it is <b>strictly grounded</b>: it only rewords what the document
-      actually says. Where the source is silent, it does not fill the gap from general knowledge — it records the
-      gap. That constraint is the single most important safety property here.</p>
-
-    <h3>Stage 4 — Check the work</h3>
-    <p class="lp">Two independent checks run on every article. A mechanical one looks for things code can catch
-      for certain — personal information, tables, phrasing that only makes sense on a screen. Then a second AI
-      model, which did not write the article, reviews it against the original and scores it: is every claim
-      traceable to the source, is anything missing, is it padded. Anything containing personal data is blocked
-      outright, not flagged.</p>
-
-    <h3>Stage 5 — Your review</h3>
-    <p class="lp">You see each proposed article with its score and any flags, and you can edit it directly or ask
-      for a revision. You also get three reports: what was <b>dropped</b> and why, a <b>coverage map</b> of what's
-      answered and what the source never addresses, and <b>candidate questions</b> members might ask about it.
-      That middle report matters most — it tells you what Robin still won't know.</p>
-
-    <h3>Stage 6 — Publish</h3>
-    <p class="lp">Approved articles go live into Robin's knowledge base. Publishing is versioned: republishing a
-      topic replaces the old version rather than leaving two competing answers, and anything can be pulled back
-      out. Live articles can be pulled back into the editor, corrected and republished without starting over.</p>
-
-    <h3>Stage 7 — Test and measure</h3>
-    <p class="lp">Before or after publishing you can ask Robin questions in writing and see how she answers from
-      what's actually live. Once real calls happen, every call is reviewed automatically: which questions were
-      asked, whether she answered them, and — when she didn't — whether it's because the knowledge is missing or
-      because it exists but wasn't found. Those two failures have completely different fixes. The result is a
-      utilisation figure and a ranked queue of the content she still needs.</p>
-
-    <h3>The quality standard we hold articles to</h3>
-    <p class="lp">The articles follow <b>KCS</b> — Knowledge-Centered Service — a methodology from the
-      <b>Consortium for Service Innovation</b>, used widely in support organisations. Its central insight is that
-      knowledge should be captured as a by-product of answering real demand, in the words the person actually
-      used, rather than written in advance by experts guessing what will be asked. Four ideas from it shape every
-      article here:</p>
+    <h3>Why you can trust it</h3>
     <ul class="lp">
-      <li><b>The requester's words.</b> Articles are titled with the question a member would actually ask —
-        "Can I take a loan from my 401(k)?" — not internal jargon. This is also what makes the right article
-        get found when Robin searches.</li>
-      <li><b>Just enough.</b> Complete enough to answer, not padded. Length follows what the source supports.</li>
-      <li><b>Consistent structure.</b> Every article is shaped the same way, which is what makes a library of
-        them usable rather than a pile of documents.</li>
-      <li><b>Demand-driven.</b> Content is created in response to what people actually ask. That's why the gap
-        queue from real calls feeds back into this tool.</li>
+      <li><b>It can't make things up.</b> Answers come only from the document you supplied.</li>
+      <li><b>A second AI checks the first,</b> comparing every answer against the original and scoring it.</li>
+      <li><b>Member personal information is blocked, not flagged.</b> An answer containing it cannot be saved.</li>
+      <li><b>Nothing goes live without a person approving it.</b></li>
+      <li><b>Everything is reversible.</b> Updating an answer replaces the old one; any answer can be removed.</li>
     </ul>
-    <p class="lp">On top of KCS we add rules specific to a <b>voice</b> agent: no tables, no "see the section
-      above", no "click the button" — an article has to make sense heard once, out loud, with no screen. And one
-      compliance rule that overrides everything: <b>no member's personal information ever enters an article.</b></p>
 
-    <h3>What this does not do</h3>
-    <p class="lp">It doesn't invent policy, interpret ambiguous plan language, or decide what's legally accurate —
-      those stay with people. It drafts from a source you chose, shows its work, and waits for your approval.</p>
+    <h3>How we know it's working</h3>
+    <p class="lp">Every call is reviewed automatically: what members asked, whether Robin answered, and if she
+      didn't, whether the knowledge is missing or simply wasn't found. That gives a running score of how much
+      she's handling and a ranked list of what to add next.</p>
+
+    <h3>The standard we write to</h3>
+    <p class="lp">We follow <b>KCS (Knowledge-Centered Service)</b>, a widely used method for support content
+      from the Consortium for Service Innovation. In plain terms:</p>
+    <ul class="lp">
+      <li>Answer the question people actually ask, in their words.</li>
+      <li>Keep it short — enough to answer, nothing more.</li>
+      <li>Write every answer the same way, so the library stays usable as it grows.</li>
+      <li>Write in response to real demand, not guesses about what might be asked.</li>
+    </ul>
+    <p class="lp">We add two rules of our own, because Robin speaks rather than displays: an answer has to make
+      sense heard once, out loud, with no screen — so no tables, no "see the section above," no "click here".
+      And no member's personal information, ever.</p>
+
+    <h3>What it doesn't do</h3>
+    <p class="lp">It doesn't set policy, interpret unclear plan language, or judge legal accuracy. It drafts from
+      the document you gave it, shows its work, and waits for your approval.</p>
   </section>
 
   <nav class="pipe" id="pipe">
