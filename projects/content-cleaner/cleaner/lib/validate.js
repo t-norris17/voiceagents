@@ -32,55 +32,143 @@ export function deterministicScan(md, article) {
   return findings;
 }
 
+// The critic returns evidence, never a number. Note there is no `score` property here — that is
+// deliberate and is the whole anti-inflation mechanism.
 const CRITIC_SCHEMA = {
   type: "object",
   additionalProperties: false,
   properties: {
-    reviews: {
+    claims: {
       type: "array",
+      description: "Every checkable factual claim the article makes, each traced to the source.",
       items: {
         type: "object",
         additionalProperties: false,
         properties: {
-          slug: { type: "string" },
-          grounded: { type: "boolean", description: "Every claim traceable to the source; no invented figures." },
-          requestor_words: { type: "boolean", description: "Title/issue phrased as a participant would ask." },
-          coverage_complete: { type: "boolean", description: "Gaps a participant would ask about are flagged." },
-          just_enough: { type: "boolean", description: "Complete but not bloated." },
-          score: { type: "integer", description: "1 (poor) to 5 (KCS-gold)." },
-          issues: { type: "array", items: { type: "string" }, description: "Specific misses; empty if clean." },
+          claim: { type: "string", description: "The claim, as the article states it." },
+          source_quote: { type: "string", description: "Verbatim span from the raw source establishing it. Empty when unsupported." },
+          verdict: { type: "string", enum: ["supported", "unsupported", "contradicted"] },
         },
-        required: ["slug", "grounded", "requestor_words", "coverage_complete", "just_enough", "score", "issues"],
+        required: ["claim", "source_quote", "verdict"],
       },
     },
+    omissions: {
+      type: "array",
+      description: "Facts in the source that belong in THIS article and are missing.",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          missing: { type: "string", description: "What the article leaves out." },
+          source_quote: { type: "string", description: "Verbatim span from the source that contains it." },
+        },
+        required: ["missing", "source_quote"],
+      },
+    },
+    answers_the_title: { type: "boolean" },
+    title_is_askable: { type: "boolean" },
+    speakable: { type: "boolean" },
+    coverage_complete: { type: "boolean" },
+    bloat: { type: "boolean" },
+    notes: { type: "array", items: { type: "string" }, description: "One short, specific line per real defect. Empty if clean." },
   },
-  required: ["reviews"],
+  required: ["claims", "omissions", "answers_the_title", "title_is_askable", "speakable", "coverage_complete", "bloat", "notes"],
 };
 
-// LLM critic over all articles in one call. `rendered` is [{slug, md}].
-export async function critique(rendered, rawText) {
-  const articlesBlock = rendered.map((r) => `--- ARTICLE ${r.slug} ---\n${r.md}`).join("\n\n");
-  const user = `RAW SOURCE (ground truth):
-"""
-${rawText}
-"""
+// The rubric, as arithmetic. Deducting from a perfect 5 makes every point lost traceable to a
+// specific piece of evidence, so "5/5" now means "nothing was found against it" rather than
+// "the model felt good about it". Weights reflect what actually harms a caller: being told
+// something false is worse than being told it awkwardly.
+export const SCORE_RULES = [
+  { key: "contradicted", cost: 3, label: "contradicts the source" },
+  { key: "unsupported", cost: 2, label: "claim the source doesn't establish" },
+  { key: "omission", cost: 1, cap: 2, label: "fact from the source left out" },
+  { key: "answers_the_title", cost: 2, label: "body doesn't answer its own title" },
+  { key: "title_is_askable", cost: 1, label: "title isn't how a participant would ask" },
+  { key: "speakable", cost: 1, label: "doesn't read cleanly aloud" },
+  { key: "coverage_complete", cost: 1, label: "gaps not flagged for routing" },
+  { key: "bloat", cost: 1, label: "padded beyond what the source supports" },
+];
 
-CLEANED ARTICLES TO REVIEW:
-${articlesBlock}
+// Turn one critic result into { score, issues, counts }. Pure — unit-testable without an API key.
+export function scoreReview(v) {
+  const claims = Array.isArray(v?.claims) ? v.claims : [];
+  const omissions = Array.isArray(v?.omissions) ? v.omissions : [];
+  const contradicted = claims.filter((c) => c.verdict === "contradicted");
+  const unsupported = claims.filter((c) => c.verdict === "unsupported");
 
-Review each article per your instructions. Return ONLY the structured JSON.`;
-  // Critic runs on Sonnet at medium effort — it REVIEWS (grounding/coverage), it doesn't
-  // generate, so the premium tier isn't needed here. The rewrite stays on Opus. This is the
-  // main cost lever: it roughly halves the per-run Opus spend with negligible quality loss.
+  const deductions = [];
+  const take = (n, cost, cap, label) => {
+    if (!n) return;
+    const counted = cap ? Math.min(n, cap) : n;
+    deductions.push({ label, points: counted * cost });
+  };
+  take(contradicted.length, 3, null, "contradicts the source");
+  take(unsupported.length, 2, null, "claim the source doesn't establish");
+  take(omissions.length, 1, 2, "fact from the source left out");
+  if (v?.answers_the_title === false) deductions.push({ label: "body doesn't answer its own title", points: 2 });
+  if (v?.title_is_askable === false) deductions.push({ label: "title isn't how a participant would ask", points: 1 });
+  if (v?.speakable === false) deductions.push({ label: "doesn't read cleanly aloud", points: 1 });
+  if (v?.coverage_complete === false) deductions.push({ label: "gaps not flagged for routing", points: 1 });
+  if (v?.bloat === true) deductions.push({ label: "padded beyond what the source supports", points: 1 });
+
+  const lost = deductions.reduce((s, d) => s + d.points, 0);
+  const score = Math.max(1, Math.min(5, 5 - lost));
+
+  // Reviewer-facing lines: the model's own notes first (most specific), then the evidence that
+  // cost points, so the card always explains its own score.
+  const issues = [];
+  for (const c of contradicted) issues.push(`Contradicts the source: ${c.claim}${c.source_quote ? ` — source says: “${trim(c.source_quote)}”` : ""}`);
+  for (const c of unsupported) issues.push(`Not in the source: ${c.claim}`);
+  for (const o of omissions) issues.push(`Left out: ${o.missing}`);
+  for (const n of Array.isArray(v?.notes) ? v.notes : []) if (!issues.includes(n)) issues.push(n);
+
+  return {
+    score,
+    issues,
+    counts: {
+      claims: claims.length,
+      supported: claims.length - contradicted.length - unsupported.length,
+      unsupported: unsupported.length,
+      contradicted: contradicted.length,
+      omissions: omissions.length,
+    },
+    deductions,
+  };
+}
+
+const trim = (s) => { const t = String(s || "").replace(/\s+/g, " ").trim(); return t.length > 140 ? t.slice(0, 137) + "…" : t; };
+
+// One critic call for ONE article. The raw source is a cached system block, so fanning out over
+// N articles re-sends the article only — grading each one alone stops the batch effect where a
+// single call spreads its attention across ten articles and settles on one uniform verdict.
+async function critiqueOne(r, rawText) {
   const res = await client.messages.create({
     model: "claude-sonnet-5",
     max_tokens: 8000,
     thinking: { type: "adaptive" },
-    output_config: { effort: "medium", format: { type: "json_schema", schema: CRITIC_SCHEMA } },
-    system: CRITIC_SYSTEM,
-    messages: [{ role: "user", content: user }],
-  });
+    output_config: { effort: "high", format: { type: "json_schema", schema: CRITIC_SCHEMA } },
+    system: [
+      { type: "text", text: CRITIC_SYSTEM },
+      { type: "text", text: `RAW SOURCE (ground truth):\n"""\n${rawText}\n"""`, cache_control: { type: "ephemeral" } },
+    ],
+    messages: [{ role: "user", content: `ARTICLE TO VERIFY (slug: ${r.slug}):\n"""\n${r.md}\n"""\n\nVerify it against the raw source per your instructions. Return ONLY the structured JSON.` }],
+  }, { timeout: 120000 });
   const text = res.content.find((b) => b.type === "text");
   if (!text) throw new Error("critic returned no text block");
-  return JSON.parse(text.text).reviews;
+  const v = JSON.parse(text.text);
+  return { slug: r.slug, ...v, ...scoreReview(v) };
+}
+
+// LLM critic, one call per article. `rendered` is [{slug, md}].
+// The first article runs alone so it writes the source into the prompt cache; the rest fan out
+// against a warm cache. A critic that fails is dropped, not fatal — the run still returns.
+export async function critique(rendered, rawText) {
+  if (!rendered.length) return [];
+  const out = [];
+  const first = await critiqueOne(rendered[0], rawText).catch(() => null);
+  if (first) out.push(first);
+  const rest = await Promise.allSettled(rendered.slice(1).map((r) => critiqueOne(r, rawText)));
+  for (const s of rest) if (s.status === "fulfilled") out.push(s.value);
+  return out;
 }
