@@ -1,4 +1,4 @@
-# SPEC — Content Cleaner (Robin-ready / KCS gold)
+# SPEC — The Knowledge Factory (Robin-ready / KCS gold)
 
 **Slug:** content-cleaner · **Status:** draft · **Created:** 2026-07-23
 **Reads:** [`SCOPE.md`](./SCOPE.md) (problem, north star, locked decisions)

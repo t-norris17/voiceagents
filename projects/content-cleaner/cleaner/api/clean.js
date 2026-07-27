@@ -1,5 +1,5 @@
 // POST /api/clean  { text, env, slug?, source? }  ->  the cleaned articles + reviewer reports.
-// The hosted "door" for the content cleaner: runs the SAME pipeline as the CLI
+// The hosted "door" for the Knowledge Factory: runs the SAME pipeline as the CLI
 // (rewrite -> validate -> critic) in-memory and returns everything the review page needs.
 // It PROPOSES; a human approves on the page before anything is used. Needs ANTHROPIC_API_KEY
 // (set on the Vercel project). maxDuration is raised in vercel.json — the rewrite is a big call.

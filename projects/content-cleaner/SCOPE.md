@@ -1,4 +1,7 @@
-# SCOPE — Content Cleaner (Robin-ready / KCS gold)
+# SCOPE — The Knowledge Factory (Robin-ready / KCS gold)
+
+> Formerly "Content Cleaner". The directory stays `projects/content-cleaner/` because the Vercel
+> project's root directory points at it — renaming the folder would break the deployment.
 
 **Slug:** content-cleaner
 **Status:** draft
