@@ -420,22 +420,111 @@
     return c;
   }
 
+  // One clean pass is bounded by the model's OUTPUT budget, not just its input: a whole plan document
+  // produces far more cleaned text than fits in a single response. So a large source is split into
+  // sections and cleaned one at a time — each pass stays well inside the limits, results stream in as
+  // they finish (nothing is lost if you stop early), and one failed section doesn't sink the run.
+  const CHUNK_MAX = 45000;
+
+  // Split on blank lines so a section never starts mid-sentence. A single oversized paragraph is
+  // hard-split as a last resort.
+  function splitSource(text){
+    if(text.length <= CHUNK_MAX) return [text];
+    const paras = text.split(/\n{2,}/);
+    const chunks = []; let cur = "";
+    for(const p of paras){
+      if(cur && (cur.length + p.length + 2) > CHUNK_MAX){ chunks.push(cur); cur = p; }
+      else cur = cur ? cur + "\n\n" + p : p;
+      while(cur.length > CHUNK_MAX){ chunks.push(cur.slice(0, CHUNK_MAX)); cur = cur.slice(CHUNK_MAX); }
+    }
+    if(cur.trim()) chunks.push(cur);
+    return chunks;
+  }
+
+  async function postClean(text, env, slug, source){
+    const res = await fetch("/api/clean", { method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ text, env, slug, source }) });
+    const d = await res.json().catch(()=>({error:"bad response"}));
+    if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
+    return d;
+  }
+
   async function run(){
     const text = $("#src").value.trim(), env = $("#env").value.trim();
     if(!text){ statusEl.textContent="Paste or upload some source text first."; return; }
     if(!env){ statusEl.textContent="Fill in 'Applies to' — the plan or product these articles cover."; return; }
     const slug = env.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,40) || "cleaned";
-    out.style.display="none"; out.innerHTML="";
+    const source = $("#source").value.trim();
+    const chunks = splitSource(text);
+
+    // Small source: one pass, unchanged.
+    if(chunks.length === 1){
+      out.style.display="none"; out.innerHTML="";
+      runBtn.disabled=true;
+      statusEl.innerHTML = `<span class="dots">Cleaning — segmenting, rewriting to KCS-gold, validating</span> · a big guide can take a minute or two`;
+      try{ render(await postClean(text, env, slug, source)); }
+      catch(e){ statusEl.textContent = "Error: "+e.message; }
+      finally{ runBtn.disabled=false; }
+      return;
+    }
+
+    // Large source: be upfront about what this run costs in time and money before starting it.
+    const mins = Math.round(chunks.length * 1.2);
+    if(!confirm(`This document is large (${(text.length/1000|0)}k characters). It'll be cleaned in ${chunks.length} sections, roughly ${mins}–${mins*2} minutes, and each section is a separate model run — so this costs meaningfully more than a normal clean.\n\nArticles appear as each section finishes, so you can stop early and keep what's done. Keep this tab open.\n\nStart?`)) return;
+
     runBtn.disabled=true;
-    statusEl.innerHTML = `<span class="dots">Cleaning — segmenting, rewriting to KCS-gold, validating</span> · a big guide can take a minute or two`;
-    try{
-      const res = await fetch("/api/clean", { method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ text, env, slug, source: $("#source").value.trim() }) });
-      const d = await res.json().catch(()=>({error:"bad response"}));
-      if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
-      render(d);
-    }catch(e){ statusEl.textContent = "Error: "+e.message; }
-    finally{ runBtn.disabled=false; }
+    out.style.display="block"; out.innerHTML="";
+    const sumEl = document.createElement("div"); sumEl.className="summary"; out.append(sumEl);
+    out.append(el("p","note","Review each article, then “Send to Publish” to stage it for Step 3."));
+    const artsEl = document.createElement("div"); out.append(artsEl);
+
+    const agg = { articles:0, fatal:0, warns:0 };
+    const seen = new Set(), dupes = [], fails = [];
+    const reports = { drop:[], coverage:[], questions:[] };
+
+    const paintSummary = (done) => {
+      sumEl.innerHTML = `<span class="chip">${agg.articles} articles</span>`
+        + (agg.fatal>0?`<span class="chip bad">⛔ ${agg.fatal} PII — NOT safe to import</span>`:`<span class="chip good">✓ no PII</span>`)
+        + `<span class="chip">${agg.warns} review flags</span>`
+        + `<span class="chip">${done}/${chunks.length} sections</span>`
+        + (dupes.length?`<span class="chip">${dupes.length} duplicate topic${dupes.length>1?"s":""}</span>`:"")
+        + (fails.length?`<span class="chip bad">${fails.length} section${fails.length>1?"s":""} failed</span>`:"");
+    };
+    paintSummary(0);
+
+    for(let i=0;i<chunks.length;i++){
+      statusEl.innerHTML = `<span class="dots">Cleaning section ${i+1} of ${chunks.length}</span> · ${agg.articles} articles so far — keep this tab open`;
+      try{
+        const d = await postClean(chunks[i], env, `${slug}-${i+1}`, source);
+        if(!CURRENT_META) CURRENT_META = d.meta || null;
+        (d.articles||[]).forEach(a=>{
+          // The same topic can surface in two sections; publishing is keyed on slug, so flag it
+          // rather than silently dropping one — the human decides which version to stage.
+          if(seen.has(a.slug)){ dupes.push(a.slug); a._dupe = true; }
+          seen.add(a.slug);
+          artsEl.append(articleCard(a));
+        });
+        agg.articles += (d.articles||[]).length;
+        agg.fatal += d.summary?.fatal || 0;
+        agg.warns += d.summary?.warns || 0;
+        if(d.reports){ reports.drop.push(d.reports.drop||""); reports.coverage.push(d.reports.coverage||""); reports.questions.push(d.reports.questions||""); }
+      }catch(e){ fails.push(`section ${i+1}: ${e.message}`); }
+      paintSummary(i+1);
+    }
+
+    const dl = document.createElement("div"); dl.className="cardfoot"; dl.style.marginTop="10px";
+    const j = (a)=>a.filter(Boolean).join("\n\n---\n\n");
+    const b1=el("button","dl","↓ drop-report.md"); b1.onclick=()=>download("_drop-report.md", j(reports.drop));
+    const b2=el("button","dl","↓ coverage-map.md"); b2.onclick=()=>download("_coverage-map.md", j(reports.coverage));
+    const b3=el("button","dl","↓ candidate-questions.md"); b3.onclick=()=>download("_candidate-questions.md", j(reports.questions));
+    dl.append(b1,b2,b3); out.append(dl);
+
+    if(fails.length){
+      const f = el("div","flag warn",`⚠ ${fails.length} section${fails.length>1?"s":""} failed and produced no articles: ${fails.join("; ")}. The rest completed — re-run just those sections by pasting them on their own.`);
+      f.style.marginTop="10px"; out.append(f);
+    }
+    statusEl.textContent = `Done — ${agg.articles} articles from ${chunks.length - fails.length}/${chunks.length} sections.`;
+    runBtn.disabled=false;
   }
 
   function rtable(head, rows){
