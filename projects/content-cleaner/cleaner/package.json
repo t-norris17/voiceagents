@@ -10,7 +10,7 @@
   "scripts": {
     "clean": "node clean.js",
     "test": "node --test",
-    "calibrate": "node test/critic-calibration.mjs"
+    "calibrate": "node tools/calibrate-critic.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "latest",

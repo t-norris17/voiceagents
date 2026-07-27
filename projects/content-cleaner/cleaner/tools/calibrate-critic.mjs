@@ -5,9 +5,10 @@
 // grader that scores the clean one below 5 is over-tuned. Run it after any change to
 // CRITIC_SYSTEM or the score weights.
 //
-//   ANTHROPIC_API_KEY=... node test/critic-calibration.mjs
+//   ANTHROPIC_API_KEY=... npm run calibrate      (or: node tools/calibrate-critic.mjs)
 //
-// Not part of `node --test` — it costs money and needs a key. Everything here is invented:
+// Lives outside test/ on purpose: `node --test` treats every file under test/ as a test,
+// and this one costs money and needs a key. Everything here is invented:
 // fictional plan, fictional recordkeeper, no real member data. Exit code 1 if any case misses.
 import { critique } from "../lib/validate.js";
 
