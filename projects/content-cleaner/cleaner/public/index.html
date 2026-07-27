@@ -194,54 +194,64 @@
   </header>
 
   <!-- Leadership-level explainer. Collapsed by default so it never gets in the way of the work. -->
-  <!-- Executive explainer. Deliberately short: what it is, what it does, why you can trust it. -->
+  <!-- Executive explainer. Concrete over reassuring: every claim carries an example. -->
   <section id="learn" class="learn" hidden>
     <h2>How this works</h2>
-    <p class="lp">Robin answers member questions on the phone. She can only answer from knowledge we give
-      her. This tool turns plan documents into that knowledge.</p>
-    <p class="lp"><b>The rule behind everything: the computer drafts, a person decides.</b> Nothing reaches a
-      member without someone approving it.</p>
+    <p class="lp">This tool turns a plan document into <b>answer cards</b> — a question a member asks, and
+      the answer Robin gives on the call.</p>
 
     <h3>What it does</h3>
     <ol class="lp">
-      <li><b>Reads your document.</b> Upload a plan document. If it's a scan — a picture of words rather than
-        words — it tells you, because there's nothing to read until it's been converted.</li>
-      <li><b>Writes the answers.</b> It turns each topic into a short answer Robin can say out loud. It only
-        rewords what your document says. Where the document is silent, it says so rather than filling the gap.</li>
-      <li><b>Waits for you.</b> You read each answer, fix anything, and approve what's good. Approved answers
-        go live. Anything can be corrected or switched off later.</li>
+      <li><b>Reads the document.</b> The cleaner reads what you upload to build an understanding of the
+        context. If the file is a scan — a picture of words rather than words — it says so, because there's
+        nothing to read until it's converted.</li>
+      <li><b>Builds the answer cards.</b> It creates a card for each topic. Every card holds a customer
+        question and the answer Robin will give.</li>
+      <li><b>Waits for you.</b> You are the final check: review each card, fix anything, then publish. Once
+        published, they are live on calls.</li>
     </ol>
 
-    <h3>Why you can trust it</h3>
+    <h3>Quality assurance</h3>
+    <p class="lp">What the checks actually catch:</p>
     <ul class="lp">
-      <li><b>It can't make things up.</b> Answers come only from the document you supplied.</li>
-      <li><b>A second AI checks the first,</b> comparing every answer against the original and scoring it.</li>
-      <li><b>Member personal information is blocked, not flagged.</b> An answer containing it cannot be saved.</li>
-      <li><b>Nothing goes live without a person approving it.</b></li>
-      <li><b>Everything is reversible.</b> Updating an answer replaces the old one; any answer can be removed.</li>
+      <li><b>It can't invent a number.</b> If your document says the loan fee is $100, the card says $100. If
+        your document never states the repayment term, the card says that isn't covered rather than
+        supplying one.</li>
+      <li><b>A second model scores every card against your original document.</b> A card that drifts from the
+        source is flagged before it reaches you.</li>
+      <li><b>A card containing a member's name, Social Security number or account number cannot be saved.</b>
+        It is blocked, not flagged.</li>
+      <li><b>Nothing publishes on its own</b> — a person presses publish — and any card can be corrected or
+        switched off after it is live.</li>
     </ul>
 
     <h3>How we know it's working</h3>
-    <p class="lp">Every call is reviewed automatically: what members asked, whether Robin answered, and if she
-      didn't, whether the knowledge is missing or simply wasn't found. That gives a running score of how much
-      she's handling and a ranked list of what to add next.</p>
+    <p class="lp">After each call we check what the member asked and whether Robin answered it. That produces
+      two things: a <b>score</b> — how many questions she handled without passing the caller to someone else —
+      and a <b>ranked list of what she couldn't answer</b>.</p>
+    <p class="lp">For example: 47 callers asked how to repay a loan, and Robin had nothing on it. That stays at
+      the top of the list until a card covers it. The list is what decides which document you clean next.</p>
 
     <h3>The standard we write to</h3>
-    <p class="lp">We follow <b>KCS (Knowledge-Centered Service)</b>, a widely used method for support content
-      from the Consortium for Service Innovation. In plain terms:</p>
+    <p class="lp">The cards follow <b>KCS (Knowledge-Centered Service)</b>, the support-content method
+      published by the Consortium for Service Innovation. Four of its rules shape every card:</p>
     <ul class="lp">
-      <li>Answer the question people actually ask, in their words.</li>
-      <li>Keep it short — enough to answer, nothing more.</li>
-      <li>Write every answer the same way, so the library stays usable as it grows.</li>
-      <li>Write in response to real demand, not guesses about what might be asked.</li>
+      <li><b>Title it as the question, in the member's words.</b> The card is called "Can I take a loan from my
+        401(k)?" — not "Loan Provisions, Section 4.2". That is also how Robin finds the right card when
+        someone asks.</li>
+      <li><b>Keep it short.</b> Answer the question, offer more, stop. Robin is speaking, not printing.</li>
+      <li><b>Write every card the same way,</b> so a hundred cards stay usable instead of becoming a pile of
+        documents.</li>
+      <li><b>Write for what is actually asked.</b> The ranked list above decides which cards get built next,
+        rather than a guess about what members might want.</li>
     </ul>
-    <p class="lp">We add two rules of our own, because Robin speaks rather than displays: an answer has to make
-      sense heard once, out loud, with no screen — so no tables, no "see the section above," no "click here".
+    <p class="lp">Because Robin speaks rather than displays, we add two rules of our own: a card has to make
+      sense heard once, out loud, with no screen — so no tables, no "see the section above", no "click here".
       And no member's personal information, ever.</p>
 
     <h3>What it doesn't do</h3>
-    <p class="lp">It doesn't set policy, interpret unclear plan language, or judge legal accuracy. It drafts from
-      the document you gave it, shows its work, and waits for your approval.</p>
+    <p class="lp">It doesn't set policy, interpret unclear plan language, or judge legal accuracy. It drafts
+      from the document you gave it and waits for your approval.</p>
   </section>
 
   <nav class="pipe" id="pipe">
