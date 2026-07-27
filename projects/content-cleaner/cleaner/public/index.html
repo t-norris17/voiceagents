@@ -94,6 +94,11 @@
   .ghost{ background:none; border:1px solid var(--line); border-radius:999px; padding:8px 15px; color:var(--sub); }
   .ghost:hover{ border-color:var(--accent); color:var(--accent); }
   .note{ font-family:var(--mono); font-size:.7rem; color:var(--faint); }
+  .seg{ display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center; padding:9px 0; border-bottom:1px solid var(--hair); cursor:pointer; }
+  .seg:last-of-type{ border-bottom:0; }
+  .seg-title{ font-weight:600; font-size:.92rem; }
+  .seg-meta{ font-family:var(--mono); font-size:.68rem; color:var(--faint); white-space:nowrap; }
+  @media (max-width:560px){ .seg{ grid-template-columns:auto 1fr; } .seg-meta{ grid-column:2; white-space:normal; } }
   .note a{ color:var(--sub); }
 
   #status{ margin-top:22px; font-family:var(--mono); font-size:.8rem; color:var(--sub); }
@@ -425,6 +430,8 @@
   // sections and cleaned one at a time — each pass stays well inside the limits, results stream in as
   // they finish (nothing is lost if you stop early), and one failed section doesn't sink the run.
   const CHUNK_MAX = 45000;
+  const SCAN_MIN = 3;          // only triage genuinely large documents — below this a picker is just clicks
+  const COST_PER_PASS = 0.77;  // measured rough per-pass cost, shown as an estimate only
 
   // Split on blank lines so a section never starts mid-sentence. A single oversized paragraph is
   // hard-split as a last resort.
@@ -468,10 +475,19 @@
       return;
     }
 
-    // Large source: be upfront about what this run costs in time and money before starting it.
+    // Large source: triage before spending. A plan document is mostly fund tables, legal boilerplate
+    // and glossaries that the cleaner drops anyway — so scan it cheaply, let the human choose the
+    // sections worth cleaning, and only then run the expensive passes. Smaller multi-section runs skip
+    // the picker: it would just be extra clicks for one or two sections.
+    if(chunks.length >= SCAN_MIN) return openSectionPicker(text, env, slug, source);
+
     const mins = Math.round(chunks.length * 1.2);
     if(!confirm(`This document is large (${(text.length/1000|0)}k characters). It'll be cleaned in ${chunks.length} sections, roughly ${mins}–${mins*2} minutes, and each section is a separate model run — so this costs meaningfully more than a normal clean.\n\nArticles appear as each section finishes, so you can stop early and keep what's done. Keep this tab open.\n\nStart?`)) return;
+    return runChunks(chunks, env, slug, source);
+  }
 
+  // Clean an explicit list of sections, one at a time, streaming results in as each finishes.
+  async function runChunks(chunks, env, slug, source){
     runBtn.disabled=true;
     out.style.display="block"; out.innerHTML="";
     const sumEl = document.createElement("div"); sumEl.className="summary"; out.append(sumEl);
@@ -525,6 +541,118 @@
     }
     statusEl.textContent = `Done — ${agg.articles} articles from ${chunks.length - fails.length}/${chunks.length} sections.`;
     runBtn.disabled=false;
+  }
+
+  // Cheap, LLM-free structure pass: find candidate headings so sections get meaningful names.
+  // PDF-extracted text is unpredictable, so this returns null when it finds nothing trustworthy and
+  // the caller falls back to splitting by size.
+  function detectSegments(text){
+    const lines = text.split("\n");
+    const heads = [];
+    for(let i=0;i<lines.length;i++){
+      const l = lines[i].trim();
+      if(!l || l.length > 80) continue;
+      const words = l.split(/\s+/).length;
+      const numbered = /^(article\s+[ivxlcdm\d]+|section\s+\d|appendix\s+[a-z\d]|\d+(\.\d+)*\.?)\s+\S/i.test(l);
+      const caps = l === l.toUpperCase() && /[A-Z]{3}/.test(l) && words <= 12;
+      // Single-word headings are common in plan documents ("Loans", "Vesting"), so allow them.
+      // False positives from wrapped prose get folded away by the sliver merge below.
+      const titled = /^[A-Z][^.!?;:]*$/.test(l) && words >= 1 && words <= 10;
+      if(numbered || caps || titled) heads.push(i);
+    }
+    if(heads.length < 2) return null;
+
+    const segs = [];
+    for(let h=0; h<heads.length; h++){
+      const start = heads[h], stop = h+1 < heads.length ? heads[h+1] : lines.length;
+      const body = lines.slice(start, stop).join("\n").trim();
+      if(body) segs.push({ title: lines[start].trim(), text: body });
+    }
+    // Fold slivers into the previous section so a stray bold line isn't its own "section".
+    const merged = [];
+    for(const seg of segs){
+      const prev = merged[merged.length-1];
+      if(prev && seg.text.length < 2500) prev.text += "\n\n" + seg.text;
+      else merged.push({ ...seg });
+    }
+    if(merged.length < 2 || merged.length > 80) return null;
+    return merged;
+  }
+
+  // Scan a large document and let the human pick what's worth cleaning. Nothing is cleaned, and
+  // nothing is charged for cleaning, until they press the button.
+  async function openSectionPicker(text, env, slug, source){
+    runBtn.disabled = true;
+    statusEl.innerHTML = `<span class="dots">Scanning the document for sections</span> · quick, cheap pass — nothing is cleaned yet`;
+
+    const detected = detectSegments(text);
+    const fromHeadings = !!detected;
+    const segs = detected || splitSource(text).map((t)=>({ title:"", text:t }));
+
+    let sections;
+    try{
+      const payload = segs.map((s,i)=>({ i, title: s.title || "", chars: s.text.length, snippet: s.text.slice(0, 260) }));
+      const res = await fetch("/api/scan", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ segments: payload, env }) });
+      const d = await res.json().catch(()=>({error:"bad response"}));
+      if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
+      sections = d.sections || [];
+    }catch(e){
+      statusEl.textContent = "";
+      const all = splitSource(text);
+      if(!confirm(`Couldn't scan the document into sections (${e.message}).\n\nClean the whole thing anyway? That's ${all.length} passes.`)){ runBtn.disabled=false; return; }
+      return runChunks(all, env, slug, source);
+    }
+
+    statusEl.textContent = "";
+    out.style.display="block"; out.innerHTML="";
+    const box = el("div","rsec");
+    box.append(el("h3", null, `Choose what to clean — ${sections.length} sections found`));
+    box.append(el("p","note", fromHeadings
+      ? "Uncheck anything that isn't participant-facing. Fund tables, legal boilerplate and glossaries start unchecked — the cleaner drops that material anyway, after you'd have paid to process it."
+      : "No clear headings were found, so the document was split by size. The labels describe what each part covers."));
+
+    const checks = [];
+    sections.forEach((sec)=>{
+      const seg = segs[sec.i];
+      if(!seg) return;
+      const row = el("label","seg");
+      const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = !!sec.recommend;
+      cb.addEventListener("change", updateEstimate);
+      row.append(cb, el("span","seg-title", sec.title), el("span","seg-meta", `${Math.max(1,Math.round(seg.text.length/1000))}k · ${sec.reason}`));
+      box.append(row);
+      checks.push({ cb, seg });
+    });
+
+    const est = el("div","note"); est.style.margin = "14px 0 2px";
+    const foot = el("div","cardfoot");
+    const go = el("button","run","Clean selected");
+    const bAll = el("button","ghost","Select all");
+    const bNone = el("button","ghost","Select none");
+    const bCancel = el("button","ghost","Cancel");
+    foot.append(go, bAll, bNone, bCancel);
+    box.append(est, foot);
+    out.append(box);
+
+    function passesFor(list){ return list.reduce((n,c)=> n + Math.max(1, Math.ceil(c.seg.text.length / CHUNK_MAX)), 0); }
+    function updateEstimate(){
+      const sel = checks.filter(c=>c.cb.checked);
+      const p = passesFor(sel), mins = Math.round(p*1.2);
+      est.innerHTML = p
+        ? `<b>${sel.length}</b> of ${checks.length} sections · ~${p} pass${p>1?"es":""} · roughly ${mins}–${mins*2} min · about $${(p*COST_PER_PASS).toFixed(0)} (rough estimate)`
+        : "Nothing selected.";
+      go.disabled = !p;
+    }
+    bAll.onclick = ()=>{ checks.forEach(c=>c.cb.checked=true); updateEstimate(); };
+    bNone.onclick = ()=>{ checks.forEach(c=>c.cb.checked=false); updateEstimate(); };
+    bCancel.onclick = ()=>{ out.innerHTML=""; out.style.display="none"; runBtn.disabled=false; };
+    go.onclick = ()=>{
+      const sel = checks.filter(c=>c.cb.checked);
+      if(!sel.length) return;
+      const chunks = [];
+      sel.forEach(c=> splitSource(c.seg.text).forEach(x=>chunks.push(x)));
+      runChunks(chunks, env, slug, source);
+    };
+    updateEstimate();
   }
 
   function rtable(head, rows){
