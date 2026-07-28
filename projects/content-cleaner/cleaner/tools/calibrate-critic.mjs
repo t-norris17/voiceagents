@@ -31,6 +31,10 @@ time by contacting the recordkeeper at 800-555-0142.
 EMPLOYER CONTRIBUTIONS
 The company matches 50% of the first 6% of pay you contribute. Match contributions vest after two
 years of service.
+
+ELIGIBILITY
+The plan may set an age and service condition before you become a participant, subject to legal
+limits on how strict those conditions can be.
 `.trim();
 
 // ---- articles with planted defects. `expect` says what the grader MUST notice. ----
@@ -102,6 +106,23 @@ The maximum is fifty thousand dollars or fifty percent of the vested balance, wh
 A seventy-five dollar setup fee applies and only one loan may be outstanding.`,
   },
   {
+    // The real one: a card scored 2/5 because its closing recap both padded the article and
+    // sharpened "legal limits" into "federal limits". Two defects, one deletable paragraph.
+    name: "closing-recap",
+    plant: "adds a summary paragraph that restates the article and sharpens 'legal' into 'federal'",
+    expect: { maxScore: 3, mustFind: ["unsupported", "bloat"] },
+    md: `How old do I have to be and how long do I have to work before I can join the plan?
+
+The plan can set an age requirement and a service requirement before you become a participant, but
+there are legal limits on how strict those can be.
+
+Your employer chooses the exact age and service conditions in its plan paperwork. To find out the
+specific rules your employer selected, check with your plan administrator.
+
+Federal rules set maximum limits on the age and service conditions a 401(k) plan may impose, while
+employers select the specific conditions within those limits in their plan documents.`,
+  },
+  {
     name: "wrong-topic",
     plant: "title asks about the match; the body answers about enrollment",
     expect: { maxScore: 3, mustFind: ["answers_the_title"] },
@@ -120,6 +141,7 @@ const found = (r) => ({
   note: (r.notes || []).length > 0,
   title: r.title_is_askable === false,
   answers_the_title: r.answers_the_title === false,
+  bloat: r.bloat === true,
 });
 
 const reviews = await critique(CASES.map((c, i) => ({ slug: String(i), md: c.md })), SOURCE);

@@ -125,8 +125,9 @@ the actual words.
   | `member_id` | String | Yes | The caller's 5-digit Member ID (e.g. 10002), as spoken. |
   | `dob` | String | Yes | The caller's date of birth as stated (any format). |
 
-- **Returns:** `{ verified, subject_ref, first_name, consented }`. Read `verified`; keep `subject_ref`
-  for `get_balance`.
+- **Returns:** `{ verified, subject_ref, first_name, plan_name, consented }`. Read `verified`; keep
+  `subject_ref` for `get_balance`; **say `plan_name` back to the caller and wait for a yes** before
+  answering anything.
 
 ### `get_balance`
 - **Name:** `get_balance`

@@ -108,11 +108,31 @@ Each article gets its **own** critic call (`critiqueOne`) with the raw source as
 articles. Sonnet at `effort: "high"`.
 
 - `npm test` — `test/score.test.mjs` pins the arithmetic. No API key needed.
-- `npm run calibrate` — `tools/calibrate-critic.mjs` feeds the **live** critic seven synthetic articles
+- `npm run calibrate` — `tools/calibrate-critic.mjs` feeds the **live** critic eight synthetic articles
   with planted defects (a fee changed $75→$100, an invented repayment term, a dropped 90-day rule, an
-  absolute hedged into "generally", a jargon title, a body answering the wrong question) and exits 1 if
+  absolute hedged into "generally", a jargon title, a body answering the wrong question, and a closing
+  recap that both pads the article and sharpens "legal limits" into "federal limits") and exits 1 if
   the grader waves them through. Re-run it after any change to `CRITIC_SYSTEM` or the weights.
   Everything in it is fictional — no real plan, no member data.
+
+## Two rewriter rules that stop defects at the source
+
+The grader is downstream. Two habits of the *rewriter* produced the low scores in the first real run,
+and both are now forbidden in `REWRITE_SYSTEM`:
+
+1. **No closing recap.** The model liked to end an article with an "in short" paragraph restating what
+   it had just said. On a spoken answer that wastes the caller's time, and it reliably drags in wording
+   the source never used. Articles now end on the last real fact.
+2. **Don't sharpen the source.** Keep its level of precision — "legal limits" stays "legal limits", not
+   "federal limits"; "a fee applies" doesn't acquire an amount; an absolute rule doesn't get softened
+   into "generally", and a hedge doesn't get hardened. Making the source *more specific* than it is
+   reads as authoritative, and is the easiest way to put something in Robin's mouth the document
+   never said.
+
+A real card scored 2/5 from exactly this pair — one closing paragraph, two defects (−2 unsupported for
+"Federal rules…" where the source said "legal limits", −1 bloat for restating the article). The fix was
+deleting one paragraph. `tools/calibrate-critic.mjs` carries it as the `closing-recap` case so the
+critic keeps catching it if it slips through.
 
 ## The review room
 

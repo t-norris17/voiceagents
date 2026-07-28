@@ -1,0 +1,361 @@
+<meta charset="utf-8">
+<title>Three things Robin can do</title>
+<style>
+  /* Print-first. Same visual language as the call diagram: Helvetica, a strict grid,
+     three flat colours — blue for ElevenLabs, black for us, red for attention. */
+  @page { size: letter; margin: 14mm 15mm 12mm; }
+
+  :root{
+    --ink:#000; --grey:#5E6065; --hair:#C9CACD;
+    --blue:#0039A6; --red:#EE352E; --on-red:#0B0B0C;
+    --sans:"Helvetica Neue",Helvetica,"Liberation Sans",Arial,sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; background:#fff; color:var(--ink);
+             font-family:var(--sans); font-size:10.5pt; line-height:1.42;
+             -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  h1,h2,h3,h4{ margin:0; font-weight:700; letter-spacing:-.015em; }
+  p{ margin:0; }
+
+  .page{ page-break-after:always; break-after:page; }
+  .page:last-child{ page-break-after:auto; break-after:auto; }
+
+  /* ---------- cover ---------- */
+  .cover h1{ font-size:36pt; line-height:.94; letter-spacing:-.03em; }
+  .cover .kicker{ font-size:8pt; font-weight:700; letter-spacing:.18em; text-transform:uppercase;
+                  color:var(--grey); margin-bottom:10pt; }
+  .cover .lede{ margin-top:12pt; font-size:11pt; max-width:52ch; }
+  .rule{ border:0; border-top:4pt solid var(--ink); margin:16pt 0 0; }
+
+  .how{ margin-top:16pt; border-top:1pt solid var(--hair); padding-top:12pt; }
+  .how h3{ font-size:8pt; letter-spacing:.16em; text-transform:uppercase; color:var(--grey); }
+  .how ol{ margin:12pt 0 0; padding:0; list-style:none; counter-reset:h; }
+  .how li{ counter-increment:h; position:relative; padding:0 0 8pt 28pt; font-size:10pt; }
+  .how li::before{ content:counter(h); position:absolute; left:0; top:-1pt;
+                   width:19pt; height:19pt; border-radius:50%; background:var(--ink); color:#fff;
+                   font-size:9.5pt; font-weight:700; display:flex; align-items:center; justify-content:center; }
+
+  .three{ margin-top:16pt; border-top:4pt solid var(--ink); }
+  .three .row{ display:flex; gap:13pt; align-items:baseline; padding:10pt 0; border-bottom:1pt solid var(--hair); }
+  .three .n{ flex:none; width:26pt; height:26pt; border-radius:50%; background:var(--blue); color:#fff;
+             font-size:12pt; font-weight:700; display:flex; align-items:center; justify-content:center; }
+  .three .who{ flex:none; width:112pt; font-size:12pt; font-weight:700; }
+  .three .what{ font-size:10pt; }
+
+  .note{ margin-top:18pt; border:3pt solid var(--ink); padding:12pt 14pt; }
+  .note .lbl{ font-size:7.5pt; font-weight:700; letter-spacing:.16em; text-transform:uppercase;
+              background:var(--ink); color:#fff; padding:3pt 7pt; display:inline-block; }
+  .note p{ margin-top:7pt; font-size:10pt; max-width:70ch; }
+
+  .foot{ margin-top:9pt; padding-top:6pt; border-top:1pt solid var(--hair);
+         font-size:7.5pt; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
+         color:var(--grey); }
+
+  /* ---------- scenario ---------- */
+  .head{ display:flex; align-items:flex-start; gap:14pt; border-bottom:4pt solid var(--ink);
+         padding-bottom:9pt; }
+  .head .bul{ flex:none; width:34pt; height:34pt; border-radius:50%; background:var(--blue); color:#fff;
+              font-size:16pt; font-weight:700; display:flex; align-items:center; justify-content:center; }
+  .head .tt{ flex:1; }
+  .head .eyebrow{ font-size:8pt; font-weight:700; letter-spacing:.16em; text-transform:uppercase;
+                  color:var(--grey); }
+  .head h2{ font-size:19pt; line-height:1.03; margin-top:3pt; }
+  .head .cap{ margin-top:5pt; font-size:9.8pt; max-width:60ch; }
+
+  .card{ margin-top:10pt; border:2pt solid var(--ink); }
+  .card .top{ background:var(--ink); color:#fff; padding:5pt 11pt; font-size:8pt; font-weight:700;
+              letter-spacing:.16em; text-transform:uppercase; }
+  .card .grid{ display:flex; flex-wrap:wrap; }
+  .card .f{ flex:1 1 33%; min-width:118pt; padding:8pt 11pt; border-right:1pt solid var(--hair);
+            border-bottom:1pt solid var(--hair); }
+  .card .f:last-child{ border-right:0; }
+  .card .k{ font-size:7.5pt; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--grey); }
+  .card .v{ margin-top:2pt; font-size:12.5pt; font-weight:700; }
+  .card .v.sm{ font-size:10.5pt; }
+
+  .say{ margin-top:10pt; border-left:5pt solid var(--blue); padding:1pt 0 1pt 12pt; }
+  .say .k{ font-size:7.5pt; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--grey); }
+  .say p{ margin-top:3pt; font-size:11.5pt; font-style:italic; }
+
+  .asks{ margin-top:12pt; }
+  .asks > .k{ font-size:8pt; font-weight:700; letter-spacing:.16em; text-transform:uppercase;
+              color:var(--grey); border-bottom:1pt solid var(--hair); padding-bottom:5pt; }
+  .ask{ display:flex; gap:10pt; padding:6.5pt 0; border-bottom:1pt solid var(--hair); break-inside:avoid; }
+  .ask .i{ flex:none; width:17pt; height:17pt; border-radius:50%; background:var(--blue); color:#fff;
+           font-size:8.5pt; font-weight:700; display:flex; align-items:center; justify-content:center; margin-top:1pt; }
+  .ask .q{ font-size:10.5pt; font-weight:700; }
+  .ask .l{ margin-top:3pt; font-size:9.3pt; line-height:1.38; color:var(--grey); max-width:66ch; }
+  .ask.star .i{ background:var(--red); color:var(--on-red); }
+  .ask.star .l{ color:var(--ink); }
+  .ask.star .l b{ color:var(--red); }
+
+  .proves{ margin-top:10pt; border:3pt solid var(--blue); padding:9pt 12pt; break-inside:avoid; }
+  .proves .lbl{ font-size:7.5pt; font-weight:700; letter-spacing:.16em; text-transform:uppercase;
+                background:var(--blue); color:#fff; padding:3pt 7pt; display:inline-block; }
+  .proves p{ margin-top:5pt; font-size:9.6pt; max-width:72ch; }
+</style>
+
+<!-- ============ COVER ============ -->
+<section class="page cover">
+  <div class="kicker">Vertex Manufacturing 401(k) · Robin · Art of the possible</div>
+  <h1>Three things<br>Robin can do</h1>
+  <hr class="rule">
+  <p class="lede">Three phone calls, about three minutes each. Every answer comes from the plan's own
+    documents or the caller's own account — nothing is invented. Pick up the phone, be the person on
+    the card, and ask the questions in order.</p>
+
+  <div class="how">
+    <h3>How to run one</h3>
+    <ol>
+      <li>Dial Robin and put her on speaker.</li>
+      <li>When she asks who is calling, read the <b>Member ID</b> and <b>date of birth</b> from the card.
+        She will never ask for a Social Security number.</li>
+      <li>Ask the questions in order. The grey line under each one is what to listen for.</li>
+      <li>The <b>red</b> question on each page is the moment worth pointing out.</li>
+    </ol>
+  </div>
+
+  <div class="three">
+    <div class="row">
+      <span class="n">1</span>
+      <span class="who">Marcus, 28</span>
+      <span class="what">Two years in, wants a loan. She checks the plan rule against his account and says no.</span>
+    </div>
+    <div class="row">
+      <span class="n">2</span>
+      <span class="who">Priya, 52</span>
+      <span class="what">Mid-career. She applies a formula to her actual balance and gives her a number.</span>
+    </div>
+    <div class="row">
+      <span class="n">3</span>
+      <span class="who">Dana, 73</span>
+      <span class="what">Retiring. She is precise about the rule and refuses to go past it.</span>
+    </div>
+  </div>
+
+  <div class="note">
+    <span class="lbl">Before you dial</span>
+    <p>Vertex Manufacturing is a fictional employer built for demonstrations. All three callers are
+      invented and so is every dollar figure. Robin answers only from that plan's documents — where
+      they are silent, she says so rather than guessing.</p>
+  </div>
+
+  <div class="foot">Synthetic data only · every record is invented</div>
+</section>
+
+<!-- ============ 1 — MARCUS ============ -->
+<section class="page">
+  <div class="head">
+    <span class="bul">1</span>
+    <div class="tt">
+      <div class="eyebrow">Scenario one</div>
+      <h2>She reads the rule<br>against your account</h2>
+      <p class="cap">Marcus is twenty-eight and two years in. He wants money for a car. The answer
+        depends on both the plan's rules and his own record — and she has to hold both at once.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="top">Be this person</div>
+    <div class="grid">
+      <div class="f"><div class="k">Member ID</div><div class="v">90002</div></div>
+      <div class="f"><div class="k">Date of birth</div><div class="v">Sept 30, 1998</div></div>
+      <div class="f"><div class="k">Contributing</div><div class="v">6%</div></div>
+      <div class="f"><div class="k">Balance</div><div class="v">$27,318.15</div></div>
+      <div class="f"><div class="k">Of that, vested</div><div class="v">$19,122.70</div></div>
+      <div class="f"><div class="k">Loan</div><div class="v sm">One outstanding</div></div>
+    </div>
+  </div>
+
+  <div class="say">
+    <div class="k">Open with</div>
+    <p>"Hi — I've got a few questions about my 401(k)."</p>
+  </div>
+
+  <div class="asks">
+    <div class="k">Then ask, in order</div>
+
+    <div class="ask">
+      <span class="i">1</span>
+      <div><div class="q">"Was I automatically enrolled? At what rate?"</div>
+        <div class="l">Four percent to start, going up one percent a year until it reaches ten.
+          Straight from the plan document.</div></div>
+    </div>
+
+    <div class="ask">
+      <span class="i">2</span>
+      <div><div class="q">"Does Vertex match what I put in?"</div>
+        <div class="l">All of the first three percent, then half of the next two — so five percent
+          from him earns the full four percent match. Listen for her to give the practical version,
+          not just the formula.</div></div>
+    </div>
+
+    <div class="ask">
+      <span class="i">3</span>
+      <div><div class="q">"What's my balance?" — then: "why are those two numbers different?"</div>
+        <div class="l">$27,318.15, of which $19,122.70 is vested. The gap is employer match he hasn't
+          held for three years yet. She knows what he has versus what he owns.</div></div>
+    </div>
+
+    <div class="ask star">
+      <span class="i">4</span>
+      <div><div class="q">"Can I take a loan out against it?"</div>
+        <div class="l"><b>The moment.</b> The plan allows loans — but only one at a time, and Marcus
+          already has one. So the answer is no, and it is <b>his</b> no, not a generic one. She had to
+          combine a rule from the plan document with a fact from his account to get there. That is the
+          difference between a search box and an assistant.</div></div>
+    </div>
+  </div>
+
+  <div class="proves">
+    <span class="lbl">What this shows</span>
+    <p>She holds two sources at once — what the plan permits, and what is true of this caller — and
+      answers the person in front of her rather than reciting policy.</p>
+  </div>
+  <div class="foot">Synthetic data only · every record is invented</div>
+</section>
+
+<!-- ============ 2 — PRIYA ============ -->
+<section class="page">
+  <div class="head">
+    <span class="bul">2</span>
+    <div class="tt">
+      <div class="eyebrow">Scenario two</div>
+      <h2>She turns a formula<br>into your number</h2>
+      <p class="cap">Priya is fifty-two and saving hard. The plan states her borrowing limit as a
+        formula. She wants a figure — and there is a trap in the arithmetic.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="top">Be this person</div>
+    <div class="grid">
+      <div class="f"><div class="k">Member ID</div><div class="v">90003</div></div>
+      <div class="f"><div class="k">Date of birth</div><div class="v">June 8, 1974</div></div>
+      <div class="f"><div class="k">Contributing</div><div class="v">10%</div></div>
+      <div class="f"><div class="k">Balance</div><div class="v">$214,905.62</div></div>
+      <div class="f"><div class="k">Vested</div><div class="v sm">Fully vested</div></div>
+      <div class="f"><div class="k">Loan</div><div class="v sm">None</div></div>
+    </div>
+  </div>
+
+  <div class="say">
+    <div class="k">Open with</div>
+    <p>"Hi, I wanted to check on a couple of things with my retirement account."</p>
+  </div>
+
+  <div class="asks">
+    <div class="k">Then ask, in order</div>
+
+    <div class="ask">
+      <span class="i">1</span>
+      <div><div class="q">"I'm over fifty — can I put in extra?"</div>
+        <div class="l">Yes, a catch-up amount on top of the normal limit. This answer only matters
+          because of her age, and she gives it without being told how old she is.</div></div>
+    </div>
+
+    <div class="ask star">
+      <span class="i">2</span>
+      <div><div class="q">"How much could I borrow if I needed to?"</div>
+        <div class="l"><b>The moment.</b> The plan says the lesser of fifty thousand dollars or half
+          your vested balance. Half of hers is over a hundred thousand — so the honest answer is
+          <b>fifty thousand</b>, the cap. Getting that right means reading the rule, pulling her
+          balance, and knowing which of the two applies. Getting it wrong means telling a member she
+          can borrow twice what she can.</div></div>
+    </div>
+
+    <div class="ask">
+      <span class="i">3</span>
+      <div><div class="q">"What would a loan cost me?"</div>
+        <div class="l">A set-up fee, a small annual fee, and a rate tied to prime — up to five years
+          to repay, longer if it's for a home. Concrete, and all of it from the document.</div></div>
+    </div>
+
+    <div class="ask">
+      <span class="i">4</span>
+      <div><div class="q">"Which fund should I be in?" — then push: "just tell me what you'd pick."</div>
+        <div class="l">She won't, however hard you press. She isn't licensed to advise and offers to
+          put her through to someone who is. Worth doing in front of a risk-minded audience.</div></div>
+    </div>
+  </div>
+
+  <div class="proves">
+    <span class="lbl">What this shows</span>
+    <p>A plan document states rules; a member wants an answer. She closes that gap without inventing
+      anything — and stops dead at the line where advice begins.</p>
+  </div>
+  <div class="foot">Synthetic data only · every record is invented</div>
+</section>
+
+<!-- ============ 3 — DANA ============ -->
+<section class="page">
+  <div class="head">
+    <span class="bul">3</span>
+    <div class="tt">
+      <div class="eyebrow">Scenario three</div>
+      <h2>She is precise, and<br>she stops on time</h2>
+      <p class="cap">Dana is seventy-three and retiring — the highest-stakes call in the book. Watch
+        her be exact about the rule and then refuse to take the next step.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="top">Be this person</div>
+    <div class="grid">
+      <div class="f"><div class="k">Member ID</div><div class="v">90001</div></div>
+      <div class="f"><div class="k">Date of birth</div><div class="v">April 12, 1953</div></div>
+      <div class="f"><div class="k">Contributing</div><div class="v">8%</div></div>
+      <div class="f"><div class="k">Balance</div><div class="v">$487,213.44</div></div>
+      <div class="f"><div class="k">Vested</div><div class="v sm">Fully vested</div></div>
+      <div class="f"><div class="k">Loan</div><div class="v sm">None</div></div>
+    </div>
+  </div>
+
+  <div class="say">
+    <div class="k">Open with</div>
+    <p>"Hi — I'm retiring this year and I want to understand my options."</p>
+  </div>
+
+  <div class="asks">
+    <div class="k">Then ask, in order</div>
+
+    <div class="ask">
+      <span class="i">1</span>
+      <div><div class="q">"What's my balance?"</div>
+        <div class="l">$487,213.44, fully vested. Nearly half a million dollars, read back correctly
+          to someone whose identity she checked first.</div></div>
+    </div>
+
+    <div class="ask">
+      <span class="i">2</span>
+      <div><div class="q">"What are my choices when I leave?"</div>
+        <div class="l">Four of them — leave it where it is, move it to a new employer's plan, move it
+          to an IRA, or take the cash. She should note that her balance is comfortably above the
+          threshold where the plan would move it for her.</div></div>
+    </div>
+
+    <div class="ask">
+      <span class="i">3</span>
+      <div><div class="q">"When do I have to start taking money out?"</div>
+        <div class="l">Seventy-three. A precise number, because the plan document states it — which
+          makes what happens next mean something.</div></div>
+    </div>
+
+    <div class="ask star">
+      <span class="i">4</span>
+      <div><div class="q">"So how much do I have to take out this year?"</div>
+        <div class="l"><b>The moment. Say "watch what she does here" before you ask it.</b> She just
+          gave a confident answer about the age — but the document doesn't say how to work out the
+          amount, so she stops and offers to connect Dana to someone who can. <b>The same assistant,
+          one question apart, exact and then declining.</b> Guessing that number is how a member ends
+          up with a tax penalty.</div></div>
+    </div>
+  </div>
+
+  <div class="proves">
+    <span class="lbl">What this shows</span>
+    <p>Confidence and restraint from the same source: precise where the document is precise, silent
+      where it is silent — and every question she can't finish becomes the list of what to teach her next.</p>
+  </div>
+  <div class="foot">Synthetic data only · every record is invented</div>
+</section>

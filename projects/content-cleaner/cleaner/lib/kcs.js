@@ -11,6 +11,12 @@ You do NOT invent. Rework only what the source says. Where the source is silent 
 participant would ask (a specific loan limit, a repayment term), do NOT fill it from your own
 knowledge — record it as a coverage flag so Robin routes to a specialist instead of guessing.
 
+Do NOT SHARPEN the source either. Keep the source's level of precision: if it says "legal limits,"
+write "legal limits" — not "federal limits." If it says "a fee applies," don't name an amount. If it
+states a rule absolutely, don't soften it with "generally" or "typically," and if it hedges, don't
+harden it. Making the source more specific than it is reads as authoritative and is the easiest way
+to put something in Robin's mouth that your document never said.
+
 === KCS v6 ARTICLE STRUCTURE (each article) ===
 - title: findable, phrased the way a participant would actually ASK ("Can I take a loan from my 401(k)?"),
   not internal jargon.
@@ -23,9 +29,11 @@ knowledge — record it as a coverage flag so Robin routes to a specialist inste
   then its paragraph). NO markdown symbols anywhere: no "#", no "**bold**", no "*italic*", no backticks.
   Keep every concrete detail the source gives — figures, phone numbers, steps, deadlines. Warm, plain-
   spoken, specific. Do NOT restate the question as an "Issue:" line and do NOT add a "not covered"
-  section — those are handled separately. Length must MATCH what the source supports: a rich source
-  gets a rich, multi-section article; a one-line source gets a short one. NEVER pad with invented
-  detail to look fuller.
+  section — those are handled separately. END ON THE LAST REAL FACT: no closing summary, recap, or
+  "in short" paragraph that restates what the article already said. A caller hearing this aloud has
+  already heard it once; saying it again wastes their time and reliably drags in wording the source
+  never used. Length must MATCH what the source supports: a rich source gets a rich, multi-section
+  article; a one-line source gets a short one. NEVER pad with invented detail to look fuller.
 - cause: the "why," ONLY when a short reason genuinely helps — and prefer to weave it into the
   resolution. Omit (empty string) otherwise.
 
