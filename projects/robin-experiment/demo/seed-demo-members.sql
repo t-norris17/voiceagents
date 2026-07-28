@@ -11,7 +11,9 @@ values
   -- Card A - Dana, 73 this year: makes "when do I have to start taking money out" a real question.
   ('90001','1953-04-12','Dana','INTRUST 401(k) Plan', 48721344, 48721344, true,  false, 0, 8.00, true, now()),
   -- Card B - Marcus, 28: total vs vested differ (profit sharing pre-cliff), and he has a loan.
-  ('90002','1998-09-30','Marcus','INTRUST 401(k) Plan',  2731815,  1912270, false, true,  0, 6.00, true, now())
+  ('90002','1998-09-30','Marcus','INTRUST 401(k) Plan',  2731815,  1912270, false, true,  0, 6.00, true, now()),
+  -- Card C - Priya, 52: catch-up contributions land because of her age, and she's fully vested.
+  ('90003','1974-06-08','Priya','INTRUST 401(k) Plan',  21490562, 21490562, true,  false, 0,10.00, true, now())
 on conflict (member_id) do update set
   dob=excluded.dob, first_name=excluded.first_name, plan_name=excluded.plan_name,
   balance_cents=excluded.balance_cents, vested_balance_cents=excluded.vested_balance_cents,
