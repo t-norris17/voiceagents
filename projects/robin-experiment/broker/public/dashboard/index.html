@@ -54,6 +54,7 @@
   table{ width:100%; border-collapse:collapse; font-size:.9rem; }
   thead th{ font-size:.62rem; text-transform:uppercase; letter-spacing:.14em; color:var(--faint); font-weight:600; text-align:left; padding:14px 0 8px; border-bottom:1px solid var(--ink); }
   th.r,td.r{ text-align:right; }
+  thead th.r{ padding-left:26px; white-space:nowrap; }
 
   .catrow td{ padding:22px 0 7px; border-bottom:1px solid var(--ink); }
   .catrow .lbl{ letter-spacing:.16em; }
@@ -144,7 +145,7 @@
   <div class="mast">
     <h1 class="wm">Robin</h1>
     <div class="meta" id="mastmeta">
-      INTRUST 401(k) pilot · loading…
+      loading…
       <button class="themebtn" id="theme">Theme</button>
     </div>
   </div>
@@ -162,30 +163,30 @@
   <section>
     <div class="shead">
       <div class="tabset" role="group" aria-label="Group by">
-        <button data-view="question" aria-pressed="true">By question</button>
-        <button data-view="category" aria-pressed="false">By category</button>
+        <button data-view="question" aria-pressed="true">One by one</button>
+        <button data-view="category" aria-pressed="false">Grouped</button>
       </div>
       <div class="tabset" role="group" aria-label="Filter">
-        <button data-q="all" aria-pressed="true">All</button>
-        <button data-q="attention" aria-pressed="false">Attention</button>
-        <button data-q="gaps" aria-pressed="false">Not asked</button>
+        <button data-q="all" aria-pressed="true">Everything</button>
+        <button data-q="attention" aria-pressed="false">Needs work</button>
+        <button data-q="gaps" aria-pressed="false">Never come up</button>
       </div>
     </div>
     <table>
       <thead>
-        <tr><th>Question</th><th class="r">Asked</th><th class="r">Quality</th><th class="r hidesm">Sentiment</th><th class="r hidesm">&nbsp;</th></tr>
+        <tr><th>What people asked</th><th class="r">Times</th><th class="r">How she did</th><th class="r hidesm">Mood</th><th class="r hidesm">&nbsp;</th></tr>
       </thead>
       <tbody id="qbody"></tbody>
     </table>
   </section>
 
   <section>
-    <div class="shead"><div class="lbl">Utilization · <span id="utilmeta"></span></div></div>
+    <div class="shead"><div class="lbl">How much she's handling · <span id="utilmeta"></span></div></div>
     <div id="util"></div>
   </section>
 
   <section>
-    <div class="shead"><div class="lbl">Content Robin needs · <span id="gapcount"></span></div></div>
+    <div class="shead"><div class="lbl">Waiting on an answer · <span id="gapcount"></span></div></div>
     <div id="gaps"></div>
   </section>
 
@@ -195,13 +196,13 @@
   </section>
 
   <section>
-    <div class="shead"><div class="lbl">Review queue · <span id="rqcount"></span></div></div>
+    <div class="shead"><div class="lbl">Worth a listen · <span id="rqcount"></span></div></div>
     <div id="rq"></div>
   </section>
 
   <footer>
-    <span>Robin · INTRUST 401(k) experiment · <span id="gen"></span></span>
-    <span>members · ai_call_events · curated_questions · call_question_scores</span>
+    <span>Robin · Vertex Manufacturing 401(k) · <span id="gen"></span></span>
+    <span>Every answer checked against the plan documents she actually read</span>
   </footer>
 </div>
 
@@ -228,29 +229,33 @@
   function paint(){
     const d=DATA; if(!d) return;
     document.getElementById("mastmeta").innerHTML=
-      `INTRUST 401(k) pilot · <b>${d.window.members}</b> testers · <b>${d.window.calls}</b> call${d.window.calls===1?"":"s"}<br>`+
-      `${d.window.consented}/${d.window.members} consented <button class="themebtn" id="theme">Theme</button>`;
+      `<b>${d.window.calls}</b> call${d.window.calls===1?"":"s"} so far<br>`+
+      `<span class="soft">last updated <span id="gen2"></span></span> <button class="themebtn" id="theme">Theme</button>`;
     wireTheme();
 
     // Verdict tiles
-    const s=d.security, x=d.experience, c=d.coverage;
+    const s=d.security, x=d.experience, u=d.utilization||{};
+    const openGaps = (d.gaps||[]).filter(g=>g.status!=="resolved" && (g.top_reason==="no_content"||g.top_reason==="not_retrieved")).length;
     const secNote = s.total_auth
-      ? `No SSN or credential disclosed. ${s.verified_pct!=null?`<b>${s.verified_pct}%</b> verified`:""}${s.failed?`, ${s.failed} transferred`:""}. ${s.flags?`<span class="accent">${s.flags} flagged</span>`:"No flags"}.`
-      : "No calls with an authentication step yet.";
+      ? `${s.flags?`<span class="accent">${s.flags} call${s.flags===1?"":"s"} worth a look.</span>`:"She never said a Social Security number, password or PIN."}${s.verified_pct!=null?` ${s.verified_pct}% of callers verified${s.failed?`; ${s.failed} handed to a person`:""}.`:""}`
+      : "Nobody has been through identity checks yet.";
     const expFig = x.graded ? `${x.avg_quality.toFixed(1)}<span class="un">/5</span>` : "—";
     const expNote = x.graded
-      ? `Answer quality across ${x.scored_count} graded answer${x.scored_count===1?"":"s"}. Net sentiment <b>${x.net_sentiment>0?"+":""}${x.net_sentiment}</b>.`
-      : `${d.window.calls} call${d.window.calls===1?"":"s"} captured; grader hasn't scored answers yet.`;
+      ? `Checked ${x.scored_count} answer${x.scored_count===1?"":"s"} line by line against the plan documents she read.`
+      : `We haven't checked her answers yet.`;
     document.getElementById("verdict").innerHTML=`
-      <div class="v"><div class="k lbl">Security</div><div class="fig">${s.verdict}</div><div class="note">${secNote}</div></div>
-      <div class="v"><div class="k lbl">Experience</div><div class="fig tnum">${expFig}</div><div class="note">${expNote}</div></div>
-      <div class="v"><div class="k lbl">Coverage</div><div class="fig tnum">${c.asked_questions}<span class="un">/${c.total_questions}</span></div>
-        <div class="note"><b>${c.testers_participated}/${c.total_testers}</b> testers took part. <span class="${c.total_questions-c.asked_questions>0?"accent":""}">${c.total_questions-c.asked_questions} question${c.total_questions-c.asked_questions===1?"":"s"}</span> not yet asked.</div></div>`;
+      <div class="v"><div class="k lbl">She answered</div><div class="fig tnum">${u.pct==null?"—":u.pct}<span class="un">%</span></div>
+        <div class="note">${u.total_asked?`${u.answered} of the ${u.total_asked} things people asked her.`:"Nothing asked yet."}</div></div>
+      <div class="v"><div class="k lbl">And got it right</div><div class="fig tnum">${expFig}</div><div class="note">${expNote}</div></div>
+      <div class="v"><div class="k lbl">Still stuck on</div><div class="fig tnum">${openGaps}</div>
+        <div class="note">${openGaps?`question${openGaps===1?"":"s"} waiting for an answer to be written.`:"Nothing — she's handled everything so far."}</div></div>`;
 
     document.getElementById("banner").innerHTML = x.graded ? "" :
-      `<div class="banner">The per-question grid fills in once the grader scores captured calls. Calls are landing (${d.window.calls}); scores are at 0.</div>`;
+      `<div class="banner">Calls are coming in — ${d.window.calls} so far. The table below fills in once we've checked her answers.</div>`;
 
-    document.getElementById("gen").textContent="updated "+when(d.generated_at);
+    { const w=when(d.generated_at);
+      const g1=document.getElementById("gen"); if(g1) g1.textContent="updated "+w;
+      const g2=document.getElementById("gen2"); if(g2) g2.textContent=w; }
     renderQuestions();
     renderUtilization();
     renderGaps();
@@ -259,10 +264,10 @@
   }
 
   const WHY = {
-    no_content:   ["No article covers this",      false],
-    not_retrieved:["In the KB but not retrieved", false],
-    out_of_scope: ["Needs a human — not content", true ],
-    guardrail:    ["Declined by design",          true ],
+    no_content:   ["Nothing written about this yet",       false],
+    not_retrieved:["We've written this — she missed it",   false],
+    out_of_scope: ["Not something an article can answer",  true ],
+    guardrail:    ["She was right to say no",              true ],
   };
 
   // Utilization: of everything callers asked Robin, how much did she actually answer?
@@ -270,26 +275,25 @@
   function renderUtilization(){
     const el2=document.getElementById("util"), u=DATA.utilization||{};
     const total=u.total_asked||0;
-    document.getElementById("utilmeta").textContent = total ? `${u.answered}/${total} questions answered` : "";
-    if(!total){ el2.innerHTML=`<div class="empty">No questions captured yet — utilization appears once calls are graded.</div>`; return; }
+    document.getElementById("utilmeta").textContent = total ? `${u.answered} of ${total} answered` : "";
+    if(!total){ el2.innerHTML=`<div class="empty">Nothing to show yet. This fills in after the first few calls.</div>`; return; }
     const ans=u.answered||0, fix=u.addressable_gap||0, oos=Math.max(0, total-ans-fix);
     const pc=(n)=>((n/total)*100).toFixed(2)+"%";
     el2.innerHTML=`
       <div class="util">
-        <div class="fig tnum">${u.pct}<span class="un">% answered</span></div>
         <div class="bar" role="img" aria-label="${ans} answered, ${fix} fixable gap, ${oos} not content">
           <span class="b-ans" style="width:${pc(ans)}"></span>
           <span class="b-gap" style="width:${pc(fix)}"></span>
           <span class="b-oos" style="width:${pc(oos)}"></span>
         </div>
         <div class="key">
-          <span class="k-ans"><i></i>${ans} answered</span>
-          <span class="k-gap"><i></i>${fix} fixable with content</span>
-          <span class="k-oos"><i></i>${oos} needs a human / declined by design</span>
+          <span class="k-ans"><i></i>${ans} she answered</span>
+          <span class="k-gap"><i></i>${fix} we could fix by writing something</span>
+          <span class="k-oos"><i></i>${oos} needed a person, or she was right to decline</span>
         </div>
         <div class="note" style="font-size:.72rem;color:var(--faint);margin-top:10px">
-          Denominator: ${esc(u.denominator_note||"questions asked on calls routed to Robin")}.
-          ${fix?`Closing the ${fix} fixable gap${fix>1?"s":""} would take Robin to <b>${Math.round(((ans+fix)/total)*100)}%</b>.`:""}
+          Out of everything asked on calls that reached her.
+          ${fix?`Write those ${fix} answer${fix>1?"s":""} and she'd be at <b>${Math.round(((ans+fix)/total)*100)}%</b>.`:""}
         </div>
       </div>`;
   }
@@ -297,8 +301,10 @@
   // The feedback loop's output: what Robin was asked and couldn't answer, ranked by demand.
   function renderGaps(){
     const el2=document.getElementById("gaps"), gaps=DATA.gaps||[];
-    document.getElementById("gapcount").textContent = gaps.length ? `${gaps.length} to write` : "none";
-    if(!gaps.length){ el2.innerHTML=`<div class="empty">Nothing unanswered yet.</div>`; return; }
+    const writable = gaps.filter(g=>!(WHY[g.top_reason]||WHY.no_content)[1]).length;
+    document.getElementById("gapcount").textContent =
+      gaps.length ? (writable ? `${writable} to write` : "nothing to write") : "all clear";
+    if(!gaps.length){ el2.innerHTML=`<div class="empty">She's answered everything that's come up so far.</div>`; return; }
     el2.innerHTML="";
     gaps.forEach(g=>{
       const [label, soft] = WHY[g.top_reason] || WHY.no_content;
@@ -311,12 +317,16 @@
         ${g.samples&&g.samples.length?`<div class="gap-sample">“${esc(g.samples[0])}”</div>`:""}`;
       const act=document.createElement("div"); act.className="gap-act";
       const st=document.createElement("span"); st.className="gap-status"; st.textContent=g.status==="new"?"":g.status;
-      if(!soft && !resolved){
+      if(!soft && !resolved && g.status==="new"){
         const b=document.createElement("button");
-        b.textContent = g.status==="requested"||g.status==="in_progress" ? "Mark resolved" : "Request content";
+        b.textContent = "Ask for this";
         b.addEventListener("click", ()=>markGap(g, b, st));
         act.append(b);
       }
+      if(g.status==="requested"||g.status==="in_progress")
+        st.textContent = "asked for — closes itself when the answer is published";
+      else if(resolved)
+        st.textContent = g.resolved_slug ? `answered by "${g.resolved_slug}"` : "answered";
       act.append(st);
       d.append(act);
       el2.append(d);
@@ -324,15 +334,16 @@
   }
 
   async function markGap(g, btn, statusEl){
-    const next = (g.status==="requested"||g.status==="in_progress") ? "resolved" : "requested";
+    const next = "requested";
     btn.disabled=true; const orig=btn.textContent; btn.textContent="Saving…";
     try{
       const res=await fetch("/api/gap_request",{method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({canonical_key:g.canonical_key, canonical_question:g.question, status:next})});
       const d=await res.json().catch(()=>({error:"bad response"}));
       if(!res.ok||d.error) throw new Error(d.error||("HTTP "+res.status));
-      g.status=next; statusEl.textContent=next;
-      if(next==="resolved"){ btn.remove(); } else { btn.disabled=false; btn.textContent="Mark resolved"; }
+      g.status=next;
+      statusEl.textContent="asked for — closes itself when the answer is published";
+      btn.remove();
     }catch(e){ btn.disabled=false; btn.textContent=orig; statusEl.textContent="failed: "+e.message; }
   }
 
@@ -355,7 +366,7 @@
   function detailRow(r){
     const tr=document.createElement("tr"); tr.className="detail"; tr.dataset.for=r.key;
     const list=(r.answers||[]).map(a=>`<div class="ans"><div class="ans-text">${esc(a.text)}</div><div class="ans-meta">${a.quality!=null?`<span class="${a.quality<3.5?'weak':''}">${a.quality.toFixed(1)}</span>`:''}<span class="s">${SENT[a.sentiment]||''}</span></div>${a.note?`<div class="ans-note">${esc(a.note)}</div>`:''}</div>`).join("");
-    tr.innerHTML=`<td colspan="5"><div class="answers">${list||'<div class="empty">No captured answers.</div>'}</div></td>`;
+    tr.innerHTML=`<td colspan="5"><div class="answers">${list||'<div class="empty">Nothing recorded for this one.</div>'}</div></td>`;
     tr.style.display="none"; return tr;
   }
 
@@ -380,7 +391,7 @@
   function renderCalls(){
     const el=document.getElementById("calls"), calls=DATA.recent_calls||[];
     document.getElementById("callcount").textContent=`${DATA.window.calls} total`;
-    if(!calls.length){ el.innerHTML=`<div class="empty">No calls captured yet.</div>`; return; }
+    if(!calls.length){ el.innerHTML=`<div class="empty">No calls yet.</div>`; return; }
     el.innerHTML=calls.map(c=>{
       const authBad=c.auth_outcome==="failed";
       const authPill=c.auth_outcome?`<span class="pill ${authBad?'bad':'ok'}">${esc(c.auth_outcome)}</span>`:"";
@@ -395,7 +406,7 @@
   function renderReview(){
     const el=document.getElementById("rq"), rq=DATA.review_queue||[];
     document.getElementById("rqcount").textContent=`${rq.length} flagged`;
-    if(!rq.length){ el.innerHTML=`<div class="empty">Nothing needs review.</div>`; return; }
+    if(!rq.length){ el.innerHTML=`<div class="empty">Nothing here needs a second look.</div>`; return; }
     el.innerHTML=rq.map(x=>`<div class="rq-item"><div><div class="rq-topic">${esc(x.topic)} <span class="rq-id">${esc(shortRef(x.ref))}</span></div><div class="rq-reason">${esc(x.reason)}</div></div><div class="rq-meta">${esc(x.meta||"")}</div></div>`).join("");
   }
 
