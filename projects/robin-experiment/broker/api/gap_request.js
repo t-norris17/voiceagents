@@ -1,7 +1,10 @@
-// POST /api/gap_request  { canonical_key, canonical_question, status?, note? }
+// POST /api/gap_request  { canonical_key, canonical_question, plan_id?, status?, note? }
 // The human half of the feedback loop: Robin's self-review surfaces a question she couldn't answer,
-// a person claims it ("content requested") and later marks it resolved once an article is published.
+// and a person claims it ("content requested"). Resolution is no longer manual — publishing an
+// article that answers the question closes the gap automatically (content-cleaner/lib/gaps.js), so
+// "resolved" means an article actually exists rather than that somebody ticked a box.
 // Status lives here rather than on call_questions so the atomic per-call facts stay immutable.
+// plan_id scopes the queue per tenant: 25 companies with 25 knowledge bases each get their own.
 import { sb } from "../lib/supabase.js";
 
 const STATUSES = new Set(["new", "requested", "in_progress", "resolved"]);
@@ -17,6 +20,7 @@ export default async function handler(req, res) {
 
     const status = STATUSES.has(b.status) ? b.status : "requested";
     const row = {
+      plan_id: String(b.plan_id || "").trim(),
       canonical_key,
       canonical_question,
       status,
@@ -25,14 +29,14 @@ export default async function handler(req, res) {
       updated_at: new Date().toISOString(),
     };
 
-    await sb("gap_requests?on_conflict=canonical_key", {
+    await sb("gap_requests?on_conflict=plan_id,canonical_key", {
       method: "POST",
       prefer: "resolution=merge-duplicates,return=minimal",
       body: row,
     });
 
     res.setHeader("Cache-Control", "no-store");
-    return res.status(200).json({ ok: true, canonical_key, status });
+    return res.status(200).json({ ok: true, canonical_key, status, plan_id: row.plan_id });
   } catch (e) {
     return res.status(500).json({ error: String(e.message || e) });
   }

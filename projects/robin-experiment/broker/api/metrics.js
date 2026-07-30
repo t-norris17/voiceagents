@@ -49,7 +49,7 @@ export default async function handler(req, res) {
     const [events, questions, scores, memberAgg, asked, gapStatus] = await Promise.all([
       sb(`ai_call_events?provider=eq.elevenlabs&select=conversation_id,started_at,duration_seconds,topic,outcome,transfer_reason,auth_outcome,subject_ref,overall_sentiment,security_flag,security_detail&order=started_at.desc.nullslast`),
       sb(`curated_questions?active=eq.true&select=question_key,category,question_text,sort_order&order=sort_order.asc`),
-      sb(`call_question_scores?select=conversation_id,question_key,asked,answer_text,quality_score,quality_rating,sentiment,reviewed,reviewer_note`),
+      sb(`call_question_scores?select=conversation_id,question_key,question_text,asked,answer_text,quality_score,quality_rating,grounding,unsupported_claims,contradicted_claims,graded_against,sentiment,reviewed,reviewer_note`),
       sb(`members?select=consented`),
       sb(`call_questions?select=conversation_id,canonical_key,canonical_question,category,asked_text,answered,fail_reason,matched_question_key`),
       sb(`gap_requests?select=canonical_key,status,note,resolved_slug`),
@@ -80,30 +80,73 @@ export default async function handler(req, res) {
       byKey.get(s.question_key).push(s);
     }
 
-    const qRows = questions.map((qq) => {
-      const rows = byKey.get(qq.question_key) || [];
+    // The grid is built from what callers ACTUALLY ASKED, not from a fixed checklist. The old
+    // version mapped over curated_questions, so the moment the grader stopped keying on curated ids
+    // — which is exactly what made it tenant-agnostic — every row would have read zero. Observed
+    // questions are the union of graded answers and the demand record, newest evidence wins for the
+    // label; curated_questions now only supplies a nicer label when it happens to know one.
+    const observed = new Map(); // key -> { label, category }
+    for (const a of asked) {
+      if (!a.canonical_key) continue;
+      if (!observed.has(a.canonical_key))
+        observed.set(a.canonical_key, { label: a.canonical_question || a.canonical_key, category: a.category || null });
+    }
+    for (const s2 of scored) {
+      if (!s2.question_key || observed.has(s2.question_key)) continue;
+      observed.set(s2.question_key, { label: s2.question_text || s2.question_key, category: null });
+    }
+    // Curated entries that were never asked still show up, so "not asked" stays meaningful.
+    for (const qq of questions) {
+      if (!observed.has(qq.question_key))
+        observed.set(qq.question_key, { label: LABEL[qq.question_key] || qq.question_text, category: qq.category });
+    }
+
+    // How often each question was asked overall, and how often it went unanswered.
+    const demand = new Map();
+    for (const a of asked) {
+      if (!a.canonical_key) continue;
+      const d = demand.get(a.canonical_key) || { asked: 0, unanswered: 0 };
+      d.asked += 1;
+      if (!a.answered) d.unanswered += 1;
+      demand.set(a.canonical_key, d);
+    }
+
+    const qRows = [...observed.entries()].map(([key, meta]) => {
+      const qq = { question_key: key, category: meta.category, question_text: meta.label };
+      const rows = byKey.get(key) || [];
+      const dem = demand.get(key) || { asked: 0, unanswered: 0 };
       const quals = rows.map((r) => num(r.quality_score)).filter((x) => x != null);
       const sents = rows.map((r) => sentBucket(r.sentiment)).filter(Boolean);
       const pos = sents.filter((x) => x === "positive").length;
       const neg = sents.filter((x) => x === "negative").length;
       const net = sents.length ? Math.round(((pos - neg) / sents.length) * 100) : null;
+      const grounds = rows.map((r) => r.grounding).filter(Boolean);
       return {
         key: qq.question_key,
         category: qq.category,
-        cat_label: CATLABEL[qq.category] || qq.category,
+        cat_label: CATLABEL[qq.category] || qq.category || "Uncategorised",
         label: LABEL[qq.question_key] || qq.question_text,
-        asked: rows.length,
+        // asked = how many times a caller raised it; scored = how many of those got graded.
+        asked: Math.max(dem.asked, rows.length),
+        unanswered: dem.unanswered,
+        scored: rows.length,
+        ungrounded: grounds.filter((g) => g === "unsupported" || g === "contradicted").length,
+        no_source: grounds.filter((g) => g === "no_source").length,
         quality: quals.length ? Number(avg(quals).toFixed(1)) : null,
         net_sentiment: net,
         neg_pct: sents.length ? Math.round((neg / sents.length) * 100) : null,
         answers: rows.map((r) => ({
           text: r.answer_text || "",
           quality: num(r.quality_score),
+          grounding: r.grounding || null,
+          graded_against: Array.isArray(r.graded_against) ? r.graded_against : [],
           sentiment: sentBucket(r.sentiment),
           note: r.reviewer_note || null,
         })),
       };
     });
+
+    qRows.sort((a, b) => (b.asked - a.asked) || ((a.quality ?? 9) - (b.quality ?? 9)));
 
     // ---- Experience: quality + sentiment across everything graded ----
     const allQuals = scored.map((s) => num(s.quality_score)).filter((x) => x != null);

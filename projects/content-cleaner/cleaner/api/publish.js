@@ -11,6 +11,7 @@
 // ELEVENLABS_AGENT_ID.
 import { createHash } from "node:crypto";
 import { sb } from "../lib/supabase.js";
+import { resolveGapsFor } from "../lib/gaps.js";
 import { createFromText, computeRagIndex, getRagIndex, attachToAgent, detachFromAgent, deleteDocument } from "../lib/elevenlabs.js";
 
 const sha256 = (s) => createHash("sha256").update(String(s)).digest("hex");
@@ -112,7 +113,17 @@ export default async function handler(req, res) {
       },
     });
 
-    return res.status(200).json({ ok: true, document_id: doc.id, version, indexed, row: inserted?.[0] || null });
+    // Close any open gap this article answers. Best-effort and AFTER the publish has landed —
+    // the article is live either way, and a matching failure must never fail the publish.
+    const closed = await resolveGapsFor({
+      plan_id, slug, title, candidate_questions: a.candidate_questions || [],
+    });
+
+    return res.status(200).json({
+      ok: true, document_id: doc.id, version, indexed,
+      row: inserted?.[0] || null,
+      gaps_closed: closed.resolved || [],
+    });
   } catch (e) {
     return res.status(500).json({ error: String(e.message || e) });
   }
