@@ -43,6 +43,15 @@ export async function getAgent(agentId) {
   return el(`/v1/convai/agents/${agentId}`, { method: "GET" });
 }
 
+// Fetch one KB document. The docs confirm a Get endpoint exists; what its response CONTAINS —
+// specifically whether the document's text comes back — is not recorded in our reference, so
+// api/kb_probe.js reports the real shape rather than us guessing at it. Once that's known this is
+// what lets us adopt documents uploaded outside the pipeline: without their text we can't grade
+// answers drawn from them, and they can't take part in the gap loop.
+export async function getDocument(documentId) {
+  return el(`/v1/convai/knowledge-base/${documentId}`, { method: "GET" });
+}
+
 export async function deleteDocument(documentId) {
   return el(`/v1/convai/knowledge-base/${documentId}`, { method: "DELETE" });
 }
