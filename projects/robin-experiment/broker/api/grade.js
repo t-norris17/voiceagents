@@ -329,8 +329,14 @@ export default async function handler(req, res) {
     const results = await Promise.allSettled(pending.map((c) => gradeCall(c, sourceCache)));
 
     let graded = 0, scoredRows = 0, askedTotal = 0, noSource = 0;
+    const failures = [];
     for (const r of results) {
-      if (r.status !== "fulfilled") { console.error("grade failed:", String(r.reason?.message || r.reason)); continue; }
+      if (r.status !== "fulfilled") {
+        const msg = String(r.reason?.message || r.reason);
+        console.error("grade failed:", msg);
+        failures.push({ stage: "grade", error: msg.slice(0, 300) });
+        continue;
+      }
       const { conversation_id, rows, askedRows, security_flag, security_detail } = r.value;
       try {
         if (rows.length) {
@@ -358,14 +364,29 @@ export default async function handler(req, res) {
         });
         graded += 1;
       } catch (e) {
-        console.error("grade write failed:", conversation_id, String(e.message || e));
+        const msg = String(e.message || e);
+        console.error("grade write failed:", conversation_id, msg);
+        failures.push({ stage: "write", conversation_id, error: msg.slice(0, 300) });
       }
     }
 
+    // A run that graded NOTHING while calls were waiting is a broken grader, not a quiet success.
+    // This endpoint used to answer 200 {ok:true, graded:0} in exactly that case, and it did so for
+    // weeks: a leftover foreign key rejected every score row, the write threw, the error went to a
+    // log nobody reads, and the calls were re-graded on every dashboard refresh forever. The only
+    // calls that got through were the ones where she answered nothing, because those write no score
+    // rows at all. Say it out loud instead.
+    const stuck = graded === 0 && pending.length > 0;
+
     res.setHeader("Cache-Control", "no-store");
-    return res.status(200).json({
-      ok: true, graded, scored_rows: scoredRows, asked_rows: askedTotal,
+    return res.status(stuck ? 500 : 200).json({
+      ok: !stuck && !failures.length,
+      graded, scored_rows: scoredRows, asked_rows: askedTotal,
       calls_without_source: noSource, pending: pending.length,
+      stuck,
+      failed: failures.length,
+      // First few only — one broken constraint produces the same error for every call in the batch.
+      errors: failures.slice(0, 3),
     });
   } catch (e) {
     return res.status(500).json({ error: String(e.message || e) });
