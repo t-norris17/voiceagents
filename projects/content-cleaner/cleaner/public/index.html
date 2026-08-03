@@ -472,8 +472,12 @@
   async function stageArticle(a){
     const meta = CURRENT_META || {};
     if(!meta.environment) throw new Error("no plan set");
+    // `verified` says this text came out of a cleaning run, where the critic checked it against the
+    // plan document. Without it the server re-checks against the previous version instead — right
+    // for a hand edit, wrong here, because a re-run on an updated document legitimately adds facts.
     const payload = { article: { plan_id: meta.slug, slug: a.slug, title: a.title, environment: meta.environment,
-      body_md: a.md, source: meta.source || null, coverage_flags: a.coverage_flags || [], candidate_questions: a.candidate_questions || [] } };
+      body_md: a.md, source: meta.source || null, coverage_flags: a.coverage_flags || [], candidate_questions: a.candidate_questions || [],
+      verified: !!a.review } };
     const res = await fetch("/api/approve", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
     const d = await res.json().catch(()=>({error:"bad response"}));
     if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
@@ -1215,18 +1219,40 @@
 
     cancel.addEventListener("click", ()=>{ wrap.remove(); btn.disabled=false; });
 
+    // Set when the reviewer has seen the fact-check warning and chosen to publish anyway. The check
+    // is advice, not a veto — but it can't be walked past without reading it.
+    let force = false;
+
     save.addEventListener("click", async ()=>{
       const body_md = ta.value.trim();
       if(!body_md){ alert("The article can't be empty."); return; }
-      save.disabled = true; cancel.disabled = true; save.textContent = "Saving…";
+      save.disabled = true; cancel.disabled = true;
+      save.textContent = force ? "Saving…" : "Checking…";
       try{
         const article = {
           plan_id: a.plan_id, slug: a.slug, title: a.title, environment: a.environment,
           body_md, source: a.source, coverage_flags: a.coverage_flags || [],
-          candidate_questions: a.candidate_questions || [],
+          candidate_questions: a.candidate_questions || [], force,
         };
         const res = await fetch("/api/approve", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ article }) });
         const d = await res.json().catch(()=>({error:"bad response"}));
+        if(res.status === 409 && d.needs_confirmation){
+          save.disabled=false; cancel.disabled=false; save.textContent="Publish anyway";
+          force = true;
+          const box = el("div","flag warn");
+          box.append(el("b","","This edit states things the previous version didn't:"));
+          const ul = document.createElement("ul"); ul.style.margin="6px 0 0 18px";
+          (d.claims||[]).forEach(c=>{
+            const li = document.createElement("li");
+            li.textContent = c.claim + (c.verdict === "contradicted" ? " — contradicts the version it replaces" : " — nothing in the previous version says this");
+            ul.append(li);
+          });
+          box.append(ul, el("div","note","Fix the text and save again, or click Publish anyway if you know it's right."));
+          box.style.marginTop="8px";
+          wrap.querySelectorAll(".flag.warn").forEach(n=>n.remove());
+          wrap.append(box);
+          return;
+        }
         if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
         if(d.already_published){
           save.disabled=false; cancel.disabled=false; save.textContent="Save & republish";
@@ -1238,10 +1264,18 @@
         wrap.remove();
         publishRow(stagedId, null, card); // serialized queue; reloads the list when it drains
       }catch(e){
-        save.disabled=false; cancel.disabled=false; save.textContent="Save & republish";
+        save.disabled=false; cancel.disabled=false;
+        save.textContent = force ? "Publish anyway" : "Save & republish";
         const err = el("div","flag warn","⚠ "+e.message);
         err.style.marginTop="8px"; wrap.append(err);
       }
+    });
+
+    // Editing again means the warning no longer describes what's in the box — re-check it.
+    ta.addEventListener("input", ()=>{
+      if(!force) return;
+      force = false; save.textContent = "Save & republish";
+      wrap.querySelectorAll(".flag.warn").forEach(n=>n.remove());
     });
   }
 
