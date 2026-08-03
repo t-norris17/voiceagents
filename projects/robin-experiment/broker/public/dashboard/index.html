@@ -245,13 +245,19 @@
       ? `${s.flags?`<span class="accent">${s.flags} call${s.flags===1?"":"s"} worth a look.</span>`:"She never said a Social Security number, password or PIN."}${s.verified_pct!=null?` ${s.verified_pct}% of callers verified${s.failed?`; ${s.failed} handed to a person`:""}.`:""}`
       : "Nobody has been through identity checks yet.";
     const expFig = x.graded ? `${x.avg_quality.toFixed(1)}<span class="un">/5</span>` : "—";
-    const expNote = x.graded
-      ? `Checked ${x.scored_count} answer${x.scored_count===1?"":"s"} line by line against the plan documents she read.`
-      : `We haven't checked her answers yet.`;
+    // Two different claims live here. The score covers whether she answered the question, covered
+    // what mattered, and routed sensibly — true of every answer. Whether what she SAID was correct
+    // needs a source document, and we only hold one for content published through the Factory. Say
+    // which of the two the number rests on rather than letting the reader assume the stronger one.
+    const expNote = !x.graded ? `We haven't checked her answers yet.`
+      : `Across ${x.scored_count} answer${x.scored_count===1?"":"s"}: was she responsive, complete, and did she route sensibly.`
+        + (x.checkable
+            ? ` <span class="accent">${x.checkable} could also be fact-checked against a source${x.ungrounded?`; ${x.ungrounded} made a claim the source didn't support`:", all supported"}.</span>`
+            : ` <span class="accent">None could be fact-checked — we hold no source for her current documents.</span>`);
     document.getElementById("verdict").innerHTML=`
       <div class="v"><div class="k lbl">She answered</div><div class="fig tnum">${u.pct==null?"—":u.pct}<span class="un">%</span></div>
         <div class="note">${u.total_asked?`${u.answered} of the ${u.total_asked} things people asked her.`:"Nothing asked yet."}</div></div>
-      <div class="v"><div class="k lbl">And got it right</div><div class="fig tnum">${expFig}</div><div class="note">${expNote}</div></div>
+      <div class="v"><div class="k lbl">And handled it well</div><div class="fig tnum">${expFig}</div><div class="note">${expNote}</div></div>
       <div class="v"><div class="k lbl">Still stuck on</div><div class="fig tnum">${openGaps}</div>
         <div class="note">${openGaps?`question${openGaps===1?"":"s"} waiting for an answer to be written.`:"Nothing — she's handled everything so far."}</div></div>`;
 

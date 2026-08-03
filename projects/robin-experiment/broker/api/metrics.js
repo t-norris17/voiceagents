@@ -153,10 +153,22 @@ export default async function handler(req, res) {
     const callSents = events.map((e) => sentBucket(e.overall_sentiment)).filter(Boolean);
     const sPos = callSents.filter((x) => x === "positive").length;
     const sNeg = callSents.filter((x) => x === "negative").length;
+    // The quality score answers "how well did she handle it" — responsive, complete, appropriately
+    // routed. Those three judgments come off the transcript and hold no matter where the documents
+    // came from, so a no_source answer is still genuinely scored (23 of the first 89 lost points).
+    //
+    // What a no_source answer CANNOT tell us is whether what she said was true, because we have no
+    // document to check it against. Reporting the average without that share lets "handled it well"
+    // read as "got it right". Ship both numbers so the tile can say which it means.
+    const checkable = scored.filter((s) => s.grounding && s.grounding !== "no_source");
     const experience = {
       avg_quality: allQuals.length ? Number(avg(allQuals).toFixed(1)) : null,
       scored_count: scored.length,
       graded: allQuals.length > 0,
+      // How much of the quality figure rests on an actual source document.
+      checkable: checkable.length,
+      ungrounded: checkable.filter((s) => s.grounding === "unsupported" || s.grounding === "contradicted").length,
+      no_source: scored.filter((s) => s.grounding === "no_source").length,
       sentiment: {
         positive: sPos,
         neutral: callSents.filter((x) => x === "neutral").length,
