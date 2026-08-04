@@ -424,6 +424,16 @@ export default async function handler(req, res) {
       if (r.status !== "fulfilled") { console.error("grade failed:", String(r.reason?.message || r.reason)); continue; }
       const { conversation_id, rows, askedRows, call_scores, security_flag, security_detail } = r.value;
       try {
+        // Re-grading is authoritative for a call, so clear its previous machine-written scores
+        // first. The upsert keys on (conversation_id, question_key), and the grader picks its own
+        // canonical keys — so when a re-grade names the same question differently, the old row
+        // survives beside the new one. That left 59 rows from grader rev 1 sitting in the table,
+        // 54 of them the `no_source` ones whose unearned ~4.5 scores were the original complaint.
+        // Human-reviewed rows are kept: a person's annotation outranks a re-run.
+        await sb(`call_question_scores?conversation_id=eq.${q(conversation_id)}&reviewed=is.false`, {
+          method: "DELETE", prefer: "return=minimal",
+        }).catch((e) => console.error("stale score cleanup failed:", conversation_id, String(e.message || e)));
+
         if (rows.length) {
           if (rows.every((x) => x.grounding === "no_source")) noSource += 1;
           await sb("call_question_scores?on_conflict=conversation_id,question_key", {
