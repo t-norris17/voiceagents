@@ -133,6 +133,24 @@
   .gap-act button[disabled]{ opacity:.55; cursor:default; }
   .gap-status{ font-size:.66rem; text-transform:uppercase; letter-spacing:.1em; color:var(--sub); }
 
+  /* Section tabs. The page was one long scroll, so reaching utilization meant paging past ~100
+     question rows. The summary (tiles + pipeline) stays pinned above; everything else lives behind
+     a tab, each with a single owner: Overview = how it's going, Content = what to write,
+     Questions = the analyst drill-down, Calls = what to listen to. */
+  nav.tabs{ position:sticky; top:0; z-index:5; display:flex; gap:4px; flex-wrap:wrap;
+    margin:28px 0 0; padding:10px 0 0; background:var(--paper); border-bottom:1px solid var(--line); }
+  nav.tabs button{ font:inherit; font-size:.72rem; letter-spacing:.12em; text-transform:uppercase;
+    font-weight:600; color:var(--sub); background:none; border:0; padding:8px 14px; cursor:pointer;
+    border-bottom:2px solid transparent; margin-bottom:-1px; white-space:nowrap; }
+  nav.tabs button:hover{ color:var(--ink); }
+  nav.tabs button[aria-selected="true"]{ color:var(--ink); border-bottom-color:var(--accent); }
+  nav.tabs button:focus-visible{ outline:2px solid var(--accent); outline-offset:-2px; }
+  .tabn{ display:inline-block; margin-left:7px; font-size:.66rem; letter-spacing:.04em;
+    color:var(--faint); font-weight:600; font-variant-numeric:tabular-nums; }
+  .tabn.attn{ color:var(--accent); }
+  .panel[hidden]{ display:none; }
+  .panel > section:first-child{ margin-top:28px; }
+
   .empty{ color:var(--faint); font-size:.85rem; font-style:italic; padding:16px 0; }
   .banner{ font-size:.72rem; letter-spacing:.04em; color:var(--sub); background:var(--hair); padding:9px 14px; border-radius:2px; margin-top:18px; }
 
@@ -192,55 +210,70 @@
 
   <hr class="rule">
 
-  <section>
-    <div class="shead">
-      <div class="tabset" role="group" aria-label="Group by">
-        <button data-view="question" aria-pressed="true">One by one</button>
-        <button data-view="category" aria-pressed="false">Grouped</button>
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Sections">
+    <button role="tab" data-panel="overview"  aria-selected="true">Overview</button>
+    <button role="tab" data-panel="content"   aria-selected="false">Content<span class="tabn" id="tn-content"></span></button>
+    <button role="tab" data-panel="questions" aria-selected="false">Questions<span class="tabn" id="tn-questions"></span></button>
+    <button role="tab" data-panel="calls"     aria-selected="false">Calls<span class="tabn" id="tn-calls"></span></button>
+  </nav>
+
+  <div class="panel" data-panel="overview">
+    <section>
+      <div class="shead"><div class="lbl">Utilization — answered from the knowledge base · <span id="utilmeta"></span></div></div>
+      <div id="util"></div>
+    </section>
+
+    <section>
+      <div class="shead"><div class="lbl">When she hands off to a person · <span id="xfermeta"></span></div></div>
+      <div id="xfer"></div>
+    </section>
+  </div>
+
+  <div class="panel" data-panel="content" hidden>
+    <section>
+      <div class="shead"><div class="lbl">Library and retrieval · <span id="libmeta"></span></div></div>
+      <div id="lib"></div>
+    </section>
+
+    <section>
+      <div class="shead"><div class="lbl">Waiting on an answer · <span id="gapcount"></span></div></div>
+      <div id="gaps"></div>
+    </section>
+  </div>
+
+  <div class="panel" data-panel="questions" hidden>
+    <section>
+      <div class="shead">
+        <div class="tabset" role="group" aria-label="Group by">
+          <button data-view="question" aria-pressed="true">One by one</button>
+          <button data-view="category" aria-pressed="false">Grouped</button>
+        </div>
+        <div class="tabset" role="group" aria-label="Filter">
+          <button data-q="all" aria-pressed="true">Everything</button>
+          <button data-q="attention" aria-pressed="false">Needs work</button>
+          <button data-q="gaps" aria-pressed="false">Never come up</button>
+        </div>
       </div>
-      <div class="tabset" role="group" aria-label="Filter">
-        <button data-q="all" aria-pressed="true">Everything</button>
-        <button data-q="attention" aria-pressed="false">Needs work</button>
-        <button data-q="gaps" aria-pressed="false">Never come up</button>
-      </div>
-    </div>
-    <table>
-      <thead>
-        <tr><th>What people asked</th><th class="r">Times</th><th class="r">How she did</th><th class="r hidesm">Mood</th><th class="r hidesm">&nbsp;</th></tr>
-      </thead>
-      <tbody id="qbody"></tbody>
-    </table>
-  </section>
+      <table>
+        <thead>
+          <tr><th>What people asked</th><th class="r">Times</th><th class="r">How she did</th><th class="r hidesm">Mood</th><th class="r hidesm">&nbsp;</th></tr>
+        </thead>
+        <tbody id="qbody"></tbody>
+      </table>
+    </section>
+  </div>
 
-  <section>
-    <div class="shead"><div class="lbl">Utilization — answered from the knowledge base · <span id="utilmeta"></span></div></div>
-    <div id="util"></div>
-  </section>
+  <div class="panel" data-panel="calls" hidden>
+    <section>
+      <div class="shead"><div class="lbl">Worth a listen · <span id="rqcount"></span></div></div>
+      <div id="rq"></div>
+    </section>
 
-  <section>
-    <div class="shead"><div class="lbl">Library and retrieval · <span id="libmeta"></span></div></div>
-    <div id="lib"></div>
-  </section>
-
-  <section>
-    <div class="shead"><div class="lbl">When she hands off to a person · <span id="xfermeta"></span></div></div>
-    <div id="xfer"></div>
-  </section>
-
-  <section>
-    <div class="shead"><div class="lbl">Waiting on an answer · <span id="gapcount"></span></div></div>
-    <div id="gaps"></div>
-  </section>
-
-  <section>
-    <div class="shead"><div class="lbl">Recent calls · <span id="callcount"></span></div></div>
-    <div id="calls"></div>
-  </section>
-
-  <section>
-    <div class="shead"><div class="lbl">Worth a listen · <span id="rqcount"></span></div></div>
-    <div id="rq"></div>
-  </section>
+    <section>
+      <div class="shead"><div class="lbl">Recent calls · <span id="callcount"></span></div></div>
+      <div id="calls"></div>
+    </section>
+  </div>
 
   <footer>
     <span>Robin · Vertex Manufacturing 401(k) · <span id="gen"></span></span>
@@ -348,6 +381,7 @@
     renderGaps();
     renderCalls();
     renderReview();
+    paintTabCounts();
   }
 
   // Every way a call can fail to arrive, in the words of what you'd do about it. These are the
@@ -762,6 +796,34 @@
     document.querySelectorAll('[data-q]').forEach(x=>x.setAttribute('aria-pressed','false'));
     b.setAttribute('aria-pressed','true'); filt=b.dataset.q; renderQuestions();
   }));
+  // Tabs. Sections are rendered regardless of which tab is showing — the data is small and it
+  // keeps every render function independent of the navigation — so switching is just visibility.
+  const PANELS = ["overview", "content", "questions", "calls"];
+  function showPanel(name){
+    const want = PANELS.includes(name) ? name : "overview";
+    document.querySelectorAll("nav.tabs button").forEach(b =>
+      b.setAttribute("aria-selected", String(b.dataset.panel === want)));
+    document.querySelectorAll(".panel").forEach(p => { p.hidden = p.dataset.panel !== want; });
+    if (location.hash.slice(1) !== want) history.replaceState(null, "", "#" + want);
+  }
+  document.querySelectorAll("nav.tabs button").forEach(b =>
+    b.addEventListener("click", () => showPanel(b.dataset.panel)));
+  window.addEventListener("hashchange", () => showPanel(location.hash.slice(1)));
+
+  // Counts on the tabs themselves, so the work is visible without opening anything.
+  function paintTabCounts(){
+    const L = DATA.library || {}, g = (DATA.gaps || []).filter(x => x.status !== "resolved").length;
+    const write = (L.content_gaps || 0) + (L.retrieval_misses || 0);
+    const set = (id, n, attn) => {
+      const el = document.getElementById(id); if (!el) return;
+      el.textContent = n ? n : "";
+      el.classList.toggle("attn", !!attn);
+    };
+    set("tn-content", write || g, (write || g) > 0);
+    set("tn-questions", (DATA.questions || []).filter(r => r.asked > 0).length, false);
+    set("tn-calls", (DATA.review_queue || []).length, (DATA.review_queue || []).length > 0);
+  }
+
   function wireTheme(){
     const btn=document.getElementById('theme'); if(!btn)return;
     btn.addEventListener('click',()=>{
@@ -805,6 +867,7 @@
     } finally { ticking = false; }
   }
   wireTheme();
+  showPanel(location.hash.slice(1));
   loadHealth().then(tick);
   setInterval(tick, 30000); // refresh + grade any new calls every 30s
 </script>
