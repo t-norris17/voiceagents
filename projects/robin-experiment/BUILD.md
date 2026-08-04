@@ -12,6 +12,59 @@
 
 ---
 
+### 2026-08-04 — Session: "calls are coming in but not showing up"
+
+**Time spent:** ~1 session
+**Status after session:** on track
+
+**What we did:**
+- Traced the report. A call becomes a dashboard number only by surviving three hops —
+  **webhook accepted → row with a transcript → graded** — and the dashboard rendered only what
+  survived all three. So a webhook rejecting every call, a provider sending transcript-less events,
+  and a genuinely quiet afternoon all produced the same empty page.
+- **Two ordering bugs, both of which hide a call that really arrived.** `/api/metrics` ordered on
+  the provider's `started_at` with nulls last and then sliced the top 20 — a call with a null start
+  time sat at position 21 of 21 and never appeared, while plainly existing in the database. And a
+  call with no transcript was counted as "waiting to be graded" forever, so the queue looked like it
+  never drained. Ordering is now by arrival (`created_at`, which always exists) and un-gradable
+  calls are reported as such.
+- **`webhook_ingest_log`** (migration `broker/supabase/migrations/003_webhook_ingest_log.sql`):
+  `postcall` now records every attempt, accepted or turned away, with a reason. No payload, no
+  caller data — a rejected body is unverified input and isn't kept. Until the migration is run the
+  dashboard reports rejections as *unknown*, never as zero.
+- **`/api/health`**: which env vars are set (presence only, never values), which tables are
+  readable, and a list of fixable problems. This is what catches the most likely cause of all —
+  a missing or mismatched `ELEVENLABS_WEBHOOK_SECRET`, which turns away 100% of calls silently.
+- **Dashboard: "Where your calls are"** — arrived / checked / waiting / can't-be-checked / turned
+  away, with a plain-English line per stuck bucket saying what to do. Each row in Recent calls now
+  carries its own state.
+- **Grading loop**: a failing `/api/grade` was swallowed by an empty `catch`, so calls piled up
+  unchecked in silence. It's now reported. Grading also keeps going while a backlog exists instead
+  of clearing ten per 30 seconds.
+- Extracted the pipeline logic to `broker/lib/pipeline.js` and pinned it with
+  `broker/test/pipeline.test.mjs` (11 tests) — it was only exercisable by placing a real call.
+
+**What broke / surprised us:**
+- Nothing new broke. The surprise was how much of "unreliable" was **unreported** rather than
+  wrong: three separate silent-failure paths (401 on bad signature, transcript-less rows, swallowed
+  grade errors), each individually reasonable, adding up to a dashboard that couldn't explain itself.
+
+**Decisions made:**
+- **Absence of evidence is never rendered as evidence of absence.** Where the dashboard can't see
+  something (no ingest log table), it says "unknown", not "zero".
+- The ingest log stores **no payload** — diagnosing a rejected webhook is not worth persisting
+  unverified input.
+
+**Next session:**
+> **Run migration `broker/supabase/migrations/003_webhook_ingest_log.sql`** against project
+> `rlhybqslnqhggbykjrqg` — until then the "turned away" count reads as unknown. Then open the
+> dashboard and check the "Where your calls are" strip against reality: if it shows turned-away
+> calls, the fix is almost certainly re-copying the signing secret from ElevenLabs. Consider moving
+> grading off the open browser tab (a cron hitting `/api/grade`) so a closed dashboard doesn't mean
+> an unchecked backlog.
+
+---
+
 ### 2026-07-23 — Session 2
 
 **Time spent:** ~1 session

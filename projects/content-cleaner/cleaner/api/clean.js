@@ -4,7 +4,7 @@
 // It PROPOSES; a human approves on the page before anything is used. Needs ANTHROPIC_API_KEY
 // (set on the Vercel project). maxDuration is raised in vercel.json — the rewrite is a big call.
 import { rewrite } from "../lib/rewrite.js";
-import { deterministicScan, critique } from "../lib/validate.js";
+import { deterministicScan, critique, CLEAN_MIN } from "../lib/validate.js";
 import { renderArticles, dropReport, coverageMap, candidateQuestions } from "../lib/render.js";
 
 export default async function handler(req, res) {
@@ -26,8 +26,7 @@ export default async function handler(req, res) {
     const findingsBySlug = {};
     let fatal = 0, warns = 0;
     for (const r of rendered) {
-      const article = result.articles.find((a) => a.slug === r.slug);
-      const findings = deterministicScan(r.md, article);
+      const findings = deterministicScan(r.md, r.article);
       findingsBySlug[r.slug] = findings;
       fatal += findings.filter((f) => f.severity === "fatal").length;
       warns += findings.filter((f) => f.severity === "warn").length;
@@ -38,15 +37,21 @@ export default async function handler(req, res) {
     try { reviews = await critique(rendered, raw); } catch (_) { reviews = []; }
 
     const articles = rendered.map((r) => {
-      const a = result.articles.find((x) => x.slug === r.slug) || {};
+      const a = r.article;
       return {
         slug: r.slug,
-        title: a.title || r.slug,
+        // `title` stays in the payload because kb_articles and the ElevenLabs document name are
+        // keyed on it; for a card, the title IS the question.
+        title: a.question || r.slug,
+        question: a.question,
+        answer: a.answer,
+        qualifiers: a.qualifiers,
+        notes: a.notes,
         md: r.md,
         findings: findingsBySlug[r.slug] || [],
         review: reviews.find((v) => v.slug === r.slug) || null,
-        candidate_questions: a.candidate_questions || [],
-        coverage_flags: a.coverage_flags || [],
+        candidate_questions: a.candidate_questions,
+        coverage_flags: a.notes, // the DB column's name; notes are what it holds now
       };
     });
 
@@ -64,7 +69,7 @@ export default async function handler(req, res) {
         coverage: coverageMap(result, reviews),
         questions: candidateQuestions(result),
       },
-      summary: { articles: articles.length, fatal, warns, criticAvg },
+      summary: { articles: articles.length, fatal, warns, criticAvg, clean_min: CLEAN_MIN },
     });
   } catch (e) {
     return res.status(500).json({ error: String(e.message || e) });

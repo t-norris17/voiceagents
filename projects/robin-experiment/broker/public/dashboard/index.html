@@ -129,6 +129,26 @@
   .empty{ color:var(--faint); font-size:.85rem; font-style:italic; padding:16px 0; }
   .banner{ font-size:.72rem; letter-spacing:.04em; color:var(--sub); background:var(--hair); padding:9px 14px; border-radius:2px; margin-top:18px; }
 
+  /* pipeline strip — where every call is right now, and what to do about the stuck ones */
+  .pipe{ margin-top:14px; border:1px solid var(--line); border-radius:3px; padding:14px 16px; }
+  .pipe.trouble{ border-color:var(--accent); }
+  .pipesteps{ display:flex; flex-wrap:wrap; gap:0; align-items:stretch; }
+  .ps{ flex:1; min-width:104px; padding:0 16px; border-left:1px solid var(--hair); }
+  .ps:first-child{ padding-left:0; border-left:0; }
+  .ps .n{ font-size:1.5rem; font-weight:800; letter-spacing:-.02em; font-variant-numeric:tabular-nums; line-height:1.1; }
+  .ps .t{ font-size:.68rem; text-transform:uppercase; letter-spacing:.1em; color:var(--sub); margin-top:3px; }
+  .ps.warn .n, .ps.warn .t{ color:var(--accent); }
+  .ps.warn .t{ font-weight:700; }
+  .ps.zero .n{ color:var(--faint); }
+  .pipenote{ margin-top:12px; padding-top:11px; border-top:1px solid var(--hair); font-size:.8rem; color:var(--sub); line-height:1.55; }
+  .pipenote + .pipenote{ border-top:0; padding-top:4px; }
+  .pipenote b{ color:var(--ink); font-weight:600; }
+  .pipenote.bad b, .pipenote.bad strong{ color:var(--accent); }
+  .pipenote code{ font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.9em; }
+  .pipetog{ font:inherit; font-size:.66rem; letter-spacing:.1em; text-transform:uppercase; background:none; border:0; color:var(--sub); cursor:pointer; padding:0; }
+  .pipetog:hover{ color:var(--ink); }
+  .callrow .state{ margin-left:8px; }
+
   footer{ margin-top:52px; padding-top:14px; border-top:1px solid var(--line); font-size:.68rem; letter-spacing:.04em; color:var(--faint); display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; }
 
   @media (max-width:640px){
@@ -157,6 +177,11 @@
   </div>
 
   <div id="banner"></div>
+
+  <section id="pipesec" style="margin-top:24px">
+    <div class="shead"><div class="lbl">Where your calls are · <span id="pipemeta"></span></div></div>
+    <div id="pipe"></div>
+  </section>
 
   <hr class="rule">
 
@@ -208,12 +233,22 @@
 
 <script>
   const SENT={positive:"▲ pos",neutral:"■ neu",negative:"▼ neg",mixed:"◆ mix"};
-  let DATA=null, view="question", filt="all";
+  let DATA=null, HEALTH=null, GRADE_ERR=null, view="question", filt="all";
 
   const esc=(s)=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
   const shortRef=(r)=>r?String(r).slice(0,8):"—";
   const dur=(s)=>s==null?"—":`${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
   const when=(iso)=>{ if(!iso)return "—"; try{ const d=new Date(iso); return d.toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}); }catch(_){return "—";} };
+  const ago=(iso)=>{
+    if(!iso) return null;
+    const ms = Date.now() - new Date(iso).getTime();
+    if(!isFinite(ms)) return null;
+    const m = Math.round(ms/60000);
+    if(m < 1) return "just now";
+    if(m < 60) return `${m} min ago`;
+    const h = Math.round(m/60);
+    return h < 36 ? `${h} hour${h===1?"":"s"} ago` : `${Math.round(h/24)} days ago`;
+  };
 
   async function load(){
     try{
@@ -222,8 +257,25 @@
       DATA=await r.json();
       paint();
     }catch(e){
-      document.getElementById("banner").innerHTML=`<div class="banner">Couldn't load live data: ${esc(e.message)}. Retrying…</div>`;
+      // A dead /api/metrics is itself a diagnosis, so ask the health endpoint what's missing
+      // rather than leaving "retrying…" on screen forever.
+      await loadHealth();
+      const fatal = (HEALTH?.problems||[]).filter(p=>p.severity==="fatal");
+      document.getElementById("banner").innerHTML=
+        `<div class="banner">Couldn't load live data: ${esc(e.message)}.`
+        + (fatal.length ? ` ${fatal.map(p=>`<b>${esc(p.what)}.</b> ${esc(p.fix)}`).join(" ")}` : " Retrying…")
+        + `</div>`;
     }
+  }
+
+  // Config problems are the cause of most "it's not working" — and none of them are visible from
+  // the data alone, because a misconfigured deployment returns the same empty tables as a quiet
+  // one. Checked once on load and after any failure; it reports presence of settings, never values.
+  async function loadHealth(){
+    try{
+      const r=await fetch("/api/health",{cache:"no-store"});
+      HEALTH = r.ok ? await r.json() : null;
+    }catch(_){ HEALTH=null; }
   }
 
   function paint(){
@@ -250,17 +302,90 @@
       <div class="v"><div class="k lbl">Still stuck on</div><div class="fig tnum">${openGaps}</div>
         <div class="note">${openGaps?`question${openGaps===1?"":"s"} waiting for an answer to be written.`:"Nothing — she's handled everything so far."}</div></div>`;
 
-    document.getElementById("banner").innerHTML = x.graded ? "" :
+    // The pipeline strip carries the "why is it empty" story now, so the banner only speaks when
+    // there's genuinely nothing wrong and nothing scored yet.
+    const p = d.pipeline || {};
+    document.getElementById("banner").innerHTML = (x.graded || p.awaiting_grading || p.no_transcript || p.rejected_recent) ? "" :
       `<div class="banner">Calls are coming in — ${d.window.calls} so far. The table below fills in once we've checked her answers.</div>`;
 
     { const w=when(d.generated_at);
       const g1=document.getElementById("gen"); if(g1) g1.textContent="updated "+w;
       const g2=document.getElementById("gen2"); if(g2) g2.textContent=w; }
+    renderPipeline();
     renderQuestions();
     renderUtilization();
     renderGaps();
     renderCalls();
     renderReview();
+  }
+
+  // Every way a call can fail to arrive, in the words of what you'd do about it. These are the
+  // reasons /api/postcall records when it turns a webhook away.
+  const REJECT = {
+    no_secret:          "This deployment has no webhook secret set, so it turned every call away. Add ELEVENLABS_WEBHOOK_SECRET and redeploy.",
+    bad_signature:      "The signature didn't match — the secret here and the one in the ElevenLabs webhook settings are different. Copy the signing secret from ElevenLabs into this deployment.",
+    unparseable:        "The webhook body wasn't readable JSON. Check the webhook's payload settings in ElevenLabs.",
+    no_conversation_id: "The webhook arrived without a conversation id, so there was nothing to file the call under. Check which event type the webhook is sending.",
+    write_failed:       "The call was accepted but couldn't be saved to the database.",
+    wrong_method:       "Something sent a non-POST request to the webhook address.",
+  };
+
+  // "Where your calls are" — one row per hop a call makes, so an empty dashboard names its own
+  // cause instead of looking the same as a quiet afternoon.
+  function renderPipeline(){
+    const el2=document.getElementById("pipe"), p=DATA.pipeline||{};
+    const meta=document.getElementById("pipemeta");
+    const received=p.received||0, graded=p.graded||0, waiting=p.awaiting_grading||0, stuck=p.no_transcript||0;
+    const rejected=p.rejected_recent||0;
+    const trouble = rejected>0 || stuck>0 || p.stalled || GRADE_ERR || (HEALTH?.problems||[]).some(x=>x.severity==="fatal");
+
+    meta.textContent = p.last_call_at ? `last call ${ago(p.last_call_at)}` : "no calls yet";
+
+    const step=(n,t,cls)=>`<div class="ps ${cls||""} ${n?"":"zero"}"><div class="n tnum">${n}</div><div class="t">${t}</div></div>`;
+    // When the ingest log isn't there this reads "?", never "0". A deployment that can't see
+    // rejections claiming there were none is the same silence the strip exists to break.
+    const turnedAway = p.ingest_log_available === false
+      ? `<div class="ps zero"><div class="n tnum">?</div><div class="t">turned away</div></div>`
+      : (rejected ? step(rejected,"turned away","warn") : "");
+    let h = `<div class="pipe${trouble?" trouble":""}">
+      <div class="pipesteps">
+        ${step(received,"arrived")}
+        ${step(graded,"checked")}
+        ${step(waiting,"waiting to be checked", waiting&&p.stalled?"warn":"")}
+        ${step(stuck,"can't be checked", stuck?"warn":"")}
+        ${turnedAway}
+      </div>`;
+
+    const notes=[];
+
+    // Rejections first: a call that never landed is the one the user is actually looking for.
+    if(rejected){
+      const byReason = p.rejected_by_reason||{};
+      for(const [reason,g] of Object.entries(byReason)){
+        notes.push(`<div class="pipenote bad"><b>${g.count} call${g.count===1?"":"s"} turned away</b> — ${esc(REJECT[reason]||reason)} <span style="color:var(--faint)">(most recent ${esc(ago(g.last_at)||"unknown")})</span></div>`);
+      }
+    }
+
+    if(stuck)
+      notes.push(`<div class="pipenote bad"><b>${stuck} call${stuck===1?"":"s"} arrived without a transcript</b>, so there's nothing to check her answers against. They're listed below but will never be scored. In ElevenLabs, make sure the <b>post-call transcription</b> webhook is the one pointed here.</div>`);
+
+    if(waiting)
+      notes.push(`<div class="pipenote"><b>${waiting} call${waiting===1?"":"s"} waiting to be checked.</b> Checking runs while this page is open, ten calls at a time — leave the tab open and they'll fill in.${p.stalled?` The oldest has been waiting since ${esc(when(p.oldest_awaiting_at))}, which usually means checking is failing rather than queuing.`:""}</div>`);
+
+    if(GRADE_ERR)
+      notes.push(`<div class="pipenote bad"><b>Checking answers is failing:</b> ${esc(GRADE_ERR)}</div>`);
+
+    // Config problems, from /api/health. These explain the ones above rather than repeating them.
+    for(const prob of (HEALTH?.problems||[]))
+      notes.push(`<div class="pipenote ${prob.severity==="fatal"?"bad":""}"><b>${esc(prob.what)}.</b> ${esc(prob.fix)}</div>`);
+
+    if(p.ingest_log_available === false)
+      notes.push(`<div class="pipenote">Calls that were <i>turned away</i> can't be counted on this deployment — the <code>webhook_ingest_log</code> table hasn't been created yet. Run <code>broker/supabase/migrations/003_webhook_ingest_log.sql</code> and rejected calls will start showing up here instead of disappearing.</div>`);
+
+    if(!notes.length)
+      notes.push(`<div class="pipenote">${received ? `Everything that arrived has been checked.${p.last_webhook_at?` Last webhook ${esc(ago(p.last_webhook_at))}.`:""}` : `No calls have arrived yet. When one does it appears here within a minute.`}</div>`);
+
+    el2.innerHTML = h + notes.join("") + `</div>`;
   }
 
   const WHY = {
@@ -388,6 +513,13 @@
   }
   function appendQ(body,r){ body.appendChild(qRow(r)); if(r.asked>0) body.appendChild(detailRow(r)); }
 
+  // Each call says where it is, so a call that arrived but hasn't been checked reads as "waiting"
+  // rather than as a row that's mysteriously missing from everything above.
+  const CALL_STATE = {
+    graded:           ["checked",                 false],
+    awaiting_grading: ["waiting to be checked",   false],
+    no_transcript:    ["no transcript — can't check", true],
+  };
   function renderCalls(){
     const el=document.getElementById("calls"), calls=DATA.recent_calls||[];
     document.getElementById("callcount").textContent=`${DATA.window.calls} total`;
@@ -396,9 +528,14 @@
       const authBad=c.auth_outcome==="failed";
       const authPill=c.auth_outcome?`<span class="pill ${authBad?'bad':'ok'}">${esc(c.auth_outcome)}</span>`:"";
       const outPill=c.outcome?`<span class="pill ${c.outcome==='abandoned'?'bad':'ok'}">${esc(c.outcome)}</span>`:"";
+      const [stLabel, stBad] = CALL_STATE[c.state] || ["", false];
+      const stPill = stLabel ? `<span class="state${stBad?" attn":""}">${esc(stLabel)}</span>` : "";
+      // The provider's start time can be missing; fall back to when we received it rather than
+      // showing a dash next to a call that plainly happened.
+      const t = c.started_at ? when(c.started_at) : (c.arrived_at ? `received ${when(c.arrived_at)}` : "—");
       return `<div class="callrow">
-        <div><span class="call-main">${esc(c.topic||"Call")}</span> <span class="call-id">${esc(shortRef(c.subject_ref))}</span>${authPill}${outPill}</div>
-        <div class="call-meta">${when(c.started_at)} · ${dur(c.duration_seconds)} · ${SENT[c.sentiment]||"—"}</div>
+        <div><span class="call-main">${esc(c.topic||"Call")}</span> <span class="call-id">${esc(shortRef(c.subject_ref))}</span>${authPill}${outPill}${stPill}</div>
+        <div class="call-meta">${t} · ${dur(c.duration_seconds)} · ${SENT[c.sentiment]||"—"}</div>
       </div>`;
     }).join("");
   }
@@ -440,16 +577,40 @@
 
   // Grade any not-yet-scored calls, then show the (possibly updated) metrics. Grading is a cheap
   // no-op once everything is scored, so it's safe to run on every refresh.
+  //
+  // Two things this used to get wrong, and both read as "unreliable":
+  //  · A failing /api/grade was swallowed by an empty catch. Calls piled up unchecked and the
+  //    dashboard said nothing, so the table just stayed stale. Now the failure is reported.
+  //  · Grading is capped at ten calls per request, and one pass per 30s meant a backlog of
+  //    thirty calls took a minute and a half to clear with no sign it was working. It now keeps
+  //    going while there's more to do.
+  const MAX_ROUNDS = 6;
+  let ticking = false;
   async function tick(){
-    await load();                              // show current state immediately
+    if(ticking) return;                        // a slow round must not stack up behind the timer
+    ticking = true;
     try{
-      const r = await fetch("/api/grade", { method:"POST" });
-      const g = await r.json().catch(()=>null);
-      if (g && g.graded > 0) await load();     // new calls got scored — refresh the grid
-    }catch(_){}
+      await load();                            // show current state immediately
+      for(let round=0; round<MAX_ROUNDS; round++){
+        let g;
+        try{
+          const r = await fetch("/api/grade", { method:"POST" });
+          g = await r.json().catch(()=>null);
+          if(!r.ok || (g && g.error)) throw new Error((g && g.error) || ("HTTP "+r.status));
+          GRADE_ERR = null;
+        }catch(e){
+          GRADE_ERR = e.message;
+          if(DATA) renderPipeline();           // say so instead of failing quietly
+          break;
+        }
+        if(!g || !g.graded) break;             // nothing left to score
+        await load();
+        if(!g.pending || g.pending < 10) break; // that was the last batch
+      }
+    } finally { ticking = false; }
   }
   wireTheme();
-  tick();
+  loadHealth().then(tick);
   setInterval(tick, 30000); // refresh + grade any new calls every 30s
 </script>
 </body>

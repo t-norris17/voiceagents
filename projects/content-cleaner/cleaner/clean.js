@@ -54,8 +54,7 @@ async function main() {
   const findingsBySlug = {};
   let fatal = 0;
   for (const r of rendered) {
-    const article = result.articles.find((a) => a.slug === r.slug);
-    const findings = deterministicScan(r.md, article);
+    const findings = deterministicScan(r.md, r.article);
     findingsBySlug[r.slug] = findings;
     fatal += findings.filter((f) => f.severity === "fatal").length;
   }
@@ -72,11 +71,14 @@ async function main() {
 
   // Summary
   const warnCount = Object.values(findingsBySlug).flat().filter((f) => f.severity === "warn").length;
-  const lowScores = reviews.filter((r) => r.score <= 3);
+  const lowScores = reviews.filter((r) => r.score < 3.5);
+  const toCheck = reviews.reduce((n, r) => n + (r.checks?.length || 0), 0);
   console.error("");
   console.error(`✔ wrote ${written.length} files to ${outDir}`);
   console.error(`  articles: ${result.articles.length} · deterministic warns: ${warnCount} · fatal: ${fatal}`);
-  if (reviews.length) console.error(`  critic avg: ${(reviews.reduce((s, r) => s + r.score, 0) / reviews.length).toFixed(1)}/5` + (lowScores.length ? ` · ${lowScores.length} article(s) ≤3 — review` : ""));
+  if (reviews.length) console.error(`  critic avg: ${(reviews.reduce((s, r) => s + r.score, 0) / reviews.length).toFixed(1)}/5`
+    + (lowScores.length ? ` · ${lowScores.length} card(s) below 3.5 — review` : "")
+    + (toCheck ? ` · ${toCheck} claim(s) the grader couldn't settle either way — check by hand` : ""));
   console.error(`  review: ${join(outDir, "_drop-report.md")} , _coverage-map.md , _candidate-questions.md`);
 
   if (fatal > 0) {

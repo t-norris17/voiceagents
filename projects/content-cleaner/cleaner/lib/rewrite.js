@@ -14,21 +14,37 @@ const SCHEMA = {
   properties: {
     articles: {
       type: "array",
+      description: "One card per participant question. Four parts each: question, answer, qualifiers, notes.",
       items: {
         type: "object",
         additionalProperties: false,
         properties: {
           slug: { type: "string", description: "kebab-case, becomes the filename (e.g. account-access)." },
-          title: { type: "string", description: "Findable, phrased the way a participant would ASK." },
-          issue: { type: "string", description: "The participant's need in their own words." },
+          question: { type: "string", description: "The card's question, phrased the way a participant would ASK it out loud." },
           environment: { type: "string", description: "What it applies to; use the provided environment verbatim." },
-          resolution: { type: "string", description: "Grounded, complete, spoken-friendly answer. No tables/UI gestures/cross-refs." },
-          cause: { type: "string", description: "The why, when it helps. Empty string if it adds nothing." },
-          coverage_flags: { type: "array", items: { type: "string" }, description: "What the source does NOT cover for this topic → route to specialist." },
-          candidate_questions: { type: "array", items: { type: "string" }, description: "1-3 questions a participant would ask that this article answers." },
+          answer: { type: "string", description: "The spoken answer to that question. Grounded, complete, plain text. No conditions (those are qualifiers) and no statements about what the document omits (those are notes)." },
+          qualifiers: {
+            type: "array",
+            description: "Conditions the SOURCE states that CHANGE the answer. Empty when the answer is unconditional — do not invent one.",
+            items: {
+              type: "object",
+              additionalProperties: false,
+              properties: {
+                when: { type: "string", description: "The condition, without a leading 'if' (e.g. 'you're still employed at the company')." },
+                then: { type: "string", description: "How the answer changes when it holds." },
+              },
+              required: ["when", "then"],
+            },
+          },
+          notes: {
+            type: "array",
+            items: { type: "string" },
+            description: "Agent-facing. What THIS SOURCE does not settle that a member will ask next, so Robin routes instead of guessing. Never a plan fact.",
+          },
+          candidate_questions: { type: "array", items: { type: "string" }, description: "1-3 questions a participant would ask that this card answers." },
           source_span: { type: "string", description: "Short quote/anchor from the raw text this came from." },
         },
-        required: ["slug", "title", "issue", "environment", "resolution", "cause", "coverage_flags", "candidate_questions", "source_span"],
+        required: ["slug", "question", "environment", "answer", "qualifiers", "notes", "candidate_questions", "source_span"],
       },
     },
     dropped: {
@@ -66,8 +82,9 @@ RAW SOURCE CONTENT:
 ${rawText}
 """
 
-Segment this into KCS-gold, Robin-ready articles per your instructions. One topic per article.
-Drop the noise (record each drop). Flag what the source does not cover. Return ONLY the structured JSON.`;
+Segment this into KCS-gold, Robin-ready cards per your instructions. One participant question per
+card, each with its question, answer, qualifiers and notes. Drop the noise (record each drop).
+Put what the source does not settle in each card's notes. Return ONLY the structured JSON.`;
 
   // Stream the call: at a 32k-token budget the SDK refuses the non-streaming path (the request
   // could exceed its 10-minute ceiling). Streaming lifts that guard; finalMessage() reassembles

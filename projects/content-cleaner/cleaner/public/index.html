@@ -136,7 +136,22 @@
   .flag.warn{ background:var(--warn); border:1px solid var(--warnln); color:var(--warntx); }
   .issues{ margin:8px 0; padding-left:16px; border-left:2px solid var(--warnln); }
   .issues li{ font-size:.86rem; color:var(--warntx); }
-  .md{ font-size:.93rem; margin-top:10px; }
+  /* "check this" — the grader couldn't settle it either way. Deliberately quieter than .issues:
+     it costs no points and is a question for the reviewer, not a defect to fix. */
+  .checks{ margin:8px 0; padding-left:16px; border-left:2px solid var(--line); }
+  .checks li{ font-size:.84rem; color:var(--sub); }
+  .checks .hd{ font-family:var(--mono); font-size:.64rem; text-transform:uppercase; letter-spacing:.08em; color:var(--faint); list-style:none; margin-bottom:3px; }
+
+  /* the card's four parts, laid out as four parts */
+  .sec{ margin-top:12px; }
+  .sec > .sh{ font-family:var(--mono); font-size:.62rem; text-transform:uppercase; letter-spacing:.14em; color:var(--faint); display:flex; align-items:baseline; gap:8px; }
+  .sec > .sh .hint{ font-family:var(--sans); font-size:.7rem; letter-spacing:0; text-transform:none; color:var(--faint); }
+  .sec.notes{ border-top:1px dashed var(--line); padding-top:10px; }
+  .seclist{ margin:4px 0 0; padding-left:1.1em; font-size:.9rem; }
+  .seclist li{ margin:.2em 0; }
+  .sec.notes .seclist li{ color:var(--sub); }
+  .secempty{ font-size:.85rem; color:var(--faint); font-style:italic; margin-top:3px; }
+  .md{ font-size:.93rem; margin-top:4px; }
   .md h1{ font-size:1.05rem; text-transform:none; letter-spacing:0; margin:.2em 0 .4em; border:0; }
   .md h2{ font-size:.72rem; font-family:var(--mono); text-transform:uppercase; letter-spacing:.1em; color:var(--sub); margin:1em 0 .3em; }
   .md p{ margin:0 0 .6em; } .md strong{ font-weight:700; } .md em{ font-style:italic; }
@@ -164,7 +179,9 @@
 
   .card[hidden]{ display:none; }
   .card.collapsed{ padding:11px 18px; }
-  .card.collapsed .flagbox, .card.collapsed .issuebox, .card.collapsed .evidbox, .card.collapsed .md, .card.collapsed .cardfoot{ display:none; }
+  .card.collapsed .flagbox, .card.collapsed .issuebox, .card.collapsed .checkbox, .card.collapsed .evidbox, .card.collapsed .body, .card.collapsed .cardfoot{ display:none; }
+  .scorewhy{ font-size:.78rem; color:var(--sub); margin-top:6px; }
+  .scorewhy b{ color:var(--ink); font-weight:600; }
   .chead{ cursor:default; }
   .card.canfold .chead{ cursor:pointer; }
   .tstamp{ font-family:var(--mono); font-size:.6rem; text-transform:uppercase; letter-spacing:.08em; padding:3px 9px; border-radius:999px; border:1px solid var(--line); color:var(--sub); white-space:nowrap; }
@@ -183,6 +200,7 @@
   .cl.supported .v{ color:var(--goodtx); }
   .cl.unsupported .v, .cl.omitted .v{ color:var(--warntx); font-weight:700; }
   .cl.contradicted .v{ color:var(--badtx); font-weight:700; }
+  .cl.unverified .v{ color:var(--sub); font-weight:700; }
   .cl .cq{ font-size:.8rem; color:var(--faint); font-style:italic; }
   .cl .cq.none{ color:var(--warntx); font-style:normal; font-family:var(--mono); font-size:.72rem; }
   .cl.omitted .ct::before{ content:"left out: "; color:var(--warntx); font-family:var(--mono); font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; }
@@ -240,13 +258,30 @@
     <p class="lp">This tool turns a plan document into <b>answer cards</b> — a question a member asks, and
       the answer Robin gives on the call.</p>
 
+    <h3>What a card is — four parts, always</h3>
+    <p class="lp">Every card is one member question and nothing else. It has the same four parts, in the
+      same order, so a hundred cards stay readable instead of becoming a pile of documents:</p>
+    <ul class="lp">
+      <li><b>Question</b> — what a member actually asks, in their words. "Can I take a loan from my 401(k)?",
+        not "Loan Provisions, Section 4.2". This is also how Robin finds the right card when someone asks.</li>
+      <li><b>Answer</b> — what Robin says. The direct answer first, then the detail. Nothing else lives here.</li>
+      <li><b>Qualifiers</b> — the conditions that <i>change</i> the answer: "if you're still employed…",
+        "if you already have a loan out…". Spoken, because the answer is wrong without them. Most cards have
+        none, and that's fine — an unconditional fact has no conditions.</li>
+      <li><b>Notes</b> — for Robin, not the caller. What your document does <i>not</i> settle, so she offers a
+        specialist instead of guessing: "the document doesn't state the repayment term." Notes describe the
+        document, never the plan.</li>
+    </ul>
+    <p class="lp">Separating them isn't tidiness. An answer with every exception jammed into it is
+      unlistenable. And a note about what your document leaves out is unverifiable by definition — mixing it
+      into the answer is what used to make honest cards fail the fact-check.</p>
+
     <h3>What it does</h3>
     <ol class="lp">
       <li><b>Reads the document.</b> The cleaner reads what you upload to build an understanding of the
         context. If the file is a scan — a picture of words rather than words — it says so, because there's
         nothing to read until it's converted.</li>
-      <li><b>Builds the answer cards.</b> It creates a card for each topic. Every card holds a customer
-        question and the answer Robin will give.</li>
+      <li><b>Builds the answer cards.</b> One card per member question, in the four parts above.</li>
       <li><b>Waits for you.</b> You are the final check: review each card, fix anything, then publish. Once
         published, they are live on calls.</li>
     </ol>
@@ -255,17 +290,41 @@
     <p class="lp">What the checks actually catch:</p>
     <ul class="lp">
       <li><b>It can't invent a number.</b> If your document says the loan fee is $100, the card says $100. If
-        your document never states the repayment term, the card says that isn't covered rather than
-        supplying one.</li>
+        your document never states the repayment term, that goes in Notes rather than being supplied from
+        general knowledge.</li>
       <li><b>A second model fact-checks every card, claim by claim.</b> It pulls out each figure, deadline and
         rule the card states and finds the exact sentence in your document that backs it up — or reports that
-        there isn't one. You can open any card and read the quotes it matched. The score is the arithmetic on
-        what it found, not an opinion.</li>
+        there isn't one. You can open any card and read the quotes it matched.</li>
+      <li><b>Every quote is then checked against your document by the tool itself.</b> This cuts both ways.
+        A quote that isn't really in your file proves nothing, so it stops counting as proof. And a fact the
+        checker couldn't find, which your document plainly contains, is listed as "worth confirming" instead
+        of being scored as invented — because "I didn't find it" is not "it isn't there".</li>
       <li><b>A card containing a member's name, Social Security number or account number cannot be saved.</b>
         It is blocked, not flagged.</li>
       <li><b>Nothing publishes on its own</b> — a person presses publish — and any card can be corrected or
         switched off after it is live.</li>
     </ul>
+
+    <h3>What the score means</h3>
+    <p class="lp">Every card starts at <b>5.0</b> and loses points for specific, named evidence. There is no
+      model opinion in the number: a model can be generous with a score, it can't be generous with a quote
+      that doesn't exist. The card shows its own subtraction — "starts at 5.0, then −1.0 a figure your
+      document doesn't state" — so you can disagree with it.</p>
+    <ul class="lp">
+      <li><b>Contradicts your document</b> — the worst thing a card can do. −1.5 each.</li>
+      <li><b>States a figure or rule your document doesn't</b> — −1.0 each. Wording drift with no actionable
+        specifics costs −0.5.</li>
+      <li><b>Leaves out something your document says</b> — −0.5 each.</li>
+      <li><b>Doesn't answer its own question</b> — −2.0. Style problems (hard to say aloud, jargon question,
+        padding, a gap left unnoted) are −0.5 each.</li>
+      <li><b>Every one of these is capped.</b> A long, detailed card makes more claims than a short one, so
+        uncapped per-claim penalties punished depth rather than error — which is exactly how a run ends up
+        looking like all 2s. A card's score now reflects the worst thing in it, not the length of the list.</li>
+      <li><b>"Worth confirming" costs nothing.</b> Those are the places the fact-checker and your document
+        disagreed about whether something is there. That's a question for you, not a defect.</li>
+    </ul>
+    <p class="lp">Anything at <b>4.5 or above with nothing on its fix list</b> is ready to send. Below that,
+      the card tells you what to change.</p>
 
     <h3>How we know it's working</h3>
     <p class="lp">After each call we check what the member asked and whether Robin answered it. That produces
@@ -276,11 +335,9 @@
 
     <h3>The standard we write to</h3>
     <p class="lp">The cards follow <b>KCS (Knowledge-Centered Service)</b>, the support-content method
-      published by the Consortium for Service Innovation. Four of its rules shape every card:</p>
+      published by the Consortium for Service Innovation. Three of its rules shape the four-part card
+      above:</p>
     <ul class="lp">
-      <li><b>Title it as the question, in the member's words.</b> The card is called "Can I take a loan from my
-        401(k)?" — not "Loan Provisions, Section 4.2". That is also how Robin finds the right card when
-        someone asks.</li>
       <li><b>Keep it short.</b> Answer the question, offer more, stop. Robin is speaking, not printing.</li>
       <li><b>Write every card the same way,</b> so a hundred cards stay usable instead of becoming a pile of
         documents.</li>
@@ -306,9 +363,10 @@
 
   <!-- STEP 1 — CLEAN -->
   <section class="tabpanel active" id="p-clean">
-    <p class="panelintro">Drop in a messy guide or SOP. It proposes clean, <b>KCS-gold, Robin-ready</b>
-      articles — one topic each, voice-friendly, grounded — plus a report of what it dropped and what
-      the source doesn't answer. Review each, then <b>Send to Publish</b>.</p>
+    <p class="panelintro">Drop in a messy guide or SOP. It proposes <b>answer cards</b> — one member
+      question each, in four parts: the <b>question</b>, the <b>answer</b> Robin speaks, the
+      <b>qualifiers</b> that change it, and <b>notes</b> on what your document doesn't settle. Plus a
+      report of what it dropped. Review each, then <b>Send to Publish</b>.</p>
 
     <div class="fields">
       <div class="full">
@@ -368,6 +426,9 @@
   const statusEl = $("#status"), out = $("#out"), runBtn = $("#run");
   const el = (tag, cls, text) => { const e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; };
   let CURRENT_META = null; // {slug, environment, source} from the last clean run
+  // The raw document the current cards came from. Refine re-grades against THIS, never against the
+  // card itself — a card compared to its own text passes every check by construction.
+  let SOURCE_TEXT = "";
 
   // ---------- top-level pipeline nav ----------
   function switchTab(name){
@@ -472,8 +533,8 @@
   async function stageArticle(a){
     const meta = CURRENT_META || {};
     if(!meta.environment) throw new Error("no plan set");
-    const payload = { article: { plan_id: meta.slug, slug: a.slug, title: a.title, environment: meta.environment,
-      body_md: a.md, source: meta.source || null, coverage_flags: a.coverage_flags || [], candidate_questions: a.candidate_questions || [] } };
+    const payload = { article: { plan_id: meta.slug, slug: a.slug, title: a.question || a.title, environment: meta.environment,
+      body_md: a.md, source: meta.source || null, coverage_flags: a.notes || a.coverage_flags || [], candidate_questions: a.candidate_questions || [] } };
     const res = await fetch("/api/approve", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
     const d = await res.json().catch(()=>({error:"bad response"}));
     if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
@@ -493,47 +554,87 @@
   }
 
   const SSN_RE = /\b\d{3}[-.\s]?\d{2}[-.\s]?\d{4}\b/; // client mirror of the PII guard
+  const CLEAN_MIN = 4.5;  // mirrors CLEAN_MIN in lib/validate.js
+
+  // A card is four parts. Read them back out of the rendered text, because that text is what the
+  // reviewer edits and what gets published. Mirrors parseArticle() in lib/kcs.js.
+  const STANDING_NOTE = /^if a caller needs more than this card settles/i;
+  function parseCard(md){
+    const lines = String(md||"").split("\n");
+    const question = (lines.shift()||"").trim();
+    const out = { question, answer:[], qualifiers:[], notes:[] };
+    let cur = "answer";
+    for(const raw of lines){
+      const line = raw.trim();
+      if(/^qualifiers$/i.test(line)){ cur = "qualifiers"; continue; }
+      if(/^notes$/i.test(line)){ cur = "notes"; continue; }
+      if(cur === "answer"){ out.answer.push(raw); continue; }
+      const item = line.replace(/^[-•]\s*/,"").trim();
+      if(item && !(cur==="notes" && STANDING_NOTE.test(item))) out[cur].push(item);
+    }
+    out.answer = out.answer.join("\n").trim();
+    return out;
+  }
 
   // Three buckets, in the order a reviewer should spend attention on them.
   //   blocked   — a PII fatal. Cannot be staged at all until it's edited.
-  //   attention — anything the graders found, OR an article the critic never scored. An
-  //               unverified article is NOT a clean one; silence from the critic is not a pass.
-  //   clean     — no findings, no critic issues, and a full 5/5 from the evidence-based score.
+  //   attention — anything the graders found, OR a card the critic never scored. An unverified
+  //               card is NOT a clean one; silence from the critic is not a pass.
+  //   clean     — no flags, nothing on the fix list, and a score at or above the bar. "Check this"
+  //               items don't block it: they cost no points and are a question, not a defect.
   function triage(a){
     if(a.findings.some(f=>f.severity==="fatal")) return "blocked";
     if(a.findings.length) return "attention";
     if(!a.review || typeof a.review.score !== "number") return "attention";
-    if(a.review.score < 5) return "attention";
+    if(a.review.score < CLEAN_MIN) return "attention";
     if(a.review.issues && a.review.issues.length) return "attention";
     return "clean";
   }
-  const TRIAGE_LABEL = { blocked:"PII — blocked", attention:"needs a look", clean:"clean 5/5" };
+  const TRIAGE_LABEL = { blocked:"blocked — PII", attention:"needs an edit", clean:"ready to send" };
   const TRIAGE_RANK = { blocked:0, attention:1, clean:2 };
 
-  // "critic 4/5" on its own is a vibe. Showing how many claims were actually checked, and what
-  // each lost point was for, is what makes the number worth trusting (or worth arguing with).
-  function scoreLine(r){
-    if(!r || typeof r.score !== "number") return "not verified";
-    const n = r.counts || {};
-    const bits = [`critic ${r.score}/5`];
-    if(typeof n.claims === "number") bits.push(`${n.claims} claim${n.claims===1?"":"s"} checked`);
-    if(n.unsupported) bits.push(`${n.unsupported} unsupported`);
-    if(n.contradicted) bits.push(`${n.contradicted} contradicted`);
-    if(n.omissions) bits.push(`${n.omissions} omitted`);
-    return bits.join(" · ");
-  }
-  // The receipts. Every checkable claim the article makes, next to the exact words in YOUR
-  // document that back it up — or nothing, when the source never said it. This is the difference
-  // between "a model gave it 5/5" and "here is what was checked".
   function esc(t){ return String(t==null?"":t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+  // "critic 4/5" on its own is a vibe. The headline is the number; the line under it is the
+  // subtraction that produced it, in words — so the score is something you can agree or disagree
+  // with rather than something you have to accept.
+  function scoreLine(r){
+    if(!r || typeof r.score !== "number") return "not checked";
+    return `${r.score.toFixed(1)} / 5`;
+  }
+  function scoreWhy(r){
+    if(!r || typeof r.score !== "number")
+      return `The fact-checker didn't return a verdict for this card, so nothing has been checked. Read it yourself before sending it.`;
+    const n = r.counts || {};
+    const checked = typeof n.claims === "number"
+      ? `${n.claims} claim${n.claims===1?"":"s"} checked against your document` : "checked against your document";
+    if(!r.deductions || !r.deductions.length)
+      return `<b>Nothing found against it.</b> ${checked}${n.unverified?`, ${n.unverified} the checker couldn't settle either way`:""}.`;
+    const parts = r.deductions.map(d=>`<b>−${d.points}</b> ${esc(d.label)}${d.count>1?` (×${d.count}${d.capped?", capped":""})`:""}`);
+    return `Starts at 5.0, then ${parts.join(", ")}. ${checked}${n.unverified?`, ${n.unverified} the checker couldn't settle either way`:""}.`;
+  }
+
+  // The receipts. Every checkable claim the card makes, next to the exact words in YOUR document
+  // that back it up — or nothing, when the source never said it. This is the difference between
+  // "a model gave it 5/5" and "here is what was checked". `resolved` is the verdict AFTER the
+  // quote was located in your document; where it differs from the model's, the card says so.
+  const MARK = { supported:"✓", unsupported:"○", contradicted:"✕", unverified:"?" };
+  const VERDICT_WORD = {
+    supported: "found in your document",
+    unsupported: "not in your document",
+    contradicted: "your document says otherwise",
+    unverified: "couldn't be settled either way",
+  };
   function evidenceHtml(r){
     if(!r || !Array.isArray(r.claims) || !r.claims.length) return "";
-    const MARK = { supported:"✓", unsupported:"○", contradicted:"✕" };
-    const rows = r.claims.map(c=>`<li class="cl ${c.verdict}"><span class="v">${MARK[c.verdict]||"?"}</span>
+    const rows = r.claims.map(c=>{
+      const v = c.resolved || c.verdict;
+      return `<li class="cl ${v}"><span class="v">${MARK[v]||"?"}</span>
         <span class="ct">${esc(c.claim)}</span>
-        ${c.source_quote ? `<span class="cq">“${esc(c.source_quote)}”</span>`
-                         : `<span class="cq none">no matching text in your document</span>`}</li>`).join("");
-    const om = (r.omissions||[]).map(o=>`<li class="cl omitted"><span class="v">–</span>
+        ${c.source_quote && c.quote_found !== false ? `<span class="cq">“${esc(c.source_quote)}”</span>`
+          : `<span class="cq none">${esc(c.verify_note || VERDICT_WORD[v] || "no matching text in your document")}</span>`}</li>`;
+    }).join("");
+    const om = (r.omissions||[]).filter(o=>o.counts !== false).map(o=>`<li class="cl omitted"><span class="v">–</span>
         <span class="ct">${esc(o.missing)}</span>
         <span class="cq">“${esc(o.source_quote)}”</span></li>`).join("");
     const n = r.counts || {};
@@ -541,21 +642,17 @@
       <ul class="clist">${rows}${om}</ul></details>`;
   }
 
-  function scoreTitle(r){
-    if(!r) return "The critic didn't return a verdict for this article — review it yourself.";
-    if(!r.deductions || !r.deductions.length) return "Nothing found against it: no unsupported claims, no omissions, no style defects.";
-    return "5 minus " + r.deductions.map(d=>`${d.points} (${d.label})`).join(", ");
-  }
-
   function articleCard(a){
     const c = el("div", "card");
     c.dataset.slug = a.slug;
     c.innerHTML = `
       <div class="chead"><span class="ctitle"></span><span class="tstamp"></span><span class="score"></span><span class="fold"></span></div>
+      <div class="scorewhy"></div>
       <div class="flagbox"></div>
       <div class="issuebox"></div>
+      <div class="checkbox"></div>
       <div class="evidbox"></div>
-      <div class="md"></div>
+      <div class="body"></div>
       <div class="cardfoot"></div>`;
 
     // Clean cards start folded: the reviewer opens what they choose to read, instead of
@@ -570,21 +667,43 @@
       setFold(!c.classList.contains("collapsed"));
     });
 
+    // The card is shown as the four things it is, not as a wall of text. A reviewer scanning
+    // twenty of these needs to see at a glance where the answer stops and the conditions start,
+    // and which lines are agent-facing notes that no caller ever hears.
+    function bodyHtml(){
+      const p = parseCard(a.md);
+      const list = (items) => `<ul class="seclist">${items.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`;
+      let h = `<div class="sec"><div class="sh">Answer <span class="hint">what Robin says</span></div>
+        <div class="md">${md(p.answer)}</div></div>`;
+      h += `<div class="sec"><div class="sh">Qualifiers <span class="hint">conditions that change the answer</span></div>`
+        + (p.qualifiers.length ? list(p.qualifiers) : `<div class="secempty">None — the answer holds either way.</div>`)
+        + `</div>`;
+      h += `<div class="sec notes"><div class="sh">Notes <span class="hint">not spoken — what this document doesn't settle, so Robin hands off instead of guessing</span></div>`
+        + (p.notes.length ? list(p.notes) : `<div class="secempty">None — the source settles this question.</div>`)
+        + `</div>`;
+      return h;
+    }
+
     function paint(){
       const fatal = a.findings.some(f=>f.severity==="fatal");
       const t = triage(a);
       c.classList.toggle("hasfatal", fatal);
       c.dataset.triage = t;
       c.classList.toggle("canfold", t === "clean");
-      $(".ctitle", c).textContent = a.title;
+      $(".ctitle", c).textContent = a.question || a.title;
       const stamp = $(".tstamp", c); stamp.className = "tstamp " + t; stamp.textContent = TRIAGE_LABEL[t];
-      const sc = $(".score", c); sc.textContent = scoreLine(a.review); sc.title = scoreTitle(a.review);
+      $(".score", c).textContent = scoreLine(a.review);
+      $(".scorewhy", c).innerHTML = scoreWhy(a.review);
       $(".flagbox", c).innerHTML = a.findings.length
         ? `<div class="flags">${a.findings.map(f=>`<div class="flag ${f.severity}">${f.severity==="fatal"?"⛔":"⚠"} ${f.kind} — ${f.detail}</div>`).join("")}</div>` : "";
       $(".issuebox", c).innerHTML = (a.review && a.review.issues && a.review.issues.length)
-        ? `<ul class="issues">${a.review.issues.map(i=>`<li>${i}</li>`).join("")}</ul>` : "";
+        ? `<ul class="issues">${a.review.issues.map(i=>`<li>${esc(i)}</li>`).join("")}</ul>` : "";
+      // Separate list, on purpose: these cost the card nothing. They're where the fact-checker and
+      // your document disagreed about whether something is there — a question for you, not a fix.
+      $(".checkbox", c).innerHTML = (a.review && a.review.checks && a.review.checks.length)
+        ? `<ul class="checks"><li class="hd">Worth confirming — these didn't cost the card any points</li>${a.review.checks.map(i=>`<li>${esc(i)}</li>`).join("")}</ul>` : "";
       $(".evidbox", c).innerHTML = evidenceHtml(a.review);
-      $(".md", c).innerHTML = md(a.md.replace(/^[^\n]*\n+/, "")); // drop the title line — card shows it
+      $(".body", c).innerHTML = bodyHtml();
       paintFoot(fatal);
       setFold(t === "clean");
     }
@@ -601,16 +720,25 @@
     }
 
     function startEdit(){
-      const ta = el("textarea"); ta.value = a.md; ta.style.minHeight = "240px";
-      $(".md", c).replaceWith(ta);
+      const body = $(".body", c);
+      const ta = el("textarea"); ta.value = a.md; ta.style.minHeight = "280px";
+      const guide = el("p", "note", "Keep the shape: the first line is the question, then the answer, then optional “Qualifiers” and “Notes” heading lines with one “- ” item each.");
+      body.innerHTML = ""; body.append(guide, ta);
       const foot = $(".cardfoot", c); foot.innerHTML = "";
       const save = el("button", "run", "Save"); save.onclick = ()=>{
-        const body = ta.value.trim();
-        if(SSN_RE.test(body)){ alert("That looks like it contains an SSN-shaped number. Remove it before saving."); return; }
-        a.md = body; a.findings = a.findings.filter(f=>f.severity!=="fatal"); // cleared PII by editing
-        ta.replaceWith(el("div", "md")); paint();
+        const text = ta.value.trim();
+        if(SSN_RE.test(text)){ alert("That looks like it contains an SSN-shaped number. Remove it before saving."); return; }
+        a.md = text;
+        const p = parseCard(text);
+        a.question = p.question; a.answer = p.answer; a.qualifiers = p.qualifiers; a.notes = p.notes;
+        a.coverage_flags = p.notes;                                   // what the DB column holds
+        a.findings = a.findings.filter(f=>f.severity!=="fatal");      // cleared PII by editing
+        // The score belonged to the text that was just replaced. Keeping it would let an edited
+        // card carry a stale 5/5 into "Send all clean" — Refine re-grades, Save doesn't.
+        a.review = null;
+        paint();
       };
-      const cancel = el("button", "dl", "Cancel"); cancel.onclick = ()=>{ ta.replaceWith(el("div", "md")); paint(); };
+      const cancel = el("button", "dl", "Cancel"); cancel.onclick = paint;
       foot.append(save, cancel);
       ta.focus();
     }
@@ -621,14 +749,26 @@
       const issues = (a.review?.issues || []).concat(a.findings.filter(f=>f.severity!=="fatal").map(f=>f.detail));
       try{
         const res = await fetch("/api/refine", { method:"POST", headers:{"Content-Type":"application/json"},
-          body: JSON.stringify({ article: { slug:a.slug, title:a.title, environment: meta.environment || "", source: meta.source || null, body_md: a.md, issues } }) });
+          body: JSON.stringify({ article: { slug:a.slug, title:a.question || a.title, environment: meta.environment || "",
+            source: meta.source || null, body_md: a.md, issues,
+            // Re-grading a card against itself is a rigged exam — every claim it makes is trivially
+            // present in its own text. Send the document it came from so the new score means what
+            // the first one meant.
+            source_text: SOURCE_TEXT } }) });
         const d = await res.json().catch(()=>({error:"bad response"}));
         if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
         a.md = d.md || a.md;
+        const p = parseCard(a.md);
+        a.question = p.question; a.answer = p.answer; a.qualifiers = p.qualifiers; a.notes = p.notes;
+        a.coverage_flags = p.notes;
         a.findings = d.findings || a.findings;
-        if(d.review) a.review = d.review;
+        a.review = d.review || null;   // null when there was no source to grade against — honest, not stale
         if(d.candidate_questions) a.candidate_questions = d.candidate_questions;
         paint();
+        if(!d.graded_against_source){
+          const n = el("div","flag warn","⚠ Revised, but not re-scored: the original document wasn't available to check it against. Score any card against its source, never against itself.");
+          n.style.marginTop="8px"; c.append(n);
+        }
       }catch(e){ paint(); const err = el("div","flag warn","⚠ refine failed: "+e.message); err.style.marginTop="8px"; c.append(err); }
     }
 
@@ -674,6 +814,7 @@
     if(!env){ statusEl.textContent="Fill in 'Applies to' — the plan or product these articles cover."; return; }
     const slug = env.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,40) || "cleaned";
     const source = $("#source").value.trim();
+    SOURCE_TEXT = text;   // what Refine re-grades against, for the whole run
     const chunks = splitSource(text);
 
     // Small source: one pass, unchanged.
@@ -926,14 +1067,15 @@
 
   function buildCoverage(d){
     const box = document.createElement("div");
-    const s1 = el("div", "rsec"); s1.append(el("h3", null, "Topics covered"));
+    const s1 = el("div", "rsec"); s1.append(el("h3", null, "Questions answered"));
     const ul = el("ul", "rlist");
     d.articles.forEach(a=>{
       const li = el("li");
-      li.append(document.createTextNode(a.title));
-      li.append(el("span", "muted", "  " + a.slug + (a.review ? " · critic " + a.review.score + "/5" : "")));
-      if(a.coverage_flags && a.coverage_flags.length){
-        const sub = el("ul", "sub"); a.coverage_flags.forEach(cf=>sub.append(el("li", null, "not covered: " + cf))); li.append(sub);
+      li.append(document.createTextNode(a.question || a.title));
+      li.append(el("span", "muted", "  " + a.slug + (a.review ? " · " + a.review.score.toFixed(1) + "/5" : "")));
+      const notes = a.notes || a.coverage_flags || [];
+      if(notes.length){
+        const sub = el("ul", "sub"); notes.forEach(cf=>sub.append(el("li", null, "not settled by the source: " + cf))); li.append(sub);
       }
       ul.append(li);
     });
@@ -960,7 +1102,7 @@
     d.articles.forEach(a=>{
       if(!a.candidate_questions || !a.candidate_questions.length) return;
       any = true;
-      const g = el("div", "qgroup"); g.append(el("div", "qt", a.title));
+      const g = el("div", "qgroup"); g.append(el("div", "qt", a.question || a.title));
       const ul = el("ul", "rlist"); a.candidate_questions.forEach(q=>ul.append(el("li", null, q))); g.append(ul); box.append(g);
     });
     if(!any) box.append(el("p", "muted", "No candidate questions."));
@@ -995,9 +1137,9 @@
 
     const FILTERS = [
       ["all",       `All ${counts.all}`],
-      ["blocked",   `⛔ PII blocked ${counts.blocked}`],
-      ["attention", `⚠ Needs a look ${counts.attention}`],
-      ["clean",     `✓ Clean 5/5 ${counts.clean}`],
+      ["blocked",   `⛔ Blocked ${counts.blocked}`],
+      ["attention", `⚠ Needs an edit ${counts.attention}`],
+      ["clean",     `✓ Ready to send ${counts.clean}`],
     ];
     let active = "all";
     const chips = FILTERS.map(([key,label])=>{
@@ -1021,10 +1163,10 @@
     // Bulk stage — clean cards only, and it re-checks triage at click time so an article you
     // just edited or refined is judged on its current state, not the state at render.
     const wrap = el("div", "bulk");
-    const btn = el("button", "stageall", `→ Send all clean (${counts.clean})`);
+    const btn = el("button", "stageall", `→ Send all ready (${counts.clean})`);
     const prog = el("span", "note", "");
     btn.disabled = !counts.clean;
-    btn.title = counts.clean ? "Stages every card with no flags and a 5/5 — one at a time" : "Nothing is clean enough to send in bulk yet";
+    btn.title = counts.clean ? `Stages every card with no flags, nothing on its fix list, and a score of at least ${CLEAN_MIN} — one at a time` : "Nothing is ready to send in bulk yet";
     btn.onclick = async ()=>{
       const targets = cards.filter(c=>triage(c._article)==="clean" && !c._article.staged);
       if(!targets.length){ prog.textContent = "Everything clean is already staged."; return; }
@@ -1038,7 +1180,7 @@
         targets[i]._repaint && targets[i]._repaint();
       }
       prog.textContent = failed.length ? `${ok} staged · ${failed.length} failed` : `${ok} staged`;
-      btn.textContent = `→ Send all clean (${counts.clean})`;
+      btn.textContent = `→ Send all ready (${counts.clean})`;
       btn.disabled = cards.every(c=>triage(c._article)!=="clean" || c._article.staged);
       if(failed.length){
         const err = el("div","flag warn","⚠ Didn't stage: "+failed.join("; ")+" — open the card and use “Send to Publish” to retry.");
@@ -1059,9 +1201,10 @@
     }
 
     const empty = el("p", "muted", "Nothing in this filter."); empty.hidden = true;
-    box.append(bar, handoff,
-      el("p", "note", "Ordered worst-first. Clean cards are folded — click one to read it. “Send to Publish” stages an article for Step 3; nothing goes live until you publish it there."),
-      empty, list);
+    const legend = el("div");
+    legend.innerHTML = `<p class="note" style="margin:0 0 4px">Each card is one member question. <b>Answer</b> is what Robin says; <b>Qualifiers</b> are the conditions that change it; <b>Notes</b> are for Robin, not the caller — what your document doesn't settle, so she hands off instead of guessing.</p>
+      <p class="note" style="margin:0">Scored out of 5 by subtraction, starting at 5.0 — every point off names the evidence that took it. Worst first; ready cards are folded, click one to read it. “Send to Publish” stages a card for Step 3; nothing goes live until you publish it there.</p>`;
+    box.append(bar, handoff, legend, empty, list);
     applyFilter();
     return box;
   }
@@ -1073,11 +1216,11 @@
     const arts = document.createElement("div");
     const sum = document.createElement("div"); sum.className="summary";
     const tc = { blocked:0, attention:0, clean:0 }; d.articles.forEach(a=>tc[triage(a)]++);
-    sum.innerHTML = `<span class="chip">${s.articles} articles</span>`
+    sum.innerHTML = `<span class="chip">${s.articles} card${s.articles===1?"":"s"}</span>`
       + (s.fatal>0?`<span class="chip bad">⛔ ${s.fatal} PII — NOT safe to import</span>`:`<span class="chip good">✓ no PII</span>`)
-      + (tc.attention?`<span class="chip">${tc.attention} need a look</span>`:"")
-      + `<span class="chip good">${tc.clean} clean</span>`
-      + (s.criticAvg!=null?`<span class="chip">critic avg ${s.criticAvg.toFixed(1)}/5</span>`:"");
+      + (tc.attention?`<span class="chip">${tc.attention} need an edit</span>`:"")
+      + `<span class="chip good">${tc.clean} ready to send</span>`
+      + (s.criticAvg!=null?`<span class="chip">average score ${s.criticAvg.toFixed(1)}/5</span>`:"");
     arts.append(sum);
     arts.append(buildTriage(d.articles));
 
@@ -1105,8 +1248,13 @@
   const RUN_KEY = "cleaner:lastrun";
   const RUN_TTL = 24*60*60*1000;
   function saveRun(d){
-    try{ localStorage.setItem(RUN_KEY, JSON.stringify({ at: Date.now(), d })); }
-    catch(_){ /* quota — a very large run just doesn't get cached */ }
+    // The source rides along: without it a restored run can't re-grade, and Refine would silently
+    // fall back to scoring each card against itself.
+    try{ localStorage.setItem(RUN_KEY, JSON.stringify({ at: Date.now(), src: SOURCE_TEXT, d })); }
+    catch(_){
+      try{ localStorage.setItem(RUN_KEY, JSON.stringify({ at: Date.now(), src: "", d })); }
+      catch(_2){ /* quota — a very large run just doesn't get cached */ }
+    }
   }
   function loadRun(){
     try{
@@ -1120,9 +1268,9 @@
     const mins = Math.round((Date.now() - v.at)/60000);
     const when = mins < 60 ? `${mins || 1} min ago` : `${Math.round(mins/60)}h ago`;
     const bar = el("div", "handoff");
-    bar.append(el("span", null, `Your last clean run (${v.d.articles.length} articles, ${when}) is still here.`));
+    bar.append(el("span", null, `Your last clean run (${v.d.articles.length} cards, ${when}) is still here.`));
     const go = el("button", null, "Restore it");
-    go.onclick = ()=>{ bar.remove(); render(v.d); out.scrollIntoView({behavior:"smooth", block:"start"}); };
+    go.onclick = ()=>{ bar.remove(); SOURCE_TEXT = v.src || ""; if(v.src && !$("#src").value.trim()) $("#src").value = v.src; render(v.d); out.scrollIntoView({behavior:"smooth", block:"start"}); };
     const no = el("button", null, "Discard");
     no.onclick = ()=>{ localStorage.removeItem(RUN_KEY); bar.remove(); };
     bar.append(go, no);

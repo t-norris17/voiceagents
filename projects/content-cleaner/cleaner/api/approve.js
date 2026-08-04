@@ -21,8 +21,10 @@ export default async function handler(req, res) {
     if (!plan_id || !slug || !title || !environment || !body_md)
       return res.status(400).json({ error: "need plan_id, slug, title, environment, body_md" });
 
-    // Re-run the deterministic PII guard — an edited article must not slip an SSN past the gate.
-    const fatal = deterministicScan(body_md, { resolution: body_md, coverage_flags: a.coverage_flags || [] }).filter((f) => f.severity === "fatal");
+    // Re-run the deterministic PII guard — an edited card must not slip an SSN past the gate.
+    // Passing null makes the scan read the four sections back out of the text the human actually
+    // typed, rather than trusting the shape the client claimed for it.
+    const fatal = deterministicScan(body_md, null).filter((f) => f.severity === "fatal");
     if (fatal.length) return res.status(400).json({ error: "PII detected — " + fatal.map((f) => f.detail).join("; ") + " Remove it before staging." });
 
     const checksum = sha256(body_md);

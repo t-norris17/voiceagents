@@ -7,6 +7,7 @@
 // (grader hasn't run), the per-question grid degrades gracefully to "not graded yet" rather
 // than inventing numbers.
 import { sb } from "../lib/supabase.js";
+import { computePipeline, sortByArrival, callState, arrivedAt } from "../lib/pipeline.js";
 
 const q = (s) => encodeURIComponent(s);
 const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : null);
@@ -46,13 +47,24 @@ const sentBucket = (s) => {
 export default async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).json({ error: "GET only" });
   try {
-    const [events, questions, scores, memberAgg, asked, gapStatus] = await Promise.all([
-      sb(`ai_call_events?provider=eq.elevenlabs&select=conversation_id,started_at,duration_seconds,topic,outcome,transfer_reason,auth_outcome,subject_ref,overall_sentiment,security_flag,security_detail&order=started_at.desc.nullslast`),
+    const [events, questions, scores, memberAgg, asked, gapStatus, noTranscript, ingest] = await Promise.all([
+      // created_at and scored_at ride along so a call's position in the pipeline is answerable.
+      // `started_at` is provider-reported and can be null; ordering on it alone buried those calls
+      // at the end of the list, where the 20-row "recent calls" slice never reached them — a call
+      // genuinely arrived, and genuinely didn't show up.
+      sb(`ai_call_events?provider=eq.elevenlabs&select=conversation_id,started_at,created_at,scored_at,duration_seconds,topic,outcome,transfer_reason,auth_outcome,subject_ref,overall_sentiment,security_flag,security_detail&order=created_at.desc`),
       sb(`curated_questions?active=eq.true&select=question_key,category,question_text,sort_order&order=sort_order.asc`),
       sb(`call_question_scores?select=conversation_id,question_key,question_text,asked,answer_text,quality_score,quality_rating,grounding,unsupported_claims,contradicted_claims,graded_against,sentiment,reviewed,reviewer_note`),
       sb(`members?select=consented`),
       sb(`call_questions?select=conversation_id,canonical_key,canonical_question,category,asked_text,answered,fail_reason,matched_question_key`),
       sb(`gap_requests?select=canonical_key,status,note,resolved_slug`),
+      // Calls with no transcript can never be graded, so they'd sit "pending" forever without
+      // anything saying why. Cheap id-only query — the transcripts themselves are large.
+      sb(`ai_call_events?provider=eq.elevenlabs&transcript=is.null&select=conversation_id,created_at&order=created_at.desc`),
+      // Rejected webhooks. Optional: this table arrives with a migration, and the dashboard has to
+      // keep working on a deployment that hasn't run it yet — so a miss degrades to "unknown",
+      // never to a broken page.
+      sb(`webhook_ingest_log?select=received_at,accepted,reason,detail,conversation_id,event_type,had_transcript&order=received_at.desc&limit=50`).catch(() => null),
     ]);
 
     const totalTesters = memberAgg.length;
@@ -244,22 +256,30 @@ export default async function handler(req, res) {
       denominator_note: "questions asked on calls routed to Robin",
     };
 
-    const recent = events.slice(0, 20).map((e) => ({
+    // ---- Pipeline: where every call actually is, and what to do about the ones that are stuck ----
+    const pipeline = computePipeline({ events, noTranscript, ingest });
+    const noTranscriptIds = new Set((noTranscript || []).map((e) => e.conversation_id));
+
+    // Newest first by ARRIVAL, not by the provider's start time, so a call with a missing or odd
+    // start time still appears at the top instead of sinking below the 20-row cut.
+    const recent = sortByArrival(events).slice(0, 20).map((e) => ({
       conversation_id: e.conversation_id,
       started_at: e.started_at,
+      arrived_at: arrivedAt(e),
       duration_seconds: e.duration_seconds,
       topic: e.topic,
       outcome: e.outcome,
       auth_outcome: e.auth_outcome,
       sentiment: sentBucket(e.overall_sentiment),
       subject_ref: e.subject_ref,
+      state: callState(e, noTranscriptIds), // what this call is waiting on
     }));
 
     res.setHeader("Cache-Control", "no-store");
     return res.status(200).json({
       generated_at: new Date().toISOString(),
       window: { members: totalTesters, consented, calls: events.length },
-      security, experience, coverage, utilization,
+      security, experience, coverage, utilization, pipeline,
       gaps,
       questions: qRows,
       recent_calls: recent,

@@ -3,7 +3,7 @@
 // Writes nothing to the ElevenLabs KB — a human approves these first.
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { articleToMarkdown } from "./kcs.js";
+import { articleToMarkdown, normalizeArticle } from "./kcs.js";
 
 export function dropReport(result, findingsBySlug) {
   const L = ["# Drop report", "", "_What the cleaner cut from the source, and why. Confirm nothing important was lost._", ""];
@@ -30,13 +30,15 @@ export function dropReport(result, findingsBySlug) {
 }
 
 export function coverageMap(result, reviews) {
-  const L = ["# Coverage map", "", "_Topics produced, plus the gaps the source does not answer (Robin routes these to a specialist)._", ""];
-  L.push("## Topics covered", "");
-  for (const a of result.articles) {
+  const L = ["# Coverage map", "", "_Questions answered, plus each card's notes — what its source does not settle (Robin routes those to a specialist)._", ""];
+  L.push("## Questions answered", "");
+  for (const raw of result.articles) {
+    const a = normalizeArticle(raw);
     const r = reviews.find((x) => x.slug === a.slug);
     const score = r ? ` · critic ${r.score}/5` : "";
-    L.push(`- **${a.title}** \`${a.slug}\`${score}`);
-    for (const cf of a.coverage_flags || []) L.push(`  - not covered: ${cf}`);
+    L.push(`- **${a.question}** \`${a.slug}\`${score}`);
+    for (const q of a.qualifiers) L.push(`  - qualifier: ${q}`);
+    for (const n of a.notes) L.push(`  - note: ${n}`);
   }
   L.push("", "## Source-level gaps", "");
   if (result.coverage_gaps?.length) for (const g of result.coverage_gaps) L.push(`- ${g}`);
@@ -45,10 +47,11 @@ export function coverageMap(result, reviews) {
 }
 
 export function candidateQuestions(result) {
-  const L = ["# Candidate questions", "", "_Pulled from the cleaned articles — seed for this plan's eval set (the curated-questions pattern)._", ""];
-  for (const a of result.articles) {
-    if (!a.candidate_questions?.length) continue;
-    L.push(`## ${a.title}  \`${a.slug}\``);
+  const L = ["# Candidate questions", "", "_Pulled from the cleaned cards — seed for this plan's eval set (the curated-questions pattern)._", ""];
+  for (const raw of result.articles) {
+    const a = normalizeArticle(raw);
+    if (!a.candidate_questions.length) continue;
+    L.push(`## ${a.question}  \`${a.slug}\``);
     for (const q of a.candidate_questions) L.push(`- ${q}`);
     L.push("");
   }
@@ -80,7 +83,12 @@ export function render(outDir, { result, findingsBySlug, reviews, rendered, meta
   return written;
 }
 
-// Render articles to {slug, md} using the KCS formatter (shared source of shape).
+// Render articles to {slug, md, article} using the KCS formatter (shared source of shape).
+// The normalized article rides along so the critic and the deterministic guards read the same
+// four sections the renderer wrote, instead of re-deriving them from the text.
 export function renderArticles(result, meta) {
-  return result.articles.map((a) => ({ slug: a.slug, md: articleToMarkdown(a, meta) }));
+  return result.articles.map((a) => {
+    const article = normalizeArticle(a);
+    return { slug: article.slug || a.slug, md: articleToMarkdown(article, meta), article };
+  });
 }
