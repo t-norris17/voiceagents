@@ -495,9 +495,16 @@ export default async function handler(req, res) {
         // survives beside the new one. That left 59 rows from grader rev 1 sitting in the table,
         // 54 of them the `no_source` ones whose unearned ~4.5 scores were the original complaint.
         // Human-reviewed rows are kept: a person's annotation outranks a re-run.
-        await sb(`call_question_scores?conversation_id=eq.${q(conversation_id)}&reviewed=is.false`, {
-          method: "DELETE", prefer: "return=minimal",
-        }).catch((e) => console.error("stale score cleanup failed:", conversation_id, String(e.message || e)));
+        await Promise.all([
+          sb(`call_question_scores?conversation_id=eq.${q(conversation_id)}&reviewed=is.false`, {
+            method: "DELETE", prefer: "return=minimal",
+          }),
+          // The demand record has exactly the same problem, and it feeds utilization: 74 leftover
+          // rows here reported 280 questions asked when the graded calls actually recorded 206.
+          sb(`call_questions?conversation_id=eq.${q(conversation_id)}`, {
+            method: "DELETE", prefer: "return=minimal",
+          }),
+        ]).catch((e) => console.error("stale row cleanup failed:", conversation_id, String(e.message || e)));
 
         if (rows.length) {
           if (rows.every((x) => x.grounding === "no_source")) noSource += 1;
