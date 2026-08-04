@@ -12,6 +12,66 @@
 
 ---
 
+### 2026-08-04 — Session: grade against the real KB; per-call scores; utilization
+
+**Time spent:** ~1 session (continues the session below)
+**Status after session:** on track — one deploy setting outstanding
+
+**What we did:**
+- **Found that the grader had been blind almost the whole time.** Ran the numbers on the 39 calls in
+  `rlhybqslnqhggbykjrqg`: 38 of 39 retrieved something from the knowledge base, **3** could be
+  graded against it, and **100 of 108 answers came back `no_source` — averaging 4.24/5 anyway.**
+  An answer with no source has no claims, so it takes no grounding deductions and scores near 5 by
+  default. The dashboard's "and got it right: 4.2/5" was computed almost entirely from answers
+  nobody had checked.
+- **Cause:** the grader resolved retrieved `document_id`s against our own `kb_articles` table, which
+  only holds what the Knowledge Factory published. Five documents carried nearly all the traffic
+  (30–37 calls each) and none were ours — uploaded straight into the ElevenLabs dashboard. The
+  limitation was written down in `grade.js`'s header comment from the start; nobody had measured how
+  much of the corpus it covered.
+- **`lib/elevenlabs-kb.js`** reads document text from `GET /v1/convai/knowledge-base/{id}/content`,
+  cached in `kb_document_cache` (migration 004). The grader now resolves kb_articles → cache →
+  ElevenLabs, so it can see whatever Robin actually retrieved.
+- **Two scores per call, never blended.** *Accuracy* = was what she said supported by the documents
+  she read. *Quality* = did she answer what was asked, fully, and hand off when she should have.
+  They fail separately and the dangerous call is where they diverge. **Accuracy is null when nothing
+  could be checked** — unknown, not good — and a null is never averaged in.
+- **Utilization redefined at the call level**, per the ask: calls with at least one KB-grounded
+  answer / calls where a plan question was asked. Grounded in an article is stricter than "she said
+  something" — otherwise the number measures Robin's fluency, not the library's coverage. Each call
+  lists which of its questions the KB didn't answer and why.
+- `POST /api/grade?regrade=1` re-scores calls stamped before the KB was readable. Surfaced as a
+  dashboard button, not automatic — it costs a model call per call.
+- Migrations **003** (webhook_ingest_log) and **004** (kb_document_cache, call-level score columns,
+  `kb_answered`, plus a fifth `grounding` value `no_claims`) applied to `rlhybqslnqhggbykjrqg`.
+- 36 broker tests, up from 10.
+
+**What broke / surprised us:**
+- The old grader tests **passed the whole time** — they pinned that an answer with no source scores
+  5 and reads `no_source`. Both halves were true and the combination was the bug. A test can lock in
+  a defect if it only ever asserts the behaviour and never asks whether the behaviour is right.
+- `grounding` has a CHECK constraint. Adding `no_claims` without the constraint change would have
+  400'd **every** score write — the grader would have gone silently to zero output. Caught by
+  reading the constraint before writing the code, not after.
+- `no_claims` earned its place: "we read her sources and she said nothing checkable" (a balance from
+  a tool, a correct hand-off) is not `grounded` and not `no_source`.
+
+**Decisions made:**
+- **An unknown is never rendered as a good number.** Null accuracy, null averages, "not checked" on
+  the tile. Same rule as the pipeline strip's "?" for unknown rejections.
+- **Utilization counts KB-grounded answers, not non-empty ones.** Otherwise it measures the wrong
+  thing and always looks good.
+- Re-grading spends money, so a human presses the button.
+
+**Next session:**
+> **Set `ELEVENLABS_API_KEY` on the Vercel broker project** — until then the grader still can't read
+> the five dashboard-uploaded documents, accuracy stays null, and utilization can't be computed.
+> `/api/health` reports this as a fatal problem and the dashboard shows it. Then open the dashboard,
+> press **Re-check them** to re-score the 39 existing calls against the real KB, and read the first
+> honest accuracy and utilization figures. Expect accuracy to come in well below the old fake 4.24.
+
+---
+
 ### 2026-08-04 — Session: "calls are coming in but not showing up"
 
 **Time spent:** ~1 session

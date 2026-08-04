@@ -52,11 +52,11 @@ export default async function handler(req, res) {
       // `started_at` is provider-reported and can be null; ordering on it alone buried those calls
       // at the end of the list, where the 20-row "recent calls" slice never reached them — a call
       // genuinely arrived, and genuinely didn't show up.
-      sb(`ai_call_events?provider=eq.elevenlabs&select=conversation_id,started_at,created_at,scored_at,duration_seconds,topic,outcome,transfer_reason,auth_outcome,subject_ref,overall_sentiment,security_flag,security_detail&order=created_at.desc`),
+      sb(`ai_call_events?provider=eq.elevenlabs&select=conversation_id,started_at,created_at,scored_at,duration_seconds,topic,outcome,transfer_reason,auth_outcome,subject_ref,overall_sentiment,security_flag,security_detail,quality_score,accuracy_score,kb_answered,questions_asked,questions_kb&order=created_at.desc`),
       sb(`curated_questions?active=eq.true&select=question_key,category,question_text,sort_order&order=sort_order.asc`),
-      sb(`call_question_scores?select=conversation_id,question_key,question_text,asked,answer_text,quality_score,quality_rating,grounding,unsupported_claims,contradicted_claims,graded_against,sentiment,reviewed,reviewer_note`),
+      sb(`call_question_scores?select=conversation_id,question_key,question_text,asked,answer_text,quality_score,quality_rating,grounding,unsupported_claims,contradicted_claims,graded_against,kb_answered,sentiment,reviewed,reviewer_note`),
       sb(`members?select=consented`),
-      sb(`call_questions?select=conversation_id,canonical_key,canonical_question,category,asked_text,answered,fail_reason,matched_question_key`),
+      sb(`call_questions?select=conversation_id,canonical_key,canonical_question,category,asked_text,answered,kb_grounded,fail_reason,matched_question_key`),
       sb(`gap_requests?select=canonical_key,status,note,resolved_slug`),
       // Calls with no transcript can never be graded, so they'd sit "pending" forever without
       // anything saying why. Cheap id-only query — the transcripts themselves are large.
@@ -198,11 +198,42 @@ export default async function handler(req, res) {
     for (const s of scored.filter((s) => num(s.quality_score) != null && num(s.quality_score) < 3.0))
       review.push({ topic: LABEL[s.question_key] || s.question_key, ref: s.conversation_id, reason: s.reviewer_note || "Weak answer (quality < 3.0)", meta: `quality ${num(s.quality_score).toFixed(1)}` });
 
-    // ---- Utilization: of every question callers actually asked Robin, how many did she answer? ----
-    // Robin is the front door, so this is a top-of-funnel read — but the denominator is only the calls
-    // ROUTED to her, which the dashboard states explicitly so the number is never over-claimed.
+    // ---- Utilization: what share of Robin's CALLS did the knowledge base answer? ----
+    //
+    // The unit is the call, not the question: "62% utilization" means 62% of the calls that asked
+    // a plan question had at least one answer grounded in a KB article.
+    //
+    // "Grounded in a KB article" is a stricter test than "she said something". An answer she
+    // improvised, read off a tool, or recited from her system prompt is not the knowledge base
+    // working — and counting it would make utilization measure Robin's fluency instead of the
+    // library's coverage, which is the opposite of what it's for.
+    //
+    // Denominator excludes calls where nobody asked a plan question (a wrong number, a pure
+    // transfer, an auth failure before any question). Those aren't a KB miss, and burying them in
+    // the denominator quietly deflates the figure.
+    const kbByCall = new Map();
+    for (const a of asked) {
+      const c = kbByCall.get(a.conversation_id) || { asked: 0, kb: 0, answered: 0, unanswered: [] };
+      c.asked++;
+      if (a.answered) c.answered++;
+      if (a.kb_grounded) c.kb++;
+      // What the knowledge base could NOT answer on this call — the reason a call misses.
+      if (!a.kb_grounded)
+        c.unanswered.push({
+          question: a.canonical_question || a.canonical_key,
+          category: a.category || null,
+          // Answered but not from a KB article: she handled it, just not out of the library.
+          reason: a.answered ? "answered_without_kb" : (a.fail_reason || "no_content"),
+        });
+      kbByCall.set(a.conversation_id, c);
+    }
+
+    const callsWithQuestions = [...kbByCall.values()];
+    const callsKbAnswered = callsWithQuestions.filter((c) => c.kb > 0).length;
+
     const totalAsked = asked.length;
     const answeredCount = asked.filter((a) => a.answered).length;
+    const kbAnsweredQuestions = asked.filter((a) => a.kb_grounded).length;
     const byReason = {};
     for (const a of asked) if (!a.answered) byReason[a.fail_reason || "no_content"] = (byReason[a.fail_reason || "no_content"] || 0) + 1;
 
@@ -247,13 +278,39 @@ export default async function handler(req, res) {
       });
 
     const utilization = {
+      // THE headline: share of calls the knowledge base answered.
+      calls_with_questions: callsWithQuestions.length,
+      calls_kb_answered: callsKbAnswered,
+      pct: callsWithQuestions.length ? Math.round((callsKbAnswered / callsWithQuestions.length) * 100) : null,
+
+      // Kept alongside, because they answer different questions and get conflated otherwise:
+      //   answered_pct = did she handle it at all (however she did it)
+      //   question_kb_pct = share of individual questions the library covered
       total_asked: totalAsked,
       answered: answeredCount,
-      pct: totalAsked ? Math.round((answeredCount / totalAsked) * 100) : null,
+      answered_pct: totalAsked ? Math.round((answeredCount / totalAsked) * 100) : null,
+      kb_answered_questions: kbAnsweredQuestions,
+      question_kb_pct: totalAsked ? Math.round((kbAnsweredQuestions / totalAsked) * 100) : null,
+
       by_reason: byReason,
       // Content-addressable share: excludes guardrail declines and out-of-scope, which no article fixes.
       addressable_gap: (byReason.no_content || 0) + (byReason.not_retrieved || 0),
-      denominator_note: "questions asked on calls routed to Robin",
+      denominator_note: "calls routed to Robin on which a plan question was asked",
+    };
+
+    // ---- Experience, per call: quality and accuracy, kept apart ----
+    // Averaged only over calls that HAVE each score. A call whose answers couldn't be checked
+    // against any document has a null accuracy, and a null must never be averaged in as a good
+    // number — that is precisely how 100 unverified answers reported 4.24/5.
+    const callQuals = events.map((e) => num(e.quality_score)).filter((x) => x != null);
+    const callAccs = events.map((e) => num(e.accuracy_score)).filter((x) => x != null);
+    const callScores = {
+      quality: callQuals.length ? Number(avg(callQuals).toFixed(1)) : null,
+      accuracy: callAccs.length ? Number(avg(callAccs).toFixed(1)) : null,
+      calls_scored: callQuals.length,
+      calls_accuracy_checked: callAccs.length,
+      // The honesty valve: calls we scored for quality but could not check for accuracy.
+      calls_unchecked: events.filter((e) => e.scored_at && e.accuracy_score == null).length,
     };
 
     // ---- Pipeline: where every call actually is, and what to do about the ones that are stuck ----
@@ -273,13 +330,21 @@ export default async function handler(req, res) {
       sentiment: sentBucket(e.overall_sentiment),
       subject_ref: e.subject_ref,
       state: callState(e, noTranscriptIds), // what this call is waiting on
+      // Per-call verdict. accuracy null = we couldn't check it, which is not the same as poor.
+      quality_score: num(e.quality_score),
+      accuracy_score: num(e.accuracy_score),
+      kb_answered: e.kb_answered,
+      questions_asked: e.questions_asked,
+      questions_kb: e.questions_kb,
+      // Exactly what the knowledge base didn't cover on this call — the reason it missed.
+      not_kb_answered: (kbByCall.get(e.conversation_id)?.unanswered || []).slice(0, 6),
     }));
 
     res.setHeader("Cache-Control", "no-store");
     return res.status(200).json({
       generated_at: new Date().toISOString(),
       window: { members: totalTesters, consented, calls: events.length },
-      security, experience, coverage, utilization, pipeline,
+      security, experience, coverage, utilization, pipeline, call_scores: callScores,
       gaps,
       questions: qRows,
       recent_calls: recent,

@@ -15,13 +15,20 @@
 // Factory's critic: a model can be generous with a number, it can't be generous with a quote that
 // isn't in the source.
 //
-// Limitation worth knowing: only documents published through our pipeline have a kb_articles row.
-// A document uploaded straight into the ElevenLabs dashboard has no text on our side, so those
-// answers grade as `no_source` — visible, not silently scored. Fetching document text from the
-// ElevenLabs KB API would close that gap and is the obvious next step.
+// That limitation used to bite hard: only documents published through our pipeline had a
+// kb_articles row, so a document uploaded straight into the ElevenLabs dashboard had no text on
+// our side and its answers graded as `no_source`. On this project's first 39 calls that was 100 of
+// 108 answers — and they still averaged 4.24/5, because an answer with no source has no claims and
+// so takes no grounding deductions. The dashboard was reporting a quality figure computed almost
+// entirely from answers nobody had checked.
+//
+// Now the grader reads the knowledge base Robin ACTUALLY has: kb_articles first (we already hold
+// that text), then a cached copy, then the ElevenLabs content API for anything else. `no_source`
+// still exists and is still reported — it just means what it says.
 import Anthropic from "@anthropic-ai/sdk";
 import { sb } from "../lib/supabase.js";
-import { scoreAnswer } from "../lib/score.js";
+import { scoreAnswer, scoreCall } from "../lib/score.js";
+import { getDocumentContent, getDocumentName, hasElevenLabsKey } from "../lib/elevenlabs-kb.js";
 
 const client = new Anthropic(); // ANTHROPIC_API_KEY
 const MAX_PER_RUN = 10; // bound latency/cost per invocation; later polls catch up the rest
@@ -179,19 +186,70 @@ function documentIds(t) {
   return ids;
 }
 
-// Pull the text of those documents from kb_articles. Cached across the whole run: one batch of
-// calls usually hits the same handful of articles, and this is a hot loop at 10 calls a go.
+// Pull the text of those documents, in the order that costs least:
+//
+//   1. kb_articles      — articles we published. We already hold the text; no network call.
+//   2. kb_document_cache — anything we've fetched before, whoever uploaded it.
+//   3. ElevenLabs       — GET /v1/convai/knowledge-base/{id}/content, then cached for next time.
+//
+// The in-process `cache` map is shared across a whole batch: ten calls usually hit the same handful
+// of documents, and this is a hot loop.
 async function loadSources(ids, cache) {
   const missing = [...ids].filter((id) => !cache.has(id));
-  if (missing.length) {
-    const list = missing.map((id) => `"${id}"`).join(",");
+
+  // 1) our own published articles
+  let stillMissing = missing;
+  if (stillMissing.length) {
+    const list = stillMissing.map((id) => `"${id}"`).join(",");
     let rows = [];
     try {
       rows = await sb(`kb_articles?elevenlabs_document_id=in.(${q(list)})&select=elevenlabs_document_id,title,body_md`);
     } catch (_) { rows = []; }
     for (const r of rows || []) cache.set(String(r.elevenlabs_document_id), { title: r.title, body_md: r.body_md });
-    for (const id of missing) if (!cache.has(id)) cache.set(id, null); // remember the miss
+    stillMissing = stillMissing.filter((id) => !cache.has(id));
   }
+
+  // 2) the persistent cache — including remembered failures, so a document that can't be read
+  //    isn't re-fetched on every grading run.
+  if (stillMissing.length) {
+    const list = stillMissing.map((id) => `"${id}"`).join(",");
+    let rows = [];
+    try {
+      rows = await sb(`kb_document_cache?document_id=in.(${q(list)})&select=document_id,name,body,fetch_error`);
+    } catch (_) { rows = []; }
+    for (const r of rows || []) {
+      cache.set(String(r.document_id), r.body ? { title: r.name || r.document_id, body_md: r.body } : null);
+    }
+    stillMissing = stillMissing.filter((id) => !cache.has(id));
+  }
+
+  // 3) ElevenLabs. Fetched in parallel — a call can touch several documents and these are
+  //    independent. A failure is recorded, not thrown: one unreadable document must not stop the
+  //    rest of the call from being graded against the documents we CAN read.
+  if (stillMissing.length && hasElevenLabsKey()) {
+    await Promise.all(stillMissing.map(async (id) => {
+      let body = null, name = null, err = null;
+      try {
+        [body, name] = await Promise.all([getDocumentContent(id), getDocumentName(id)]);
+      } catch (e) {
+        err = String(e.message || e).slice(0, 300);
+      }
+      cache.set(id, body ? { title: name || id, body_md: body } : null);
+      try {
+        await sb("kb_document_cache?on_conflict=document_id", {
+          method: "POST",
+          prefer: "resolution=merge-duplicates,return=minimal",
+          body: { document_id: id, name, body, chars: body ? body.length : null,
+                  source: "elevenlabs", fetch_error: err, fetched_at: new Date().toISOString() },
+        });
+      } catch (e) { console.error("kb cache write failed:", id, String(e.message || e)); }
+    }));
+  }
+
+  // Anything still unresolved is a genuine miss — remembered in-process so we don't retry it
+  // within this batch.
+  for (const id of missing) if (!cache.has(id)) cache.set(id, null);
+
   const found = [];
   for (const id of ids) { const v = cache.get(id); if (v) found.push(v); }
   return found;
@@ -260,11 +318,15 @@ Review this call per your instructions. Return ONLY the structured JSON.`;
   // space is the tenant-agnostic one, and it matches call_questions.
   const seenScore = new Set();
   const rows = [];
+  const scored = [];      // the scoreAnswer results, for the call-level roll-up
+  const kbByKey = new Map();
   for (const a of out.answers || []) {
     const key = slugKey(a.canonical_key || a.question_text);
     if (!key || seenScore.has(key)) continue;
     seenScore.add(key);
     const s = scoreAnswer(a, hasSource);
+    scored.push(s);
+    kbByKey.set(key, s.kbAnswered);
     rows.push({
       conversation_id: call.conversation_id,
       question_key: key,
@@ -277,6 +339,7 @@ Review this call per your instructions. Return ONLY the structured JSON.`;
       unsupported_claims: s.unsupported,
       contradicted_claims: s.contradicted,
       graded_against: docTitles,
+      kb_answered: s.kbAnswered,
       sentiment: SENTS.has(a.sentiment) ? a.sentiment : null,
       sentiment_score: clampSent(a.sentiment_score),
       graded_by: "llm",
@@ -302,14 +365,22 @@ Review this call per your instructions. Return ONLY the structured JSON.`;
       category: String(a.category || "").trim().toLowerCase() || null,
       matched_question_key: seenScore.has(key) ? key : null,
       answered,
+      // "She said something" and "the knowledge base answered it" are different questions, and
+      // utilization is about the second one.
+      kb_grounded: !!kbByKey.get(key),
       fail_reason: answered ? null : (FAIL_REASONS.has(a.fail_reason) ? a.fail_reason : "no_content"),
     });
   }
+
+  // The call as a call. The denominator is every question the caller ASKED, not every question she
+  // managed to answer — a call that ducked three of four questions must not score on the one.
+  const call_scores = scoreCall(scored, askedRows.length || scored.length);
 
   return {
     conversation_id: call.conversation_id,
     rows,
     askedRows,
+    call_scores,
     security_flag: !!out.security_flag,
     security_detail: String(out.security_detail || "").trim() || null,
   };
@@ -318,20 +389,28 @@ Review this call per your instructions. Return ONLY the structured JSON.`;
 export default async function handler(req, res) {
   if (req.method !== "POST" && req.method !== "GET") return res.status(405).json({ error: "POST only" });
   try {
+    // `?regrade=1` re-scores calls that were already stamped. Needed whenever the grader's inputs
+    // change — a call graded before we could read the ElevenLabs knowledge base carries a score
+    // computed against nothing, and `scored_at` would otherwise freeze that score forever.
+    // Bounded to MAX_PER_RUN like everything else, oldest first, so it drains over several polls.
+    const regrade = String(req.query?.regrade ?? "") === "1";
+    const filter = regrade
+      ? `accuracy_score=is.null&transcript=not.is.null`
+      : `scored_at=is.null&transcript=not.is.null`;
     const pending = await sb(
-      `ai_call_events?provider=eq.elevenlabs&scored_at=is.null&transcript=not.is.null` +
+      `ai_call_events?provider=eq.elevenlabs&${filter}` +
         `&select=conversation_id,transcript&order=created_at.asc&limit=${MAX_PER_RUN}`
     );
 
-    if (!pending.length) return res.status(200).json({ ok: true, graded: 0, scored_rows: 0, asked_rows: 0 });
+    if (!pending.length) return res.status(200).json({ ok: true, graded: 0, scored_rows: 0, asked_rows: 0, regrade });
 
     const sourceCache = new Map(); // document_id -> {title, body_md} | null, shared across the batch
     const results = await Promise.allSettled(pending.map((c) => gradeCall(c, sourceCache)));
 
-    let graded = 0, scoredRows = 0, askedTotal = 0, noSource = 0;
+    let graded = 0, scoredRows = 0, askedTotal = 0, noSource = 0, unchecked = 0;
     for (const r of results) {
       if (r.status !== "fulfilled") { console.error("grade failed:", String(r.reason?.message || r.reason)); continue; }
-      const { conversation_id, rows, askedRows, security_flag, security_detail } = r.value;
+      const { conversation_id, rows, askedRows, call_scores, security_flag, security_detail } = r.value;
       try {
         if (rows.length) {
           if (rows.every((x) => x.grounding === "no_source")) noSource += 1;
@@ -350,12 +429,15 @@ export default async function handler(req, res) {
           });
           askedTotal += askedRows.length;
         }
-        // Stamp the call so it isn't re-graded, and carry the security verdict onto the call row.
+        // Stamp the call so it isn't re-graded, and carry the call-level verdict onto the row.
+        // `answers_checked` is a run statistic, not a column — PostgREST rejects unknown keys.
+        const { answers_checked, ...callCols } = call_scores || {};
         await sb(`ai_call_events?conversation_id=eq.${q(conversation_id)}`, {
           method: "PATCH",
           prefer: "return=minimal",
-          body: { scored_at: new Date().toISOString(), security_flag, security_detail },
+          body: { scored_at: new Date().toISOString(), security_flag, security_detail, ...callCols },
         });
+        if (!answers_checked) unchecked += 1;
         graded += 1;
       } catch (e) {
         console.error("grade write failed:", conversation_id, String(e.message || e));
@@ -365,7 +447,13 @@ export default async function handler(req, res) {
     res.setHeader("Cache-Control", "no-store");
     return res.status(200).json({
       ok: true, graded, scored_rows: scoredRows, asked_rows: askedTotal,
-      calls_without_source: noSource, pending: pending.length,
+      calls_without_source: noSource,
+      // Calls where nothing could be checked against a document. If this stays high, the grader is
+      // still blind and the accuracy figures above mean nothing — worth saying in the response
+      // rather than leaving it to be inferred from a suspiciously good average.
+      calls_unchecked: unchecked,
+      elevenlabs_kb_readable: hasElevenLabsKey(),
+      pending: pending.length, regrade,
     });
   } catch (e) {
     return res.status(500).json({ error: String(e.message || e) });

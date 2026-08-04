@@ -94,6 +94,13 @@
 
   .callrow{ display:grid; grid-template-columns:1fr auto; gap:2px 16px; padding:11px 0; border-bottom:1px solid var(--hair); align-items:baseline; }
   .callrow:last-child{ border-bottom:0; }
+  .callscore{ grid-column:1/-1; font-size:.76rem; color:var(--sub); font-variant-numeric:tabular-nums; margin-top:2px; }
+  .callscore b{ color:var(--ink); font-weight:700; }
+  .callscore b.weak{ color:var(--accent); }
+  .callmiss{ grid-column:1/-1; font-size:.74rem; color:var(--faint); margin-top:4px; }
+  .missq{ display:inline-block; margin-right:12px; color:var(--sub); }
+  .missq i{ font-style:normal; color:var(--faint); margin-left:5px; }
+  .missq i::before{ content:"— "; }
   .call-main{ font-weight:600; font-size:.9rem; }
   .call-id{ font-size:.7rem; color:var(--faint); letter-spacing:.03em; }
   .call-meta{ font-size:.78rem; color:var(--sub); font-variant-numeric:tabular-nums; white-space:nowrap; }
@@ -206,7 +213,7 @@
   </section>
 
   <section>
-    <div class="shead"><div class="lbl">How much she's handling · <span id="utilmeta"></span></div></div>
+    <div class="shead"><div class="lbl">Utilization — answered from the knowledge base · <span id="utilmeta"></span></div></div>
     <div id="util"></div>
   </section>
 
@@ -291,16 +298,25 @@
     const secNote = s.total_auth
       ? `${s.flags?`<span class="accent">${s.flags} call${s.flags===1?"":"s"} worth a look.</span>`:"She never said a Social Security number, password or PIN."}${s.verified_pct!=null?` ${s.verified_pct}% of callers verified${s.failed?`; ${s.failed} handed to a person`:""}.`:""}`
       : "Nobody has been through identity checks yet.";
-    const expFig = x.graded ? `${x.avg_quality.toFixed(1)}<span class="un">/5</span>` : "—";
-    const expNote = x.graded
-      ? `Checked ${x.scored_count} answer${x.scored_count===1?"":"s"} line by line against the plan documents she read.`
-      : `We haven't checked her answers yet.`;
+    // Three tiles: how much of her work the library carried, how well she did it, and how
+    // accurate it was. Accuracy is its own number and can read "not checked" — averaging an
+    // unverified answer into a good-looking score is the thing this dashboard got wrong before.
+    const cs = d.call_scores || {};
+    const accFig = cs.accuracy == null ? "—" : `${cs.accuracy.toFixed(1)}<span class="un">/5</span>`;
+    const accNote = cs.accuracy == null
+      ? (cs.calls_scored ? `<span class="accent">None of her answers could be checked against the documents she read.</span> Until they can, there is no accuracy figure — not a good one and not a bad one.`
+                         : `We haven't checked her answers yet.`)
+      : `Checked against the documents she actually retrieved, on ${cs.calls_accuracy_checked} call${cs.calls_accuracy_checked===1?"":"s"}.`
+        + (cs.calls_unchecked ? ` <span class="accent">${cs.calls_unchecked} more couldn't be checked and are excluded.</span>` : "");
+    const qFig = cs.quality == null ? "—" : `${cs.quality.toFixed(1)}<span class="un">/5</span>`;
     document.getElementById("verdict").innerHTML=`
-      <div class="v"><div class="k lbl">She answered</div><div class="fig tnum">${u.pct==null?"—":u.pct}<span class="un">%</span></div>
-        <div class="note">${u.total_asked?`${u.answered} of the ${u.total_asked} things people asked her.`:"Nothing asked yet."}</div></div>
-      <div class="v"><div class="k lbl">And got it right</div><div class="fig tnum">${expFig}</div><div class="note">${expNote}</div></div>
-      <div class="v"><div class="k lbl">Still stuck on</div><div class="fig tnum">${openGaps}</div>
-        <div class="note">${openGaps?`question${openGaps===1?"":"s"} waiting for an answer to be written.`:"Nothing — she's handled everything so far."}</div></div>`;
+      <div class="v"><div class="k lbl">Answered from the KB</div><div class="fig tnum">${u.pct==null?"—":u.pct}<span class="un">%</span></div>
+        <div class="note">${u.calls_with_questions
+          ? `${u.calls_kb_answered} of ${u.calls_with_questions} call${u.calls_with_questions===1?"":"s"} were answered out of the knowledge base.`
+          : "Nobody has asked her a plan question yet."}</div></div>
+      <div class="v"><div class="k lbl">Answer quality</div><div class="fig tnum">${qFig}</div>
+        <div class="note">${cs.calls_scored?`Did she answer what was asked, fully, across ${cs.calls_scored} call${cs.calls_scored===1?"":"s"}.`:"Nothing scored yet."}</div></div>
+      <div class="v"><div class="k lbl">Accuracy</div><div class="fig tnum">${accFig}</div><div class="note">${accNote}</div></div>`;
 
     // The pipeline strip carries the "why is it empty" story now, so the banner only speaks when
     // there's genuinely nothing wrong and nothing scored yet.
@@ -375,6 +391,17 @@
     if(GRADE_ERR)
       notes.push(`<div class="pipenote bad"><b>Checking answers is failing:</b> ${esc(GRADE_ERR)}</div>`);
 
+    // Calls scored for quality but never checked against a document. Almost always these were
+    // graded before the grader could read the ElevenLabs knowledge base. Offered as a button, not
+    // done automatically: re-checking spends a model call per call, and that's the user's money.
+    const cs = DATA.call_scores || {};
+    if(cs.calls_unchecked)
+      notes.push(`<div class="pipenote"><b>${cs.calls_unchecked} call${cs.calls_unchecked===1?" was":"s were"} scored before their sources could be read</b>,
+        so ${cs.calls_unchecked===1?"it has":"they have"} a quality score but no accuracy score. Re-checking reads the
+        knowledge base documents Robin actually retrieved and scores what she said against them.
+        <button class="pipetog" id="regradebtn" style="border:1px solid var(--line);border-radius:999px;padding:3px 11px;margin-left:6px">Re-check them →</button>
+        <span id="regradestatus" style="margin-left:8px;color:var(--faint)"></span></div>`);
+
     // Config problems, from /api/health. These explain the ones above rather than repeating them.
     for(const prob of (HEALTH?.problems||[]))
       notes.push(`<div class="pipenote ${prob.severity==="fatal"?"bad":""}"><b>${esc(prob.what)}.</b> ${esc(prob.fix)}</div>`);
@@ -386,6 +413,33 @@
       notes.push(`<div class="pipenote">${received ? `Everything that arrived has been checked.${p.last_webhook_at?` Last webhook ${esc(ago(p.last_webhook_at))}.`:""}` : `No calls have arrived yet. When one does it appears here within a minute.`}</div>`);
 
     el2.innerHTML = h + notes.join("") + `</div>`;
+    const rb = document.getElementById("regradebtn");
+    if(rb) rb.addEventListener("click", ()=>regradeAll(rb, document.getElementById("regradestatus")));
+  }
+
+  // Re-score already-stamped calls against the knowledge base. Ten per request, so it loops until
+  // the backlog drains — with the count shown, because this costs a model call per call and the
+  // person who pressed the button should be able to watch it spend.
+  let REGRADING = false;
+  async function regradeAll(btn, status){
+    if(REGRADING) return;
+    REGRADING = true; btn.disabled = true; btn.textContent = "Re-checking…";
+    let done = 0;
+    try{
+      for(let round=0; round<40; round++){
+        const r = await fetch("/api/grade?regrade=1", { method:"POST" });
+        const g = await r.json().catch(()=>null);
+        if(!r.ok || (g && g.error)) throw new Error((g && g.error) || ("HTTP "+r.status));
+        if(!g || !g.graded) break;
+        done += g.graded;
+        status.textContent = `${done} re-checked…`;
+        await load();
+      }
+      status.textContent = done ? `${done} re-checked.` : "Nothing left to re-check.";
+    }catch(e){
+      btn.disabled = false; btn.textContent = "Re-check them →";
+      status.textContent = "failed: " + e.message;
+    }finally{ REGRADING = false; }
   }
 
   const WHY = {
@@ -395,30 +449,37 @@
     guardrail:    ["She was right to say no",              true ],
   };
 
-  // Utilization: of everything callers asked Robin, how much did she actually answer?
-  // The bar separates the fixable gap (write an article) from the part no content can fix.
+  // Utilization: what share of Robin's CALLS did the knowledge base answer?
+  //
+  // The bar is drawn over CALLS, matching the headline tile. Beneath it, the same population read
+  // by question — because "62% of calls were answered by the library" and "48% of questions were"
+  // are different facts, and showing only one invites the other to be assumed.
   function renderUtilization(){
     const el2=document.getElementById("util"), u=DATA.utilization||{};
-    const total=u.total_asked||0;
-    document.getElementById("utilmeta").textContent = total ? `${u.answered} of ${total} answered` : "";
-    if(!total){ el2.innerHTML=`<div class="empty">Nothing to show yet. This fills in after the first few calls.</div>`; return; }
-    const ans=u.answered||0, fix=u.addressable_gap||0, oos=Math.max(0, total-ans-fix);
-    const pc=(n)=>((n/total)*100).toFixed(2)+"%";
+    const calls=u.calls_with_questions||0;
+    document.getElementById("utilmeta").textContent = calls ? `${u.calls_kb_answered} of ${calls} calls` : "";
+    if(!calls){ el2.innerHTML=`<div class="empty">Nothing to show yet. This fills in once callers start asking plan questions.</div>`; return; }
+
+    const kb=u.calls_kb_answered||0, rest=Math.max(0, calls-kb);
+    const pc=(n)=>((n/calls)*100).toFixed(2)+"%";
+    const totalQ=u.total_asked||0, fix=u.addressable_gap||0;
     el2.innerHTML=`
       <div class="util">
-        <div class="bar" role="img" aria-label="${ans} answered, ${fix} fixable gap, ${oos} not content">
-          <span class="b-ans" style="width:${pc(ans)}"></span>
-          <span class="b-gap" style="width:${pc(fix)}"></span>
-          <span class="b-oos" style="width:${pc(oos)}"></span>
+        <div class="fig tnum">${u.pct==null?"—":u.pct}<span class="un">%</span></div>
+        <div class="bar" role="img" aria-label="${kb} of ${calls} calls answered from the knowledge base">
+          <span class="b-ans" style="width:${pc(kb)}"></span>
+          <span class="b-oos" style="width:${pc(rest)}"></span>
         </div>
         <div class="key">
-          <span class="k-ans"><i></i>${ans} she answered</span>
-          <span class="k-gap"><i></i>${fix} we could fix by writing something</span>
-          <span class="k-oos"><i></i>${oos} needed a person, or she was right to decline</span>
+          <span class="k-ans"><i></i>${kb} answered out of the knowledge base</span>
+          <span class="k-oos"><i></i>${rest} not — she improvised, used a tool, or couldn't answer</span>
         </div>
         <div class="note" style="font-size:.72rem;color:var(--faint);margin-top:10px">
-          Out of everything asked on calls that reached her.
-          ${fix?`Write those ${fix} answer${fix>1?"s":""} and she'd be at <b>${Math.round(((ans+fix)/total)*100)}%</b>.`:""}
+          Of the ${calls} call${calls===1?"":"s"} where someone asked a plan question. A call counts once at
+          least one answer on it was grounded in a KB article — not merely because she said something.
+          ${totalQ?`<br>By question: <b>${u.question_kb_pct}%</b> of the ${totalQ} questions asked were answered from the library
+            (${u.answered_pct}% got some answer, however she produced it).`:""}
+          ${fix?`<br>${fix} unanswered question${fix>1?"s":""} could be fixed by writing an article — see “Waiting on an answer”.`:""}
         </div>
       </div>`;
   }
@@ -533,12 +594,41 @@
       // The provider's start time can be missing; fall back to when we received it rather than
       // showing a dash next to a call that plainly happened.
       const t = c.started_at ? when(c.started_at) : (c.arrived_at ? `received ${when(c.arrived_at)}` : "—");
+
+      // Two scores, never blended. Accuracy shows "not checked" rather than a dash, because a dash
+      // reads as "bad" and this is "unknown".
+      const sc = [];
+      if(c.quality_score!=null) sc.push(`quality <b class="${c.quality_score<3.5?'weak':''}">${c.quality_score.toFixed(1)}</b>`);
+      if(c.accuracy_score!=null) sc.push(`accuracy <b class="${c.accuracy_score<3.5?'weak':''}">${c.accuracy_score.toFixed(1)}</b>`);
+      else if(c.state==="graded") sc.push(`<span class="dash">accuracy not checked</span>`);
+      const kbPill = c.kb_answered==null ? ""
+        : `<span class="pill ${c.kb_answered?'ok':'bad'}">${c.kb_answered?'KB answered':'not from KB'}</span>`;
+
+      // What the library didn't cover on this call. This is the "why" behind a utilization miss,
+      // and the queue of what to write next.
+      const miss = (c.not_kb_answered||[]);
+      const missHtml = miss.length
+        ? `<div class="callmiss">Not answered from the KB: ${miss.map(m=>
+            `<span class="missq">${esc(m.question)}<i>${esc(MISS_REASON[m.reason]||m.reason)}</i></span>`).join("")}</div>`
+        : "";
+
       return `<div class="callrow">
-        <div><span class="call-main">${esc(c.topic||"Call")}</span> <span class="call-id">${esc(shortRef(c.subject_ref))}</span>${authPill}${outPill}${stPill}</div>
+        <div><span class="call-main">${esc(c.topic||"Call")}</span> <span class="call-id">${esc(shortRef(c.subject_ref))}</span>${authPill}${outPill}${kbPill}${stPill}</div>
         <div class="call-meta">${t} · ${dur(c.duration_seconds)} · ${SENT[c.sentiment]||"—"}</div>
+        ${sc.length?`<div class="callscore">${sc.join(" · ")}${c.questions_asked?` · ${c.questions_kb||0}/${c.questions_asked} question${c.questions_asked===1?"":"s"} from the KB`:""}</div>`:""}
+        ${missHtml}
       </div>`;
     }).join("");
   }
+
+  // Why a question wasn't answered out of the knowledge base, in words that name the fix.
+  const MISS_REASON = {
+    answered_without_kb: "she answered, but not from an article",
+    no_content:          "nothing written about it",
+    not_retrieved:       "an article covers it — she missed it",
+    out_of_scope:        "not something an article can answer",
+    guardrail:           "she was right to decline",
+  };
 
   function renderReview(){
     const el=document.getElementById("rq"), rq=DATA.review_queue||[];

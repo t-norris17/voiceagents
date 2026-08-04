@@ -37,7 +37,7 @@ export default async function handler(req, res) {
 
   const tables = {};
   if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
-    const names = ["ai_call_events", "call_question_scores", "call_questions", "kb_articles", "webhook_ingest_log"];
+    const names = ["ai_call_events", "call_question_scores", "call_questions", "kb_articles", "webhook_ingest_log", "kb_document_cache"];
     const results = await Promise.all(names.map((n) => probe(n)));
     names.forEach((n, i) => { tables[n] = results[i]; });
   }
@@ -50,9 +50,13 @@ export default async function handler(req, res) {
     problems.push({ severity: "fatal", what: "Calls can't be received", fix: "Set ELEVENLABS_WEBHOOK_SECRET to the signing secret from the ElevenLabs post-call webhook config. Every incoming call is rejected without it." });
   if (!env.ANTHROPIC_API_KEY)
     problems.push({ severity: "fatal", what: "Calls can't be graded", fix: "Set ANTHROPIC_API_KEY. Calls will still arrive and be listed, but nothing gets scored." });
+  if (!env.ELEVENLABS_API_KEY)
+    problems.push({ severity: "fatal", what: "Answers can't be checked for accuracy",
+      fix: "Set ELEVENLABS_API_KEY. Without it the grader can only read knowledge-base documents we published ourselves — anything uploaded in the ElevenLabs dashboard is invisible to it, so answers grade as 'no source' and there is no accuracy figure or utilization number." });
+  const OPTIONAL = new Set(["webhook_ingest_log", "kb_document_cache"]);
   for (const [name, t] of Object.entries(tables))
     if (t.missing)
-      problems.push({ severity: name === "webhook_ingest_log" ? "warn" : "fatal",
+      problems.push({ severity: OPTIONAL.has(name) ? "warn" : "fatal",
         what: `Table ${name} is missing`,
         fix: `Run the migration that creates ${name} against this project's database.` });
     else if (!t.ok)

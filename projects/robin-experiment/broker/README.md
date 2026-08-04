@@ -78,6 +78,63 @@ Grading runs from the dashboard page, ten calls per request. It now keeps going 
 backlog instead of one batch per 30 seconds, and a failing `/api/grade` is shown instead of being
 swallowed by an empty `catch`.
 
+## Grading against the real knowledge base
+
+The grader has no answer key. For each call it reconstructs what Robin retrieved — ElevenLabs
+records the `document_id` of every chunk in `rag_retrieval_info` — and asks whether what she SAID is
+supported by what she READ.
+
+It used to resolve those document ids against our own `kb_articles` table, which only holds
+documents *we* published. Measured on the first 39 calls:
+
+| | |
+|---|---|
+| calls that retrieved something from the KB | 38 of 39 |
+| calls we could actually grade against it | **3 of 39** |
+| answers graded `no_source` | **100 of 108** |
+| average quality of those 100 unchecked answers | **4.24 / 5** |
+
+Five documents carried nearly all the retrieval traffic (30–37 calls each) and none of them were
+ours — they had been uploaded straight into the ElevenLabs dashboard. And an answer with no source
+has no claims, so it takes no grounding deductions and scores near 5 by default. The dashboard's
+"and got it right: 4.2/5" was computed almost entirely from answers nobody had checked.
+
+`lib/elevenlabs-kb.js` closes it: document text now comes from
+`GET /v1/convai/knowledge-base/{id}/content`, cached in `kb_document_cache`, whoever uploaded it.
+**Set `ELEVENLABS_API_KEY` on the deployment** — without it the grader is still blind and
+`/api/health` says so.
+
+### Two scores, never blended
+
+- **Accuracy** — was what she said supported by the documents she retrieved? Contradiction −1.5
+  (cap 3), unsupported claim −1.0 (cap 2.5).
+- **Quality** — did she answer what was asked, fully, and hand off when she should have?
+
+They're separate because they fail separately, and the dangerous call is the one where they
+diverge: fluent, complete, confident, and containing a figure the plan documents never state.
+Accuracy is **null when nothing could be checked** — unknown, not good. A null is never averaged in.
+
+### Utilization
+
+`utilization.pct` = **calls where at least one answer was grounded in a KB article / calls where a
+plan question was asked.** "62% utilization" means 62% of Robin's calls were answered out of the
+knowledge base.
+
+Grounded in an article is stricter than "she said something" — an answer she improvised, read off a
+tool, or recited from her system prompt is not the library working, and counting it would make the
+number measure Robin's fluency rather than the KB's coverage. Calls where nobody asked a plan
+question (wrong numbers, pure transfers, auth failures) are out of the denominator; they aren't a KB
+miss. Each call lists exactly which of its questions the KB didn't answer, and why.
+
+`question_kb_pct` (share of individual questions) and `answered_pct` (handled at all, however) sit
+alongside it, because they're different facts and showing one invites the other to be assumed.
+
+### Re-grading
+
+`POST /api/grade?regrade=1` re-scores calls that already have a `scored_at` but no `accuracy_score`
+— calls graded before the grader could read the KB. Ten per request. The dashboard offers it as a
+button rather than doing it automatically: it costs a model call per call.
+
 ## Security model
 
 - **Service role key is server-only** (`lib/supabase.js`). Never in the browser or the ElevenLabs
