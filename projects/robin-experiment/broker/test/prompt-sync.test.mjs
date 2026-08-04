@@ -19,12 +19,29 @@ test("robin-system-prompt.txt matches PRODUCTION_SYSTEM", () => {
   );
 });
 
+// Line wrapping in the prompt is cosmetic; every phrase check runs against normalised whitespace.
+const flat = PRODUCTION_SYSTEM.replace(/\s+/g, " ");
+
 test("the caller's name is asked for, and is never treated as identification", () => {
   // Both halves matter and they pull against each other: ask warmly, trust nothing.
-  assert.match(PRODUCTION_SYSTEM, /who am I speaking with\?/i);
-  assert.match(PRODUCTION_SYSTEM, /A SPOKEN NAME IS NEVER IDENTIFICATION/);
+  assert.match(flat, /who am I speaking with\?/i);
+  assert.match(flat, /A SPOKEN NAME IS NEVER IDENTIFICATION/);
   // The two asks must stay in separate turns — merging them is what made the call feel like a form.
-  assert.match(PRODUCTION_SYSTEM, /Never ask for the name and the Member ID in the same breath/);
+  assert.match(flat, /Never ask for the name and the Member ID in the same breath/);
+});
+
+test("a name already offered is never asked for again", () => {
+  // This lived as a sub-bullet under a heading that said ASK, which is how a model ends up asking
+  // anyway. It has to be the first branch, stated before the ask, or it doesn't survive contact.
+  assert.match(flat, /NEVER ASK FOR ONE YOU ALREADY HAVE/);
+  assert.match(flat, /THEY ALREADY TOLD YOU/);
+  // The skip branch must come before the ask branch in the text.
+  assert.ok(
+    flat.indexOf("THEY ALREADY TOLD YOU") < flat.indexOf("who am I speaking with"),
+    "the skip case must be stated before the ask, or the ask wins"
+  );
+  // Applies whenever they offered it, not only in their opening line.
+  assert.match(flat, /at any point, not just in their opening line/);
 });
 
 test("the rules that came out of live calls are still present", () => {
@@ -40,7 +57,5 @@ test("the rules that came out of live calls are still present", () => {
 test("no plan is named that the tool didn't hand back", () => {
   // Robin may only speak a plan name that verify_caller returned. The prompt names Vertex as the
   // agent's own context; it must never instruct her to assert one from a caller's name.
-  // Line wrapping in the prompt is cosmetic, so normalise whitespace before matching.
-  const flat = PRODUCTION_SYSTEM.replace(/\s+/g, " ");
   assert.match(flat, /Never infer, state, or confirm a company or plan from a name/);
 });
