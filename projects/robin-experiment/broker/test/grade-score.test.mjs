@@ -3,7 +3,7 @@
 // evidence turns into the right numbers. Pure, no API key. Run: `node --test`.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { scoreAnswer, scoreCall } from "../lib/score.js";
+import { scoreAnswer, scoreCall, scoreHandoff, missedHandoffSteps, TRANSFER_CLASSES, GOOD_TRANSFER } from "../lib/score.js";
 
 const clean = {
   claims: [
@@ -169,4 +169,76 @@ test("a call where she answered nothing at all", () => {
   assert.equal(c.accuracy_score, null);
   assert.equal(c.kb_answered, false);
   assert.equal(c.questions_asked, 3);
+});
+
+// --- transfers: five things, not one -------------------------------------------------------
+
+test("a handoff is scored on what she completed, weighted toward answering first", () => {
+  const perfect = { caller_verified: true, answered_what_it_could: true, collected_context: true, explained_next_step: true, warm_handoff: true };
+  const nothing = { caller_verified: false, answered_what_it_could: false, collected_context: false, explained_next_step: false, warm_handoff: false };
+  assert.equal(scoreHandoff(perfect), 5);
+  assert.equal(scoreHandoff(nothing), 1);
+  // Answering what she could outweighs the mechanics of the transfer itself.
+  assert.ok(scoreHandoff({ ...nothing, answered_what_it_could: true }) > scoreHandoff({ ...nothing, warm_handoff: true }));
+  assert.deepEqual(missedHandoffSteps(perfect), []);
+  assert.equal(missedHandoffSteps(nothing).length, 5);
+});
+
+test("a transfer that needed a human, handed over well, is HANDLED CORRECTLY", () => {
+  // The whole point: routing work that belongs to a person is not a failure.
+  const steps = { caller_verified: true, answered_what_it_could: true, collected_context: true, explained_next_step: true, warm_handoff: true };
+  const c = scoreCall([scoreAnswer(clean, true)], 1, { transferClass: "by_design", handoffSteps: steps, outcome: "transferred" });
+  assert.equal(c.handled_correctly, true);
+  assert.equal(c.handoff_score, 5);
+});
+
+test("a transfer that needed a human but was dumped cold is NOT handled correctly", () => {
+  // The decision was right, the execution wasn't. That distinction is the coaching signal.
+  const steps = { caller_verified: false, answered_what_it_could: false, collected_context: false, explained_next_step: false, warm_handoff: false };
+  const c = scoreCall([], 1, { transferClass: "by_design", handoffSteps: steps, outcome: "transferred" });
+  assert.equal(c.handled_correctly, false);
+});
+
+test("a transfer she should have handled is never 'handled correctly', however smooth", () => {
+  const perfect = { caller_verified: true, answered_what_it_could: true, collected_context: true, explained_next_step: true, warm_handoff: true };
+  for (const cls of ["knowledge_gap", "tool_gap", "breakdown"]) {
+    const c = scoreCall([], 1, { transferClass: cls, handoffSteps: perfect, outcome: "transferred" });
+    assert.equal(c.handled_correctly, false, `${cls} must not count as handled correctly`);
+    assert.equal(c.handoff_score, 5, "the handoff can still be graded well — it just doesn't excuse the transfer");
+  }
+});
+
+test("a resolved call is handled correctly without needing a handoff score", () => {
+  const c = scoreCall([scoreAnswer(clean, true)], 1, { outcome: "resolved" });
+  assert.equal(c.handled_correctly, true);
+  assert.equal(c.handoff_score, null);
+  assert.equal(c.transfer_class, null);
+});
+
+test("questions nobody could answer are excused from the quality denominator", () => {
+  // Four questions, one answered, three she was RIGHT to decline or route. Without excusing them
+  // this scores 2.0 — the agent marked down for refusing to do what it must refuse to do, which is
+  // why transfers averaged 2.84 against 4.07 for resolved calls.
+  const punished = scoreCall([scoreAnswer(clean, true)], 4);
+  const fair     = scoreCall([scoreAnswer(clean, true)], 4, { excusedCount: 3 });
+  assert.equal(punished.quality_score, 2);
+  assert.equal(fair.quality_score, 5);
+  assert.equal(fair.excused_questions, 3);
+});
+
+test("excusing can't be gamed past the number actually unanswered", () => {
+  const c = scoreCall([scoreAnswer(clean, true), scoreAnswer(clean, true)], 2, { excusedCount: 9 });
+  assert.equal(c.excused_questions, 0, "both questions were answered — there is nothing to excuse");
+  assert.equal(c.quality_score, 5);
+});
+
+test("an abandoned call is not handled correctly; an unknown outcome stays unknown", () => {
+  assert.equal(scoreCall([], 1, { outcome: "abandoned" }).handled_correctly, false);
+  assert.equal(scoreCall([], 1, { outcome: "unknown" }).handled_correctly, null);
+});
+
+test("transfer classes stay in the set the DB constraint accepts", () => {
+  assert.deepEqual([...GOOD_TRANSFER], ["by_design", "caller_request"]);
+  for (const c of GOOD_TRANSFER) assert.ok(TRANSFER_CLASSES.includes(c));
+  assert.equal(TRANSFER_CLASSES.length, 5);
 });

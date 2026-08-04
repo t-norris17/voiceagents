@@ -218,6 +218,11 @@
   </section>
 
   <section>
+    <div class="shead"><div class="lbl">When she hands off to a person · <span id="xfermeta"></span></div></div>
+    <div id="xfer"></div>
+  </section>
+
+  <section>
     <div class="shead"><div class="lbl">Waiting on an answer · <span id="gapcount"></span></div></div>
     <div id="gaps"></div>
   </section>
@@ -330,6 +335,7 @@
     renderPipeline();
     renderQuestions();
     renderUtilization();
+    renderTransfers();
     renderGaps();
     renderCalls();
     renderReview();
@@ -440,6 +446,56 @@
       btn.disabled = false; btn.textContent = "Re-check them →";
       status.textContent = "failed: " + e.message;
     }finally{ REGRADING = false; }
+  }
+
+  // Five kinds of handoff. The first two are the agent doing her job; the rest each name a
+  // different fix. Lumping them together is what made "transferred" read as failure.
+  const XFER = {
+    by_design:      { label:"Needed a person",        good:true,  fix:"Nothing to fix — the task requires a human." },
+    caller_request: { label:"They asked for a person", good:true,  fix:"Nothing to fix — the caller wanted one." },
+    knowledge_gap:  { label:"She didn't know",         good:false, fix:"Write an article. She'd have handled this herself." },
+    tool_gap:       { label:"She couldn't do it",      good:false, fix:"Wire up a tool — a lookup or an action, not an article." },
+    breakdown:      { label:"The call broke down",     good:false, fix:"Listen to this one." },
+  };
+
+  // The point of a voice agent whose job legitimately ends at a person isn't to avoid the handoff —
+  // it's to arrive at that person with the work already done. So transfers are shown as a
+  // correctness split, never as a failure count, with the handoff itself scored separately.
+  function renderTransfers(){
+    const el2=document.getElementById("xfer"), t=DATA.transfers||{};
+    const meta=document.getElementById("xfermeta");
+    if(!t.total){
+      meta.textContent = "none yet";
+      el2.innerHTML=`<div class="empty">No calls have gone to a person yet.</div>`;
+      return;
+    }
+    meta.textContent = `${t.right_call} of ${t.total} were the right call`;
+
+    const order = ["by_design","caller_request","knowledge_gap","tool_gap","breakdown"];
+    const rows = order.filter(k=>t.by_class && t.by_class[k]).map(k=>{
+      const g=t.by_class[k], m=XFER[k];
+      return `<div class="gap">
+        <div class="gap-q">${esc(m.label)}</div>
+        <div class="gap-meta">${g.count} call${g.count===1?"":"s"}${g.avg_handoff!=null?` · handoff ${g.avg_handoff.toFixed(1)}/5`:""}</div>
+        <div class="gap-why${m.good?" soft":""}">${esc(m.fix)}</div>
+        ${(g.examples||[]).map(x=>`<div class="gap-sample">“${esc(x)}”</div>`).join("")}
+      </div>`;
+    }).join("");
+
+    el2.innerHTML = `
+      <div class="util" style="margin-bottom:6px">
+        <div class="fig tnum">${t.handled_pct==null?"—":t.handled_pct}<span class="un">%</span></div>
+        <div class="note" style="font-size:.8rem;color:var(--sub);margin-top:6px">
+          <b>Handled correctly</b> — resolved, or handed to a person for a reason that needed one and handed over cleanly.
+          ${t.judged?`${t.handled_correctly} of ${t.judged} calls.`:""}
+          A transfer that was the right call counts as a success here; it is not a failure to route work that belongs to a human.
+        </div>
+        <div class="note" style="font-size:.72rem;color:var(--faint);margin-top:8px">
+          ${t.total} handoff${t.total===1?"":"s"} · <b>${t.right_call}</b> the right call ·
+          <b class="${t.preventable?"accent":""}">${t.preventable}</b> preventable${t.avg_handoff!=null?` · average handoff quality <b>${t.avg_handoff.toFixed(1)}/5</b>`:""}
+          ${t.rough_handoffs?`<br><span class="accent">${t.rough_handoffs} correct transfer${t.rough_handoffs===1?"":"s"} handed over poorly</span> — the decision was right, the execution wasn't. That's coaching, not content.`:""}
+        </div>
+      </div>${rows}`;
   }
 
   const WHY = {
@@ -588,7 +644,12 @@
     el.innerHTML=calls.map(c=>{
       const authBad=c.auth_outcome==="failed";
       const authPill=c.auth_outcome?`<span class="pill ${authBad?'bad':'ok'}">${esc(c.auth_outcome)}</span>`:"";
-      const outPill=c.outcome?`<span class="pill ${c.outcome==='abandoned'?'bad':'ok'}">${esc(c.outcome)}</span>`:"";
+      // A transferred call says WHY it transferred. "transferred" on its own reads as failure and
+      // tells nobody what to do; the class does both jobs at once.
+      const xm = c.transfer_class ? XFER[c.transfer_class] : null;
+      const outPill = xm
+        ? `<span class="pill ${xm.good?'ok':'bad'}">${esc(xm.label)}</span>`
+        : (c.outcome?`<span class="pill ${c.outcome==='abandoned'?'bad':'ok'}">${esc(c.outcome)}</span>`:"");
       const [stLabel, stBad] = CALL_STATE[c.state] || ["", false];
       const stPill = stLabel ? `<span class="state${stBad?" attn":""}">${esc(stLabel)}</span>` : "";
       // The provider's start time can be missing; fall back to when we received it rather than
@@ -601,6 +662,8 @@
       if(c.quality_score!=null) sc.push(`quality <b class="${c.quality_score<3.5?'weak':''}">${c.quality_score.toFixed(1)}</b>`);
       if(c.accuracy_score!=null) sc.push(`accuracy <b class="${c.accuracy_score<3.5?'weak':''}">${c.accuracy_score.toFixed(1)}</b>`);
       else if(c.state==="graded") sc.push(`<span class="dash">accuracy not checked</span>`);
+      if(c.handoff_score!=null) sc.push(`handoff <b class="${c.handoff_score<3.5?'weak':''}">${c.handoff_score.toFixed(1)}</b>`);
+      if(c.excused_questions) sc.push(`<span class="dash">${c.excused_questions} not hers to answer</span>`);
       const kbPill = c.kb_answered==null ? ""
         : `<span class="pill ${c.kb_answered?'ok':'bad'}">${c.kb_answered?'KB answered':'not from KB'}</span>`;
 

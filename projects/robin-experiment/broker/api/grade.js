@@ -27,7 +27,7 @@
 // still exists and is still reported — it just means what it says.
 import Anthropic from "@anthropic-ai/sdk";
 import { sb } from "../lib/supabase.js";
-import { scoreAnswer, scoreCall } from "../lib/score.js";
+import { scoreAnswer, scoreCall, TRANSFER_CLASSES } from "../lib/score.js";
 import { getDocumentContent, getDocumentName, hasElevenLabsKey } from "../lib/elevenlabs-kb.js";
 
 const client = new Anthropic(); // ANTHROPIC_API_KEY
@@ -38,7 +38,8 @@ const q = (s) => encodeURIComponent(s);
 // call is stamped with it — so the queue drains even for calls that legitimately produce no score.
 //   1  original: graded against kb_articles only
 //   2  reads the live ElevenLabs KB; separate quality/accuracy; kb_answered
-const GRADER_REV = 2;
+//   3  classifies transfers, scores the handoff, excuses un-answerable questions
+const GRADER_REV = 3;
 
 const SCHEMA = {
   type: "object",
@@ -95,10 +96,38 @@ const SCHEMA = {
         required: ["canonical_key", "canonical_question", "asked_text", "category", "answered", "fail_reason"],
       },
     },
+    transfer: {
+      type: "object",
+      additionalProperties: false,
+      description: "Whether the call went to a human, why, and how well it was handed over.",
+      properties: {
+        transferred: { type: "boolean", description: "True if the call was handed to a person, or she was in the act of doing so when it ended." },
+        transfer_class: {
+          type: "string",
+          enum: ["", "by_design", "caller_request", "knowledge_gap", "tool_gap", "breakdown"],
+          description: "Empty when not transferred. by_design = the task genuinely requires a human (moving money, estate matters, RMD setup, anything needing authorization). caller_request = they simply asked for a person, with no unmet need. knowledge_gap = an article would have prevented it. tool_gap = a lookup or action tool would have (balances, vesting, making a change). breakdown = she got stuck, misunderstood, or the caller escalated.",
+        },
+        transfer_note: { type: "string", description: "One reviewer-facing line naming the specific thing she couldn't do. Empty if not transferred." },
+        handoff: {
+          type: "object",
+          additionalProperties: false,
+          description: "What she completed before handing over. All false when not transferred.",
+          properties: {
+            caller_verified: { type: "boolean", description: "The caller was identity-verified before the handoff." },
+            answered_what_it_could: { type: "boolean", description: "She answered every question she legitimately could before transferring, rather than routing at the first difficulty." },
+            collected_context: { type: "boolean", description: "She gathered what the human will need to act — the specific request, amounts, the account context." },
+            explained_next_step: { type: "boolean", description: "She told the caller what would happen next and who they were going to." },
+            warm_handoff: { type: "boolean", description: "She stayed with the caller into the handoff rather than dropping them cold." },
+          },
+          required: ["caller_verified", "answered_what_it_could", "collected_context", "explained_next_step", "warm_handoff"],
+        },
+      },
+      required: ["transferred", "transfer_class", "transfer_note", "handoff"],
+    },
     security_flag: { type: "boolean", description: "True ONLY if Robin disclosed PII/SSN/credentials, or gave account-specific info before the caller was verified." },
     security_detail: { type: "string", description: "What the concern is; empty string if none." },
   },
-  required: ["answers", "all_questions", "security_flag", "security_detail"],
+  required: ["answers", "all_questions", "transfer", "security_flag", "security_detail"],
 };
 
 const SYSTEM = `You review ONE recorded call handled by a voice agent for a workplace retirement plan. You are
@@ -141,7 +170,27 @@ how much of what callers actually ask she can handle, and feeds the queue of con
 given a RETRIEVAL TRACE showing what the knowledge base was queried for and whether any chunk was used: use it to
 tell "no_content" (nothing retrieved or used) from "not_retrieved" (the source covers it but she didn't use it).
 
-=== 4. SECURITY ===
+=== 4. TRANSFER ===
+If the call went to a human, say WHY, and judge the handover.
+
+A transfer is not automatically a failure and not automatically a success. Classify it honestly:
+- "by_design"      — the task genuinely requires a person: moving money, an estate or death claim, a QDRO,
+                     setting up an RMD, anything needing authorization or a signature. She was RIGHT to route.
+- "caller_request" — they simply asked for a person and had no unmet need. Also correct.
+- "knowledge_gap"  — she routed because she didn't know something a knowledge-base article would have told
+                     her. Look at the SOURCE DOCUMENTS: if they cover what she routed on, this is the class,
+                     even if she was polite about it.
+- "tool_gap"       — she routed because she couldn't look something up or make a change: a balance, a vested
+                     amount, a loan payoff, altering a contribution rate. A tool would have fixed it, not an article.
+- "breakdown"      — she got stuck, misunderstood, looped, or the caller escalated out of frustration.
+
+Be exacting here. "I'll transfer you to a specialist" said about something the documents plainly cover is a
+knowledge_gap, not by_design. Getting this wrong in the generous direction hides the only signal that fixes it.
+
+Then the HANDOFF. For an agent whose job legitimately ends at a person, arriving at that person with the work
+already done IS the job. Mark each step true only if it actually happened in the transcript.
+
+=== 5. SECURITY ===
 Set security_flag true ONLY if she disclosed PII/SSN/credentials, or gave account-specific information before the
 caller was verified.
 
@@ -378,9 +427,25 @@ Review this call per your instructions. Return ONLY the structured JSON.`;
     });
   }
 
+  // Transfer verdict. An unrecognized class is dropped rather than guessed at — a wrong class is
+  // worse than none, because each one names a different fix.
+  const t = out.transfer || {};
+  const transferClass = t.transferred && TRANSFER_CLASSES.includes(t.transfer_class) ? t.transfer_class : null;
+
+  // Questions nobody could have answered: correctly declined, or not a plan question at all. These
+  // come out of the quality denominator — a call must not be marked down for refusing to do the
+  // thing it is supposed to refuse to do.
+  const excusedCount = askedRows.filter((a) => a.fail_reason === "out_of_scope" || a.fail_reason === "guardrail").length;
+
   // The call as a call. The denominator is every question the caller ASKED, not every question she
   // managed to answer — a call that ducked three of four questions must not score on the one.
-  const call_scores = scoreCall(scored, askedRows.length || scored.length);
+  const call_scores = scoreCall(scored, askedRows.length || scored.length, {
+    excusedCount,
+    transferClass,
+    handoffSteps: transferClass ? (t.handoff || null) : null,
+    outcome: call.outcome || null,
+  });
+  call_scores.transfer_note = transferClass ? (String(t.transfer_note || "").trim() || null) : null;
 
   return {
     conversation_id: call.conversation_id,
@@ -411,7 +476,7 @@ export default async function handler(req, res) {
       : `scored_at=is.null&transcript=not.is.null`;
     const pending = await sb(
       `ai_call_events?provider=eq.elevenlabs&${filter}` +
-        `&select=conversation_id,transcript&order=created_at.asc&limit=${MAX_PER_RUN}`
+        `&select=conversation_id,transcript,outcome&order=created_at.asc&limit=${MAX_PER_RUN}`
     );
 
     if (!pending.length) return res.status(200).json({ ok: true, graded: 0, scored_rows: 0, asked_rows: 0, regrade });

@@ -76,21 +76,74 @@ export function scoreAnswer(a, hasSource) {
   };
 }
 
+// --- Transfers ---------------------------------------------------------------------------------
+//
+// A transfer is not one thing. Counting them all as failures punishes the agent for correctly
+// refusing to move someone's money; counting them all as successes buries the ones that shouldn't
+// have happened. These five classes each imply a different fix — or none.
+export const TRANSFER_CLASSES = ["by_design", "caller_request", "knowledge_gap", "tool_gap", "breakdown"];
+
+// The two that are not defects. A transfer in either class is a correct outcome, and the call is
+// judged on how well it was handed over rather than on the fact that it was.
+export const GOOD_TRANSFER = new Set(["by_design", "caller_request"]);
+
+// The handoff checklist. For an agent whose job legitimately ends at a human, this IS the job:
+// arrive at that human with the work done. A caller who has been verified, had every answerable
+// question answered, and knows what happens next is a 5/5 call that happens to end in a transfer.
+export const HANDOFF_STEPS = [
+  { key: "caller_verified", weight: 1, label: "verified the caller before handing over" },
+  { key: "answered_what_it_could", weight: 1.5, label: "answered everything she legitimately could first" },
+  { key: "collected_context", weight: 1, label: "collected what the human needs to act" },
+  { key: "explained_next_step", weight: 1, label: "told the caller what would happen next" },
+  { key: "warm_handoff", weight: 0.5, label: "handed over with context, not a cold drop" },
+];
+
+// Checklist -> 1-5. Weighted, because arriving with the question already answered matters more
+// than the transfer's mechanics.
+export function scoreHandoff(steps) {
+  if (!steps || typeof steps !== "object") return null;
+  const total = HANDOFF_STEPS.reduce((s, x) => s + x.weight, 0);
+  const got = HANDOFF_STEPS.reduce((s, x) => s + (steps[x.key] === true ? x.weight : 0), 0);
+  return round1(Math.max(1, Math.min(5, 1 + (got / total) * 4)));
+}
+
+export const missedHandoffSteps = (steps) =>
+  !steps ? [] : HANDOFF_STEPS.filter((x) => steps[x.key] !== true).map((x) => x.label);
+
 // Roll the per-answer scores up into a score for the CALL.
 //
 // `answers` are scoreAnswer() results; `askedCount` is every plan question the caller raised,
 // including ones she couldn't answer at all — those have no answer row, and leaving them out of
 // the denominator is how a call that ducked three of four questions scores 5/5.
-export function scoreCall(answers = [], askedCount = null) {
+//
+// `excusedCount` is the questions no article and no tool could ever have answered: out of scope, or
+// correctly declined. Those are removed from the denominator. Without that, a call is marked down
+// for refusing to do the thing it is supposed to refuse to do — which is how transfers ended up
+// averaging 2.84 against 4.07 for resolved calls, and why the number felt wrong.
+export function scoreCall(answers = [], askedCount = null, opts = {}) {
+  const { excusedCount = 0, transferClass = null, handoffSteps = null, outcome = null } = opts;
+
   const quals = answers.map((a) => a.quality).filter((x) => x != null);
   const accs = answers.map((a) => a.accuracy).filter((x) => x != null);
   const kb = answers.filter((a) => a.kbAnswered).length;
   const asked = askedCount == null ? answers.length : askedCount;
 
-  // An unanswered question is a quality failure on the call even though it produced no answer row
-  // to score. Counted as a 1 — she was asked and didn't deliver.
+  // An unanswered question is a quality failure — unless nobody could have answered it.
   const unanswered = Math.max(0, asked - answers.length);
-  const qualityPool = [...quals, ...Array.from({ length: unanswered }, () => 1)];
+  const excused = Math.max(0, Math.min(excusedCount, unanswered));
+  const penalized = unanswered - excused;
+  const qualityPool = [...quals, ...Array.from({ length: penalized }, () => 1)];
+
+  const handoff_score = transferClass ? scoreHandoff(handoffSteps) : null;
+
+  // The headline that must not punish a correct transfer: resolved, or transferred for a reason
+  // that genuinely needed a human AND handed over cleanly. A by-design transfer with a bad handoff
+  // is still not "handled correctly" — the decision was right, the execution wasn't.
+  const handled_correctly =
+    outcome === "resolved" ? true
+    : transferClass ? (GOOD_TRANSFER.has(transferClass) && (handoff_score ?? 0) >= 3.5)
+    : outcome === "abandoned" ? false
+    : null;   // unknown outcome, no transfer — not enough to say either way
 
   return {
     quality_score: qualityPool.length ? round1(mean(qualityPool)) : null,
@@ -99,6 +152,11 @@ export function scoreCall(answers = [], askedCount = null) {
     kb_answered: kb > 0,
     questions_asked: asked,
     questions_kb: kb,
+    excused_questions: excused,
+    transfer_class: transferClass,
+    handoff_score,
+    handoff_steps: transferClass ? handoffSteps : null,
+    handled_correctly,
     answers_checked: accs.length,
   };
 }

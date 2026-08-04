@@ -52,7 +52,7 @@ export default async function handler(req, res) {
       // `started_at` is provider-reported and can be null; ordering on it alone buried those calls
       // at the end of the list, where the 20-row "recent calls" slice never reached them — a call
       // genuinely arrived, and genuinely didn't show up.
-      sb(`ai_call_events?provider=eq.elevenlabs&select=conversation_id,started_at,created_at,scored_at,duration_seconds,topic,outcome,transfer_reason,auth_outcome,subject_ref,overall_sentiment,security_flag,security_detail,quality_score,accuracy_score,kb_answered,questions_asked,questions_kb&order=created_at.desc`),
+      sb(`ai_call_events?provider=eq.elevenlabs&select=conversation_id,started_at,created_at,scored_at,duration_seconds,topic,outcome,transfer_reason,auth_outcome,subject_ref,overall_sentiment,security_flag,security_detail,quality_score,accuracy_score,kb_answered,questions_asked,questions_kb,transfer_class,transfer_note,handoff_score,handoff_steps,handled_correctly,excused_questions&order=created_at.desc`),
       sb(`curated_questions?active=eq.true&select=question_key,category,question_text,sort_order&order=sort_order.asc`),
       sb(`call_question_scores?select=conversation_id,question_key,question_text,asked,answer_text,quality_score,quality_rating,grounding,unsupported_claims,contradicted_claims,graded_against,kb_answered,sentiment,reviewed,reviewer_note`),
       sb(`members?select=consented`),
@@ -313,6 +313,45 @@ export default async function handler(req, res) {
       calls_unchecked: events.filter((e) => e.scored_at && e.accuracy_score == null).length,
     };
 
+    // ---- Transfers: five different things, five different fixes ----
+    //
+    // The headline is "handled correctly" — resolved, OR transferred for a reason that needed a
+    // human and handed over cleanly. That number never punishes a correct transfer, which is the
+    // whole point: an agent whose job legitimately ends at a person should be measured on how much
+    // of the call she carried before she got there, not on whether she got there.
+    const transferred = events.filter((e) => e.transfer_class);
+    const byClass = {};
+    for (const e of transferred) {
+      const g = byClass[e.transfer_class] || { count: 0, examples: [], avg_handoff: null, _h: [] };
+      g.count++;
+      if (e.handoff_score != null) g._h.push(Number(e.handoff_score));
+      if (e.transfer_note && g.examples.length < 4) g.examples.push(e.transfer_note);
+      byClass[e.transfer_class] = g;
+    }
+    for (const g of Object.values(byClass)) {
+      g.avg_handoff = g._h.length ? Number(avg(g._h).toFixed(1)) : null;
+      delete g._h;
+    }
+    const judged = events.filter((e) => e.handled_correctly != null);
+    const handoffScores = transferred.map((e) => num(e.handoff_score)).filter((x) => x != null);
+    const GOOD = new Set(["by_design", "caller_request"]);
+
+    const transfers = {
+      total: transferred.length,
+      by_class: byClass,
+      // Transfers that were the right call. Not a failure rate — a correctness rate.
+      right_call: transferred.filter((e) => GOOD.has(e.transfer_class)).length,
+      // The ones that name a fix, which is what the queue below is for.
+      preventable: transferred.filter((e) => !GOOD.has(e.transfer_class)).length,
+      avg_handoff: handoffScores.length ? Number(avg(handoffScores).toFixed(1)) : null,
+      handled_correctly: judged.filter((e) => e.handled_correctly).length,
+      judged: judged.length,
+      handled_pct: judged.length ? Math.round((judged.filter((e) => e.handled_correctly).length / judged.length) * 100) : null,
+      // A right-call transfer that was handed over badly: the decision was correct, the execution
+      // wasn't, and that is a coaching note rather than a content gap.
+      rough_handoffs: transferred.filter((e) => GOOD.has(e.transfer_class) && num(e.handoff_score) != null && num(e.handoff_score) < 3.5).length,
+    };
+
     // ---- Pipeline: where every call actually is, and what to do about the ones that are stuck ----
     const pipeline = computePipeline({ events, noTranscript, ingest });
     const noTranscriptIds = new Set((noTranscript || []).map((e) => e.conversation_id));
@@ -330,6 +369,12 @@ export default async function handler(req, res) {
       sentiment: sentBucket(e.overall_sentiment),
       subject_ref: e.subject_ref,
       state: callState(e, noTranscriptIds), // what this call is waiting on
+      transfer_class: e.transfer_class,
+      transfer_note: e.transfer_note,
+      handoff_score: num(e.handoff_score),
+      handoff_steps: e.handoff_steps || null,
+      handled_correctly: e.handled_correctly,
+      excused_questions: e.excused_questions,
       // Per-call verdict. accuracy null = we couldn't check it, which is not the same as poor.
       quality_score: num(e.quality_score),
       accuracy_score: num(e.accuracy_score),
@@ -344,7 +389,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       generated_at: new Date().toISOString(),
       window: { members: totalTesters, consented, calls: events.length },
-      security, experience, coverage, utilization, pipeline, call_scores: callScores,
+      security, experience, coverage, utilization, pipeline, call_scores: callScores, transfers,
       gaps,
       questions: qRows,
       recent_calls: recent,
