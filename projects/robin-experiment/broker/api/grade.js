@@ -34,6 +34,12 @@ const client = new Anthropic(); // ANTHROPIC_API_KEY
 const MAX_PER_RUN = 10; // bound latency/cost per invocation; later polls catch up the rest
 const q = (s) => encodeURIComponent(s);
 
+// Bump when grading semantics change. `?regrade=1` re-scores anything below this, and every graded
+// call is stamped with it — so the queue drains even for calls that legitimately produce no score.
+//   1  original: graded against kb_articles only
+//   2  reads the live ElevenLabs KB; separate quality/accuracy; kb_answered
+const GRADER_REV = 2;
+
 const SCHEMA = {
   type: "object",
   additionalProperties: false,
@@ -389,13 +395,19 @@ Review this call per your instructions. Return ONLY the structured JSON.`;
 export default async function handler(req, res) {
   if (req.method !== "POST" && req.method !== "GET") return res.status(405).json({ error: "POST only" });
   try {
-    // `?regrade=1` re-scores calls that were already stamped. Needed whenever the grader's inputs
-    // change — a call graded before we could read the ElevenLabs knowledge base carries a score
-    // computed against nothing, and `scored_at` would otherwise freeze that score forever.
-    // Bounded to MAX_PER_RUN like everything else, oldest first, so it drains over several polls.
+    // `?regrade=1` re-scores calls stamped by an older generation of the grader. Needed whenever
+    // the grader's inputs change — a call graded before we could read the ElevenLabs knowledge base
+    // carries a score computed against nothing, and `scored_at` would otherwise freeze it forever.
+    //
+    // Selects on graded_rev, NOT on `accuracy_score is null`. A call where the caller asked nothing
+    // has no answers to check, so its accuracy is legitimately null and stays null however often
+    // it's re-graded — selecting on null picks those calls every round, piles them up at the head
+    // of the oldest-first queue, and once ten accumulate the loop re-grades the same ten forever at
+    // a model call apiece. The version stamp is written whether or not a score came out, so the
+    // queue always drains.
     const regrade = String(req.query?.regrade ?? "") === "1";
     const filter = regrade
-      ? `accuracy_score=is.null&transcript=not.is.null`
+      ? `or=(graded_rev.is.null,graded_rev.lt.${GRADER_REV})&transcript=not.is.null`
       : `scored_at=is.null&transcript=not.is.null`;
     const pending = await sb(
       `ai_call_events?provider=eq.elevenlabs&${filter}` +
@@ -435,7 +447,7 @@ export default async function handler(req, res) {
         await sb(`ai_call_events?conversation_id=eq.${q(conversation_id)}`, {
           method: "PATCH",
           prefer: "return=minimal",
-          body: { scored_at: new Date().toISOString(), security_flag, security_detail, ...callCols },
+          body: { scored_at: new Date().toISOString(), graded_rev: GRADER_REV, security_flag, security_detail, ...callCols },
         });
         if (!answers_checked) unchecked += 1;
         graded += 1;
@@ -453,7 +465,7 @@ export default async function handler(req, res) {
       // rather than leaving it to be inferred from a suspiciously good average.
       calls_unchecked: unchecked,
       elevenlabs_kb_readable: hasElevenLabsKey(),
-      pending: pending.length, regrade,
+      pending: pending.length, regrade, grader_rev: GRADER_REV,
     });
   } catch (e) {
     return res.status(500).json({ error: String(e.message || e) });
