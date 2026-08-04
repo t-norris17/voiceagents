@@ -27,7 +27,7 @@
 // still exists and is still reported — it just means what it says.
 import Anthropic from "@anthropic-ai/sdk";
 import { sb } from "../lib/supabase.js";
-import { scoreAnswer, scoreCall, TRANSFER_CLASSES } from "../lib/score.js";
+import { scoreAnswer, scoreCall, scoreGap, GAP_HANDLING, TRANSFER_CLASSES } from "../lib/score.js";
 import { getDocumentContent, getDocumentName, hasElevenLabsKey } from "../lib/elevenlabs-kb.js";
 
 const client = new Anthropic(); // ANTHROPIC_API_KEY
@@ -39,7 +39,8 @@ const q = (s) => encodeURIComponent(s);
 //   1  original: graded against kb_articles only
 //   2  reads the live ElevenLabs KB; separate quality/accuracy; kb_answered
 //   3  classifies transfers, scores the handoff, excuses un-answerable questions
-const GRADER_REV = 3;
+//   4  scores HOW she handled each gap instead of excusing or flat-penalising it
+const GRADER_REV = 4;
 
 const SCHEMA = {
   type: "object",
@@ -92,8 +93,13 @@ const SCHEMA = {
           category: { type: "string", description: "Topic area, e.g. loans, enrollment, account_access, investments." },
           answered: { type: "boolean", description: "True only if Robin gave a substantive answer. Deflecting, routing, or 'I don't have that' = false." },
           fail_reason: { type: "string", enum: ["", "no_content", "not_retrieved", "out_of_scope", "guardrail"], description: "Empty when answered. no_content = nothing in the KB covers it (retrieval used no chunk). not_retrieved = the KB likely covers it but she didn't use it. out_of_scope = not a plan-knowledge question at all. guardrail = she correctly declined (e.g. investment advice)." },
+          handling: {
+            type: "string",
+            enum: ["", "declined_correctly", "acknowledged_and_routed", "bluffed", "dropped"],
+            description: "Empty when answered. How she handled a question she could NOT answer — judge only what she did, not why she couldn't. declined_correctly = refused something she should refuse (investment advice, a transaction, anything out of scope) and said so plainly. acknowledged_and_routed = admitted she didn't have it and offered a person or a next step. bluffed = answered anyway with something the source documents don't support, or implied certainty she didn't have. dropped = stalled, changed the subject, looped, or left the caller with nothing. This is the part that is entirely hers, and it is what she is scored on when the knowledge base has nothing.",
+          },
         },
-        required: ["canonical_key", "canonical_question", "asked_text", "category", "answered", "fail_reason"],
+        required: ["canonical_key", "canonical_question", "asked_text", "category", "answered", "fail_reason", "handling"],
       },
     },
     transfer: {
@@ -169,6 +175,23 @@ Separately, record EVERY distinct question the caller asked — including ones s
 how much of what callers actually ask she can handle, and feeds the queue of content that needs writing. You are
 given a RETRIEVAL TRACE showing what the knowledge base was queried for and whether any chunk was used: use it to
 tell "no_content" (nothing retrieved or used) from "not_retrieved" (the source covers it but she didn't use it).
+
+For every question she could NOT answer, also record HOW she handled it. These are separate judgments and must not
+be blurred: fail_reason is WHY she couldn't (which may be nobody's fault, or the library's), handling is what
+she DID about it (always hers). She is scored on the second, not the first.
+
+- "declined_correctly"      — she refused something she should refuse: investment advice, a transaction, a legal or
+                              tax opinion, anything outside a plan-knowledge agent's remit. Said so plainly. This is
+                              a GOOD outcome, not an absence.
+- "acknowledged_and_routed" — she said she didn't have that information and offered a person or a next step.
+                              The right behaviour when the knowledge base is silent.
+- "bluffed"                 — she answered anyway with something the SOURCE DOCUMENTS do not support, or implied a
+                              certainty she had no basis for. Worse than saying nothing. Be strict: a plausible,
+                              confident, unsupported answer is a bluff even when it sounds helpful.
+- "dropped"                 — she stalled, changed the subject, looped, or left the caller with nothing and no route.
+
+Judge handling from the transcript alone. A caller who leaves knowing what to do next was handled well even when
+the answer was "I don't have that."
 
 === 4. TRANSFER ===
 If the call went to a human, say WHY, and judge the handover.
@@ -412,6 +435,11 @@ Review this call per your instructions. Return ONLY the structured JSON.`;
     if (!key || seen.has(key)) continue;
     seen.add(key);
     const answered = !!a.answered;
+    const fail_reason = answered ? null : (FAIL_REASONS.has(a.fail_reason) ? a.fail_reason : "no_content");
+    // WHY she couldn't answer belongs to whoever owns it; HOW she handled it is always hers. The
+    // score comes from the second, which is what stops a missing article from reading as her fault.
+    const handling = answered ? null : (GAP_HANDLING.includes(a.handling) ? a.handling : "dropped");
+    const gap = answered ? null : scoreGap(fail_reason, handling);
     askedRows.push({
       conversation_id: call.conversation_id,
       asked_text: String(a.asked_text || "").trim() || null,
@@ -423,7 +451,10 @@ Review this call per your instructions. Return ONLY the structured JSON.`;
       // "She said something" and "the knowledge base answered it" are different questions, and
       // utilization is about the second one.
       kb_grounded: !!kbByKey.get(key),
-      fail_reason: answered ? null : (FAIL_REASONS.has(a.fail_reason) ? a.fail_reason : "no_content"),
+      fail_reason,
+      handling,
+      fault: gap ? gap.fault : null,
+      gap_note: gap ? gap.label : null,
     });
   }
 
@@ -432,15 +463,15 @@ Review this call per your instructions. Return ONLY the structured JSON.`;
   const t = out.transfer || {};
   const transferClass = t.transferred && TRANSFER_CLASSES.includes(t.transfer_class) ? t.transfer_class : null;
 
-  // Questions nobody could have answered: correctly declined, or not a plan question at all. These
-  // come out of the quality denominator — a call must not be marked down for refusing to do the
-  // thing it is supposed to refuse to do.
-  const excusedCount = askedRows.filter((a) => a.fail_reason === "out_of_scope" || a.fail_reason === "guardrail").length;
+  // Every question she didn't answer, with how she handled it. Scored rather than excluded: a
+  // correct refusal lifts her score, a library gap she handled well is neutral, and only what she
+  // actually got wrong pulls it down.
+  const gaps = askedRows.filter((a) => !a.answered).map((a) => ({ fail_reason: a.fail_reason, handling: a.handling }));
 
   // The call as a call. The denominator is every question the caller ASKED, not every question she
   // managed to answer — a call that ducked three of four questions must not score on the one.
   const call_scores = scoreCall(scored, askedRows.length || scored.length, {
-    excusedCount,
+    gaps,
     transferClass,
     handoffSteps: transferClass ? (t.handoff || null) : null,
     outcome: call.outcome || null,
@@ -525,7 +556,7 @@ export default async function handler(req, res) {
         }
         // Stamp the call so it isn't re-graded, and carry the call-level verdict onto the row.
         // `answers_checked` is a run statistic, not a column — PostgREST rejects unknown keys.
-        const { answers_checked, ...callCols } = call_scores || {};
+        const { answers_checked, gap_detail, ...callCols } = call_scores || {};
         await sb(`ai_call_events?conversation_id=eq.${q(conversation_id)}`, {
           method: "PATCH",
           prefer: "return=minimal",

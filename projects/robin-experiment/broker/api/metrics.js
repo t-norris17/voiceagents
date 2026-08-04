@@ -52,11 +52,11 @@ export default async function handler(req, res) {
       // `started_at` is provider-reported and can be null; ordering on it alone buried those calls
       // at the end of the list, where the 20-row "recent calls" slice never reached them — a call
       // genuinely arrived, and genuinely didn't show up.
-      sb(`ai_call_events?provider=eq.elevenlabs&select=conversation_id,started_at,created_at,scored_at,duration_seconds,topic,outcome,transfer_reason,auth_outcome,subject_ref,overall_sentiment,security_flag,security_detail,quality_score,accuracy_score,kb_answered,questions_asked,questions_kb,transfer_class,transfer_note,handoff_score,handoff_steps,handled_correctly,excused_questions&order=created_at.desc`),
+      sb(`ai_call_events?provider=eq.elevenlabs&select=conversation_id,started_at,created_at,scored_at,duration_seconds,topic,outcome,transfer_reason,auth_outcome,subject_ref,overall_sentiment,security_flag,security_detail,quality_score,accuracy_score,kb_answered,questions_asked,questions_kb,correct_declines,content_gaps,retrieval_misses,robin_defects,bluffs,transfer_class,transfer_note,handoff_score,handoff_steps,handled_correctly,excused_questions&order=created_at.desc`),
       sb(`curated_questions?active=eq.true&select=question_key,category,question_text,sort_order&order=sort_order.asc`),
       sb(`call_question_scores?select=conversation_id,question_key,question_text,asked,answer_text,quality_score,quality_rating,grounding,unsupported_claims,contradicted_claims,graded_against,kb_answered,sentiment,reviewed,reviewer_note`),
       sb(`members?select=consented`),
-      sb(`call_questions?select=conversation_id,canonical_key,canonical_question,category,asked_text,answered,kb_grounded,fail_reason,matched_question_key`),
+      sb(`call_questions?select=conversation_id,canonical_key,canonical_question,category,asked_text,answered,kb_grounded,fail_reason,handling,fault,gap_note,matched_question_key`),
       sb(`gap_requests?select=canonical_key,status,note,resolved_slug`),
       // Calls with no transcript can never be graded, so they'd sit "pending" forever without
       // anything saying why. Cheap id-only query — the transcripts themselves are large.
@@ -277,6 +277,38 @@ export default async function handler(req, res) {
         return actionable(a) - actionable(b) || b.count - a.count;
       });
 
+    // ---- Coverage and retrieval: two different owners, two different fixes ----
+    //
+    // Deliberately separate from utilization, and from each other. Utilization is call-level ("did
+    // the library carry this call"). Coverage is "does an article exist for what people ask" and
+    // belongs to the content team. Retrieval is "when an article exists, does she find it" and
+    // belongs to prompt/RAG tuning. Collapsing any two of these gives you one number nobody can act
+    // on, and people quote whichever is highest.
+    //
+    // Out-of-scope and guardrail questions are excluded from BOTH denominators: there is no article
+    // to write for "what should I invest in", so counting it as a coverage miss would permanently
+    // depress a number that is already correct.
+    const inScope = asked.filter((a) => a.fail_reason !== "out_of_scope" && a.fail_reason !== "guardrail");
+    const noContent = inScope.filter((a) => a.fail_reason === "no_content").length;
+    const notRetrieved = inScope.filter((a) => a.fail_reason === "not_retrieved").length;
+    const haveArticle = inScope.length - noContent;
+
+    const library = {
+      in_scope_questions: inScope.length,
+      out_of_scope: asked.length - inScope.length,
+      // Content team: of the questions someone could write an article for, how many have one.
+      content_gaps: noContent,
+      coverage_pct: inScope.length ? Math.round(((inScope.length - noContent) / inScope.length) * 100) : null,
+      // Agent tuning: of the questions an article DOES cover, how many she actually used it for.
+      retrieval_misses: notRetrieved,
+      retrieval_pct: haveArticle ? Math.round(((haveArticle - notRetrieved) / haveArticle) * 100) : null,
+      // The wins. In a regulated product this is the headline, not an absence.
+      correct_declines: asked.filter((a) => a.fault === "none").length,
+      // The worst thing in the table: she couldn't answer and answered anyway.
+      bluffs: asked.filter((a) => a.handling === "bluffed").length,
+      dropped: asked.filter((a) => a.handling === "dropped").length,
+    };
+
     const utilization = {
       // THE headline: share of calls the knowledge base answered.
       calls_with_questions: callsWithQuestions.length,
@@ -374,7 +406,10 @@ export default async function handler(req, res) {
       handoff_score: num(e.handoff_score),
       handoff_steps: e.handoff_steps || null,
       handled_correctly: e.handled_correctly,
-      excused_questions: e.excused_questions,
+      correct_declines: e.correct_declines,
+      content_gaps: e.content_gaps,
+      retrieval_misses: e.retrieval_misses,
+      bluffs: e.bluffs,
       // Per-call verdict. accuracy null = we couldn't check it, which is not the same as poor.
       quality_score: num(e.quality_score),
       accuracy_score: num(e.accuracy_score),
@@ -389,7 +424,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       generated_at: new Date().toISOString(),
       window: { members: totalTesters, consented, calls: events.length },
-      security, experience, coverage, utilization, pipeline, call_scores: callScores, transfers,
+      security, experience, coverage, utilization, library, pipeline, call_scores: callScores, transfers,
       gaps,
       questions: qRows,
       recent_calls: recent,

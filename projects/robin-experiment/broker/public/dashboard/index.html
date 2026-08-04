@@ -218,6 +218,11 @@
   </section>
 
   <section>
+    <div class="shead"><div class="lbl">Library and retrieval · <span id="libmeta"></span></div></div>
+    <div id="lib"></div>
+  </section>
+
+  <section>
     <div class="shead"><div class="lbl">When she hands off to a person · <span id="xfermeta"></span></div></div>
     <div id="xfer"></div>
   </section>
@@ -319,8 +324,11 @@
         <div class="note">${u.calls_with_questions
           ? `${u.calls_kb_answered} of ${u.calls_with_questions} call${u.calls_with_questions===1?"":"s"} were answered out of the knowledge base.`
           : "Nobody has asked her a plan question yet."}</div></div>
-      <div class="v"><div class="k lbl">Answer quality</div><div class="fig tnum">${qFig}</div>
-        <div class="note">${cs.calls_scored?`Did she answer what was asked, fully, across ${cs.calls_scored} call${cs.calls_scored===1?"":"s"}.`:"Nothing scored yet."}</div></div>
+      <div class="v"><div class="k lbl">Robin score</div><div class="fig tnum">${qFig}</div>
+        <div class="note">${cs.calls_scored
+          ? `How she handled what was asked of her, across ${cs.calls_scored} call${cs.calls_scored===1?"":"s"}.
+             <b>Never counted against her for a missing article</b> — only for inventing one, missing one that exists, or leaving a caller with nothing.`
+          : "Nothing scored yet."}</div></div>
       <div class="v"><div class="k lbl">Accuracy</div><div class="fig tnum">${accFig}</div><div class="note">${accNote}</div></div>`;
 
     // The pipeline strip carries the "why is it empty" story now, so the banner only speaks when
@@ -335,6 +343,7 @@
     renderPipeline();
     renderQuestions();
     renderUtilization();
+    renderLibrary();
     renderTransfers();
     renderGaps();
     renderCalls();
@@ -496,6 +505,37 @@
           ${t.rough_handoffs?`<br><span class="accent">${t.rough_handoffs} correct transfer${t.rough_handoffs===1?"":"s"} handed over poorly</span> — the decision was right, the execution wasn't. That's coaching, not content.`:""}
         </div>
       </div>${rows}`;
+  }
+
+  // Coverage and retrieval are separated on purpose: they have different owners and different
+  // fixes. Coverage misses are articles nobody has written; retrieval misses are articles that
+  // exist and she didn't use. One combined number would be actionable by nobody.
+  function renderLibrary(){
+    const el2=document.getElementById("lib"), L=DATA.library||{};
+    const meta=document.getElementById("libmeta");
+    if(!L.in_scope_questions){ meta.textContent=""; el2.innerHTML=`<div class="empty">Nothing asked yet.</div>`; return; }
+    meta.textContent = `${L.in_scope_questions} question${L.in_scope_questions===1?"":"s"} an article could answer`;
+    const row = (label, pct, missCount, missLabel, owner, bad) => `
+      <div class="gap">
+        <div class="gap-q">${esc(label)}</div>
+        <div class="gap-meta tnum">${pct==null?"—":pct+"%"}</div>
+        <div class="gap-why${bad?"":" soft"}">${missCount} ${esc(missLabel)} · ${esc(owner)}</div>
+      </div>`;
+    el2.innerHTML =
+      row("Coverage — is there an article for what people ask?", L.coverage_pct, L.content_gaps,
+          `question${L.content_gaps===1?"":"s"} with nothing written`, "content team", L.content_gaps>0) +
+      row("Retrieval — when an article exists, does she use it?", L.retrieval_pct, L.retrieval_misses,
+          `article${L.retrieval_misses===1?"":"s"} she had but missed`, "prompt / retrieval tuning", L.retrieval_misses>0) +
+      `<div class="gap">
+        <div class="gap-q">Correctly declined</div>
+        <div class="gap-meta tnum">${L.correct_declines}</div>
+        <div class="gap-why soft">investment advice, transactions, anything outside her remit — a win, not a gap</div>
+      </div>` +
+      (L.bluffs||L.dropped ? `<div class="gap">
+        <div class="gap-q">Handled badly</div>
+        <div class="gap-meta tnum">${(L.bluffs||0)+(L.dropped||0)}</div>
+        <div class="gap-why">${L.bluffs||0} answered anyway with something unsupported · ${L.dropped||0} left the caller with nothing — this is the part that IS hers</div>
+      </div>` : "");
   }
 
   const WHY = {
@@ -663,7 +703,9 @@
       if(c.accuracy_score!=null) sc.push(`accuracy <b class="${c.accuracy_score<3.5?'weak':''}">${c.accuracy_score.toFixed(1)}</b>`);
       else if(c.state==="graded") sc.push(`<span class="dash">accuracy not checked</span>`);
       if(c.handoff_score!=null) sc.push(`handoff <b class="${c.handoff_score<3.5?'weak':''}">${c.handoff_score.toFixed(1)}</b>`);
-      if(c.excused_questions) sc.push(`<span class="dash">${c.excused_questions} not hers to answer</span>`);
+      if(c.correct_declines) sc.push(`<span class="dash">${c.correct_declines} correctly declined</span>`);
+      if(c.bluffs) sc.push(`<b class="weak">${c.bluffs} bluffed</b>`);
+      if(c.retrieval_misses) sc.push(`<b class="weak">${c.retrieval_misses} missed an article</b>`);
       const kbPill = c.kb_answered==null ? ""
         : `<span class="pill ${c.kb_answered?'ok':'bad'}">${c.kb_answered?'KB answered':'not from KB'}</span>`;
 

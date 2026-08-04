@@ -76,6 +76,61 @@ export function scoreAnswer(a, hasSource) {
   };
 }
 
+// --- Gaps: what she did when she couldn't answer ------------------------------------------------
+//
+// An unanswered question used to score 1 — the same value as "confidently told the member something
+// false". That isn't a low score, it's a measurement error, and it dragged her average to 2.94 while
+// every visible row read 4-5.
+//
+// The obvious fix is to drop unanswered questions from the score entirely. That's wrong in three
+// ways: it hides `not_retrieved` (the article existed and she missed it — 10 of this project's 51
+// gaps, and the only category unambiguously hers); it makes not-answering free and answering risky,
+// so the metric quietly pays her to attempt less; and it deletes the compliance win, because
+// refusing to give investment advice is the single most valuable thing a regulated agent does.
+//
+// So a gap is not excluded and not a flat penalty. It is scored on the part she controlled: the
+// WHY belongs to whoever owns it, the HOW is always hers.
+export const GAP_HANDLING = ["declined_correctly", "acknowledged_and_routed", "bluffed", "dropped"];
+
+// (why it went unanswered, how she handled it) -> { score, fault, label }
+//   fault "none"    — she did the right thing; nothing to fix
+//   fault "content" — an article would fix it; goes to the content queue, not her score
+//   fault "robin"   — hers: she invented, stalled, or missed an article that exists
+export function scoreGap(failReason, handling) {
+  // An unrecognized handling is treated as `dropped`, not as a free pass. A grader that failed to
+  // say how she handled it must not hand out a 5 by default.
+  const h = GAP_HANDLING.includes(handling) ? handling : "dropped";
+  const bluffed = h === "bluffed";
+  const dropped = h === "dropped";
+
+  switch (failReason) {
+    case "guardrail":
+    case "out_of_scope":
+      // She was RIGHT not to answer. This is a win, not an absence — unless she undercut it by
+      // answering anyway, which is the one way a correct refusal turns into a defect.
+      if (bluffed) return { score: 1.5, fault: "robin", label: "declined, then answered anyway" };
+      return {
+        score: 5, fault: "none",
+        label: failReason === "guardrail" ? "correctly declined" : "not a plan question",
+      };
+
+    case "no_content":
+      // The library has nothing. Not her fault — but everything about HOW she handled it is hers.
+      if (bluffed) return { score: 1.5, fault: "robin", label: "nothing written — and she made something up" };
+      if (dropped) return { score: 2.5, fault: "robin", label: "nothing written — and she left the caller with nothing" };
+      return { score: 5, fault: "content", label: "nothing written yet — she handled it well" };
+
+    case "not_retrieved":
+      // An article covers this and she didn't use it. Hers, and the failure mode that gets worse
+      // silently as the knowledge base grows.
+      if (bluffed) return { score: 1.5, fault: "robin", label: "an article covers this — she made something up instead" };
+      return { score: 2.5, fault: "robin", label: "an article covers this — she missed it" };
+
+    default:
+      return { score: 2.5, fault: "robin", label: "unanswered" };
+  }
+}
+
 // --- Transfers ---------------------------------------------------------------------------------
 //
 // A transfer is not one thing. Counting them all as failures punishes the agent for correctly
@@ -116,23 +171,27 @@ export const missedHandoffSteps = (steps) =>
 // including ones she couldn't answer at all — those have no answer row, and leaving them out of
 // the denominator is how a call that ducked three of four questions scores 5/5.
 //
-// `excusedCount` is the questions no article and no tool could ever have answered: out of scope, or
-// correctly declined. Those are removed from the denominator. Without that, a call is marked down
-// for refusing to do the thing it is supposed to refuse to do — which is how transfers ended up
-// averaging 2.84 against 4.07 for resolved calls, and why the number felt wrong.
+// `gaps` is one entry per question she did NOT substantively answer, as
+// { fail_reason, handling }. Each is scored by scoreGap() and folded into the same pool as her
+// answers — so a correct refusal lifts her score, a library gap she handled well is neutral, and
+// only what she actually got wrong pulls it down. Nothing is excluded, so the denominator still
+// tells the truth about how much was asked of her.
 export function scoreCall(answers = [], askedCount = null, opts = {}) {
-  const { excusedCount = 0, transferClass = null, handoffSteps = null, outcome = null } = opts;
+  const { gaps = [], transferClass = null, handoffSteps = null, outcome = null } = opts;
 
   const quals = answers.map((a) => a.quality).filter((x) => x != null);
   const accs = answers.map((a) => a.accuracy).filter((x) => x != null);
   const kb = answers.filter((a) => a.kbAnswered).length;
   const asked = askedCount == null ? answers.length : askedCount;
 
-  // An unanswered question is a quality failure — unless nobody could have answered it.
-  const unanswered = Math.max(0, asked - answers.length);
-  const excused = Math.max(0, Math.min(excusedCount, unanswered));
-  const penalized = unanswered - excused;
-  const qualityPool = [...quals, ...Array.from({ length: penalized }, () => 1)];
+  // Score every gap on what she controlled. If the caller asked more than we have gap records for
+  // (a grader that under-reported), the remainder is scored as an unclassified miss rather than
+  // vanishing — a silent hole in the denominator is how a partial call reads as a perfect one.
+  const scoredGaps = gaps.map((g) => scoreGap(g.fail_reason, g.handling));
+  const unaccounted = Math.max(0, asked - answers.length - scoredGaps.length);
+  for (let i = 0; i < unaccounted; i++) scoredGaps.push(scoreGap(null, null));
+
+  const qualityPool = [...quals, ...scoredGaps.map((g) => g.score)];
 
   const handoff_score = transferClass ? scoreHandoff(handoffSteps) : null;
 
@@ -145,18 +204,33 @@ export function scoreCall(answers = [], askedCount = null, opts = {}) {
     : outcome === "abandoned" ? false
     : null;   // unknown outcome, no transfer — not enough to say either way
 
+  // Where each gap's blame landed. These are the numbers a manager acts on: content_gaps go to the
+  // writing queue, retrieval_misses to prompt/retrieval tuning, robin_defects to coaching, and
+  // correct_declines are a win worth reporting rather than an absence.
+  const correct_declines = scoredGaps.filter((g) => g.fault === "none").length;
+  const content_gaps = scoredGaps.filter((g) => g.fault === "content").length;
+  const robin_defects = scoredGaps.filter((g) => g.fault === "robin").length;
+  const retrieval_misses = gaps.filter((g) => g.fail_reason === "not_retrieved").length;
+  const bluffs = gaps.filter((g) => g.handling === "bluffed").length;
+
   return {
+    // Robin's score. Never blamed for a missing article; still charged for inventing one.
     quality_score: qualityPool.length ? round1(mean(qualityPool)) : null,
     // Null, not 5: an accuracy score means "we checked". No checkable answer means we didn't.
     accuracy_score: accs.length ? round1(mean(accs)) : null,
     kb_answered: kb > 0,
     questions_asked: asked,
     questions_kb: kb,
-    excused_questions: excused,
+    correct_declines,
+    content_gaps,
+    retrieval_misses,
+    robin_defects,
+    bluffs,
     transfer_class: transferClass,
     handoff_score,
     handoff_steps: transferClass ? handoffSteps : null,
     handled_correctly,
     answers_checked: accs.length,
+    gap_detail: scoredGaps,
   };
 }
