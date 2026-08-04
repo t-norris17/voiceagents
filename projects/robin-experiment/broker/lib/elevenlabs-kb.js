@@ -66,14 +66,50 @@ export async function getDocumentName(documentId, { timeoutMs = 10000 } = {}) {
 export function unwrap(raw) {
   const s = String(raw ?? "").trim();
   if (!s) return "";
-  if (!(s.startsWith("{") || s.startsWith("["))) return s;   // plain text document
-  let j;
-  try { j = JSON.parse(s); } catch (_) { return s; }         // looked like JSON, wasn't
-  if (typeof j === "string") return j;
-  for (const k of ["content", "text", "extracted_inner_html", "body"]) {
-    if (typeof j?.[k] === "string" && j[k].trim()) return j[k];
+  if (s.startsWith("{") || s.startsWith("[")) {
+    let j;
+    try { j = JSON.parse(s); } catch (_) { return htmlToText(s); }   // looked like JSON, wasn't
+    if (typeof j === "string") return htmlToText(j);
+    for (const k of ["content", "text", "extracted_inner_html", "body"]) {
+      if (typeof j?.[k] === "string" && j[k].trim()) return htmlToText(j[k]);
+    }
+    // An unrecognized JSON envelope is more useful to the critic as its own text than as an empty
+    // string — but it is NOT silently treated as a document body of length zero.
+    return s;
   }
-  // An unrecognized JSON envelope is more useful to the critic as its own text than as an empty
-  // string — but it is NOT silently treated as a document body of length zero.
-  return s;
+  return htmlToText(s);
+}
+
+const ENTITIES = {
+  amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ",
+  mdash: "—", ndash: "–", rsquo: "’", lsquo: "‘", rdquo: "”", ldquo: "“", hellip: "…", middot: "·",
+};
+
+// ElevenLabs returns document content as HTML — a real document comes back as
+// `<html><body><div data-name="..."><h1>Vertex Manufacturing 401(k) …`. The grader asks the model
+// for VERBATIM spans of the source, so handing it markup means every quote is drawn from tag soup:
+// the model either quotes the tags (and no human can check it) or silently paraphrases past them
+// (and the quote no longer matches the source). Either way the evidence stops being evidence.
+//
+// So markup is stripped to the text a person would read, with block boundaries kept as newlines so
+// headings don't weld themselves onto the paragraph below.
+export function htmlToText(input) {
+  const s = String(input ?? "");
+  if (!/<[a-z!/]/i.test(s)) return s.trim();   // not markup — leave it exactly as written
+
+  return s
+    .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, " ")   // never readable content
+    .replace(/<!--[\s\S]*?-->/g, " ")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|h[1-6]|li|tr|section|article|blockquote|table)\s*>/gi, "\n")
+    .replace(/<(li)\b[^>]*>/gi, "- ")
+    .replace(/<\/(td|th)\s*>/gi, "  ")
+    .replace(/<[^>]+>/g, "")                                    // everything else
+    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(Number(d)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&([a-z]+);/gi, (m, name) => ENTITIES[name.toLowerCase()] ?? m)
+    .replace(/[ \t]+/g, " ")
+    .replace(/ *\n */g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }

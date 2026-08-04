@@ -14,7 +14,14 @@ const has = (k) => !!(process.env[k] && String(process.env[k]).trim());
 // signal we want for "the migration hasn't been run here".
 async function probe(table) {
   try {
-    await sb(`${table}?select=1&limit=1`);
+    // `limit=0` asks Postgres for the table and no rows: it proves the table is readable without
+    // dragging back a row (ai_call_events rows carry a full transcript and raw webhook payload).
+    //
+    // NOT `select=1` — PostgREST reads that as "the column named 1", so every probe came back
+    // `column ai_call_events.1 does not exist` and health reported six fatal problems on a
+    // perfectly healthy database. A checker that cries wolf is worse than no checker; it teaches
+    // you to ignore the one time it's right.
+    await sb(`${table}?limit=0`);
     return { ok: true };
   } catch (e) {
     const msg = String(e.message || e);
