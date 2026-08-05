@@ -12,6 +12,67 @@
 
 ---
 
+### 2026-08-05 — Session: the dashboard was spending $87/day and nobody could see it
+
+**Time spent:** ~1 session
+**Status after session:** on track — needs a promote
+
+**What we did:**
+- Traced a **$88.81 single-day Anthropic bill** ($87.05 of it Sonnet 5) to its actual source.
+  Vercel runtime logs over 48h: **769 invocations of `/api/grade`** and 759 of `/api/metrics` on
+  the broker, against **13** `/api/clean` on the cleaner. The dashboard's 30-second auto-grade
+  loop — up to 6 batches of 10 calls per tick, a model call apiece — was the whole story. Roughly
+  **20 full passes over 39 calls**, most of them nobody asked for.
+- **Removed the auto-grade loop.** `/api/metrics` still refreshes on a timer (it's a DB read and
+  costs nothing), but nothing on the page calls a model unless a button is pressed. Two buttons
+  now: *Check them now* (unscored calls) and *Re-check them* (below the current grader rev), both
+  running through one `runGrading()` that shows the cost climbing as it spends.
+- **Dropped the grader from `effort: high` to `medium`.** Output is ~72% of the call's cost. The
+  grader does arithmetic on quotes it's handed; the judgement lives in `scoreAnswer`/`scoreGap`,
+  in code. High effort stays in the Knowledge Factory's critic, which has to find what *isn't*
+  there.
+- **Added prompt caching to `/api/grade`** — two breakpoints, on the system prompt (byte-identical
+  every call) and the retrieved documents (five documents carry nearly all this project's
+  retrieval traffic). Documents moved from the user turn into `system`, and are now sorted by
+  title so the same set always renders byte-identical.
+- **`/api/grade` reports what it spent**: `tokens` (input / output / cache_write / cache_read) and
+  `est_cost_usd` at Sonnet 5 *list* rates, deliberately not the promotional ones.
+
+**What broke / surprised us:**
+- **My first estimate was 10× low** — I guessed transcripts at 4–8KB. Measured, they average
+  **29,658 bytes** (max 78,937). Real per-call input is ~13.6k tokens, not ~7k. The lesson is the
+  one this project keeps re-learning: measure before explaining.
+- **Caching would have been a net loss as first written.** `Promise.allSettled` fires all ten
+  calls of a batch concurrently, so all ten race the cache write, all ten pay the 1.25× premium,
+  and none gets a read. Fixed by grading the first call alone to warm the cache, then fanning out
+  the remaining nine — the same trick `cleaner/lib/validate.js` already used for its critic.
+- The auto-loop's filter (`scored_at is null`) does drain correctly; it wasn't a runaway. The cost
+  came from it racing *manual* re-grades — every time `scored_at` was cleared to force a re-grade,
+  an open tab started grading the same 39 calls in parallel.
+
+**Decisions made:**
+- **A dashboard reports spend; it does not create it.** No model call on this page without a
+  click. If unattended grading is wanted later it belongs in a Vercel cron (needs Pro for
+  sub-daily) or the post-call webhook — *not* in a browser tab.
+- Grading stays out of the `postcall` webhook. The ingest path must never block on a ~25s model
+  call; a webhook that times out loses the call entirely, which is the exact failure this
+  dashboard exists to surface.
+- Cost estimates shown to a user are quoted at **list price**. An estimate that reads high is
+  survivable; one that reads low is how you find out from the invoice.
+
+**Next session:**
+> **Promote the broker** — this change plus `a3d0017` (the Overview/Content/Questions/Calls tabs)
+> are both sitting unpromoted, and the last re-grade ran against the build before them. Then press
+> *Re-check them* once and read the `est_cost_usd` the run reports back: that's the first real
+> measurement of a full 39-call pass at `effort: medium` with caching on, and it tells us whether
+> the ~$3.90 → under-$1 estimate holds. Confirm `cache_read_input_tokens` is non-zero on calls 2-10
+> of each batch — if it's zero the warm-up call isn't working and the caching is costing us 1.25×
+> for nothing. Still open from before: `conv_3101kyms4vb3f90r085rbbr8kqmn` (20 turns, 36KB) fails
+> every grading attempt and records no reason, and the `handled_correctly` threshold (handoff ≥ 3.5)
+> was picked without evidence and shouldn't be shown to anyone until it has some.
+
+---
+
 ### 2026-08-04 — Session: grade against the real KB; per-call scores; utilization
 
 **Time spent:** ~1 session (continues the session below)

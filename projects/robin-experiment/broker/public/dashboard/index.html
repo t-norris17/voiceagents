@@ -286,6 +286,14 @@
   let DATA=null, HEALTH=null, GRADE_ERR=null, view="question", filt="all";
 
   const esc=(s)=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+  // What one call costs to check, so a button can price itself before it's pressed. Measured, not
+  // guessed: ~13.6k input tokens (system + the retrieved documents + a transcript that averages
+  // 29KB on this project) and ~7k output, at Sonnet 5 list rates. Prompt caching on the system
+  // prompt and the documents pulls the real figure below this; showing the uncached number keeps
+  // the estimate a ceiling. The running total on the button comes from the API's own token counts.
+  const PER_CALL_USD = 0.11;
+  const money=(n)=> n < 1 ? `${Math.round(n*100)}¢` : `$${n.toFixed(2)}`;
   const shortRef=(r)=>r?String(r).slice(0,8):"—";
   const dur=(s)=>s==null?"—":`${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
   const when=(iso)=>{ if(!iso)return "—"; try{ const d=new Date(iso); return d.toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}); }catch(_){return "—";} };
@@ -434,8 +442,15 @@
     if(stuck)
       notes.push(`<div class="pipenote bad"><b>${stuck} call${stuck===1?"":"s"} arrived without a transcript</b>, so there's nothing to check her answers against. They're listed below but will never be scored. In ElevenLabs, make sure the <b>post-call transcription</b> webhook is the one pointed here.</div>`);
 
+    // Checking used to start itself, every 30 seconds, for as long as the tab was open. It now
+    // waits to be asked — and says what it will cost before you ask, because "leave the tab open
+    // and they'll fill in" turned out to mean about $2 an hour.
     if(waiting)
-      notes.push(`<div class="pipenote"><b>${waiting} call${waiting===1?"":"s"} waiting to be checked.</b> Checking runs while this page is open, ten calls at a time — leave the tab open and they'll fill in.${p.stalled?` The oldest has been waiting since ${esc(when(p.oldest_awaiting_at))}, which usually means checking is failing rather than queuing.`:""}</div>`);
+      notes.push(`<div class="pipenote"><b>${waiting} call${waiting===1?"":"s"} waiting to be checked.</b>
+        Checking reads the knowledge base documents Robin retrieved and scores what she said against them —
+        roughly <b>${money(waiting * PER_CALL_USD)}</b> for ${waiting===1?"this one":"these"}, about ${money(PER_CALL_USD)} a call.${p.stalled?` The oldest has been waiting since ${esc(when(p.oldest_awaiting_at))}, which usually means checking is failing rather than queuing.`:""}
+        <button class="pipetog" id="checkbtn" style="border:1px solid var(--line);border-radius:999px;padding:3px 11px;margin-left:6px">Check ${waiting===1?"it":"them"} now →</button>
+        <span id="checkstatus" style="margin-left:8px;color:var(--faint)"></span></div>`);
 
     if(GRADE_ERR)
       notes.push(`<div class="pipenote bad"><b>Checking answers is failing:</b> ${esc(GRADE_ERR)}</div>`);
@@ -462,33 +477,48 @@
       notes.push(`<div class="pipenote">${received ? `Everything that arrived has been checked.${p.last_webhook_at?` Last webhook ${esc(ago(p.last_webhook_at))}.`:""}` : `No calls have arrived yet. When one does it appears here within a minute.`}</div>`);
 
     el2.innerHTML = h + notes.join("") + `</div>`;
+    const cb = document.getElementById("checkbtn");
+    if(cb) cb.addEventListener("click", ()=>runGrading("new", cb, document.getElementById("checkstatus"),
+      { idle:"Check them now →", busy:"Checking…", progress:"checked", done:"checked", none:"Nothing left to check." }));
     const rb = document.getElementById("regradebtn");
-    if(rb) rb.addEventListener("click", ()=>regradeAll(rb, document.getElementById("regradestatus")));
+    if(rb) rb.addEventListener("click", ()=>runGrading("regrade", rb, document.getElementById("regradestatus"),
+      { idle:"Re-check them →", busy:"Re-checking…", progress:"re-checked", done:"re-checked", none:"Nothing left to re-check." }));
   }
 
-  // Re-score already-stamped calls against the knowledge base. Ten per request, so it loops until
-  // the backlog drains — with the count shown, because this costs a model call per call and the
-  // person who pressed the button should be able to watch it spend.
-  let REGRADING = false;
-  async function regradeAll(btn, status){
-    if(REGRADING) return;
-    REGRADING = true; btn.disabled = true; btn.textContent = "Re-checking…";
-    let done = 0;
+  // The only thing on this page that spends money. Ten calls per request, looping until the
+  // backlog drains, and it reports the running cost as it goes — /api/grade returns the token
+  // counts for its batch. Every model call this system makes now happens because somebody pressed
+  // one of these two buttons and watched the number climb.
+  //
+  //   mode "new"     — score calls that have never been scored (?regrade absent)
+  //   mode "regrade" — re-score everything below the current grader revision (?regrade=1)
+  let GRADING = false;
+  async function runGrading(mode, btn, status, labels){
+    if(GRADING) return;
+    GRADING = true; btn.disabled = true; btn.textContent = labels.busy;
+    const url = mode === "regrade" ? "/api/grade?regrade=1" : "/api/grade";
+    let done = 0, spent = 0;
+    const spend = () => spent ? ` · $${spent.toFixed(2)} so far` : "";
     try{
       for(let round=0; round<40; round++){
-        const r = await fetch("/api/grade?regrade=1", { method:"POST" });
+        const r = await fetch(url, { method:"POST" });
         const g = await r.json().catch(()=>null);
         if(!r.ok || (g && g.error)) throw new Error((g && g.error) || ("HTTP "+r.status));
+        GRADE_ERR = null;
         if(!g || !g.graded) break;
         done += g.graded;
-        status.textContent = `${done} re-checked…`;
+        spent += Number(g.est_cost_usd) || 0;
+        status.textContent = `${done} ${labels.progress}…${spend()}`;
         await load();
+        if(!g.pending || g.pending < 10) break;  // that was the last batch
       }
-      status.textContent = done ? `${done} re-checked.` : "Nothing left to re-check.";
+      status.textContent = done ? `${done} ${labels.done}.${spend()}` : labels.none;
     }catch(e){
-      btn.disabled = false; btn.textContent = "Re-check them →";
+      GRADE_ERR = e.message;
+      btn.disabled = false; btn.textContent = labels.idle;
       status.textContent = "failed: " + e.message;
-    }finally{ REGRADING = false; }
+      if(DATA) renderPipeline();                 // say so instead of failing quietly
+    }finally{ GRADING = false; }
   }
 
   // Five kinds of handoff. The first two are the agent doing her job; the rest each name a
@@ -832,44 +862,22 @@
     });
   }
 
-  // Grade any not-yet-scored calls, then show the (possibly updated) metrics. Grading is a cheap
-  // no-op once everything is scored, so it's safe to run on every refresh.
+  // Refresh the numbers. Reads only — /api/metrics is a database query and costs nothing, so it
+  // can safely run on a timer.
   //
-  // Two things this used to get wrong, and both read as "unreliable":
-  //  · A failing /api/grade was swallowed by an empty catch. Calls piled up unchecked and the
-  //    dashboard said nothing, so the table just stayed stale. Now the failure is reported.
-  //  · Grading is capped at ten calls per request, and one pass per 30s meant a backlog of
-  //    thirty calls took a minute and a half to clear with no sign it was working. It now keeps
-  //    going while there's more to do.
-  const MAX_ROUNDS = 6;
-  let ticking = false;
-  async function tick(){
-    if(ticking) return;                        // a slow round must not stack up behind the timer
-    ticking = true;
-    try{
-      await load();                            // show current state immediately
-      for(let round=0; round<MAX_ROUNDS; round++){
-        let g;
-        try{
-          const r = await fetch("/api/grade", { method:"POST" });
-          g = await r.json().catch(()=>null);
-          if(!r.ok || (g && g.error)) throw new Error((g && g.error) || ("HTTP "+r.status));
-          GRADE_ERR = null;
-        }catch(e){
-          GRADE_ERR = e.message;
-          if(DATA) renderPipeline();           // say so instead of failing quietly
-          break;
-        }
-        if(!g || !g.graded) break;             // nothing left to score
-        await load();
-        if(!g.pending || g.pending < 10) break; // that was the last batch
-      }
-    } finally { ticking = false; }
-  }
+  // What used to live here was a grading loop: every 30 seconds, up to six batches of ten calls,
+  // each batch a model call per call. Left open for an afternoon it fired /api/grade 769 times to
+  // score 39 calls, and that — not the cleaner, not this session's work — is where $87 of Sonnet 5
+  // went in a single day. Two things made it invisible. An open browser tab doesn't look like a
+  // cost centre, and re-grades that a person triggered raced against the timer doing the same work.
+  //
+  // Grading now happens only when somebody asks for it, from the buttons in the pipeline strip.
+  // A dashboard should report spend, not create it.
+  async function refresh(){ try{ await load(); }catch(_){} }
   wireTheme();
   showPanel(location.hash.slice(1));
-  loadHealth().then(tick);
-  setInterval(tick, 30000); // refresh + grade any new calls every 30s
+  loadHealth().then(refresh);
+  setInterval(refresh, 60000); // read the numbers again every minute — no model calls
 </script>
 </body>
 </html>

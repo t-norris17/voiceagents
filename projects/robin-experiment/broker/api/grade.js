@@ -358,17 +358,16 @@ async function gradeCall(call, sourceCache) {
 
   const docs = await loadSources(documentIds(call.transcript), sourceCache);
   const hasSource = docs.length > 0;
+  // Sorted by title so the same set of documents always renders byte-identical. loadSources
+  // returns them in retrieval order, which varies call to call — and an unstable prefix is a
+  // prompt cache that never hits.
   const sourceBlock = hasSource
-    ? docs.map((d) => `--- DOCUMENT: ${d.title} ---\n${d.body_md}`).join("\n\n")
+    ? [...docs].sort((a, b) => String(a.title).localeCompare(String(b.title)))
+        .map((d) => `--- DOCUMENT: ${d.title} ---\n${d.body_md}`).join("\n\n")
     : "(none — no retrieved document was available to check against)";
   const trace = retrievalTrace(call.transcript);
 
-  const user = `SOURCE DOCUMENTS the agent retrieved during this call (the ground truth):
-"""
-${sourceBlock}
-"""
-
-CALL TRANSCRIPT:
+  const user = `CALL TRANSCRIPT:
 """
 ${convText}
 """
@@ -382,8 +381,27 @@ Review this call per your instructions. Return ONLY the structured JSON.`;
     model: "claude-sonnet-5",
     max_tokens: 8000,
     thinking: { type: "adaptive" },
-    output_config: { effort: "high", format: { type: "json_schema", schema: SCHEMA } },
-    system: SYSTEM,
+    // `medium`, not `high`. Output is ~72% of this call's cost (≈7k thinking+answer tokens
+    // against ≈13.6k of input), so effort is the single biggest lever on the bill. The grader's
+    // job is arithmetic on quotes it has been handed, not open-ended reasoning — the hard
+    // judgement lives in scoreAnswer/scoreGap, in code. High effort belongs in the Knowledge
+    // Factory's critic, which has to find what ISN'T there.
+    output_config: { effort: "medium", format: { type: "json_schema", schema: SCHEMA } },
+    // Two cache breakpoints, both on things that repeat:
+    //  · SYSTEM is byte-identical on every call ever made — always a hit after the first.
+    //  · The source documents repeat across most calls; five documents carry nearly all of this
+    //    project's retrieval traffic, so the same block is re-sent dozens of times.
+    // Together that is ~4.7k tokens per call that were being re-billed at full rate. Cache reads
+    // are a tenth of input price. The transcript stays in the user turn: it is unique per call
+    // and caching it would be a pure 1.25x write penalty.
+    system: [
+      { type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } },
+      {
+        type: "text",
+        text: `SOURCE DOCUMENTS the agent retrieved during this call (the ground truth):\n"""\n${sourceBlock}\n"""`,
+        cache_control: { type: "ephemeral" },
+      },
+    ],
     messages: [{ role: "user", content: user }],
   });
   const text = msg.content.find((b) => b.type === "text");
@@ -485,6 +503,7 @@ Review this call per your instructions. Return ONLY the structured JSON.`;
     call_scores,
     security_flag: !!out.security_flag,
     security_detail: String(out.security_detail || "").trim() || null,
+    usage: msg.usage || null,
   };
 }
 
@@ -513,12 +532,31 @@ export default async function handler(req, res) {
     if (!pending.length) return res.status(200).json({ ok: true, graded: 0, scored_rows: 0, asked_rows: 0, regrade });
 
     const sourceCache = new Map(); // document_id -> {title, body_md} | null, shared across the batch
-    const results = await Promise.allSettled(pending.map((c) => gradeCall(c, sourceCache)));
+
+    // The first call runs ALONE, then the rest fan out. Ten concurrent requests all start before
+    // any of them finishes writing the prompt cache, so every one of the ten pays the 1.25x write
+    // premium and none gets a read — caching would cost more than not caching. One warm-up request
+    // puts the system prompt and the retrieved documents in the cache; the other nine read it at a
+    // tenth of input price. Same reason lib/validate.js grades its first card alone.
+    const [first, ...rest] = pending;
+    const results = [
+      ...(await Promise.allSettled([gradeCall(first, sourceCache)])),
+      ...(rest.length ? await Promise.allSettled(rest.map((c) => gradeCall(c, sourceCache))) : []),
+    ];
 
     let graded = 0, scoredRows = 0, askedTotal = 0, noSource = 0, unchecked = 0;
+    // Token accounting, reported per run. Grading 39 calls quietly cost ~$87 in one day before
+    // anyone could see a number; a run that can't say what it spent will do it again.
+    const tok = { input: 0, output: 0, cache_write: 0, cache_read: 0 };
     for (const r of results) {
       if (r.status !== "fulfilled") { console.error("grade failed:", String(r.reason?.message || r.reason)); continue; }
-      const { conversation_id, rows, askedRows, call_scores, security_flag, security_detail } = r.value;
+      const { conversation_id, rows, askedRows, call_scores, security_flag, security_detail, usage } = r.value;
+      if (usage) {
+        tok.input      += usage.input_tokens || 0;
+        tok.output     += usage.output_tokens || 0;
+        tok.cache_write += usage.cache_creation_input_tokens || 0;
+        tok.cache_read  += usage.cache_read_input_tokens || 0;
+      }
       try {
         // Re-grading is authoritative for a call, so clear its previous machine-written scores
         // first. The upsert keys on (conversation_id, question_key), and the grader picks its own
@@ -579,6 +617,13 @@ export default async function handler(req, res) {
       calls_unchecked: unchecked,
       elevenlabs_kb_readable: hasElevenLabsKey(),
       pending: pending.length, regrade, grader_rev: GRADER_REV,
+      tokens: tok,
+      // Sonnet 5 list price ($3/$15 per 1M); cache writes bill at 1.25x input, reads at 0.1x.
+      // Deliberately the list rate, not the promotional one — an estimate that reads high is
+      // survivable, one that reads low is how you find out from the invoice.
+      est_cost_usd: Math.round(
+        (tok.input * 3 + tok.cache_write * 3.75 + tok.cache_read * 0.3 + tok.output * 15) / 1e6 * 10000
+      ) / 10000,
     });
   } catch (e) {
     return res.status(500).json({ error: String(e.message || e) });
