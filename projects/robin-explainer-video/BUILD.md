@@ -12,6 +12,37 @@
 
 ---
 
+### 2026-08-07 — Session 3
+
+**Status after session:** motion prompts rewritten; ready to re-generate
+
+**What we did:**
+- Scene 7 wouldn't generate. Root cause: the prompt chained **seven sequential beats** in one clip.
+  Rewrote it as three one-motion clips (**Loop A/B/C**) plus a push-in on the existing Scene 3b stamp
+  still, assembled into a loop in the edit.
+- Same flaw found and fixed preemptively in **Scene 3** (three simultaneous motions → Conveyor A/B)
+  and **Scene 5** (four beats plus a camera move → Call A/B).
+- Added a **"Rules that make these actually generate"** block to `elevencreative-prompts.md`: one
+  motion per clip, describe the opening frame then the single change, state what stays still, never
+  ask for a transformation, never ask it to count, one explicit camera instruction, direction beats
+  action, generate short and cut.
+- Renamed the motion clips (Conveyor/Call/Loop A-B-C) so they stop colliding with the Scene 3b still.
+
+**What broke / surprised us:**
+- The single biggest fix was narrative, not technical: **follow one card, not many.** A single marked
+  card leaving the wall and returning reads as a loop far better than a swarm — and it's renderable.
+- Hands in motion are the fastest way to break these models. The stamp beat stays a still.
+
+**Decisions made:**
+- The loop is built in the **edit**, not in one generation. Three clips + one still, cut on the motion.
+- Fallback for Loop A if it keeps failing: animate only the ribbon (one object, one direction).
+
+**Next session:**
+> Re-generate Loop A/B/C, Conveyor A/B, Call A/B against the new prompts and log which ones still
+> needed re-rolls. If a shot resists after three attempts, split it further rather than re-seeding.
+
+---
+
 ### 2026-08-07 — Session 2
 
 **Time spent:** short
