@@ -63,20 +63,28 @@ the next decision (wider rollout, more plans) is exactly the audience that has n
 - Not a technical explainer — the how of retrieval, grading, or publishing is deliberately out.
 - Not a live-call recording — the call in Scene 5 is illustrated, not captured.
 
-## Open decisions (need Tanner)
+## Locked decisions (2026-08-07)
 
-- [ ] **Branding.** Is this INTRUST-branded, NestEgg U-branded, or unbranded? The KB carries real
-      INTRUST plan content but the demo brand is NestEgg U. Recommend: **unbranded** ("the plan,"
-      "the recordkeeper") so the same video works for any audience, with a branded title card only.
-- [ ] **Where it plays.** Boardroom/email link (16:9) vs. internal social (9:16). Recommend 16:9,
-      cut a 9:16 later from the same stills.
-- [ ] **Narrator.** Voice-only over motion stills (recommended), or an on-screen ElevenCreative
-      avatar presenter. Avatar adds a face but costs consistency across 8 scenes.
-- [ ] **Does it need compliance review before it leaves the building?** Recommend yes, once, before
-      first external send — it depicts a financial-services member interaction.
-- [ ] **The number.** Scene 2 can carry the password-reset business case (3,136 calls, 3% self-serve,
-      55% callback) or stay qualitative. Confirm those figures are shareable outside the team.
+1. **Unbranded.** "The plan," "the recordkeeper." No employer or product name in the narration; a
+   branded title card at the top is the only place a logo appears. The same video works for any
+   audience without a re-cut, and real INTRUST plan content stays out of frame.
+2. **16:9, sent as a link.** ~3:10, boardroom and email. A 9:16 cut can come later from the same
+   stills if it's ever wanted.
+3. **Voice only, over motion stills.** No on-screen presenter and no avatar — consistent with the
+   storyboard's hands-only, never-faces rule, and it keeps eight scenes visually coherent.
+4. **Topic = plan questions and general plan information.** How the match works, whether you can take
+   a loan, what happens if you leave. **Password reset and account access are explicitly out** —
+   that isn't the path being taken first, so the video must not imply it is. No call-volume or
+   deflection figures; Scene 2 stays qualitative.
+5. **Internal only — no compliance review gate.** Treated as internal explainer material. **If this
+   ever goes to a plan sponsor, a member, or anyone outside the team, revisit this first** — it
+   depicts a financial-services member interaction.
+6. **One version first.** Build the 3:00–3:30 cut and prove it before cutting anything shorter. A
+   ~90-second version (scenes 1, 3, 4, 7) needs no new generation, so it stays cheap to add later.
+7. **The transcript demand miner folds into Scene 7** rather than getting its own beat. "People keep
+   asking this, and we have nothing for it" already carries it, and one loop is the whole point for a
+   non-technical viewer.
 
 ---
 
-*Scope locked: pending the five decisions above*
+*Scope locked: 2026-08-07*

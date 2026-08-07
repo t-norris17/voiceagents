@@ -12,6 +12,37 @@
 
 ---
 
+### 2026-08-07 — Session 2
+
+**Time spent:** short
+**Status after session:** scope locked — ready to generate
+
+**What we did:**
+- Walked the open decisions with Tanner and locked all seven in `SCOPE.md`.
+- Removed the password-reset business-case swap from `talk-track.md` and added an explicit topic
+  guard (plan questions + general plan information only).
+- Added the locked format settings (16:9, VO-only, unbranded) to `talk-track.md` and
+  `elevencreative-prompts.md`, plus a note to use a **different voice from Robin's** for the narrator.
+
+**What broke / surprised us:**
+- The password-reset framing is legacy from `nestegg-u-demo` and is **not** the path being taken
+  first. Anything reused from that project's story needs the same check — the current story is plan
+  questions and general information, and Scene 1's loan question was already the right example.
+
+**Decisions made:**
+- See the seven locked decisions in `SCOPE.md`. Notable: internal-only with **no compliance gate**,
+  which is fine as long as the video stays inside the team — flagged in SCOPE for the day it doesn't.
+
+**Next session:**
+> Generate the **style anchor** still (Step 1 of `elevencreative-prompts.md`) and lock it before
+> anything else — every other prompt references it. Then VO, then stills, then the three motion
+> shots. Log which prompts needed re-rolling so the prompt file improves rather than being rewritten.
+> While you're in ElevenCreative, capture what's actually true about **max clip length, aspect-ratio
+> options, and the model list** and add an ElevenCreative section to `docs/elevenlabs-reference.md` —
+> those three are unverified here because elevenlabs.io is blocked from the build sandbox.
+
+---
+
 ### 2026-08-07 — Session 1
 
 **Time spent:** ~1 session

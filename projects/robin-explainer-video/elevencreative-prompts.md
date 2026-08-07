@@ -3,6 +3,11 @@
 Copy-paste prompts for ElevenCreative. Work top to bottom: style anchor first, then stills, then the
 three motion shots, then the voiceover.
 
+**Locked settings (2026-08-07):** **16:9** on every generation — set it once and don't mix, since
+re-framing a 9:16 still into a widescreen edit costs you the composition. **Voice only, no avatar,
+no on-screen presenter.** **Unbranded** — no logos, no product names, and no readable text in any
+generated frame.
+
 > **Verification note.** `docs/elevenlabs-reference.md` covers Conversational AI, not ElevenCreative,
 > and elevenlabs.io is blocked from this sandbox, so I could not read the ElevenCreative docs
 > directly. What's confirmed from search results: the Playground takes a **text prompt plus optional
@@ -149,6 +154,10 @@ a single scene without redoing the whole read.
 **Voice direction:** warm, measured, unhurried. A knowledgeable colleague explaining something over
 coffee — not an ad, not a documentary, not upbeat corporate. Lower energy than feels right; explainer
 VO almost always wants slowing down.
+
+**Not Robin's voice.** Use a different voice from the agent's. If the narrator sounds like Robin, the
+video reads as Robin explaining herself, which quietly undercuts the whole "she follows instructions
+a human wrote" point.
 
 **Delivery notes to apply:**
 - Full stop on every period. The script is written in short sentences on purpose.

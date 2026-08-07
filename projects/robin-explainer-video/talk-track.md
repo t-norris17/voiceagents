@@ -3,9 +3,15 @@
 **Runtime:** ~3:10 at a 140 wpm explainer read (≈445 words).
 **Read style:** calm, warm, unhurried. Short sentences. Land on the periods.
 **Rule for the read:** every paragraph break is a beat of silence and a scene change.
+**Format:** 16:9, voice-only over motion stills — no on-screen presenter.
+**Branding:** unbranded. "The plan," "the recordkeeper." No employer or product name in the VO; a
+branded title card at the top is the only place a logo appears.
 
 > Lines marked **[CUT]** come out first if you need to get under 2:45.
-> Lines marked **[SWAP]** have an alternate underneath for a different audience.
+
+**Topic focus:** plan questions and general plan information — how the match works, whether you can
+take a loan, what happens if you leave. **Not** password reset or account access; that isn't the
+path we're taking first, and the video shouldn't imply it is.
 
 ---
 
@@ -33,10 +39,6 @@ None of that is wrong. It's all accurate, and it's all there.
 
 It's just not in a shape anyone can get to at nine at night. **[CUT]** — and getting to it takes a
 human being, one call at a time.
-
-> **[SWAP]** for a business-case audience, replace the last line with:
-> *"Password resets alone are three thousand calls a year. Three percent of people solve it
-> themselves. More than half call back."*
 
 ---
 
@@ -158,5 +160,8 @@ Worth knowing so you can answer it live if it comes up in the room:
 - No vendor names (ElevenLabs, Supabase, Vercel), no "RAG," no "LLM," no "embeddings."
 - No claim that Robin does transactions — she's answer-only today, and the video never implies
   otherwise.
+- No password reset, no account access, no "she'll get you logged in." The topic on screen is plan
+  questions and general plan information, start to finish.
+- No employer or product name in the narration — the only branding is the title card.
 - No claim of a launch. Scene 8 states the real state of play on purpose.
 - No real member, no real balance, no real screen.
