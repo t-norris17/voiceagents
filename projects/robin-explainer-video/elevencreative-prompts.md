@@ -247,6 +247,10 @@ over it the direction of travel is all the meaning you actually need.
 
 ## Step 4 — Voiceover
 
+**→ Paste-ready blocks and voice settings are in [`voiceover-prompt.md`](./voiceover-prompt.md).**
+That file has the eight script blocks with TTS-safe number spellings, a Voice Design prompt, and the
+narration settings. The direction below is the summary.
+
 Narration script: `talk-track.md`. Generate it in one pass per scene (eight files) so you can re-roll
 a single scene without redoing the whole read.
 
