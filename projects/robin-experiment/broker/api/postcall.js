@@ -3,6 +3,7 @@
 // The async scoring pass reads these rows later; this endpoint only persists.
 import crypto from "node:crypto";
 import { sb } from "../lib/supabase.js";
+import { parseSurvey } from "../lib/survey.js";
 
 // We need the RAW body to verify the signature, so disable Vercel's body parser.
 export const config = { api: { bodyParser: false } };
@@ -55,6 +56,8 @@ function coerce(kind, v) {
   for (const [k, val] of Object.entries(e.map)) if (n.includes(k)) return val; // contains a known token
   return e.fallback;
 }
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // Guard against an invalid/odd unix value — new Date(NaN).toISOString() throws, which would 500.
 function safeIso(unix) {
@@ -116,7 +119,34 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "upsert failed: " + String(e.message || e) });
     }
 
-    return res.status(200).json({ ok: true });
+    // --- survey, if there was one ---------------------------------------------------------
+    // Strictly additive: a call whose agent has no survey fields configured produces null here and
+    // this block does nothing, so deploying it cannot change how existing calls are handled.
+    //
+    // A failure must not fail the webhook — a non-200 makes ElevenLabs retry the whole delivery,
+    // and losing a transcript to save a satisfaction score is a bad trade. But it must not vanish
+    // either: the grader spent weeks broken behind a swallowed write error. Log it, and say so in
+    // the response so a curl shows it.
+    let survey = "none";
+    try {
+      // subject_ref is an LLM-filled field typed uuid in the table; anything that isn't one would
+      // reject the insert, so drop it rather than lose the whole survey over a malformed id.
+      const ref = UUID_RE.test(String(row.subject_ref ?? "")) ? row.subject_ref : null;
+      const surveyRow = parseSurvey(pick, { conversation_id, subject_ref: ref });
+      if (surveyRow) {
+        await sb("call_surveys?on_conflict=conversation_id", {
+          method: "POST",
+          prefer: "resolution=merge-duplicates,return=minimal",
+          body: { ...surveyRow, updated_at: new Date().toISOString() },
+        });
+        survey = surveyRow.survey_consent;
+      }
+    } catch (e) {
+      console.error("survey write failed:", conversation_id, String(e.message || e));
+      survey = "failed: " + String(e.message || e).slice(0, 200);
+    }
+
+    return res.status(200).json({ ok: true, survey });
   } catch (e) {
     console.error("postcall error:", String(e.message || e));
     return res.status(500).json({ error: String(e.message || e) });

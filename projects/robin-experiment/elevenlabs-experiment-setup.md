@@ -137,6 +137,25 @@ Add these fields so `postcall` can populate the metrics columns (it reads
 | `transfer_reason` | string | Why transferred (null if not). |
 | `auth_outcome` | string | verified / failed / not_attempted. |
 
+**Survey fields.** Add these six as well — `postcall` writes them to `call_surveys`. Until they
+exist here, the survey prompt block will run on the call but nothing will be recorded.
+
+| Field | Type | What to extract |
+|---|---|---|
+| `survey_offered` | boolean | Did the agent offer the end-of-call survey at all? |
+| `survey_consent` | string | accepted / declined / not_offered. |
+| `csat` | string | The 1-5 satisfaction rating the caller gave. Empty if they didn't give one. |
+| `resolved_fcr` | boolean | Did the caller say we took care of what they called about today? |
+| `callback_consent` | boolean | Did the caller agree to be called back for a further survey? |
+| `callback_window` | string | When they said suits them, in their words ("weekday mornings"). Empty if they didn't say or didn't consent. |
+
+Free text is fine — the parser handles "five", "4 out of 5", "yeah", "not offered". A rating outside
+1-5 is discarded rather than clamped, and an unanswered question stays null rather than becoming a
+"no". See `broker/lib/survey.js`.
+
+⚠️ `callback_consent` is the **only** lawful basis for an outbound survey call. It must reflect what
+the caller actually said and must never be inferred from a good CSAT.
+
 ## 8. Pre-flight test (from the tester cards, generated last)
 1. Call, ask a plan question **before** verifying → Robin refuses and verifies (Member ID + DOB).
 2. Verify with a real member → ask "can I take a loan?" → grounded answer, no invented limit.
