@@ -94,6 +94,40 @@ Programmatic KB management exists — you can publish articles from code, no das
 - Docs: `/docs/eleven-agents/phone-numbers/twilio-integration/native-integration`,
   `/docs/eleven-agents/phone-numbers/sip-trunking`
 
+## Outbound calls
+
+Two ways to place a call. **For a survey callback, the single-call API is the right primitive** —
+one member, when their window comes due — not the spreadsheet upload in the dashboard.
+
+- **One call at a time** (verified 2026-08 against ElevenLabs' own repo,
+  `github.com/elevenlabs/skills/blob/main/agents/references/outbound-calls.md`):
+  `POST https://api.elevenlabs.io/v1/convai/twilio/outbound-call`
+  (Exotel equivalent at `/v1/convai/exotel/outbound-call`.)
+  Headers `xi-api-key` + `Content-Type: application/json`.
+  Required body: `agent_id`, `agent_phone_number_id`, `to_number` (**E.164**).
+  Optional: `call_recording_enabled` (Twilio only), `telephony_call_config.ringing_timeout_secs`,
+  and `conversation_initiation_client_data` — which carries **`dynamic_variables`**, the mechanism
+  for telling the agent who it is calling and why before the first word.
+  Returns `success`, `message`, `conversation_id`, `callSid`.
+- **Batch / campaign**: `POST /v1/convai/batch-calling/submit` with `call_name`, `agent_id`,
+  `agent_phone_number_id`, `scheduled_time_unix`, and a `recipients[]` array (each with
+  `phone_number` and optional `conversation_initiation_client_data`); returns a `batch_id`.
+  Same feature as the dashboard's spreadsheet upload. **Endpoint path corroborated from two
+  independent summaries of the official docs and by the `batch_call` field present in our own
+  post-call payloads — but the exact body schema is NOT first-party verified**, because
+  `elevenlabs.io` is blocked by this environment's egress proxy. Confirm before building on it.
+
+Both require a phone number already connected via Twilio or SIP trunking (see Telephony above).
+
+**The caller's number is already in the post-call payload** — no need to collect it on the call:
+`data.metadata.phone_call` carries `external_number`, `agent_number`, `direction`
+("inbound"/"outbound"), `call_sid`, and `phone_number_id`. Treat `external_number` as PII.
+
+⚠️ **Outbound to a participant is a compliance question before it is an engineering one.** An AI
+voice is treated as an "artificial voice" for TCPA purposes, which generally requires prior express
+consent for calls to wireless numbers; survey/research carve-outs do not cleanly cover it. Capture
+and store consent on the inbound call before any dialer exists.
+
 ## Voices
 
 - Match the target IVR: for a warm American female support voice, A/B **Sarah** (good default),
