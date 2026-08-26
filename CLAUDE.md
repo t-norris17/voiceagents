@@ -40,9 +40,10 @@ with links). Reusable design patterns are in
 
 **Connecting to the live workspace:** connect **ElevenLabs as a claude.ai connector** to read
 and change agents directly instead of copy-pasting into the dashboard — it works from web *and*
-local sessions, because connector traffic bypasses the cloud egress allowlist. `.mcp.json` also
-declares the hosted server for local Claude Code (`/mcp` → Authenticate). Setup, the egress
-caveat, and what still needs the REST API: [`docs/elevenlabs-mcp.md`](./docs/elevenlabs-mcp.md).
+local sessions, because connector traffic bypasses the cloud egress allowlist. It covers agents,
+**procedures**, tools, KB, branches/drafts, and tests — `agents_update` exists, so setup docs no
+longer have to be pasted into the dashboard. Setup, the residency gotcha, the verified tool list,
+and what still needs the REST API: [`docs/elevenlabs-mcp.md`](./docs/elevenlabs-mcp.md).
 Direct calls to `api.elevenlabs.io` (curl, the publish pipeline) stay blocked from cloud sessions
 unless the environment allowlists it. If an MCP session changes the workspace, update the
 project's `elevenlabs-*-setup.md` to match before the session ends.

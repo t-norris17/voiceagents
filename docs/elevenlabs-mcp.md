@@ -17,6 +17,10 @@ no longer maintained** — its README now points at the hosted server. Don't ins
   are served from a regional host instead — `https://api.us.elevenlabs.io/v1/mcp` for US. The
   claude.ai connector picks the right one itself; only a hand-written `.mcp.json` has to care.
 - **Transport:** HTTP
+- **Data residency matters at connect time.** The connector's OAuth page renders **blank** if the
+  region is wrong for the workspace. Setting residency to **Global** is what fixed it here; a `.us.`
+  host produced a white authorize screen even while logged in. If you get a blank page, change the
+  region before debugging the browser.
 - **Auth:** **OAuth** — you sign in through the browser. No `xi-api-key` is copied into a client
   config, and nothing lands in this repo. That is the reason to prefer it over the local server.
 
@@ -46,22 +50,11 @@ plus three more not shown in the listing.
 
 > On Team and Enterprise plans only an admin can add connectors.
 
-### B. `.mcp.json` + OAuth in local Claude Code
+### B. Local `.mcp.json` — removed, don't re-add
 
-The repo's `.mcp.json` declares the hosted server directly. This is the local-only path: a cloud
-session sees the server but can't authenticate it (no browser) and can't reach it (blocked host).
-
-```
-claude            # start a session in this repo
-/mcp              # select "elevenlabs" -> Authenticate -> finish the browser OAuth flow
-```
-
-`.mcp.json` holds only a URL; the OAuth token lives in your local Claude Code credential store,
-never in git. To register it outside this repo instead:
-`claude mcp add --transport http elevenlabs https://api.elevenlabs.io/v1/mcp`.
-
-A server declared here takes precedence over a connector pointing at the same URL; `/mcp` will
-list the connector as hidden. Running both is harmless — just don't be surprised by that notice.
+An earlier pass declared the hosted server in a repo `.mcp.json`. It's gone: a server added in
+Claude Code takes precedence over a connector, so keeping both risks shadowing the working
+connector with an unauthenticated duplicate. The connector covers local Claude Code too.
 
 ## Egress: what the connector does NOT cover
 
@@ -88,24 +81,32 @@ cache. Each environment has its own list — there's no org-wide allowlist. Shar
 environments are edited by an Owner under **Cloud environments** in
 [admin settings](https://claude.ai/admin-settings).
 
-## What to check on first connect
+## Verified tool surface (connected 2026-08-26)
 
-The hosted server's exact tool list wasn't verifiable from a cloud session (docs host blocked),
-so **confirm it with `/mcp` before assuming a capability**. The things this workbench most wants
-covered, in rough priority order:
+Far wider than the deprecated local server, and it covers every part of
+`elevenlabs-poc-setup.md` that used to be copy-paste:
 
-1. **Update an existing agent** (system prompt, first message, turn timeout, system tools) — the
-   whole of §1 and §2 of `projects/nestegg-u-demo/elevenlabs-poc-setup.md` is copy-paste today.
-2. **Create/attach webhook (server) tools** — §5, the mock-backend tools.
-3. **Procedures** (free-form and structured) — §3. These are **Alpha**; expect them to be the
-   last thing exposed, if at all.
-4. **Knowledge base** create / RAG-index / attach — §4.
-5. **Conversations + transcripts** for post-demo review.
+- **Agents:** `agents_list`, `agents_get`, `agents_create`, **`agents_update`**, `agents_delete`,
+  `agents_duplicate`, `agents_get_link`, `agents_get_widget`, `agents_get_summaries`.
+- **Procedures — yes, these are exposed:** `agents_list_procedures`, `agents_get_procedure`,
+  `agents_create_procedure`, `agents_update_procedure_draft`, `agents_compile_procedures`,
+  `agents_delete_procedure`.
+- **Tools:** `agents_list_tools`, `agents_get_tool`, `agents_create_tool`, `agents_update_tool`,
+  `agents_delete_tool`, `agents_get_tool_dependents`, `agents_get_tool_executions`.
+- **Knowledge base:** `agents_create_kb_text`, `agents_create_kb_url`, `agents_update_kb_document`,
+  `agents_list_knowledge_base`, `agents_search_knowledge_base`, `agents_query_knowledge_base_rag`,
+  `agents_get_kb_dependents`, `agents_bulk_*`.
+- **Branches, drafts, versions, deployments:** `agents_create_branch`, `agents_merge_branch`,
+  `agents_merge_branch_preview`, `agents_create_draft`, `agents_get_version`,
+  `agents_create_deployment` — safe review-then-merge edits instead of live mutation.
+- **Tests:** `agents_create_test`, `agents_run_tests`, `agents_list_test_runs`, `agents_get_test_run`.
+- **Conversations:** `agents_list_conversations`, `agents_get_conversation`,
+  `agents_search_conversation_messages`, `agents_get_topics`, `agents_resolve_conversation`.
+- **Phone numbers, MCP servers, triage tickets** round it out, plus a `creative_*` family for
+  TTS/image/video generation.
 
-The deprecated local server covered only `create_agent`, `add_knowledge_base_to_agent`,
-`list_agents`, `get_agent`, `get_conversation`, `list_conversations`, `simulate_conversation`,
-`make_outbound_call`, `list_phone_numbers` — note there was **no agent *update*, no procedures,
-no webhook-tool creation**. Treat that as the floor, not the ceiling, for the hosted server.
+`agents_update` and `agents_create_procedure` existing is the headline: §1–§5 of a project's
+`elevenlabs-*-setup.md` no longer have to be pasted into the dashboard by hand.
 
 ## Keep the REST path for the publish pipeline
 
