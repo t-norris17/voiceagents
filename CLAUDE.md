@@ -38,6 +38,13 @@ Don't answer ElevenLabs capability questions from memory — check
 with links). Reusable design patterns are in
 [`docs/voice-agent-patterns.md`](./docs/voice-agent-patterns.md).
 
+**Connecting to the live workspace:** the hosted **ElevenLabs MCP server** is declared in
+`.mcp.json` — run `/mcp` and authenticate (OAuth) to read and change agents directly instead of
+copy-pasting into the dashboard. Setup, limits, and what still needs the REST API:
+[`docs/elevenlabs-mcp.md`](./docs/elevenlabs-mcp.md). **It only works from local Claude Code** —
+the cloud environment's egress policy blocks `api.elevenlabs.io`. If an MCP session changes the
+workspace, update the project's `elevenlabs-*-setup.md` to match before the session ends.
+
 Key facts to remember:
 - **Procedures are Alpha** (breaking changes possible). Two kinds: **free-form** (adaptive,
   can reference the Knowledge Base — use these for KBA-grounded answers) and **structured**

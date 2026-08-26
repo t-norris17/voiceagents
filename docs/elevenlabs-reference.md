@@ -100,3 +100,18 @@ Programmatic KB management exists — you can publish articles from code, no das
   **Rachel**, **Jessica**.
 - Settings starting point: Stability ~55–65%, Similarity ~80%, low Style. Use a low-latency
   (Flash/Turbo) model — responsiveness matters most on a call.
+
+## Programmatic access — MCP vs REST (verified 2026-08-26)
+
+- **Hosted MCP server:** `https://api.elevenlabs.io/v1/mcp`, HTTP transport, **OAuth** (no API key
+  in any client config). Declared in this repo's `.mcp.json`; authenticate with `/mcp`.
+- The **local** stdio server (PyPI `elevenlabs-mcp`, `uvx elevenlabs-mcp`) is **deprecated and
+  unmaintained** — its README redirects to the hosted one. Don't use it.
+- Its agent-platform coverage was thin and is the floor to expect: `create_agent`,
+  `add_knowledge_base_to_agent`, `list_agents`, `get_agent`, `get_conversation`,
+  `list_conversations`, `simulate_conversation`, `make_outbound_call`, `list_phone_numbers`.
+  **No agent update, no procedures, no webhook-tool creation.** Confirm the hosted server's real
+  tool list with `/mcp` before assuming a capability.
+- **REST stays** for unattended pipelines (Vercel functions, publish scripts) — `xi-api-key`
+  header, see `projects/content-cleaner/cleaner/lib/elevenlabs.js`.
+- Setup + limits: [`elevenlabs-mcp.md`](./elevenlabs-mcp.md).
