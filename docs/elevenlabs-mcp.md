@@ -18,37 +18,69 @@ no longer maintained** — its README now points at the hosted server. Don't ins
 - **Auth:** **OAuth** — you sign in through the browser. No `xi-api-key` is copied into a client
   config, and nothing lands in this repo. That is the reason to prefer it over the local server.
 
-## Connect it
+## Two ways in — pick by where you're working
 
-`.mcp.json` at the repo root already declares the server, so **any Claude Code session started in
-this repo will offer to connect it** — approve it once per machine. That file holds only a URL;
-the OAuth token lives in your local Claude Code credential store, never in git.
+### A. claude.ai connector (works from the web AND locally) ← preferred
 
-First run, in the repo:
+**ElevenLabs is in the claude.ai connector directory** ("Create and manage ElevenLabs voice
+agents in your chat"). Connect it once at
+[claude.ai/customize/connectors](https://claude.ai/customize/connectors) — Settings → Connectors
+→ find ElevenLabs → Connect → OAuth in the browser.
+
+Why this is the good path: **connector traffic does not go through a cloud environment's domain
+allowlist.** Cloud sessions get connectors provisioned by the host and routed through Anthropic's
+MCP proxy, so a web session can use ElevenLabs even though `api.elevenlabs.io` is blocked by the
+egress policy. It also solves OAuth — you sign in once in the browser, not in a headless session.
+Local Claude Code picks the same connector up automatically when you're logged in to the same
+claude.ai account.
+
+Tools the directory advertises: `create_agent`, `delete_agent`, `duplicate_agent`, `get_agent`,
+`get_agent_summaries`, `get_agent_link`, `get_agent_knowledge_size`, `calculate_agent_llm_usage`,
+plus three more not shown in the listing.
+
+> On Team and Enterprise plans only an admin can add connectors.
+
+### B. `.mcp.json` + OAuth in local Claude Code
+
+The repo's `.mcp.json` declares the hosted server directly. This is the local-only path: a cloud
+session sees the server but can't authenticate it (no browser) and can't reach it (blocked host).
 
 ```
-claude            # start a session here
+claude            # start a session in this repo
 /mcp              # select "elevenlabs" -> Authenticate -> finish the browser OAuth flow
 ```
 
-If you'd rather register it outside this repo (available in every project):
+`.mcp.json` holds only a URL; the OAuth token lives in your local Claude Code credential store,
+never in git. To register it outside this repo instead:
+`claude mcp add --transport http elevenlabs https://api.elevenlabs.io/v1/mcp`.
+
+A server declared here takes precedence over a connector pointing at the same URL; `/mcp` will
+list the connector as hidden. Running both is harmless — just don't be surprised by that notice.
+
+## Egress: what the connector does NOT cover
+
+`api.elevenlabs.io` and `elevenlabs.io` are blocked by this org's egress policy (403 on CONNECT),
+and the connector routes around that only for MCP calls. Still blocked from a cloud session:
+`curl` to the ElevenLabs API, the REST publish pipeline in
+`projects/content-cleaner/cleaner/lib/elevenlabs.js`, and reading `elevenlabs.io` docs pages.
+
+To fix those, add the hosts to the environment's allowlist — at
+[claude.ai/code](https://claude.ai/code), select the cloud icon above the message box, hover the
+environment, open its settings, set **Network access** to **Custom**, and list under
+**Allowed domains**:
 
 ```
-claude mcp add --transport http elevenlabs https://api.elevenlabs.io/v1/mcp
+api.elevenlabs.io
+elevenlabs.io
+*.elevenlabs.io
 ```
 
-Then `/mcp` to authenticate. Check `/mcp` any time to see connection state and the tool list the
-server actually exposes.
-
-## ⚠️ It will NOT work from Claude Code on the web
-
-Sessions in the managed cloud environment are behind an egress policy that **blocks
-`api.elevenlabs.io` and `elevenlabs.io` (403 on CONNECT)**. A web session can still edit this
-repo's docs and scripts, but it cannot reach the workspace — MCP or REST. Anything that has to
-touch the live workspace runs from **local Claude Code** (CLI, desktop, or IDE).
-
-To change that, the blocked hosts have to be allowed in the environment's network policy — see
-https://code.claude.com/docs/en/claude-code-on-the-web.
+A leading `*.` matches subdomains but not the apex, so list both. Check **Also include default
+list of common package managers** or you lose npm/PyPI/GitHub. Changes apply to **new sessions**,
+not running ones, and changing allowed hosts re-runs the setup script to rebuild the environment
+cache. Each environment has its own list — there's no org-wide allowlist. Shared Team/Enterprise
+environments are edited by an Owner under **Cloud environments** in
+[admin settings](https://claude.ai/admin-settings).
 
 ## What to check on first connect
 
