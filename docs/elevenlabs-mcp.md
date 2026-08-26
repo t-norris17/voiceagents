@@ -13,10 +13,16 @@ Verified 2026-08-26 against the official repo README
 The old local stdio server (`uvx elevenlabs-mcp`, PyPI `elevenlabs-mcp`) is **deprecated and
 no longer maintained** — its README now points at the hosted server. Don't install it.
 
-- **URL:** `https://api.elevenlabs.io/v1/mcp`
+- **URL:** `https://api.elevenlabs.io/v1/mcp`. Workspaces pinned to a **data-residency region**
+  are served from a regional host instead — `https://api.us.elevenlabs.io/v1/mcp` for US. The
+  claude.ai connector picks the right one itself; only a hand-written `.mcp.json` has to care.
 - **Transport:** HTTP
 - **Auth:** **OAuth** — you sign in through the browser. No `xi-api-key` is copied into a client
   config, and nothing lands in this repo. That is the reason to prefer it over the local server.
+
+> **Opening the MCP URL in a browser returns `{"detail":"Method Not Allowed"}`. That is correct
+> and healthy** — the endpoint answers MCP POSTs, not browser GETs. It is not the OAuth page and
+> not a sign of a broken connector. The authorize page is a separate URL on `elevenlabs.io`.
 
 ## Two ways in — pick by where you're working
 
