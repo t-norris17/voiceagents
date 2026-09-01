@@ -3,7 +3,7 @@
 // is "we don't know", because a survey that guesses is worse than no survey.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { boolish, ratingFrom, consentState, parseSurvey } from "../lib/survey.js";
+import { boolish, ratingFrom, consentState, preferenceFrom, scrubVerbatim, parseSurvey } from "../lib/survey.js";
 
 const pickFrom = (o) => (k) => (k in o ? o[k] : null);
 
@@ -52,13 +52,15 @@ test("offered and declined IS recorded — it's the denominator", () => {
 
 test("a full response maps across", () => {
   const r = parseSurvey(
-    pickFrom({ survey_offered: "yes", survey_consent: "accepted", csat: "five",
-               resolved_fcr: "yes", callback_consent: "yes", callback_window: "weekday mornings" }),
+    pickFrom({ survey_offered: "yes", survey_consent: "accepted", csat: "four", understood: "five",
+               prefer_agent: "with you", improve_verbatim: "maybe be a bit quicker",
+               callback_consent: "yes", callback_window: "weekday mornings" }),
     { conversation_id: "c1", subject_ref: "s1" }
   );
   assert.deepEqual(r, {
     conversation_id: "c1", subject_ref: "s1", survey_offered: true, survey_consent: "accepted",
-    csat: 5, fcr: true, callback_consent: true, callback_window: "weekday mornings",
+    csat: 4, understood: 5, prefer_agent: "agent", improve_verbatim: "maybe be a bit quicker",
+    improve_redacted: false, callback_consent: true, callback_window: "weekday mornings",
   });
 });
 
@@ -73,7 +75,7 @@ test("a callback window is dropped unless consent was actually given", () => {
 });
 
 test("answering implies it was offered, even if the field says otherwise", () => {
-  const r = parseSurvey(pickFrom({ csat: "5", resolved_fcr: "yes" }), { conversation_id: "c1" });
+  const r = parseSurvey(pickFrom({ csat: "5", understood: "5" }), { conversation_id: "c1" });
   assert.equal(r.survey_offered, true);
   assert.equal(r.survey_consent, "accepted");
 });
@@ -86,5 +88,50 @@ test("consent state normalises the model's wording", () => {
 });
 
 test("a malformed field set can't throw", () => {
-  assert.doesNotThrow(() => parseSurvey(pickFrom({ csat: {}, resolved_fcr: [], callback_consent: 7 }), { conversation_id: "c" }));
+  assert.doesNotThrow(() => parseSurvey(pickFrom({ csat: {}, understood: [], prefer_agent: 7, improve_verbatim: {} }), { conversation_id: "c" }));
+});
+
+test("preference reads the caller's own phrasing", () => {
+  assert.equal(preferenceFrom("with you"), "agent");
+  assert.equal(preferenceFrom("you, definitely"), "agent");
+  assert.equal(preferenceFrom("I'd wait for a person"), "person");
+  assert.equal(preferenceFrom("a real human please"), "person");
+  assert.equal(preferenceFrom("either is fine"), "no_preference");
+  assert.equal(preferenceFrom("doesn't matter"), "no_preference");
+  assert.equal(preferenceFrom("hmm"), null);
+});
+
+test("a person-answer that mentions 'you' still counts as person", () => {
+  // "I'd rather a person than you" contains both. Person wins, or we'd read a rejection as praise.
+  assert.equal(preferenceFrom("I'd rather a person than you"), "person");
+  assert.equal(preferenceFrom("no, a human, not you"), "person");
+});
+
+test("the open answer is kept when it's harmless", () => {
+  const { text, redacted } = scrubVerbatim("  you could be   a bit quicker  ");
+  assert.equal(text, "you could be a bit quicker");
+  assert.equal(redacted, false);
+});
+
+test("an open answer carrying PII is dropped, and the fact recorded", () => {
+  // The point is the rate stays visible without the words being stored.
+  for (const v of ["my ssn is 123-45-6789", "social security came up", "account 4012888888881881", "it's 123456789012"]) {
+    const r = scrubVerbatim(v);
+    assert.equal(r.text, null, v);
+    assert.equal(r.redacted, true, v);
+  }
+});
+
+test("a redacted answer still counts as a survey response", () => {
+  // Otherwise a caller who said something sensitive would look like they never answered.
+  const r = parseSurvey(pickFrom({ improve_verbatim: "my ssn is 123-45-6789" }), { conversation_id: "c1" });
+  assert.notEqual(r, null);
+  assert.equal(r.improve_redacted, true);
+  assert.equal(r.improve_verbatim, null);
+  assert.equal(r.survey_consent, "accepted");
+});
+
+test("we no longer ask about resolution — the grader measures it", () => {
+  const r = parseSurvey(pickFrom({ csat: "5", resolved_fcr: "yes" }), { conversation_id: "c1" });
+  assert.ok(!("fcr" in r), "fcr must not come back; it is measured, not asked");
 });

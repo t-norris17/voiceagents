@@ -1,5 +1,11 @@
 // Turning Robin's spoken survey into a row.
 //
+// We do NOT ask whether she resolved the caller's problem. The grader already determines that from
+// the transcript, per question, with a reason when she couldn't — so asking would spend the
+// caller's patience re-collecting a fact we compute for free. The survey asks only what the caller
+// alone can tell us: whether they felt understood, whether they'd choose the agent again, and what
+// would have made it better.
+//
 // The answers arrive as ElevenLabs Data Collection fields — an LLM reading the transcript and
 // filling in fields we defined. That means free text, every time: "5", "five", "four out of five",
 // "Yes", "yeah definitely", "they said no". Nothing here can assume a clean value.
@@ -51,6 +57,47 @@ export function ratingFrom(v) {
   return null;
 }
 
+// "Next time, would you rather sort this out with me, or wait for a person?"
+// Order matters: a person-answer often contains a you-word ("I'd rather a person than you"), and
+// "either" must win over both. Checked most-specific first.
+const PREF_NONE   = ["either", "no preference", "don't mind", "doesn't matter", "dont mind",
+                     "no difference", "whatever", "both fine", "not fussed"];
+const PREF_PERSON = ["person", "human", "someone", "somebody", "real", "rep", "representative",
+                     "agent on the phone", "wait", "live"];
+const PREF_AGENT  = ["you", "this", "yourself", "robin", "the assistant", "automated", "ai",
+                     "again", "quicker", "faster"];
+
+export function preferenceFrom(v) {
+  const n = String(v ?? "").trim().toLowerCase();
+  if (!n) return null;
+  const has = (list) => list.some((w) => new RegExp(`(^|\\W)${w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(\\W|$)`).test(n));
+  if (has(PREF_NONE)) return "no_preference";
+  if (has(PREF_PERSON)) return "person";
+  if (has(PREF_AGENT)) return "agent";
+  return null;
+}
+
+// An open question invites anything, and it lands in a database as free text. The scale fields
+// carry no such risk, which is why only this one gets scanned. If it trips we keep the FACT that
+// something was said and redacted — so the rate is visible — and drop the words themselves.
+//
+// The Knowledge Factory has a fuller version of this scan, but it lives in a different Vercel
+// project and Vercel only builds what's inside a project's root directory, so it cannot be
+// imported. These are the patterns that matter for a spoken sentence.
+const SSN_RE      = /\b\d{3}[-.\s]?\d{2}[-.\s]?\d{4}\b/;
+const SSN_WORDS   = /\bsocial security\b/i;
+const LONG_DIGITS = /\b\d{9,}\b/;                       // account / card / member runs
+const CARD_RE     = /\b(?:\d[ -]*?){13,19}\b/;
+const VERBATIM_MAX = 600;
+
+export function scrubVerbatim(v) {
+  const t = String(v ?? "").replace(/\s+/g, " ").trim();
+  if (!t) return { text: null, redacted: false };
+  if (SSN_RE.test(t) || SSN_WORDS.test(t) || LONG_DIGITS.test(t) || CARD_RE.test(t))
+    return { text: null, redacted: true };
+  return { text: t.slice(0, VERBATIM_MAX), redacted: false };
+}
+
 const CONSENT = new Set(["accepted", "declined", "not_offered"]);
 
 // Normalise the survey_consent field into the three states the table allows.
@@ -76,11 +123,14 @@ export function consentState(v, offered) {
 export function parseSurvey(pick, { conversation_id, subject_ref = null } = {}) {
   const offered = boolish(pick("survey_offered"));
   const csat = ratingFrom(pick("csat"));
-  const fcr = boolish(pick("resolved_fcr"));
+  const understood = ratingFrom(pick("understood"));
+  const prefer_agent = preferenceFrom(pick("prefer_agent"));
   const callback_consent = boolish(pick("callback_consent"));
   const rawConsent = pick("survey_consent");
+  const { text: improve_verbatim, redacted: improve_redacted } = scrubVerbatim(pick("improve_verbatim"));
 
-  const answered = csat != null || fcr != null || callback_consent != null;
+  const answered = csat != null || understood != null || prefer_agent != null ||
+                   callback_consent != null || improve_verbatim != null || improve_redacted;
   if (offered !== true && !answered && rawConsent == null) return null;
 
   const survey_consent = consentState(rawConsent, offered === true || answered);
@@ -92,7 +142,10 @@ export function parseSurvey(pick, { conversation_id, subject_ref = null } = {}) 
     survey_offered: offered ?? answered,     // if they answered, it was plainly offered
     survey_consent,
     csat,
-    fcr,
+    understood,
+    prefer_agent,
+    improve_verbatim,
+    improve_redacted,
     callback_consent,
     // A window is only meaningful alongside consent. Storing "next week" next to a refusal would
     // read, to anyone building the dialer later, like permission.

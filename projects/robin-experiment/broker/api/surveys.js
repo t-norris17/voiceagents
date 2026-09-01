@@ -18,9 +18,11 @@ export default async function handler(req, res) {
     ) || [];
 
     const answered = rows.filter((r) => r.survey_consent === "accepted");
-    const scores = answered.map((r) => Number(r.csat)).filter((n) => Number.isFinite(n));
-    const fcrKnown = answered.filter((r) => r.fcr !== null);
+    const nums = (k) => answered.map((r) => Number(r[k])).filter((n) => Number.isFinite(n));
+    const csat = nums("csat"), understood = nums("understood");
+    const prefs = answered.map((r) => r.prefer_agent).filter(Boolean);
     const consented = rows.filter((r) => r.callback_consent === true);
+    const verbatims = answered.filter((r) => r.improve_verbatim);
 
     res.setHeader("Cache-Control", "no-store");
     return res.status(200).json({
@@ -31,15 +33,30 @@ export default async function handler(req, res) {
       declined: rows.filter((r) => r.survey_consent === "declined").length,
       response_rate_pct: rows.length ? Math.round((answered.length / rows.length) * 100) : null,
 
-      csat: scores.length ? Number(avg(scores).toFixed(2)) : null,
-      csat_n: scores.length,
-      // Reported as a share of the answers where they actually told us, not of every survey —
-      // an unanswered FCR question is not a "no".
-      fcr_pct: fcrKnown.length ? Math.round((fcrKnown.filter((r) => r.fcr).length / fcrKnown.length) * 100) : null,
-      fcr_n: fcrKnown.length,
+      // Headline number, kept for reporting — but no longer the only one.
+      csat: csat.length ? Number(avg(csat).toFixed(2)) : null,
+      csat_n: csat.length,
+      // What the caller felt about being understood. Worth crossing against the grader's grounding:
+      // high understood + ungrounded answers is the confidently-wrong quadrant.
+      understood: understood.length ? Number(avg(understood).toFixed(2)) : null,
+      understood_n: understood.length,
+
+      // The business question. Reported as counts, not a single score — "no preference" is a real
+      // answer and averaging it away would hide the split.
+      prefer: {
+        agent: prefs.filter((p) => p === "agent").length,
+        person: prefs.filter((p) => p === "person").length,
+        no_preference: prefs.filter((p) => p === "no_preference").length,
+        answered: prefs.length,
+      },
 
       // The population an outbound survey call could lawfully reach, once that clears compliance.
       callback_consented: consented.length,
+
+      // Where the actual insight lives. Redacted count is surfaced so the PII scan's hit rate is
+      // visible rather than looking like people simply had nothing to say.
+      improvements: verbatims.map((r) => ({ text: r.improve_verbatim, at: r.created_at })),
+      improvements_redacted: rows.filter((r) => r.improve_redacted).length,
 
       recent: rows.slice(0, 25),
     });
