@@ -2,13 +2,205 @@
 
 **Slug:** robin-experiment
 **Started:** 2026-07-23
-**Status:** active
+**Status:** active — see Session 4 for the current handoff
 
 ---
 
 ## Session log
 
 <!-- Add new sessions at the top, newest first -->
+
+---
+
+### 2026-09-01 — Session 4 (the connector answers, and the prompt has forked)
+
+**Task 1 from the Session 3 handoff is done. Both halves of it answered yes.**
+
+**Can the connector write Data Collection fields? Yes — and it does the new thing too.**
+The read-only `agents_get` shows fields under `platform_settings.data_collection`, and a write
+through `agents_update` (raw `body` escape hatch) created all 8 survey fields on the first try.
+More usefully, the API also minted 8 matching `analysis_items.data_collection` entries
+(`aitem_…m1f41…`), which is the newer structure the dashboard actually reads — so this is a real
+create, not a write into a legacy field the UI ignores. **No hand-entry in the Analysis tab is
+needed.** Count went 11 → 19.
+
+- One wrinkle: `data_collection_scopes` still lists only the original 11. The new fields carry
+  `"scope":"conversation"` on their `analysis_items` entries, so this is probably a vestigial map,
+  but it is unverified — check the 8 fields actually populate on the first real call.
+- The full 19-field set was sent deliberately, so merge-vs-replace semantics never mattered. That
+  question is still open if anyone wants to send a partial update later.
+
+**Survey-test clone is live and configured:** `agent_7401m1f4033qene9ybgt78d3saw4`
+("Robin — survey test"). Prompt + all 19 fields set. **No phone number attached** (duplication
+doesn't carry one), so it is web-widget only until someone assigns one. Live Robin
+(`agent_8301kwj5qa8ve1atremxxwjjp9f8`) was not touched.
+
+**What broke / surprised us**
+
+- **The system prompt has forked three ways, and production is the odd one out.** Session 3 left
+  two copies with a drift test. There are actually three, and the live agent matches neither: it
+  carries a condensed `A SPOKEN NAME IS NOT IDENTIFICATION` block, where `claude/robin-survey` has
+  the fuller `GET A NAME BEFORE YOU VERIFY` flow, the `A SPOKEN NAME IS NEVER IDENTIFICATION`
+  wording, and a `USE THE NAME ON THE RECORD ONCE VERIFIED` rule (use `first_name` from
+  `verify_caller`) that production **does not have at all**. Live was last updated ~2026-08-06,
+  three days *after* the branch — so someone edited the dashboard from an older base and dropped
+  the branch's name-handling work.
+  Neither copy is a superset. **This is a decision, not a merge**, and it is Tanner's:
+  does production keep its condensed rule, or take the branch's name-first flow?
+  Captured production verbatim to `robin-system-prompt.LIVE-2026-09-01.txt` so the live text exists
+  somewhere other than the dashboard. The clone was built by appending *only* the survey block to
+  that live text, so testing the survey does not smuggle in the name-flow change.
+- **Three tools on the live agent still point at `lumio-retirement.vercel.app`** —
+  `get_plan_details`, `send_reset_email`, `document_resolution` — while `verify_caller` and
+  `get_balance` point at `voiceagents-seven.vercel.app`. `get_plan_details` is the dangerous one: it
+  overlaps `get_balance`, the prompt never mentions it, and nothing stops the model reaching for it
+  and getting figures from a different deployment. The setup doc's §2 note already says the
+  experiment dropped `send_reset_email` and `document_resolution`; they are still attached.
+- **The clone inherited production's post-call webhook** (`post_call_webhook_id`
+  `4deed01a…`). Test calls on the clone will POST to the *production* `/api/postcall` and write
+  real `ai_call_events` rows. Harmless for the survey (prod has no parser, so survey fields are
+  ignored) but it means clone traffic is not isolated from the experiment's data.
+
+**Next session:**
+> **Task 1 is finished except the part that needs a human**: place a web-widget call to the clone and
+> confirm Robin (a) offers the survey after a resolved question, (b) does NOT offer it on a transfer
+> or a failed verification, and (c) that the 8 fields populate. Use Priya — Member ID `90003`,
+> DOB 1974-06-08 — per Session 3; Marcus routes to a transfer and suppresses the survey by design.
+> Nothing will be *recorded* until Task 2 ships, so this call tests prompt behaviour and field
+> extraction only.
+>
+> **Then Task 2, unchanged and still the blocker:** get `claude/robin-survey` to production.
+>
+> Two new items, both small and both live-config risks: **detach or repoint the three
+> `lumio-retirement` tools**, and **settle the prompt fork** (see above) before anything is pasted
+> into the live agent.
+
+---
+
+### 2026-08-03 — Session 3 (survey + a broken grader)
+
+**HANDOFF: read this block first, then the two "Start here" tasks at the bottom.**
+
+**Where things stand**
+
+Two branches, neither merged. `main` does not have any of this.
+
+| Branch | Contents |
+|---|---|
+| `claude/repo-familiarization-h6dd80` | edit fact-check on save, grader stuck-detection, dashboard tile split, name-first prompt, outbound-calling reference |
+| `claude/robin-survey` | branched off the above, so it contains **all of it** plus the survey. 11 commits ahead of `main`. |
+
+`claude/robin-survey` is the one to work from — it has the complete prompt.
+
+**Three switches, and only one is on.** The survey needs all three:
+
+| Piece | Where | State |
+|---|---|---|
+| `call_surveys` table | Supabase | ✅ applied (migrations 007, 008) |
+| `postcall.js` survey write + `GET /api/surveys` | Vercel prod | ❌ unmerged branch |
+| Survey prompt block | ElevenLabs system prompt | ❌ not pasted |
+| 8 Data Collection fields | ElevenLabs Analysis tab | ❌ not created |
+
+⚠️ **Paste the prompt without deploying the branch and Robin asks all three questions while nothing
+is recorded** — production `postcall` has no parser. Order: deploy → fields → prompt.
+
+**The survey, as designed.** Asks about the agent, not the outcome:
+1. "How well did I understand what you were asking?" (1-5) → `understood`
+2. "Would you rather sort this out with me, or wait for a person?" → `prefer_agent`
+3. "Anything I could have done better?" (open) → `improve_verbatim`, PII-scrubbed
+4. Callback consent + window → the seed for outbound
+
+There is deliberately **no "did we solve it" question** — the grader already computes resolution per
+question from the transcript. `csat` remains as a column and parses if it comes up, but is no longer
+asked directly.
+
+**What broke / surprised us**
+
+- **The grader had been silently dead for weeks.** `call_question_scores.question_key` still had a
+  foreign key to `curated_questions`, left behind by the answer-key removal. Observed keys are
+  kebab-case (`loan-eligibility-401k`); curated keys are underscored. Every score row for a call
+  where Robin actually answered threw 23503, the error went to `console.error`, `scored_at` was
+  never stamped, and the same ten calls were re-graded on every 30-second dashboard refresh —
+  paying for the model each time and writing nothing. Only calls where she answered *nothing* got
+  through, because those write no score rows. That is why 3 of 30 looked graded.
+  Fixed by migration `drop_call_question_scores_curated_fk`; backlog drained to 30/30.
+- **The real numbers were nothing like the stale ones.** After the fix: 130 questions asked across
+  30 calls, **100 answered (77%)**, 13 fixable by writing an article, 17 not content problems at all
+  (10 out of scope, 7 correct declines).
+- **Only 8 of 97 answers could be fact-checked**, because the Vertex documents were hand-loaded and
+  have no `kb_articles` row. Of those 8, **6 made a claim the source didn't support.** Tiny sample,
+  points the wrong way, worth watching as coverage grows.
+- **Gap closure is wired to fail.** The dashboard's "Ask for this" button posts no `plan_id`, so
+  rows land with `plan_id=''`, while `resolveGapsFor()` queries by the article's real `plan_id`
+  (`intrust-401k-plan-1`). It has never fired, and when it does it will match nothing. **Not fixed.**
+- **Three copies of the system prompt existed and one had rotted** — the setup doc still said INTRUST
+  months after the move to Vertex and was missing every rule added from live-call testing. Now two
+  copies with `test/prompt-sync.test.mjs` failing on drift.
+
+**Decisions made**
+
+- Survey collected via **Data Collection, not a mid-call tool** — answers are in the transcript,
+  nothing needs them during the call, and a tool adds latency plus a new way for the conversation to
+  break.
+- Ratings outside 1-5 are **discarded, not clamped**; unknown stays `null`, never `false`.
+- `call_surveys` has **no `plan_id` column**, deliberately — we cannot populate one from a call, and
+  `gap_requests` just showed what an always-empty tenant column costs.
+- Outbound survey calls are **gated on TCPA**, not engineering. The API exists (below); consent is
+  the blocker and needs a human at INTRUST.
+
+**Environment gotchas that cost time**
+
+- `elevenlabs.io` and `*.vercel.app` are **blocked by the agent proxy**. Use
+  `mcp__Vercel__web_fetch_vercel_url` for Vercel URLs; for ElevenLabs docs, `github.com/elevenlabs/skills`
+  is reachable and first-party.
+- **Vercel builds only what is inside a project root** — `content-cleaner/cleaner` and
+  `robin-experiment/broker` are separate projects and cannot import from each other. That is why the
+  PII scan is reimplemented in `broker/lib/survey.js` instead of reusing `deterministicScan`.
+- Migrations are applied via Supabase MCP **and** mirrored into `supabase/migrations/`.
+
+**Demo credentials (synthetic)**
+
+- **Marcus — Member ID `90002`, DOB 1998-09-30.** Not fully vested, **has an outstanding loan** →
+  best for demoing the loan trap, but the loan-limit gap routes to a transfer, and the prompt
+  forbids offering the survey mid-transfer.
+- **Priya — Member ID `90003`, DOB 1974-06-08.** Fully vested, no loan → nothing triggers a
+  transfer, so the survey actually fires. **Use Priya to demo the survey.**
+
+**Outbound calling — verified, for when TCPA clears**
+
+`POST https://api.elevenlabs.io/v1/convai/twilio/outbound-call` with `agent_id`,
+`agent_phone_number_id`, `to_number` (E.164), plus
+`conversation_initiation_client_data.dynamic_variables` — that last one is how an outbound agent
+knows who it is calling and why. Batch endpoint exists too but its body schema is **not** first-party
+verified. See `docs/elevenlabs-reference.md`. The caller's number already arrives on every inbound
+call at `metadata.phone_call.external_number`.
+
+**Open unknowns, cheapest probe first**
+
+| Unknown | Probe |
+|---|---|
+| Does the ElevenLabs API return KB **document text**? If yes, hand-loaded Vertex docs become gradeable and the `no_source` problem disappears | `broker/api/kb_probe.js` — **written, never run** |
+| Does the ElevenLabs MCP connector expose **Data Collection field** creation? | one read-only `agents_get` |
+| Is 6-of-8 unsupported real or noise? | needs more checkable answers |
+| Does multi-tenancy work with two live plans? | seed a second `plan_id`, run one call |
+
+**Next session:**
+> **Start here (1) — ElevenLabs, with the connector live.** It was announced this session but
+> disconnected before it could be used. First call is **read-only `agents_get`** on the Robin agent to
+> see what the config payload actually exposes — specifically whether Data Collection fields can be
+> written, which is unconfirmed. If yes: use `agents_duplicate` to clone Robin into a survey-test
+> agent so the live agent stays untouched, put the survey prompt + 8 fields on the clone
+> (`elevenlabs-experiment-setup.md` §2 and §7), and test through the web widget. If field creation is
+> not exposed, set the prompt and add the fields by hand.
+>
+> **Start here (2) — get the code to production.** Nothing records until `claude/robin-survey` is
+> deployed. Merge it or open the PR; it carries 11 commits, so if only the survey is wanted, rebase
+> the two survey commits onto `main` on a clean branch instead.
+>
+> Then: fix the `plan_id` bug in the dashboard's gap request (2 lines, currently guarantees gap
+> closure matches nothing), run `kb_probe`, and start the TCPA conversation — it has the longest lead
+> time and the outbound dialer waits on it, while the consented population only accumulates once the
+> survey is live.
 
 ---
 
