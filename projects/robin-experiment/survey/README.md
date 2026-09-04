@@ -55,15 +55,39 @@ Two harness gotchas, both cost time to learn:
 - Simulated callers hang up early and simulations time out. Read failure *causes*, not
   just the pass count — a scenario can read 3/20 while every evaluable criterion passed.
 
-## Known defects fixed in v3
+## What the tests found
 
-Both were found by the tests, not by reading the prompt:
+Every defect below was found by the simulation suite, not by reading the prompt.
 
+**Inherited defects, fixed in v3:**
 - **The carve-out overrode the gate.** On a caller who failed verification, Robin ran the
   full survey on the way into the transfer, ~1 call in 10. Fixed by moving the eligibility
-  gate above both ask paths and stating that it beats the transfer rule.
+  gate above both ask paths and stating that it beats the transfer rule. Suppression went
+  16/20 → 20/20 and has held there since.
 - **She offered, then transferred before collecting**, 3 in 20. Fixed by forbidding
   `transfer_to_number` until both answers are in.
+
+**A defect I introduced, fixed in v5:** the v3/v4 gate required the caller to have been
+*verified*. On the most important scenario — someone who asks for a person straight away —
+verification never runs at all, so the gate suppressed the survey entirely. Transfer
+adherence collapsed to 4–5/20. The fix inverts the test: only a **failed** verification
+disqualifies; never-verified is eligible.
+
+The lesson worth keeping: the prompt gate and `evaluation-criterion.json` encode the same
+eligibility rule in two places, and they silently disagreed for two versions. **Change them
+in the same commit, every time.**
+
+## Clone hygiene (not part of the survey)
+
+Fixed on the clone while testing, and still outstanding on live:
+- The Plan Questions procedure called `get_plan_details` against a dead host
+  (`lumio-retirement.vercel.app`, returns `{"found":false}` with `is_error=false`). Repointed
+  to `get_balance` and stripped a promise no tool can keep (a borrowing limit).
+- All three Lumio tools detached. Verified via `agents_get_tool_dependents` that only Robin
+  and this clone referenced them, so detaching breaks nothing else.
+- Publishing a procedure is two steps: `agents_update_procedure_draft` writes a draft only,
+  and `agents_compile_procedures` does **not** publish it. An `agents_update` on the agent
+  does, minting a new procedure version.
 
 ## Removal
 
@@ -75,7 +99,8 @@ version rollback has been observed working.
 |---|---|
 | Live Robin (untouched as of 2026-09-04) | `agent_8301kwj5qa8ve1atremxxwjjp9f8` |
 | Survey-test clone | `agent_7401m1f4033qene9ybgt78d3saw4` |
-| Clone version, survey v3 + criterion | `agtvrsn_6401m1pszvmxe138k13s71axs4yc` |
+| Clone version, survey v5 + criterion v2 | `agtvrsn_2901m1py7cyxeja9aw6hkjf5xhd3` |
+| Clone Plan Questions procedure (repointed) | `agtprcv_4101m1pvmymyeq78h47px1fqbge0` |
 | Production prompt capture | `../robin-system-prompt.LIVE-2026-09-01.txt` |
 
 ## Before the employee wave
@@ -85,4 +110,7 @@ version rollback has been observed working.
 - Count **one response per person**, not per call. 50–75 people making 2–3 calls each is
   50–75 opinions, not 200.
 - Fix the live-agent defects first. Running 75 colleagues against an agent whose loan
-  lookup silently fails gets you a "no" verdict on a dead webhook.
+  lookup silently fails gets you a "no" verdict on a dead webhook. Three of them: the dead
+  `get_plan_details` host, the Account Recovery procedure's instruction to collect the last
+  4 of an SSN (contradicts the prompt's hard no-SSN rule; verified not yet fired), and the
+  three-way prompt fork with production as the odd copy out.
