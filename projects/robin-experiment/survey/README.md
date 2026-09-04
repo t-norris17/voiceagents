@@ -110,6 +110,28 @@ Two of the three simulation tests now assert **suppression** rather than firing.
 fires where it shouldn't is the failure that costs you a caller; that asymmetry should show up
 in the test coverage.
 
+## v6 results — the instrument is done
+
+20 repeats per scenario, run against the clone at `agtvrsn_6401m1pz2amnfmtths2yh81gth3g`.
+
+| Scenario | Result |
+|---|---|
+| Suppressed on failed verification | **20/20** |
+| Suppressed on a transfer | **20/20** |
+| Fires on a resolved call | **18/20** |
+
+Read the resolved-call number carefully: 11 runs passed outright and 7 more were scored as
+failures by the harness's 60s turn timeout — but in all 7, both questions were asked AND
+answered before the clock ran out. Robin has `end_call` disabled, so after the survey closes
+she cannot end the call and the harness waits for a turn that never comes. 2 runs are genuine
+misses, where she never raised the survey.
+
+So: ~90% offer rate on the path that matters, and zero leakage into transfers or failed
+verifications. That is a shippable instrument, and the adherence criterion measures the real
+rate on live calls rather than assuming it.
+
+For comparison, the pre-transfer ask peaked at 9/20 across four attempts.
+
 ## Clone hygiene (not part of the survey)
 
 Fixed on the clone while testing, and still outstanding on live:

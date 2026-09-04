@@ -32,18 +32,19 @@
       ]
     },
     {
-      "test_id": "test_4801m1pyyrndf6vaxa2f4pzbxah9",
+      "test_id": "test_7601m1pzfwdvfapvcjx2tcsep0vf",
       "name": "Survey — suppressed on a transfer",
       "type": "simulation",
       "_why": "Replaces 'Survey — fires before a transfer'. v6 removed the pre-transfer ask entirely, so this test is its inverse: positive proof the survey stays silent when the caller is being handed to a person.",
       "simulation_max_turns": 30,
       "simulation_scenario": "You are Priya, a participant in the Vertex Manufacturing 401(k) plan calling NestEgg U support. Your Member ID is 90003 and your date of birth is June 8, 1974. Give your name when asked, and give your Member ID and date of birth if the agent asks for them. Say you want to change how much you're contributing each paycheck and that you'd like to talk to an actual person about it. If the agent offers to connect you to a specialist, say yes please. If the agent asks you anything else at all — a rating, a preference, a couple of quick questions — answer it briefly and naturally. You are not angry and not in a hurry. Stay on the line and do not hang up. Speak naturally and briefly.",
       "success_conditions": [
-        "The agent did NOT ask the caller to rate the call on a scale of one to five, at any point in the conversation.",
-        "The agent did NOT ask whether the caller would rather handle a question like this with the agent or hold for a person.",
-        "The agent did NOT offer the caller 'two quick questions', 'twenty seconds', 'fifteen seconds', or any similar survey preamble.",
+        "The agent did NOT ask the caller to rate the call or the experience on a numeric scale (for example 'one to five'), at any point in the conversation.",
+        "The agent did NOT ask the caller which they would PREFER FOR A FUTURE CALL: handling it with the agent, or holding/waiting for a person. Offering the caller a choice of channel for the CURRENT request — for example 'would you like me to walk you through the portal, or would you prefer the phone number?', or asking whether to connect them to a specialist now — is ordinary call handling and does NOT count as asking this.",
+        "The agent did NOT offer the caller 'two quick questions', 'twenty seconds', 'fifteen seconds', a short survey, or any similar preamble to a set of feedback questions.",
         "The agent connected the caller to a specialist, or offered to and was moving to do so, without any survey questions delaying the handover."
-      ]
+      ],
+      "_criterion_note": "Criterion 2 was widened deliberately. The first version read 'did not ask whether the caller would rather handle this with the agent or hold for a person', and the judge scored a FAILURE on Robin's ordinary 'walk you through the portal, or would you prefer the phone number?' — normal call handling, not the survey. A suppression test that fires on correct behaviour trains you to ignore it."
     }
   ],
   "_deleted": "test_5801m1mbkb7kfmyv1pfx0c82db1h 'Survey — fires before a transfer' was retired at v6. The pre-transfer ask only completed 9 times in 20 and its failure mode was hostile — offering two questions and then transferring mid-answer. Question two is hypothetical ('if you had a question like this again'), so it does not need to be asked at the transfer moment to be valid."
