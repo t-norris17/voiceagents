@@ -25,14 +25,26 @@ Three layers. Only the first two are new, and both are configuration, not code.
 |---|---|---|
 | Asking | `survey-block.txt`, pasted into the system prompt | ElevenLabs agent config |
 | Capturing | `data-collection-fields.json`, 5 fields | ElevenLabs, post-call analysis |
-| Storing | already existed — post-call webhook → `/api/postcall` | Vercel broker → Supabase |
+| Storing | already existed — post-call webhook → `/api/postcall` → `raw_payload` | Vercel broker → Supabase |
+| Reading | `read-results.sql` | SQL against `ai_call_events` |
 
 `robin-prompt-WITH-survey.txt` is the complete assembled prompt: production's live prompt
 with the survey block inserted before `SOUNDING HUMAN`. That's the paste-ready text.
 
-**ElevenLabs stores the answers on the conversation regardless.** You do not need the
-broker or Supabase to capture data — only to chart it. If the parser isn't shipped, the
-answers are still readable per conversation via the dashboard or API.
+## Getting the data out
+
+**There is nothing to build.** `broker/api/postcall.js` already stores the entire ElevenLabs
+webhook event in `ai_call_events.raw_payload`, and every Data Collection field rides along
+inside it. Verified 2026-09-04: 56 of 56 rows carry
+`raw_payload -> 'data' -> 'analysis' -> 'data_collection_results'`.
+
+So the answers land in Supabase the moment the fields exist on the agent — no parser, no
+migration, no deploy. `read-results.sql` is the whole pipeline: a view plus the four queries
+that answer the experiment.
+
+Ignore the `call_surveys` table on the unmerged `claude/robin-survey` branch. Its columns
+encode an older survey (`understood` / `fcr` / `callback_consent`), and its read endpoint
+`api/surveys.js` selects `fcr`, which migration 008 dropped.
 
 ## The adherence check
 
@@ -105,8 +117,6 @@ version rollback has been observed working.
 
 ## Before the employee wave
 
-- The branch parser expects `understood`; this uses `satisfaction`. `broker/lib/survey.js`
-  needs the rename or it silently writes nulls.
 - Count **one response per person**, not per call. 50–75 people making 2–3 calls each is
   50–75 opinions, not 200.
 - Fix the live-agent defects first. Running 75 colleagues against an agent whose loan
