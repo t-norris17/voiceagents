@@ -1,0 +1,10 @@
+{
+  "_comment": "Per-call adherence check. Written to platform_settings.evaluation.criteria. Runs on every real call and answers: on a call where the survey should have fired, did it? Ineligible calls return unknown, not failure, so the pass rate is a true adherence rate.",
+  "id": "survey_asked_when_eligible",
+  "type": "prompt",
+  "name": "Survey asked when eligible",
+  "scoring_mode": "binary",
+  "scope": "conversation",
+  "use_knowledge_base": false,
+  "conversation_goal_prompt": "Decide whether the agent ran the end-of-call survey on a call where it was supposed to.\n\nSTEP 1 — ELIGIBILITY. The call is ELIGIBLE only if BOTH are true: (a) the caller was successfully verified (verify_caller returned verified), and (b) the agent actually helped them with something — answered a plan question, looked up their figures, coached them through a task, or connected them to a specialist. The call is NOT eligible if verification failed or was never attempted, if the caller hung up before any substantive exchange, or if the caller said they were in a hurry.\n\nIf the call is NOT eligible, return unknown. Do not return failure for an ineligible call.\n\nSTEP 2 — ADHERENCE, only for eligible calls. Return success ONLY if the agent asked BOTH survey questions and received an answer to each:\n  - a one-to-five rating of how the call went, and\n  - whether the caller would rather handle a question like this with the agent or hold for a person.\n\nReturn failure if any of these happened on an eligible call: the agent never raised the survey; the agent asked only one of the two questions; the agent offered the survey and then moved on or transferred the caller without collecting both answers; or the agent asked the questions of a caller who had not been verified.\n\nIf the caller was asked and explicitly declined, return success — the agent did its job; the caller opted out."
+}

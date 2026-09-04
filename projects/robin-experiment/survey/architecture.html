@@ -1,0 +1,380 @@
+<title>Robin Survey Instrument</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:ital,wght@0,400;0,500;1,400&display=swap">
+<style>
+  :root{
+    --ground:#F6F8F7;
+    --surface:#FFFFFF;
+    --sunk:#EDF1F0;
+    --ink:#151E1C;
+    --muted:#66716F;
+    --line:#D6DEDC;
+    --accent:#0F6E6A;
+    --accent-soft:#E2F0EE;
+    --warn:#9C5D10;
+    --warn-soft:#F7EDDD;
+    --crit:#A5382B;
+    --crit-soft:#F8E6E2;
+    --shadow:0 1px 2px rgba(21,30,28,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#0E1413;
+      --surface:#161E1D;
+      --sunk:#1C2625;
+      --ink:#E4EBE9;
+      --muted:#94A29F;
+      --line:#2A3634;
+      --accent:#54C2B8;
+      --accent-soft:#12302E;
+      --warn:#D9A155;
+      --warn-soft:#2E2415;
+      --crit:#E0796A;
+      --crit-soft:#331D19;
+      --shadow:0 1px 2px rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0E1413;
+    --surface:#161E1D;
+    --sunk:#1C2625;
+    --ink:#E4EBE9;
+    --muted:#94A29F;
+    --line:#2A3634;
+    --accent:#54C2B8;
+    --accent-soft:#12302E;
+    --warn:#D9A155;
+    --warn-soft:#2E2415;
+    --crit:#E0796A;
+    --crit-soft:#331D19;
+    --shadow:0 1px 2px rgba(0,0,0,.4);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    background:var(--ground);
+    color:var(--ink);
+    font-family:"IBM Plex Serif",Georgia,serif;
+    font-size:16px;
+    line-height:1.62;
+    margin:0;
+    padding:56px 24px 96px;
+  }
+  .wrap{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:44px}
+
+  header{display:flex;flex-direction:column;gap:12px}
+  .eyebrow{
+    font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent);
+  }
+  h1{
+    font-family:"IBM Plex Sans",system-ui,sans-serif;
+    font-weight:600;font-size:34px;line-height:1.15;letter-spacing:-.02em;
+    margin:0;text-wrap:balance;
+  }
+  .standfirst{color:var(--muted);font-size:17px;max-width:64ch;margin:0}
+
+  section{display:flex;flex-direction:column;gap:16px}
+  h2{
+    font-family:"IBM Plex Sans",system-ui,sans-serif;
+    font-weight:600;font-size:13px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted);margin:0;padding-bottom:8px;border-bottom:1px solid var(--line);
+  }
+  h3{
+    font-family:"IBM Plex Sans",system-ui,sans-serif;
+    font-weight:600;font-size:18px;margin:0;letter-spacing:-.01em;
+  }
+  p{margin:0;max-width:66ch}
+  .note{color:var(--muted);font-size:14.5px}
+  code,.mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.87em}
+  code{background:var(--sunk);padding:.1em .34em;border-radius:3px}
+  em{font-style:italic}
+  strong{font-weight:500;font-family:"IBM Plex Sans",system-ui,sans-serif}
+
+  .diagram{
+    background:var(--surface);border:1px solid var(--line);border-radius:6px;
+    padding:20px;overflow-x:auto;box-shadow:var(--shadow);
+  }
+  .diagram svg{display:block;min-width:820px}
+  .d-box{fill:var(--sunk);stroke:var(--line);stroke-width:1}
+  .d-box-accent{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1}
+  .d-box-warn{fill:var(--warn-soft);stroke:var(--warn);stroke-width:1;stroke-dasharray:3 3}
+  .d-t{font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:12.5px;font-weight:500;fill:var(--ink)}
+  .d-s{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10.5px;fill:var(--muted)}
+  .d-lane{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;letter-spacing:.12em;fill:var(--accent)}
+  .d-arrow{stroke:var(--muted);stroke-width:1.4;fill:none}
+  .d-rule{stroke:var(--line);stroke-width:1}
+
+  .layers{display:grid;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .layer{background:var(--surface);padding:18px 20px;display:grid;grid-template-columns:132px 1fr;gap:20px;align-items:start}
+  .layer-n{
+    font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--accent);padding-top:3px;
+  }
+  .layer-b{display:flex;flex-direction:column;gap:6px}
+
+  table{border-collapse:collapse;width:100%;font-size:14.5px;font-family:"IBM Plex Sans",system-ui,sans-serif}
+  th{
+    text-align:left;font-weight:600;font-size:11px;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--muted);padding:0 12px 8px 0;border-bottom:1px solid var(--line);
+  }
+  td{padding:11px 12px 11px 0;border-bottom:1px solid var(--line);vertical-align:top}
+  td:last-child,th:last-child{padding-right:0}
+  .num{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+  .pill{
+    display:inline-block;font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:3px;white-space:nowrap;
+  }
+  .p-live{background:var(--accent-soft);color:var(--accent)}
+  .p-pend{background:var(--warn-soft);color:var(--warn)}
+  .p-bug{background:var(--crit-soft);color:var(--crit)}
+
+  .finding{
+    border-left:2px solid var(--crit);background:var(--surface);
+    padding:16px 18px;display:flex;flex-direction:column;gap:8px;border-radius:0 4px 4px 0;
+  }
+  .finding.ok{border-left-color:var(--accent)}
+  .finding h3{font-size:16px}
+  blockquote{
+    margin:0;padding-left:14px;border-left:2px solid var(--line);
+    font-style:italic;color:var(--muted);font-size:14.5px;
+  }
+
+  .ids{display:flex;flex-direction:column;gap:0;font-size:13.5px}
+  .id-row{
+    display:grid;grid-template-columns:190px 1fr;gap:16px;
+    padding:9px 0;border-bottom:1px solid var(--line);
+  }
+  .id-row:last-child{border-bottom:none}
+  .id-k{color:var(--muted);font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:13px}
+  .id-v{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12px;word-break:break-all}
+
+  ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;max-width:66ch}
+  li::marker{color:var(--muted)}
+
+  @media (max-width:620px){
+    body{padding:36px 18px 72px}
+    h1{font-size:27px}
+    .layer{grid-template-columns:1fr;gap:8px}
+    .id-row{grid-template-columns:1fr;gap:2px}
+  }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">robin-experiment · built 2026-09-03</div>
+    <h1>Robin Survey Instrument</h1>
+    <p class="standfirst">A two-question viability survey bolted onto a live ElevenLabs voice agent, designed to come back off cleanly. No new webhook, no workflow graph — three layers, two of which were already standing.</p>
+  </header>
+
+  <section>
+    <h2>The shape of it</h2>
+    <p>The survey is not a feature. It is a temporary measuring instrument for one question: would callers rather handle this with Robin, or hold for a person even if it takes longer. It runs on two cohorts, then comes off. That constraint drove every build decision below — most importantly, nothing was added that would be hard to remove.</p>
+    <div class="diagram">
+      <svg viewBox="0 0 860 400" role="img" aria-label="Two flows: the runtime path from agent config through post-call analysis into Supabase, and the test path from a simulation definition through a simulated caller and judge.">
+        <text x="0" y="14" class="d-lane">RUNTIME PATH — WHAT HAPPENS ON A REAL CALL</text>
+
+        <rect x="0" y="30" width="168" height="96" rx="4" class="d-box-accent"/>
+        <text x="14" y="52" class="d-t">Robin (agent config)</text>
+        <text x="14" y="70" class="d-s">system prompt</text>
+        <text x="14" y="85" class="d-s">+ survey block ← new</text>
+        <text x="14" y="103" class="d-s">webhook tools</text>
+        <text x="14" y="118" class="d-s">knowledge base (RAG)</text>
+
+        <path d="M168 78 L212 78" class="d-arrow" marker-end="url(#ar)"/>
+
+        <rect x="212" y="42" width="140" height="72" rx="4" class="d-box"/>
+        <text x="226" y="66" class="d-t">The call</text>
+        <text x="226" y="84" class="d-s">claude-haiku-4-5</text>
+        <text x="226" y="99" class="d-s">caller hangs up</text>
+
+        <path d="M352 78 L396 78" class="d-arrow" marker-end="url(#ar)"/>
+
+        <rect x="396" y="30" width="160" height="96" rx="4" class="d-box-accent"/>
+        <text x="410" y="52" class="d-t">Post-call analysis</text>
+        <text x="410" y="70" class="d-s">gemini-2.5-flash</text>
+        <text x="410" y="85" class="d-s">reads the transcript</text>
+        <text x="410" y="103" class="d-s">fills 16 fields</text>
+        <text x="410" y="118" class="d-s">5 are the survey</text>
+
+        <path d="M556 78 L600 78" class="d-arrow" marker-end="url(#ar)"/>
+
+        <rect x="600" y="42" width="150" height="72" rx="4" class="d-box"/>
+        <text x="614" y="66" class="d-t">Broker</text>
+        <text x="614" y="84" class="d-s">/api/postcall</text>
+        <text x="614" y="99" class="d-s">Vercel · existing</text>
+
+        <path d="M675 114 L675 150" class="d-arrow" marker-end="url(#ar)"/>
+
+        <rect x="600" y="150" width="150" height="60" rx="4" class="d-box-warn"/>
+        <text x="614" y="172" class="d-t">Supabase</text>
+        <text x="614" y="190" class="d-s">call_surveys</text>
+        <text x="614" y="203" class="d-s">parser unmerged</text>
+
+        <text x="0" y="172" class="d-s">Only the survey block and the</text>
+        <text x="0" y="187" class="d-s">5 fields are new. The webhook</text>
+        <text x="0" y="202" class="d-s">and broker already existed.</text>
+
+        <line x1="0" y1="240" x2="860" y2="240" class="d-rule"/>
+        <text x="0" y="266" class="d-lane">TEST PATH — NO PHONE INVOLVED</text>
+
+        <rect x="0" y="282" width="168" height="72" rx="4" class="d-box"/>
+        <text x="14" y="306" class="d-t">Simulation test</text>
+        <text x="14" y="324" class="d-s">persona + scenario</text>
+        <text x="14" y="339" class="d-s">5 success conditions</text>
+
+        <path d="M168 318 L212 318" class="d-arrow" marker-end="url(#ar)"/>
+
+        <rect x="212" y="282" width="160" height="72" rx="4" class="d-box"/>
+        <text x="226" y="306" class="d-t">Simulated caller</text>
+        <text x="226" y="324" class="d-s">claude-sonnet-4-6</text>
+        <text x="226" y="339" class="d-s">up to 30 turns</text>
+
+        <path d="M372 306 L416 306" class="d-arrow" marker-end="url(#ar)"/>
+        <path d="M416 336 L372 336" class="d-arrow" marker-end="url(#ar)"/>
+
+        <rect x="416" y="282" width="160" height="72" rx="4" class="d-box-accent"/>
+        <text x="430" y="306" class="d-t">Robin clone</text>
+        <text x="430" y="324" class="d-s">real webhook tools</text>
+        <text x="430" y="339" class="d-s">no phone number</text>
+
+        <path d="M576 318 L620 318" class="d-arrow" marker-end="url(#ar)"/>
+
+        <rect x="620" y="282" width="150" height="72" rx="4" class="d-box"/>
+        <text x="634" y="306" class="d-t">Judge</text>
+        <text x="634" y="324" class="d-s">claude-sonnet-4-6</text>
+        <text x="634" y="339" class="d-s">× 20 repeats</text>
+
+        <defs>
+          <marker id="ar" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0 1 L7 4 L0 7 z" fill="currentColor" style="color:var(--muted)"/>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+  </section>
+
+  <section>
+    <h2>Three layers</h2>
+    <div class="layers">
+      <div class="layer">
+        <div class="layer-n">Asking</div>
+        <div class="layer-b">
+          <h3>A paragraph in the system prompt</h3>
+          <p class="note">Not a tool, not a workflow node. Robin decides when to ask from written rules, the same way she decides when to transfer. A mid-call webhook tool would pay a round trip to capture something the transcript already holds, and add a fresh way for the conversation to break mid-survey. A workflow node would mean building a graph you then have to dismantle — and dismantling is exactly what makes a temporary instrument dangerous. A paragraph is removed by deleting a paragraph.</p>
+        </div>
+      </div>
+      <div class="layer">
+        <div class="layer-n">Capturing</div>
+        <div class="layer-b">
+          <h3>Data Collection fields</h3>
+          <p class="note">After hangup, the analysis model reads the transcript and fills typed fields. Writing them through the connector also mints the matching <code>analysis_items</code> entries the dashboard reads, so no hand-entry in the Analysis tab. The write is a full replace, not a merge: the field list you send is the field list you get.</p>
+        </div>
+      </div>
+      <div class="layer">
+        <div class="layer-n">Storing</div>
+        <div class="layer-b">
+          <h3>The post-call webhook that already existed</h3>
+          <p class="note">Nothing new to wire. The agent already posts transcript plus analysis to <code>/api/postcall</code> on the Vercel broker. The only new code is the survey parser inside that endpoint, which <code>claude/robin-survey</code> already wrote and which has not shipped.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>What the survey asks</h2>
+    <p>Two questions on a normal call. The same two before a transfer, which is the deliberate carve-out — a caller about to be handed to a human is the most informative person you can ask the preference question.</p>
+    <ul>
+      <li><strong>Satisfaction.</strong> <em>"Quick one to five, how was that for you?"</em> → <code>satisfaction</code></li>
+      <li><strong>Preference.</strong> <em>"And if you had a question like this again, would you rather do it this way with me, or hold for a person, even if it took longer?"</em> → <code>prefer_agent</code></li>
+    </ul>
+    <p class="note">Plus three bookkeeping fields: <code>survey_offered</code>, <code>survey_consent</code>, and <code>offer_context</code> — which records <code>in_call</code> versus <code>pre_transfer</code> so the two moments stay separable in the results. Five fields dropped: <code>understood</code>, <code>csat</code>, <code>improve_verbatim</code>, <code>callback_consent</code>, <code>callback_window</code>.</p>
+  </section>
+
+  <section>
+    <h2>What the tests found</h2>
+    <p>Sixty simulated calls against the clone, twenty per scenario, judged against written success conditions. Repeats matter because "does she offer the survey" is probabilistic, not deterministic — one run gives you an anecdote, twenty give you a rate.</p>
+    <table>
+      <thead>
+        <tr><th>Scenario</th><th>Passed</th><th>Real failures</th><th>Reading</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Fires before a transfer</td>
+          <td class="num">17 / 20</td>
+          <td class="num">3</td>
+          <td>Carve-out works, with a race — see below</td>
+        </tr>
+        <tr>
+          <td>Suppressed on failed verification</td>
+          <td class="num">16 / 20</td>
+          <td class="num">2</td>
+          <td>Leaks about one call in ten</td>
+        </tr>
+        <tr>
+          <td>Fires on a resolved call</td>
+          <td class="num">3 / 20</td>
+          <td class="num">0</td>
+          <td>All 17 failures were harness, not Robin</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="note">That last row needs the caveat spelled out or it reads as a disaster: twelve runs timed out waiting for Robin's next turn and five had the simulated caller hang up early. Every criterion that could be evaluated passed, with the judge quoting her verbatim. The twelve timeouts are themselves a finding — see the stale tools below.</p>
+  </section>
+
+  <section>
+    <h2>Two defects the tests surfaced</h2>
+
+    <div class="finding">
+      <h3>The carve-out overrides the suppression <span class="pill p-bug">2 in 19</span></h3>
+      <p class="note">On a caller who failed verification twice, Robin ran the whole survey on the way into the transfer. The prompt says "before a transfer, ask the same two first" in one place and "do not ask when verification failed" in another, and the model picks the wrong one about one time in ten.</p>
+      <blockquote>"I'm getting you to a specialist now — two quick things first, takes fifteen seconds?" … "on a scale of one to five, how was that for you?"</blockquote>
+      <p class="note">A rating from someone who never got service is unattributable and drags the denominator around. Fix is to make the suppression explicitly beat the carve-out rather than sitting in a separate list.</p>
+    </div>
+
+    <div class="finding">
+      <h3>She offers, then transfers before collecting <span class="pill p-bug">3 in 20</span></h3>
+      <p class="note">Distinct from the first. Robin proposes the two questions, then fires <code>transfer_to_number</code> before asking them or before waiting for the answers. The judge: <em>"The agent only asked one question and the user did not answer it before the transfer was initiated."</em> The transfer instinct wins mid-sequence. The offer is spent and nothing is captured.</p>
+    </div>
+
+    <div class="finding ok">
+      <h3>Confirmed live: the stale broker host</h3>
+      <p class="note">Across the sixty runs the agent called <code>lumio-retirement.vercel.app</code> 26 times — <code>document_resolution</code> 18, <code>get_plan_details</code> 7, <code>send_reset_email</code> once. <code>get_plan_details</code> is the one that matters: it returns <code>{"found": false}</code> with no error, and it is the prime suspect for the twelve 60-second turn timeouts on the resolved-call path. This is not a survey bug; it is the measurement environment being broken underneath the thing being measured.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Status</h2>
+    <table>
+      <thead><tr><th>Piece</th><th>Where</th><th>State</th></tr></thead>
+      <tbody>
+        <tr><td>Survey prompt block</td><td>Clone agent</td><td><span class="pill p-live">Live</span></td></tr>
+        <tr><td>16 Data Collection fields</td><td>Clone agent</td><td><span class="pill p-live">Live</span></td></tr>
+        <tr><td>Three simulation tests</td><td>Workspace</td><td><span class="pill p-live">Live</span></td></tr>
+        <tr><td><code>call_surveys</code> table</td><td>Supabase</td><td><span class="pill p-live">Applied</span></td></tr>
+        <tr><td>Survey parser, <code>GET /api/surveys</code></td><td><code>claude/robin-survey</code></td><td><span class="pill p-pend">Unmerged</span></td></tr>
+        <tr><td>Cohort tagging</td><td>Supabase + broker</td><td><span class="pill p-pend">Not built</span></td></tr>
+        <tr><td>Anything on the live agent</td><td>Production</td><td><span class="pill p-pend">Untouched</span></td></tr>
+      </tbody>
+    </table>
+    <p class="note"><strong>One integration risk worth naming.</strong> The branch's parser expects the old field names. Renaming <code>understood</code> to <code>satisfaction</code> means <code>broker/lib/survey.js</code> needs a matching change or the parser silently writes nulls. Small, but it fails quietly, which is the worst way for it to fail.</p>
+  </section>
+
+  <section>
+    <h2>How it comes off</h2>
+    <p>Every agent update mints a new version, which is the removal plan: record the version before the survey goes on and the version after, revert when the customer wave closes. Branches exist too, but the live phone number is pinned to a branch and that interaction is unverified, so version rollback — which has been watched working — is the safer lever.</p>
+    <div class="ids">
+      <div class="id-row"><div class="id-k">Live Robin (untouched)</div><div class="id-v">agent_8301kwj5qa8ve1atremxxwjjp9f8</div></div>
+      <div class="id-row"><div class="id-k">Survey-test clone</div><div class="id-v">agent_7401m1f4033qene9ybgt78d3saw4</div></div>
+      <div class="id-row"><div class="id-k">Clone version, current</div><div class="id-v">agtvrsn_1801m1mbjcceepkvseefk08fk8az</div></div>
+      <div class="id-row"><div class="id-k">Post-call webhook</div><div class="id-v">4deed01a5a2d420f8781ecdb1d7fa804</div></div>
+      <div class="id-row"><div class="id-k">Test suite, 60 runs</div><div class="id-v">suite_0101m1mbqhckeshaxxhvqsfjef0x</div></div>
+      <div class="id-row"><div class="id-k">Production prompt capture</div><div class="id-v">robin-system-prompt.LIVE-2026-09-01.txt</div></div>
+    </div>
+    <p class="note">The clone inherits production's post-call webhook, so its test calls write into the real <code>ai_call_events</code>. Cohort tagging via a <code>members.cohort</code> column, joined on <code>subject_ref</code>, is what keeps pilot, employee and customer waves separable — and keeps clone traffic out of the wave data.</p>
+  </section>
+
+</div>

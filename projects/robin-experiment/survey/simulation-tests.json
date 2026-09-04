@@ -1,0 +1,50 @@
+{
+  "_comment": "Three ElevenLabs simulation tests. Created via agents_create_test, run via agents_run_tests with repeat_count. Repeats matter: whether the agent asks is probabilistic, so one run is an anecdote and twenty is a rate. Run against the clone, never the live agent.",
+  "_run_note": "agents_run_tests times out at the MCP layer after 60s but the suite starts server-side — poll agents_list_test_runs for the suite id.",
+  "tests": [
+    {
+      "test_id": "test_7101m1mbq990fk4sghnzzh86pp97",
+      "name": "Survey — fires on a resolved call (v2)",
+      "type": "simulation",
+      "simulation_max_turns": 30,
+      "expects": "survey asked in_call before goodbye",
+      "simulation_scenario": "You are Priya, a participant in the Vertex Manufacturing 401(k) plan calling NestEgg U support. Your Member ID is 90003 and your date of birth is June 8, 1974. You want to know whether the plan lets you take a loan against your 401(k). IMPORTANT: stay on the line for the whole call. Do not hang up, do not end the conversation, and do not stop replying until the agent has actually said goodbye to you. Always give some reply, even if it is just 'okay' or 'thanks'. Give your name when asked. Give your Member ID and date of birth when asked. Confirm the plan name when the agent reads it back. When the agent answers your loan question, say that's all you needed and you don't need anything else. If the agent asks whether you have twenty seconds for a couple of questions, say yes. If asked to rate the call one to five, say 'four'. If asked whether you'd rather do this with the agent or hold for a person next time, say 'honestly, with you, I don't have time to sit on hold.' After that, wait for the agent to close, then say goodbye back. Never volunteer a rating or a preference unless you are asked. Speak naturally and briefly, like a real person on the phone.",
+      "success_conditions": [
+        "Before the call ended, the agent asked the caller whether they had time for a couple of quick questions.",
+        "The agent asked the caller to rate the call on a scale of one to five.",
+        "The agent asked whether the caller would rather handle a question like this with the agent or hold for a person, and the phrasing included the idea that holding for a person would take longer.",
+        "The agent asked the two survey questions one at a time, waiting for an answer to the first before asking the second.",
+        "At no point did the agent read the survey questions back, repeat the caller's answers back to them, summarise their answers, or tell the caller what had been recorded."
+      ]
+    },
+    {
+      "test_id": "test_5801m1mbkb7kfmyv1pfx0c82db1h",
+      "name": "Survey — fires before a transfer",
+      "type": "simulation",
+      "simulation_max_turns": 30,
+      "expects": "survey asked pre_transfer, BOTH answers collected before transfer_to_number",
+      "simulation_scenario": "You are Priya, a participant in the Vertex Manufacturing 401(k) plan calling NestEgg U support. Your Member ID is 90003 and your date of birth is June 8, 1974. Give your name when asked, give your Member ID and date of birth when asked, and confirm the plan name when the agent reads it back. Once you are verified, say you want to change how much you're contributing each paycheck and you'd like to talk to an actual person about it. If the agent offers to connect you to a specialist, say yes please. If the agent asks whether you have fifteen or twenty seconds for a couple of quick questions before connecting you, say sure. If asked to rate the call one to five, say 'three, I guess'. If asked whether you'd rather handle something like this with the agent or hold for a person next time, say 'for this one I'd want a person.' Do not volunteer a rating or a preference unless asked. You are not angry or in a hurry. Speak naturally and briefly.",
+      "success_conditions": [
+        "The agent asked the caller for a couple of quick questions BEFORE connecting them to a specialist, not after.",
+        "The agent asked the caller to rate the call on a scale of one to five.",
+        "The agent asked whether the caller would rather handle a question like this with the agent or hold for a person, including the idea that holding would take longer.",
+        "After the caller answered both questions, the agent proceeded with connecting them to a specialist rather than abandoning the transfer.",
+        "The agent did not apologise at length, defend itself, promise to pass the feedback along, or ask the caller to explain their rating."
+      ]
+    },
+    {
+      "test_id": "test_5101m1mbkfwefjpaj7najsbya6bf",
+      "name": "Survey — suppressed on failed verification",
+      "type": "simulation",
+      "simulation_max_turns": 24,
+      "expects": "no survey at all; the eligibility gate must beat the pre-transfer carve-out",
+      "simulation_scenario": "You are calling NestEgg U support about your 401(k) balance. Give your name as Dana when asked. When asked for your Member ID and date of birth, give Member ID 77777 and date of birth March 3, 1980. These details are wrong and will not verify, but you believe they are correct, so if asked again repeat the same details rather than correcting them. Stay polite and a little puzzled throughout. If the agent offers to connect you to a specialist who can verify you another way, say okay. Answer any question the agent asks you, including questions about rating the call, but never bring up a rating or a preference on your own.",
+      "success_conditions": [
+        "The agent never asked the caller to rate the call on a scale of one to five.",
+        "The agent never asked whether the caller would rather use the agent or hold for a person.",
+        "The agent never asked whether the caller had twenty seconds or fifteen seconds for a couple of quick questions.",
+        "After verification failed, the agent moved to connect the caller to a specialist."
+      ]
+    }
+  ]
+}

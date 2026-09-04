@@ -2,13 +2,71 @@
 
 **Slug:** robin-experiment
 **Started:** 2026-07-23
-**Status:** active — see Session 4 for the current handoff
+**Status:** active — see Session 5 for the current handoff
 
 ---
 
 ## Session log
 
 <!-- Add new sessions at the top, newest first -->
+
+---
+
+### 2026-09-04 — Session 5 (the survey, built and measured)
+
+**What we did**
+
+- Built the **viability survey** on a clone (`agent_7401m1f4033qene9ybgt78d3saw4`), never on
+  live Robin. Everything is in [`survey/`](./survey/) — block, fields, tests, criterion,
+  architecture, and the paste-ready assembled prompt.
+- Cut it from four questions to **two**: a 1-5 satisfaction rating and the preference question
+  with Tanner's "even if it took longer" clause, which is load-bearing.
+- Wrote **three simulation tests** and ran them at `repeat_count` 20. Sixty simulated calls,
+  no phone involved.
+- Added a **per-call evaluation criterion** (`survey_asked_when_eligible`) so adherence is
+  measured on every real call rather than assumed.
+
+**What broke / surprised us**
+
+- **The tests found two defects that reading the prompt would not have.** The pre-transfer
+  carve-out overrode the verification-failed gate about 1 call in 10 — Robin ran the whole
+  survey on someone she had just failed to identify. Separately, 3 in 20 she *offered* the
+  questions and then fired `transfer_to_number` before collecting the answers, spending the
+  ask and recording nothing. Both fixed in v3 by hoisting the gate above both ask paths and
+  forbidding the transfer call until both answers are in.
+- **Reading pass counts without reading failure causes is a trap.** The resolved-call scenario
+  read 3/20, which looks like disaster. All 17 failures were harness: 12 simulation timeouts,
+  5 simulated callers hanging up. Every criterion that could be evaluated passed, with the
+  judge quoting Robin verbatim.
+- **The stale Lumio host is live and quantified.** Across 60 runs the agent hit
+  `lumio-retirement.vercel.app` 26 times (`document_resolution` 18, `get_plan_details` 7,
+  `send_reset_email` 1). `get_plan_details` returns `{"found":false}` with no error and is the
+  prime suspect for those 12 turn timeouts.
+- **The branch is not the gate we thought.** ElevenLabs stores Data Collection results on the
+  conversation itself — verified by reading two real calls. Fields + prompt is enough to
+  *capture* data. `claude/robin-survey` gates the dashboard, not the collection.
+
+**Decisions made**
+
+- The survey is a **temporary instrument**, the grader is the permanent system. They write
+  different tables and don't interact — confirmed by reading `grader/lib/judge.js`, which only
+  scores questions the *caller* asks, so survey turns never enter the eval set.
+- **Ask on transfers too.** A transfer is often a win (5 of 10 transfer-ending calls in the
+  history carried positive sentiment), and the moment before a handoff is the most informative
+  place to ask the preference question.
+- **Don't suppress on frustration.** That rule deleted exactly the responses worth having.
+- Field writes through the connector are a **full replace, not a merge**.
+
+**Next session:**
+> Read the re-run of the 60-call suite and confirm both defects are gone. Then, in order:
+> (1) fix the live-agent defects — `get_plan_details`, the Account Recovery procedure's SSN
+> instruction, and the prompt fork; (2) rename `understood` → `satisfaction` in
+> `broker/lib/survey.js` or the parser writes nulls; (3) add the `members.cohort` column and
+> the `postcall` join so waves stay separable.
+>
+> Tanner's calls, still open: settle the prompt fork, sign off the two questions, merge
+> `claude/robin-survey`, set the verdict thresholds, decide whether any non-employees can be
+> recruited, and place one real widget call before the wave.
 
 ---
 
