@@ -1,5 +1,5 @@
 {
-  "_comment": "Three ElevenLabs simulation tests. Created via agents_create_test, run via agents_run_tests with repeat_count. Repeats matter: whether the agent asks is probabilistic, so one run is an anecdote and twenty is a rate. Run against the clone, never the live agent.",
+  "_comment": "Three ElevenLabs simulation tests. Created via agents_create_test, run via agents_run_tests with repeat_count. Repeats matter: whether the agent asks is probabilistic, so one run is an anecdote and twenty is a rate. Run against the clone, never the live agent. Note the shape: two of the three assert SUPPRESSION. A survey that fires where it shouldn't is the failure mode that costs you a caller, so it gets two thirds of the coverage.",
   "_run_note": "agents_run_tests times out at the MCP layer after 60s but the suite starts server-side — poll agents_list_test_runs for the suite id.",
   "tests": [
     {
@@ -18,21 +18,6 @@
       ]
     },
     {
-      "test_id": "test_5801m1mbkb7kfmyv1pfx0c82db1h",
-      "name": "Survey — fires before a transfer",
-      "type": "simulation",
-      "simulation_max_turns": 30,
-      "expects": "survey asked pre_transfer, BOTH answers collected before transfer_to_number",
-      "simulation_scenario": "You are Priya, a participant in the Vertex Manufacturing 401(k) plan calling NestEgg U support. Your Member ID is 90003 and your date of birth is June 8, 1974. Give your name when asked, give your Member ID and date of birth when asked, and confirm the plan name when the agent reads it back. Once you are verified, say you want to change how much you're contributing each paycheck and you'd like to talk to an actual person about it. If the agent offers to connect you to a specialist, say yes please. If the agent asks whether you have fifteen or twenty seconds for a couple of quick questions before connecting you, say sure. If asked to rate the call one to five, say 'three, I guess'. If asked whether you'd rather handle something like this with the agent or hold for a person next time, say 'for this one I'd want a person.' Do not volunteer a rating or a preference unless asked. You are not angry or in a hurry. Speak naturally and briefly.",
-      "success_conditions": [
-        "The agent asked the caller for a couple of quick questions BEFORE connecting them to a specialist, not after.",
-        "The agent asked the caller to rate the call on a scale of one to five.",
-        "The agent asked whether the caller would rather handle a question like this with the agent or hold for a person, including the idea that holding would take longer.",
-        "After the caller answered both questions, the agent proceeded with connecting them to a specialist rather than abandoning the transfer.",
-        "The agent did not apologise at length, defend itself, promise to pass the feedback along, or ask the caller to explain their rating."
-      ]
-    },
-    {
       "test_id": "test_5101m1mbkfwefjpaj7najsbya6bf",
       "name": "Survey — suppressed on failed verification",
       "type": "simulation",
@@ -45,6 +30,21 @@
         "The agent never asked whether the caller had twenty seconds or fifteen seconds for a couple of quick questions.",
         "After verification failed, the agent moved to connect the caller to a specialist."
       ]
+    },
+    {
+      "test_id": "test_4801m1pyyrndf6vaxa2f4pzbxah9",
+      "name": "Survey — suppressed on a transfer",
+      "type": "simulation",
+      "_why": "Replaces 'Survey — fires before a transfer'. v6 removed the pre-transfer ask entirely, so this test is its inverse: positive proof the survey stays silent when the caller is being handed to a person.",
+      "simulation_max_turns": 30,
+      "simulation_scenario": "You are Priya, a participant in the Vertex Manufacturing 401(k) plan calling NestEgg U support. Your Member ID is 90003 and your date of birth is June 8, 1974. Give your name when asked, and give your Member ID and date of birth if the agent asks for them. Say you want to change how much you're contributing each paycheck and that you'd like to talk to an actual person about it. If the agent offers to connect you to a specialist, say yes please. If the agent asks you anything else at all — a rating, a preference, a couple of quick questions — answer it briefly and naturally. You are not angry and not in a hurry. Stay on the line and do not hang up. Speak naturally and briefly.",
+      "success_conditions": [
+        "The agent did NOT ask the caller to rate the call on a scale of one to five, at any point in the conversation.",
+        "The agent did NOT ask whether the caller would rather handle a question like this with the agent or hold for a person.",
+        "The agent did NOT offer the caller 'two quick questions', 'twenty seconds', 'fifteen seconds', or any similar survey preamble.",
+        "The agent connected the caller to a specialist, or offered to and was moving to do so, without any survey questions delaying the handover."
+      ]
     }
-  ]
+  ],
+  "_deleted": "test_5801m1mbkb7kfmyv1pfx0c82db1h 'Survey — fires before a transfer' was retired at v6. The pre-transfer ask only completed 9 times in 20 and its failure mode was hostile — offering two questions and then transferring mid-answer. Question two is hypothetical ('if you had a question like this again'), so it does not need to be asked at the transfer moment to be valid."
 }

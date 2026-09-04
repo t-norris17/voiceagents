@@ -17,6 +17,9 @@ The "even if it took longer" clause is load-bearing. Without it people compare R
 an idealised human who answers instantly. **Do not reword between waves** — the two
 cohorts must get an identical instrument or the comparison is dead.
 
+**Asked only at the end of a normal call.** A call ending in a transfer gets nothing — see
+"Why there is no pre-transfer survey" below.
+
 ## What it's made of
 
 Three layers. Only the first two are new, and both are configuration, not code.
@@ -61,7 +64,10 @@ know about is a usable instrument; a 100% assumption is not.
 `simulation-tests.json` holds three scenarios, run against the **clone** via
 `agents_run_tests` with `repeat_count`. Never run these against the live agent.
 
-Two harness gotchas, both cost time to learn:
+Three harness gotchas, all of which cost time to learn:
+- `agents_update` **silently drops the `prompt` parameter when `body` is also passed.** The
+  criterion updated and the prompt did not, with no error. Push prompt and body changes as
+  separate calls, and read the returned config back to confirm.
 - `agents_run_tests` times out at the MCP layer after 60s, but the suite **starts
   server-side**. Poll `agents_list_test_runs` rather than re-running.
 - Simulated callers hang up early and simulations time out. Read failure *causes*, not
@@ -71,23 +77,38 @@ Two harness gotchas, both cost time to learn:
 
 Every defect below was found by the simulation suite, not by reading the prompt.
 
-**Inherited defects, fixed in v3:**
-- **The carve-out overrode the gate.** On a caller who failed verification, Robin ran the
-  full survey on the way into the transfer, ~1 call in 10. Fixed by moving the eligibility
-  gate above both ask paths and stating that it beats the transfer rule. Suppression went
-  16/20 → 20/20 and has held there since.
-- **She offered, then transferred before collecting**, 3 in 20. Fixed by forbidding
-  `transfer_to_number` until both answers are in.
+**Inherited defects, fixed in v3:** the pre-transfer carve-out overrode the eligibility gate,
+so Robin ran the full survey on a caller she had just failed to identify (~1 in 10); and she
+offered the survey then fired `transfer_to_number` before collecting answers (3 in 20).
 
 **A defect I introduced, fixed in v5:** the v3/v4 gate required the caller to have been
-*verified*. On the most important scenario — someone who asks for a person straight away —
-verification never runs at all, so the gate suppressed the survey entirely. Transfer
-adherence collapsed to 4–5/20. The fix inverts the test: only a **failed** verification
-disqualifies; never-verified is eligible.
+*verified*. On a transfer-on-request call verification never runs, so the gate suppressed the
+survey entirely and transfer adherence collapsed to 4/20. Only a **failed** verification
+should disqualify.
 
 The lesson worth keeping: the prompt gate and `evaluation-criterion.json` encode the same
 eligibility rule in two places, and they silently disagreed for two versions. **Change them
 in the same commit, every time.**
+
+## Why there is no pre-transfer survey
+
+Removed at v6, after four rounds of trying to make it work. Best result was 9/20: seven times
+Robin never raised it, and four times she raised it and fired `transfer_to_number` before the
+caller could answer. That second mode is worse than never asking — you interrupt someone to
+ask a question and then cut them off mid-answer, on the call where they already wanted a human.
+
+The reasoning that killed it: **question two is hypothetical.** "If you had a question like
+this again, would you rather do it this way with me, or hold for a person?" You do not need to
+catch someone mid-transfer to ask that. The earlier design note calling the transfer moment
+"the single most useful moment for question two" was intuition; the measured cost of acting on
+it was a 45%-reliable instrument and a hostile failure mode.
+
+Dropping it also collapses the gate into one list with no ordering hazard, which is where both
+of the bugs above came from.
+
+Two of the three simulation tests now assert **suppression** rather than firing. A survey that
+fires where it shouldn't is the failure that costs you a caller; that asymmetry should show up
+in the test coverage.
 
 ## Clone hygiene (not part of the survey)
 
@@ -111,7 +132,7 @@ version rollback has been observed working.
 |---|---|
 | Live Robin (untouched as of 2026-09-04) | `agent_8301kwj5qa8ve1atremxxwjjp9f8` |
 | Survey-test clone | `agent_7401m1f4033qene9ybgt78d3saw4` |
-| Clone version, survey v5 + criterion v2 | `agtvrsn_2901m1py7cyxeja9aw6hkjf5xhd3` |
+| Clone version, survey v6 + criterion v3 | `agtvrsn_6401m1pz2amnfmtths2yh81gth3g` |
 | Clone Plan Questions procedure (repointed) | `agtprcv_4101m1pvmymyeq78h47px1fqbge0` |
 | Production prompt capture | `../robin-system-prompt.LIVE-2026-09-01.txt` |
 
