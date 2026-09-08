@@ -16,6 +16,9 @@
 -- and the criterion drifted apart during testing; one source of truth, deliberately.
 --
 -- TEMPORARY: drop this view when the survey is removed after the customer wave.
+--
+-- SUPERSEDED by 008_survey_answers_recommend_comments.sql, which adds questions 3 and 4 and the
+-- PII scrub. This file is kept as the historical first version; 008 is the current definition.
 create or replace view survey_answers as
 with base as (
   select

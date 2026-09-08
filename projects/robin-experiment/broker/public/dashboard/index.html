@@ -153,6 +153,10 @@
   .svy-m.warn .n{ color:var(--accent); }
   .svy-alarm{ font-size:.78rem; color:var(--accent); font-weight:600; border:1px solid var(--accent);
     padding:11px 14px; margin-top:24px; line-height:1.5; }
+  .svy-cm{ margin-top:30px; padding-top:18px; border-top:1px solid var(--line); }
+  .svy-cmt{ font-size:.86rem; line-height:1.55; padding:9px 0; border-bottom:1px solid var(--hair); }
+  .svy-cmt:last-child{ border-bottom:0; }
+  .svy-cmt.redacted{ color:var(--faint); font-style:italic; font-size:.78rem; }
   .svy-vb{ margin-top:30px; border-top:1px solid var(--ink); }
   .svy-q{ display:grid; grid-template-columns:1fr auto; gap:3px 18px; padding:12px 0; border-bottom:1px solid var(--hair);
     align-items:baseline; }
@@ -338,7 +342,8 @@
       return;
     }
 
-    const a=s.adherence||{}, r=s.response||{}, p=s.preference||{}, sat=s.satisfaction||{};
+    const a=s.adherence||{}, r=s.response||{}, p=s.preference||{}, sat=s.satisfaction||{},
+          rec=s.recommend||{}, com=s.comments||{};
     document.getElementById("svymeta").textContent=
       `${s.calls} call${s.calls===1?"":"s"} since it went live`;
 
@@ -386,6 +391,10 @@
           <div class="cap">of people she asked gave an answer — ${r.answered} of ${r.offered}.
           ${r.declined?`${r.declined} said no thanks.`:""}</div>
         </div>`,
+      rec.answered ? `<div class="svy-m">
+          <div class="n tnum">${rec.yes_pct!=null?rec.yes_pct:"—"}${rec.yes_pct!=null?'<span class="un">%</span>':""}</div>
+          <div class="cap">would recommend it to someone else — ${rec.yes} yes, ${rec.no} no.${rec.unclear?` ${rec.unclear} unclear.`:""}</div>
+        </div>` : "",
       sat.n ? `<div class="svy-m">
           <div class="n tnum">${sat.mean}<span class="un">/5</span></div>
           <div class="cap">average rating across ${sat.n} answer${sat.n===1?"":"s"};
@@ -412,10 +421,21 @@
           </div>`).join("")}
       </div>` : "";
 
+    // Free-text answers. The count of dropped ones is shown so the redaction RATE stays visible
+    // even though the words never do — that number is the compliance answer if anyone asks.
+    const comments = (com.recent||[]).length || com.redacted ? `
+      <div class="svy-cm">
+        <div class="lbl" style="margin-bottom:6px">In their own words${com.redacted?` · <span class="accent">${com.redacted} withheld</span>`:""}</div>
+        ${(com.recent||[]).map(c=>`<div class="svy-cmt">“${esc(c.text)}”</div>`).join("")}
+        ${com.redacted?`<div class="svy-cmt redacted">${com.redacted} answer${com.redacted===1?" was":"s were"} dropped for containing something
+          personal — an account number, a Social Security Number or similar. The rate is kept, the words are not.</div>`:""}
+      </div>` : "";
+
     el.innerHTML=`<div class="svy">
-      <p class="svy-lede">Two questions at the end of a normal call, for the testing phase only. She stays quiet on
-        transfers and on anyone she couldn't verify.</p>
-      ${headFig}${bar}${metrics?`<div class="svy-grid">${metrics}</div>`:""}${alarm}${vb}
+      <p class="svy-lede">Four questions at the end of a normal call, for the testing phase only. She stays quiet on
+        transfers and on anyone she couldn't verify. Testers are briefed beforehand, so she states the
+        questions rather than asking permission.</p>
+      ${headFig}${bar}${metrics?`<div class="svy-grid">${metrics}</div>`:""}${alarm}${comments}${vb}
     </div>`;
   }
   // ---- end survey ---------------------------------------------------------------------------

@@ -111,6 +111,22 @@ function summariseSurvey(rows) {
       // dropped: a rising count means the mean is computed on a shrinking slice of what was said.
       unparsed: answered.filter((r) => r.satisfaction_raw && score(r.satisfaction_score) === null).length,
     },
+    // Q3, added at the boss's request. Close to question 2 by construction — a stated intention
+    // next to a revealed preference — so they are reported side by side rather than averaged into
+    // one "satisfaction" number that hides which is which.
+    recommend: (() => {
+      const t = (v) => rows.filter((r) => r.would_recommend === v).length;
+      const yes = t("yes"), no = t("no"), unclear = t("unclear"), answered = yes + no + unclear;
+      return { yes, no, unclear, answered, yes_pct: (yes + no) ? Math.round((yes / (yes + no)) * 100) : null };
+    })(),
+    // Q4, the only free-text field in the instrument. `redacted` counts answers that tripped the
+    // PII scan in the view and were dropped — the rate stays visible, the words never do.
+    comments: {
+      given: rows.filter((r) => r.open_comments || r.comments_redacted).length,
+      redacted: rows.filter((r) => r.comments_redacted).length,
+      recent: rows.filter((r) => r.open_comments).slice(0, 25)
+        .map((r) => ({ conversation_id: r.conversation_id, started_at: r.started_at, text: r.open_comments })),
+    },
     // Should always be 0. The prompt forbids surveying on a transfer, so anything here means the gate
     // leaked and the pre-transfer failure mode is back. Surfaced as an alarm, not a statistic.
     leaked_pre_transfer: rows.filter((r) => r.offer_context === "pre_transfer").length,
@@ -123,6 +139,7 @@ function summariseSurvey(rows) {
         satisfaction: r.satisfaction_raw,
         prefer_agent: r.prefer_agent_raw,
         preference: r.preference,
+        would_recommend: r.would_recommend,
       })),
   };
 }
@@ -147,7 +164,7 @@ export default async function handler(req, res) {
     let survey = null;
     try {
       survey = summariseSurvey(
-        await sb(`survey_answers?in_survey_era=is.true&select=conversation_id,started_at,survey_offered,survey_consent,offer_context,satisfaction_raw,satisfaction_score,prefer_agent_raw,preference,survey_verdict&order=started_at.desc.nullslast`)
+        await sb(`survey_answers?in_survey_era=is.true&select=conversation_id,started_at,survey_offered,survey_consent,offer_context,satisfaction_raw,satisfaction_score,prefer_agent_raw,preference,would_recommend_raw,would_recommend,open_comments,comments_redacted,survey_verdict&order=started_at.desc.nullslast`)
       );
     } catch (e) {
       console.error("survey block failed (dashboard continues without it):", String(e.message || e));
