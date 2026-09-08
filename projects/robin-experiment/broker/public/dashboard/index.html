@@ -42,6 +42,8 @@
   .v .note{ font-size:.8rem; color:var(--sub); margin-top:12px; line-height:1.45; }
   .v .note b{ color:var(--ink); font-weight:600; }
 
+  .xlink{ font-size:.7rem; color:var(--faint); }
+  .xlink a{ color:var(--sub); }
   hr.rule{ border:0; border-top:1px solid var(--line); margin:44px 0 0; }
 
   section{ margin-top:40px; }
@@ -126,48 +128,6 @@
   .gap-act button[disabled]{ opacity:.55; cursor:default; }
   .gap-status{ font-size:.66rem; text-transform:uppercase; letter-spacing:.1em; color:var(--sub); }
 
-  /* ---- SURVEY (temporary; delete this block with the instrument) ------------------------- */
-  .svy{ margin-top:10px; }
-  .svy-head{ display:flex; align-items:baseline; justify-content:space-between; gap:14px; }
-  .svy-tag{ font-size:.6rem; letter-spacing:.16em; text-transform:uppercase; color:var(--faint); font-weight:600;
-    border:1px solid var(--line); padding:2px 7px; white-space:nowrap; }
-  .svy-lede{ font-size:.82rem; color:var(--sub); margin:12px 0 0; max-width:56ch; line-height:1.5; }
-  .svy-head-fig{ display:flex; align-items:baseline; gap:14px; margin-top:22px; }
-  .svy-head-fig .fig{ font-size:clamp(3rem,9vw,4.4rem); font-weight:800; line-height:.85; letter-spacing:-.035em; }
-  .svy-head-fig .un{ font-size:.95rem; font-weight:600; color:var(--sub); }
-  .svy-head-fig .vs{ font-size:.82rem; color:var(--sub); line-height:1.45; }
-  .svy-head-fig .vs b{ color:var(--ink); }
-  .bar .b-agent{ background:var(--ink); }
-  .bar .b-none{ background:var(--line); }
-  .bar .b-person{ background:var(--accent); }
-  .key .k-agent i{ background:var(--ink); } .key .k-none i{ background:var(--line); } .key .k-person i{ background:var(--accent); }
-  .svy-moe{ font-size:.72rem; color:var(--faint); margin-top:10px; line-height:1.5; }
-  .svy-moe b{ color:var(--sub); font-weight:600; }
-  .svy-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:0; margin-top:30px;
-    border-top:1px solid var(--line); }
-  .svy-m{ padding:16px 20px 4px; border-left:1px solid var(--line); }
-  .svy-m:first-child{ padding-left:0; border-left:0; }
-  .svy-m .n{ font-size:1.7rem; font-weight:800; letter-spacing:-.02em; line-height:1; }
-  .svy-m .n .un{ font-size:.8rem; font-weight:600; color:var(--sub); margin-left:2px; letter-spacing:0; }
-  .svy-m .cap{ font-size:.72rem; color:var(--sub); margin-top:9px; line-height:1.45; }
-  .svy-m.warn .n{ color:var(--accent); }
-  .svy-alarm{ font-size:.78rem; color:var(--accent); font-weight:600; border:1px solid var(--accent);
-    padding:11px 14px; margin-top:24px; line-height:1.5; }
-  .svy-cm{ margin-top:30px; padding-top:18px; border-top:1px solid var(--line); }
-  .svy-cmt{ font-size:.86rem; line-height:1.55; padding:9px 0; border-bottom:1px solid var(--hair); }
-  .svy-cmt:last-child{ border-bottom:0; }
-  .svy-cmt.redacted{ color:var(--faint); font-style:italic; font-size:.78rem; }
-  .svy-vb{ margin-top:30px; border-top:1px solid var(--ink); }
-  .svy-q{ display:grid; grid-template-columns:1fr auto; gap:3px 18px; padding:12px 0; border-bottom:1px solid var(--hair);
-    align-items:baseline; }
-  .svy-q:last-child{ border-bottom:0; }
-  .svy-q .said{ font-size:.86rem; }
-  .svy-q .said .lead{ color:var(--faint); }
-  .svy-q .tagp{ font-size:.66rem; text-transform:uppercase; letter-spacing:.1em; color:var(--sub); white-space:nowrap; }
-  .svy-q .tagp.person{ color:var(--accent); font-weight:700; }
-  .svy-q .tagp.unclassified{ color:var(--accent); }
-  .svy-q .sc{ font-size:.78rem; color:var(--sub); font-variant-numeric:tabular-nums; white-space:nowrap; }
-  /* ---- end survey ------------------------------------------------------------------------ */
 
   .empty{ color:var(--faint); font-size:.85rem; font-style:italic; padding:16px 0; }
   .banner{ font-size:.72rem; letter-spacing:.04em; color:var(--sub); background:var(--hair); padding:9px 14px; border-radius:2px; margin-top:18px; }
@@ -202,16 +162,6 @@
   <div id="banner"></div>
 
   <hr class="rule">
-
-  <!-- SURVEY — temporary testing instrument. Delete this <section> with the CSS and JS blocks
-       marked "survey" when the customer wave closes. Nothing else depends on it. -->
-  <section id="svysec" hidden>
-    <div class="shead svy-head">
-      <div class="lbl">Would they rather use Robin? · <span id="svymeta"></span></div>
-      <span class="svy-tag">Test instrument</span>
-    </div>
-    <div id="svy"></div>
-  </section>
 
   <section>
     <div class="shead">
@@ -255,6 +205,7 @@
 
   <footer>
     <span>Robin · Vertex Manufacturing 401(k) · <span id="gen"></span></span>
+    <span class="xlink">Testing-phase survey results live on <a href="/survey/">their own page</a>.</span>
     <span>Every answer checked against the plan documents she actually read</span>
   </footer>
 </div>
@@ -309,7 +260,6 @@
     { const w=when(d.generated_at);
       const g1=document.getElementById("gen"); if(g1) g1.textContent="updated "+w;
       const g2=document.getElementById("gen2"); if(g2) g2.textContent=w; }
-    renderSurvey();   // temporary; remove with the instrument
     renderQuestions();
     renderUtilization();
     renderGaps();
@@ -326,119 +276,6 @@
 
   // Utilization: of everything callers asked Robin, how much did she actually answer?
   // The bar separates the fixable gap (write an article) from the part no content can fix.
-  // ---- SURVEY (temporary; delete with the instrument) --------------------------------------
-  // Ordered by what can mislead you fastest, not by what's most interesting:
-  //   1. adherence — if she isn't asking, every number under it comes from a biased slice
-  //   2. the preference split, with its margin of error attached, because at n=30 a 60/40 is noise
-  //   3. what people actually said, so the buckets above stay auditable
-  function renderSurvey(){
-    const sec=document.getElementById("svysec"), el=document.getElementById("svy"), s=DATA.survey;
-    if(!s){ sec.hidden=true; return; }          // survey removed, or the block failed server-side
-    sec.hidden=false;
-
-    if(s.awaiting_first_call || !s.calls){
-      document.getElementById("svymeta").textContent="";
-      el.innerHTML=`<div class="empty">Live. No calls recorded since the questions went on; this fills in with the first one.</div>`;
-      return;
-    }
-
-    const a=s.adherence||{}, r=s.response||{}, p=s.preference||{}, sat=s.satisfaction||{},
-          rec=s.recommend||{}, com=s.comments||{};
-    document.getElementById("svymeta").textContent=
-      `${s.calls} call${s.calls===1?"":"s"} since it went live`;
-
-    // Headline. Only claim a winner once the gap clears the margin; otherwise say it's too close.
-    const gap=Math.abs((p.agent_pct??0)-(p.person_pct??0));
-    const tooClose = p.decided>0 && gap<=(p.margin_pts??99);
-    const headFig = p.decided
-      ? `<div class="svy-head-fig">
-           <div><div class="fig tnum">${p.agent_pct}<span class="un">%</span></div></div>
-           <div class="vs">chose <b>Robin</b> over holding for a person.<br>
-             ${p.person_pct}% would rather wait for a person; ${Math.max(0,100-p.agent_pct-p.person_pct)}% had no preference.</div>
-         </div>`
-      : `<div class="empty">Nobody has answered the preference question yet.</div>`;
-
-    const pc=(n)=>p.decided?((n/p.decided)*100).toFixed(2)+"%":"0%";
-    const bar = p.decided ? `
-      <div class="bar" role="img" aria-label="${p.agent} chose Robin, ${p.no_preference} no preference, ${p.person} chose a person">
-        <span class="b-agent" style="width:${pc(p.agent)}"></span>
-        <span class="b-none" style="width:${pc(p.no_preference)}"></span>
-        <span class="b-person" style="width:${pc(p.person)}"></span>
-      </div>
-      <div class="key">
-        <span class="k-agent"><i></i>${p.agent} would use Robin again</span>
-        <span class="k-none"><i></i>${p.no_preference} no preference</span>
-        <span class="k-person"><i></i>${p.person} would rather have a person</span>
-      </div>
-      <div class="svy-moe">
-        Based on <b>${p.decided} answer${p.decided===1?"":"s"}</b>, so the true figure is roughly
-        <b>±${p.margin_pts} points</b>.
-        ${tooClose
-          ? `The gap here is ${gap} point${gap===1?"":"s"} — inside the margin, so this is <b>too close to call yet</b>.`
-          : `The gap is ${gap} points, wider than the margin.`}
-        Count one answer per person, not per call.
-      </div>` : "";
-
-    const adherenceWarn = a.pct!=null && a.pct<70;
-    const metrics=[
-      a.eligible ? `<div class="svy-m${adherenceWarn?" warn":""}">
-          <div class="n tnum">${a.pct}<span class="un">%</span></div>
-          <div class="cap">of eligible calls had the survey asked — ${a.asked_when_eligible} of ${a.eligible}.
-          ${adherenceWarn?"<b>Low. The figures above rest on a thin sample.</b>":""}</div>
-        </div>` : "",
-      `<div class="svy-m">
-          <div class="n tnum">${r.rate_pct??"—"}${r.rate_pct!=null?'<span class="un">%</span>':""}</div>
-          <div class="cap">of people asked gave an answer — ${r.answered} of ${r.offered}.
-          ${r.declined?`${r.declined} declined.`:""}</div>
-        </div>`,
-      rec.answered ? `<div class="svy-m">
-          <div class="n tnum">${rec.yes_pct!=null?rec.yes_pct:"—"}${rec.yes_pct!=null?'<span class="un">%</span>':""}</div>
-          <div class="cap">would recommend it to someone else — ${rec.yes} yes, ${rec.no} no.${rec.unclear?` ${rec.unclear} unclear.`:""}</div>
-        </div>` : "",
-      sat.n ? `<div class="svy-m">
-          <div class="n tnum">${sat.mean}<span class="un">/5</span></div>
-          <div class="cap">average rating across ${sat.n} answer${sat.n===1?"":"s"};
-          ${sat.four_or_five} gave a 4 or 5.${sat.unparsed?` ${sat.unparsed} answered in words we couldn't score.`:""}</div>
-        </div>` : "",
-      a.ineligible ? `<div class="svy-m">
-          <div class="n tnum">${a.ineligible}</div>
-          <div class="cap">calls correctly excluded — transferred, or verification failed.</div>
-        </div>` : "",
-    ].filter(Boolean).join("");
-
-    // Should always be zero. Anything here means the prompt gate leaked on a transfer.
-    const alarm = s.leaked_pre_transfer
-      ? `<div class="svy-alarm">${s.leaked_pre_transfer} call${s.leaked_pre_transfer===1?"":"s"} were surveyed on the way into a transfer.
-         She's told never to do that — the gate has leaked. Worth listening to those calls.</div>` : "";
-
-    const vb = (s.verbatims||[]).length ? `
-      <div class="svy-vb">
-        ${s.verbatims.map(v=>`
-          <div class="svy-q">
-            <div class="said">${v.prefer_agent?`<span class="lead">“</span>${esc(v.prefer_agent)}<span class="lead">”</span>`:`<span class="lead">— no answer to the second question —</span>`}</div>
-            <div class="tagp ${esc(v.preference||"")}">${esc((v.preference||"").replace("_"," "))}</div>
-            <div class="sc">${v.satisfaction?`rated ${esc(v.satisfaction)}`:`<span class="lead">no rating</span>`}</div>
-          </div>`).join("")}
-      </div>` : "";
-
-    // Free-text answers. The count of dropped ones is shown so the redaction RATE stays visible
-    // even though the words never do — that number is the compliance answer if anyone asks.
-    const comments = (com.recent||[]).length || com.redacted ? `
-      <div class="svy-cm">
-        <div class="lbl" style="margin-bottom:6px">In their own words${com.redacted?` · <span class="accent">${com.redacted} withheld</span>`:""}</div>
-        ${(com.recent||[]).map(c=>`<div class="svy-cmt">“${esc(c.text)}”</div>`).join("")}
-        ${com.redacted?`<div class="svy-cmt redacted">${com.redacted} answer${com.redacted===1?" was":"s were"} dropped for containing something
-          personal — an account number, a Social Security Number or similar. The rate is kept, the words are not.</div>`:""}
-      </div>` : "";
-
-    el.innerHTML=`<div class="svy">
-      <p class="svy-lede">Four questions at the end of a normal call, for the testing phase only. Not asked on transfers, or on
-        callers who could not be verified. Testers are briefed beforehand, so the questions are stated
-        rather than offered.</p>
-      ${headFig}${bar}${metrics?`<div class="svy-grid">${metrics}</div>`:""}${alarm}${comments}${vb}
-    </div>`;
-  }
-  // ---- end survey ---------------------------------------------------------------------------
 
   function renderUtilization(){
     const el2=document.getElementById("util"), u=DATA.utilization||{};
