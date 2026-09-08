@@ -43,6 +43,90 @@ const sentBucket = (s) => {
   return null;
 };
 
+// ---------------------------------------------------------------------------------------------
+// SURVEY (temporary — remove with the instrument after the customer wave)
+//
+// Two numbers matter and they answer different questions:
+//   adherence  — did Robin ASK when she was supposed to? An operational number. If this is low the
+//                instrument is broken and every number below it is drawn from a biased sample, so
+//                it is reported first and never buried.
+//   preference — would callers rather use Robin or hold for a person? The actual experiment.
+//
+// Adherence uses the agent's own evaluation criterion (success / failure / unknown), not a rule
+// re-derived here. `unknown` means the criterion ruled the call ineligible — transferred, failed
+// verification, no substantive exchange — so it is excluded from the denominator rather than
+// counted as a miss. A transferred call is not a failure; the survey is built to stay silent there.
+// ---------------------------------------------------------------------------------------------
+function summariseSurvey(rows) {
+  if (!Array.isArray(rows) || rows.length === 0) return { calls: 0, awaiting_first_call: true };
+
+  const judged = rows.filter((r) => r.survey_verdict === "success" || r.survey_verdict === "failure");
+  const asked = rows.filter((r) => r.survey_offered === true);
+  const answered = rows.filter((r) => r.satisfaction_raw || r.prefer_agent_raw);
+
+  // Number(null) is 0, not NaN — so a plain Number().filter(isFinite) silently averages every
+  // unanswered call in as a zero and craters the mean. Reject null/""/undefined explicitly.
+  const score = (v) => (v === null || v === undefined || v === "" ? null : Number.isFinite(Number(v)) ? Number(v) : null);
+  const scores = rows.map((r) => score(r.satisfaction_score)).filter((n) => n !== null);
+  const tally = (key, vals) => Object.fromEntries(vals.map((v) => [v, rows.filter((r) => r[key] === v).length]));
+
+  const prefs = tally("preference", ["agent", "person", "no_preference", "unclassified"]);
+  const decided = prefs.agent + prefs.person + prefs.no_preference;
+
+  return {
+    calls: rows.length,
+    // --- did she ask? ---
+    adherence: {
+      eligible: judged.length,
+      asked_when_eligible: judged.filter((r) => r.survey_verdict === "success").length,
+      pct: judged.length
+        ? Math.round((judged.filter((r) => r.survey_verdict === "success").length / judged.length) * 100)
+        : null,
+      ineligible: rows.length - judged.length,
+      note: "ineligible = transferred, failed verification, or no substantive exchange",
+    },
+    // --- who answered? ---
+    response: {
+      offered: asked.length,
+      accepted: rows.filter((r) => r.survey_consent === "accepted").length,
+      declined: rows.filter((r) => r.survey_consent === "declined").length,
+      answered: answered.length,
+      rate_pct: asked.length ? Math.round((answered.length / asked.length) * 100) : null,
+    },
+    // --- the experiment ---
+    preference: {
+      ...prefs,
+      decided,
+      agent_pct: decided ? Math.round((prefs.agent / decided) * 100) : null,
+      person_pct: decided ? Math.round((prefs.person / decided) * 100) : null,
+      // n is people-sized, not call-sized. At n=50 the margin is roughly +/-14 points, which is the
+      // difference between "clearly prefer Robin" and "a coin flip" — so the figure ships with it.
+      margin_pts: decided ? Math.round(98 / Math.sqrt(decided)) : null,
+    },
+    satisfaction: {
+      n: scores.length,
+      mean: scores.length ? Number((scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(2)) : null,
+      four_or_five: scores.filter((s) => s >= 4).length,
+      // Answers that came back as words we could not score ("pretty good"). Kept visible rather than
+      // dropped: a rising count means the mean is computed on a shrinking slice of what was said.
+      unparsed: answered.filter((r) => r.satisfaction_raw && score(r.satisfaction_score) === null).length,
+    },
+    // Should always be 0. The prompt forbids surveying on a transfer, so anything here means the gate
+    // leaked and the pre-transfer failure mode is back. Surfaced as an alarm, not a statistic.
+    leaked_pre_transfer: rows.filter((r) => r.offer_context === "pre_transfer").length,
+    verbatims: rows
+      .filter((r) => r.satisfaction_raw || r.prefer_agent_raw)
+      .slice(0, 40)
+      .map((r) => ({
+        conversation_id: r.conversation_id,
+        started_at: r.started_at,
+        satisfaction: r.satisfaction_raw,
+        prefer_agent: r.prefer_agent_raw,
+        preference: r.preference,
+      })),
+  };
+}
+
 export default async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).json({ error: "GET only" });
   try {
@@ -54,6 +138,20 @@ export default async function handler(req, res) {
       sb(`call_questions?select=conversation_id,canonical_key,canonical_question,category,asked_text,answered,fail_reason,matched_question_key`),
       sb(`gap_requests?select=canonical_key,status,note,resolved_slug`),
     ]);
+
+    // The survey is a TEMPORARY testing instrument, not part of the permanent quality picture — the
+    // grader is that. It reads from the survey_answers view, which projects the answers out of
+    // raw_payload and excludes pre-survey calls on its own (see the view's comment). Deliberately
+    // self-contained so it can be deleted in one block when the customer wave closes.
+    // Failing soft: a survey outage must never take the rest of the dashboard down with it.
+    let survey = null;
+    try {
+      survey = summariseSurvey(
+        await sb(`survey_answers?in_survey_era=is.true&select=conversation_id,started_at,survey_offered,survey_consent,offer_context,satisfaction_raw,satisfaction_score,prefer_agent_raw,preference,survey_verdict&order=started_at.desc.nullslast`)
+      );
+    } catch (e) {
+      console.error("survey block failed (dashboard continues without it):", String(e.message || e));
+    }
 
     const totalTesters = memberAgg.length;
     const consented = memberAgg.filter((m) => m.consented).length;
@@ -260,6 +358,7 @@ export default async function handler(req, res) {
       generated_at: new Date().toISOString(),
       window: { members: totalTesters, consented, calls: events.length },
       security, experience, coverage, utilization,
+      survey,
       gaps,
       questions: qRows,
       recent_calls: recent,

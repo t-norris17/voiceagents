@@ -16,133 +16,96 @@
 
 
 -- ---------------------------------------------------------------------------------------------
--- The view everything else reads. Create once.
+-- The view these queries read is `survey_answers`, defined ONCE in
+-- supabase/migrations/007_survey_answers_view.sql and already applied.
+--
+-- It is deliberately not redefined here. An earlier version of this file carried its own copy of
+-- the parsing and eligibility logic, which is the same trap that let the prompt gate and the
+-- evaluation criterion drift apart for two versions during testing. One definition, one place.
+-- The dashboard at /api/metrics reads the same view, so the SQL below and the page always agree.
 -- ---------------------------------------------------------------------------------------------
-create or replace view survey_answers as
-select
-  conversation_id,
-  started_at,
-  duration_seconds,
-  (raw_payload -> 'data' -> 'analysis' -> 'data_collection_results') as dc,
-  (raw_payload -> 'data' -> 'analysis' -> 'data_collection_results' -> 'survey_offered' ->> 'value')::boolean
-                                                                    as survey_offered,
-   raw_payload -> 'data' -> 'analysis' -> 'data_collection_results' -> 'survey_consent' ->> 'value'
-                                                                    as survey_consent,
-   raw_payload -> 'data' -> 'analysis' -> 'data_collection_results' -> 'offer_context'  ->> 'value'
-                                                                    as offer_context,
-   raw_payload -> 'data' -> 'analysis' -> 'data_collection_results' -> 'satisfaction'   ->> 'value'
-                                                                    as satisfaction_raw,
-   raw_payload -> 'data' -> 'analysis' -> 'data_collection_results' -> 'prefer_agent'   ->> 'value'
-                                                                    as prefer_agent_raw,
-   raw_payload -> 'data' -> 'analysis' -> 'data_collection_results' -> 'auth_outcome'   ->> 'value'
-                                                                    as auth_outcome,
-   raw_payload -> 'data' -> 'analysis' -> 'data_collection_results' -> 'outcome'        ->> 'value'
-                                                                    as outcome
-from ai_call_events
-where provider = 'elevenlabs';
-
 
 -- ---------------------------------------------------------------------------------------------
 -- 1. THE HEADLINE. Would they rather use Robin, or hold for a person?
 --
--- `prefer_agent` is free text on purpose — the caller's own words are auditable, a bare enum is
--- not. The bucketing below is deliberately crude; always read `prefer_agent_raw` alongside it
--- before quoting a number, and hand-check anything that lands in 'unclassified'.
+-- `prefer_agent_raw` is free text on purpose — the caller's own words are auditable, a bare enum
+-- is not. `preference` is the view's crude bucketing of it. Always read query 5 alongside this
+-- before quoting a number, and hand-check anything in 'unclassified'.
 -- ---------------------------------------------------------------------------------------------
-with classified as (
-  select
-    prefer_agent_raw,
-    case
-      when prefer_agent_raw is null or btrim(prefer_agent_raw) = ''       then null
-      when prefer_agent_raw ~* '(either|no preference|dou?n.?t mind|doesn.?t matter|whatever|both)'
-                                                                          then 'no_preference'
-      when prefer_agent_raw ~* '(person|human|someone|somebody|real|rep|live|wait|hold)'
-                                                                          then 'person'
-      when prefer_agent_raw ~* '(you|this|robin|assistant|automated|ai|again|quicker|faster)'
-                                                                          then 'agent'
-      else 'unclassified'
-    end as preference
-  from survey_answers
-)
 select
   preference,
-  count(*)                                                  as n,
-  round(100.0 * count(*) / sum(count(*)) over (), 1)        as pct
-from classified
-where preference is not null
+  count(*)                                                                  as n,
+  round(100.0 * count(*) / sum(count(*)) over (), 1)                        as pct
+from survey_answers
+where in_survey_era and preference is not null
 group by preference
 order by n desc;
 
 
 -- ---------------------------------------------------------------------------------------------
--- 2. Satisfaction, 1-5. Also free text ("five", "4 out of 5", "pretty good"), so pull the digit
---    and keep the unparseable ones visible rather than dropping them silently.
--- ---------------------------------------------------------------------------------------------
-with rated as (
-  select
-    satisfaction_raw,
-    case
-      when satisfaction_raw ~ '[1-5]'      then (regexp_match(satisfaction_raw, '([1-5])'))[1]::int
-      when satisfaction_raw ~* '\mone\M'   then 1
-      when satisfaction_raw ~* '\mtwo\M'   then 2
-      when satisfaction_raw ~* '\mthree\M' then 3
-      when satisfaction_raw ~* '\mfour\M'  then 4
-      when satisfaction_raw ~* '\mfive\M'  then 5
-    end as score
-  from survey_answers
-  where satisfaction_raw is not null and btrim(satisfaction_raw) <> ''
-)
-select
-  count(*)                                        as answered,
-  count(score)                                    as parsed,
-  count(*) - count(score)                         as needs_hand_reading,
-  round(avg(score), 2)                            as mean_score,
-  count(*) filter (where score >= 4)              as four_or_five
-from rated;
-
-
--- ---------------------------------------------------------------------------------------------
--- 3. ADHERENCE. Did Robin actually ask? This is the number that tells you whether the
---    instrument worked, and it is the one the prompt-only design puts at risk.
---    Denominator excludes calls the gate legitimately suppressed.
+-- 2. Satisfaction, 1-5. `needs_hand_reading` counts answers given in words we could not score
+--    ("pretty good"). Watch it: a rising count means the mean covers a shrinking slice of what
+--    was actually said.
 -- ---------------------------------------------------------------------------------------------
 select
-  count(*) filter (where survey_offered)                          as offered,
-  count(*) filter (where survey_consent = 'accepted')             as accepted,
-  count(*) filter (where survey_consent = 'declined')             as declined,
-  count(*)                                                        as eligible_calls,
-  round(100.0 * count(*) filter (where survey_offered) / nullif(count(*), 0), 1) as offer_rate_pct
+  count(*)                                            as answered,
+  count(satisfaction_score)                           as parsed,
+  count(*) - count(satisfaction_score)                as needs_hand_reading,
+  round(avg(satisfaction_score), 2)                   as mean_score,
+  count(*) filter (where satisfaction_score >= 4)     as four_or_five
 from survey_answers
-where auth_outcome is distinct from 'failed'
-  and outcome is distinct from 'abandoned';
+where in_survey_era and satisfaction_raw is not null;
 
 
 -- ---------------------------------------------------------------------------------------------
--- 4. Does the answer differ before a transfer vs. at the end of a resolved call?
---    This is the cut that matters most: someone about to be handed to a human is the
---    hardest audience for question two.
+-- 3. ADHERENCE — RUN THIS FIRST, AND EARLY. Did Robin actually ask when she was supposed to?
+--
+-- This is the number that decides whether the instrument worked, and the one a prompt-only design
+-- puts at risk. If it is low, every figure above is drawn from a biased slice. Check it after the
+-- first ~10 calls, not at the end of the wave.
+--
+-- The denominator comes from the agent's own evaluation criterion, not a rule re-derived here.
+-- 'unknown' = the criterion ruled the call ineligible (transferred, failed verification, no real
+-- exchange, caller in a hurry), so those are excluded rather than counted as misses.
 -- ---------------------------------------------------------------------------------------------
 select
-  offer_context,
-  count(*)                                                     as n,
-  count(*) filter (where prefer_agent_raw ~* '(person|human|wait|hold)') as chose_person,
-  count(*) filter (where prefer_agent_raw ~* '(you|this|robin|again|faster|quicker)') as chose_robin
+  count(*) filter (where survey_verdict in ('success','failure'))          as eligible,
+  count(*) filter (where survey_verdict = 'success')                      as asked_when_eligible,
+  round(100.0 * count(*) filter (where survey_verdict = 'success')
+        / nullif(count(*) filter (where survey_verdict in ('success','failure')), 0), 1)
+                                                                          as adherence_pct,
+  count(*) filter (where survey_verdict = 'unknown')                      as ineligible,
+  count(*) filter (where survey_offered)                                  as offered,
+  count(*) filter (where survey_consent = 'declined')                     as declined
 from survey_answers
-where survey_consent = 'accepted'
-group by offer_context
-order by n desc;
+where in_survey_era;
+
+
+-- ---------------------------------------------------------------------------------------------
+-- 4. LEAK CHECK. Should return zero rows, always.
+--
+-- The pre-transfer survey was removed at prompt v6: she is instructed never to ask on the way into
+-- a transfer. Anything here means the gate leaked and the old failure mode is back — offering two
+-- questions and then cutting the caller off mid-answer. Listen to these calls.
+-- ---------------------------------------------------------------------------------------------
+select conversation_id, started_at, offer_context, survey_consent, prefer_agent_raw
+from survey_answers
+where in_survey_era and offer_context = 'pre_transfer'
+order by started_at desc;
 
 
 -- ---------------------------------------------------------------------------------------------
 -- 5. Every answer, raw. Read this before quoting any number above.
 -- ---------------------------------------------------------------------------------------------
 select
-  started_at::date as day,
+  started_at::date  as day,
   conversation_id,
-  offer_context,
   survey_consent,
   satisfaction_raw,
-  prefer_agent_raw
+  satisfaction_score,
+  prefer_agent_raw,
+  preference,
+  survey_verdict
 from survey_answers
-where survey_offered
+where in_survey_era and survey_offered
 order by started_at desc;
