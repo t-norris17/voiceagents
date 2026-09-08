@@ -1,0 +1,25 @@
+{
+  "_comment": "The 5 survey Data Collection fields. Written via agents_update body.platform_settings.data_collection. NOTE: that write is a FULL REPLACE, not a merge — send the agent's complete field set or the omitted ones are deleted.",
+  "survey_offered": {
+    "type": "boolean",
+    "description": "True only if the agent actually asked the caller whether they had twenty seconds for two quick questions. False if the agent never raised the survey at all."
+  },
+  "survey_consent": {
+    "type": "string",
+    "enum": ["accepted", "declined", "not_offered"],
+    "description": "How the caller responded to the survey offer. One of: accepted (agreed to answer), declined (said no), not_offered (the agent never asked)."
+  },
+  "offer_context": {
+    "type": "string",
+    "enum": ["in_call", "pre_transfer", "not_offered"],
+    "description": "Where in the call the survey was offered. One of: in_call (near the end of a normal call, before goodbye), pre_transfer (just before the agent connected them to a specialist), not_offered (the agent never asked)."
+  },
+  "satisfaction": {
+    "type": "string",
+    "description": "The caller's answer to \"Quick one to five, how was that for you?\" — record what they actually said, in their own words (\"five\", \"4 out of 5\", \"pretty good\"). Leave empty if the question was not asked or not answered. Do NOT infer a rating from the caller's tone or from how the call went."
+  },
+  "prefer_agent": {
+    "type": "string",
+    "description": "The caller's answer to whether, next time, they would rather handle a question like this with the agent or hold for a person even if it took longer. Record their own words (\"with you\", \"I'd wait for a person\", \"either is fine\"). Leave empty if the question was not asked or not answered. Do NOT infer this from anything else in the call."
+  }
+}
