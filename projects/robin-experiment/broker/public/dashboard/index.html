@@ -290,21 +290,21 @@
     const s=d.security, x=d.experience, u=d.utilization||{};
     const openGaps = (d.gaps||[]).filter(g=>g.status!=="resolved" && (g.top_reason==="no_content"||g.top_reason==="not_retrieved")).length;
     const secNote = s.total_auth
-      ? `${s.flags?`<span class="accent">${s.flags} call${s.flags===1?"":"s"} worth a look.</span>`:"She never said a Social Security number, password or PIN."}${s.verified_pct!=null?` ${s.verified_pct}% of callers verified${s.failed?`; ${s.failed} handed to a person`:""}.`:""}`
-      : "Nobody has been through identity checks yet.";
+      ? `${s.flags?`<span class="accent">${s.flags} call${s.flags===1?"":"s"} worth a look.</span>`:"No Social Security number, password or PIN was spoken on any call."}${s.verified_pct!=null?` ${s.verified_pct}% of callers verified${s.failed?`; ${s.failed} handed to a person`:""}.`:""}`
+      : "No identity checks recorded yet.";
     const expFig = x.graded ? `${x.avg_quality.toFixed(1)}<span class="un">/5</span>` : "—";
     const expNote = x.graded
-      ? `Checked ${x.scored_count} answer${x.scored_count===1?"":"s"} line by line against the plan documents she read.`
-      : `We haven't checked her answers yet.`;
+      ? `${x.scored_count} answer${x.scored_count===1?"":"s"} graded against the plan documents she cited.`
+      : `Not yet graded.`;
     document.getElementById("verdict").innerHTML=`
-      <div class="v"><div class="k lbl">She answered</div><div class="fig tnum">${u.pct==null?"—":u.pct}<span class="un">%</span></div>
-        <div class="note">${u.total_asked?`${u.answered} of the ${u.total_asked} things people asked her.`:"Nothing asked yet."}</div></div>
-      <div class="v"><div class="k lbl">And got it right</div><div class="fig tnum">${expFig}</div><div class="note">${expNote}</div></div>
-      <div class="v"><div class="k lbl">Still stuck on</div><div class="fig tnum">${openGaps}</div>
-        <div class="note">${openGaps?`question${openGaps===1?"":"s"} waiting for an answer to be written.`:"Nothing — she's handled everything so far."}</div></div>`;
+      <div class="v"><div class="k lbl">Questions answered</div><div class="fig tnum">${u.pct==null?"—":u.pct}<span class="un">%</span></div>
+        <div class="note">${u.total_asked?`${u.answered} of ${u.total_asked} questions asked on calls that reached her.`:"No questions asked yet."}</div></div>
+      <div class="v"><div class="k lbl">Answer quality</div><div class="fig tnum">${expFig}</div><div class="note">${expNote}</div></div>
+      <div class="v"><div class="k lbl">Unanswered</div><div class="fig tnum">${openGaps}</div>
+        <div class="note">${openGaps?`question${openGaps===1?"":"s"} with no source answer written yet.`:"None outstanding."}</div></div>`;
 
     document.getElementById("banner").innerHTML = x.graded ? "" :
-      `<div class="banner">Calls are coming in — ${d.window.calls} so far. The table below fills in once we've checked her answers.</div>`;
+      `<div class="banner">${d.window.calls} call${d.window.calls===1?"":"s"} recorded. The table below fills in once answers are graded.</div>`;
 
     { const w=when(d.generated_at);
       const g1=document.getElementById("gen"); if(g1) g1.textContent="updated "+w;
@@ -338,7 +338,7 @@
 
     if(s.awaiting_first_call || !s.calls){
       document.getElementById("svymeta").textContent="";
-      el.innerHTML=`<div class="empty">Live, but no calls have come in since the questions went on. This fills in with the first one.</div>`;
+      el.innerHTML=`<div class="empty">Live. No calls recorded since the questions went on; this fills in with the first one.</div>`;
       return;
     }
 
@@ -354,7 +354,7 @@
       ? `<div class="svy-head-fig">
            <div><div class="fig tnum">${p.agent_pct}<span class="un">%</span></div></div>
            <div class="vs">chose <b>Robin</b> over holding for a person.<br>
-             ${p.person_pct}% would rather wait for someone; ${Math.max(0,100-p.agent_pct-p.person_pct)}% had no preference.</div>
+             ${p.person_pct}% would rather wait for a person; ${Math.max(0,100-p.agent_pct-p.person_pct)}% had no preference.</div>
          </div>`
       : `<div class="empty">Nobody has answered the preference question yet.</div>`;
 
@@ -367,7 +367,7 @@
       </div>
       <div class="key">
         <span class="k-agent"><i></i>${p.agent} would use Robin again</span>
-        <span class="k-none"><i></i>${p.no_preference} didn't mind</span>
+        <span class="k-none"><i></i>${p.no_preference} no preference</span>
         <span class="k-person"><i></i>${p.person} would rather have a person</span>
       </div>
       <div class="svy-moe">
@@ -383,13 +383,13 @@
     const metrics=[
       a.eligible ? `<div class="svy-m${adherenceWarn?" warn":""}">
           <div class="n tnum">${a.pct}<span class="un">%</span></div>
-          <div class="cap">of the calls where she should have asked, she did — ${a.asked_when_eligible} of ${a.eligible}.
-          ${adherenceWarn?"<b>Low. Numbers above are drawn from a thin slice.</b>":""}</div>
+          <div class="cap">of eligible calls had the survey asked — ${a.asked_when_eligible} of ${a.eligible}.
+          ${adherenceWarn?"<b>Low. The figures above rest on a thin sample.</b>":""}</div>
         </div>` : "",
       `<div class="svy-m">
           <div class="n tnum">${r.rate_pct??"—"}${r.rate_pct!=null?'<span class="un">%</span>':""}</div>
-          <div class="cap">of people she asked gave an answer — ${r.answered} of ${r.offered}.
-          ${r.declined?`${r.declined} said no thanks.`:""}</div>
+          <div class="cap">of people asked gave an answer — ${r.answered} of ${r.offered}.
+          ${r.declined?`${r.declined} declined.`:""}</div>
         </div>`,
       rec.answered ? `<div class="svy-m">
           <div class="n tnum">${rec.yes_pct!=null?rec.yes_pct:"—"}${rec.yes_pct!=null?'<span class="un">%</span>':""}</div>
@@ -402,7 +402,7 @@
         </div>` : "",
       a.ineligible ? `<div class="svy-m">
           <div class="n tnum">${a.ineligible}</div>
-          <div class="cap">calls she was right not to ask on — transferred, or verification failed.</div>
+          <div class="cap">calls correctly excluded — transferred, or verification failed.</div>
         </div>` : "",
     ].filter(Boolean).join("");
 
@@ -432,9 +432,9 @@
       </div>` : "";
 
     el.innerHTML=`<div class="svy">
-      <p class="svy-lede">Four questions at the end of a normal call, for the testing phase only. She stays quiet on
-        transfers and on anyone she couldn't verify. Testers are briefed beforehand, so she states the
-        questions rather than asking permission.</p>
+      <p class="svy-lede">Four questions at the end of a normal call, for the testing phase only. Not asked on transfers, or on
+        callers who could not be verified. Testers are briefed beforehand, so the questions are stated
+        rather than offered.</p>
       ${headFig}${bar}${metrics?`<div class="svy-grid">${metrics}</div>`:""}${alarm}${comments}${vb}
     </div>`;
   }
