@@ -147,19 +147,39 @@ export function summariseSurvey(people, calls) {
       // Answers given in words we could not score ("pretty good"). Kept visible rather than dropped:
       // a rising count means the mean covers a shrinking slice of what was actually said.
       unparsed: people.filter((r) => r.satisfaction_raw && score(r.satisfaction_score) === null).length,
-      distribution: [1, 2, 3, 4, 5].map((s) => ({ score: s, n: people.filter((r) => r.satisfaction_score === s).length })),
+      // No `distribution` array: it was computed here and rendered nowhere. The cross-tab's rows
+      // already ARE the distribution, broken down by preference, which is strictly more useful.
     },
     recommend: { ...recommendCounts, yes_pct: recommendCounts.ci ? recommendCounts.ci.pct : null },
     matrix,
     happy_but_prefers_person,
     cumulative,
 
-    comments: {
-      given: people.filter((r) => r.open_comments || r.comments_redacted).length,
-      redacted: people.filter((r) => r.comments_redacted).length,
-      recent: people.filter((r) => r.open_comments).slice().reverse().slice(0, 40)
-        .map((r) => ({ conversation_id: r.conversation_id, started_at: r.started_at, person_key: r.person_key, text: r.open_comments })),
-    },
+    // FREE TEXT IS CALL-LEVEL, DELIBERATELY, and this is the one place the person-level rule must
+    // NOT apply. That rule exists so one tester's three calls count as one OPINION; it was never
+    // meant to throw away their WORDS. survey_people keeps only a person's first surveyed call, so
+    // reading comments from it silently discards anything said on a later call.
+    //
+    // That is not hypothetical. On the data as it stands, the only real comment we have was left on
+    // Marcus's SECOND surveyed call — so the person-level read showed 0 comments while 1 existed,
+    // and the themes engine had nothing to cluster.
+    //
+    // `given` counts comments, not people, because that is what the number means. `people_who_commented`
+    // is reported alongside it so a handful of chatty repeat callers cannot look like broad feedback.
+    comments: (() => {
+      const withText = calls.filter((r) => r.survey_offered && (r.open_comments || r.comments_redacted));
+      const said = calls.filter((r) => r.survey_offered && r.open_comments);
+      return {
+        given: withText.length,
+        people_who_commented: new Set(withText.map((r) => r.person_key).filter(Boolean)).size,
+        redacted: withText.filter((r) => r.comments_redacted).length,
+        // `calls` arrives newest-first, so this is already in the right order.
+        recent: said.slice(0, 40).map((r) => ({
+          conversation_id: r.conversation_id, started_at: r.started_at,
+          person_key: r.person_key, response_seq: r.response_seq, text: r.open_comments,
+        })),
+      };
+    })(),
     // Should always be 0. The prompt forbids surveying on a transfer, so anything here means the
     // gate leaked and the pre-transfer failure mode is back. Surfaced as an alarm, not a statistic.
     leaked_pre_transfer: calls.filter((r) => r.offer_context === "pre_transfer").length,

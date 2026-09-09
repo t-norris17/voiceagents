@@ -101,6 +101,10 @@ order by started_at desc;
 
 -- ---------------------------------------------------------------------------------------------
 -- 5. Every answer, raw. Read this before quoting any number above.
+--
+-- Note the source: survey_answers, not survey_people. Counts are per person; WORDS ARE NOT.
+-- survey_people keeps only a person's first surveyed call, so reading free text from it silently
+-- drops anything said on a later call.
 -- ---------------------------------------------------------------------------------------------
 select
   started_at::date  as day,

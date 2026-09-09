@@ -14,7 +14,7 @@
 // Behind the password gate (see middleware.js).
 // TEMPORARY: delete with the instrument after the customer wave.
 import Anthropic from "@anthropic-ai/sdk";
-import { surveyPeople } from "../lib/survey-data.js";
+import { surveyCalls } from "../lib/survey-data.js";
 
 const client = new Anthropic(); // ANTHROPIC_API_KEY
 const MIN_COMMENTS = 8;
@@ -42,7 +42,7 @@ const THEME_TOOL = {
             label: { type: "string", description: "3-6 words, the theme in the callers' own register, not a category name." },
             summary: { type: "string", description: "One sentence on what people in this theme actually said." },
             sentiment: { type: "string", enum: ["positive", "negative", "mixed"] },
-            people: { type: "integer", description: "How many distinct respondents expressed it." },
+            people: { type: "integer", description: "How many distinct respondents expressed it. Best effort; the server recomputes this from conversation_ids." },
             quote: { type: "string", description: "One short verbatim quote, copied exactly, that typifies the theme." },
             conversation_ids: { type: "array", items: { type: "string" }, description: "Every conversation id in this theme." },
           },
@@ -67,7 +67,9 @@ participants would rather handle a question with a voice agent (Robin) or hold f
 
 Rules:
 - Report only what the text says. Never infer a cause the caller did not state.
-- A theme needs at least two distinct people. One person's remark is not a theme; leave it out.
+- A theme needs at least two DISTINCT RESPONDENTS. Rows are individual calls, and one person may
+  appear several times under the same "respondent" id — three comments from one respondent is one
+  person's view, not a theme. Count respondents, never rows.
 - Quote verbatim. Do not clean up grammar or fillers.
 - The narrative must state the sample size honestly and name what the data cannot yet support.
   If the answers are overwhelmingly positive, say so plainly AND note that a small self-selected
@@ -77,10 +79,13 @@ Rules:
 export default async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).json({ error: "GET only" });
   try {
-    const people = await surveyPeople();
-    const withText = people.filter((p) => p.open_comments || p.prefer_agent_raw || p.would_recommend_raw);
+    // CALL-level, not person-level. survey_people holds only a person's first surveyed call, so
+    // reading themes from it discards every comment left on a second or third call — which on the
+    // data as it stands is 100% of them. Proportions are counted per person; words are not.
+    const calls = (await surveyCalls()).filter((c) => c.survey_offered);
+    const withText = calls.filter((c) => c.open_comments || c.prefer_agent_raw || c.would_recommend_raw);
 
-    const commented = people.filter((p) => p.open_comments).length;
+    const commented = calls.filter((c) => c.open_comments).length;
     if (commented < MIN_COMMENTS) {
       return res.status(200).json({
         ready: false,
@@ -91,11 +96,21 @@ export default async function handler(req, res) {
     }
 
     // Fingerprint the inputs, not the clock: same answers means same themes.
-    const key = `${withText.length}:${commented}:${people[people.length - 1]?.first_at || ""}`;
+    //
+    // The first version keyed on (withText.length, commented, last person's first_at) — all three
+    // of which can stay FROZEN while the data changes. A repeat caller who already had a comment
+    // leaves another one: counts unchanged (person-level), and first_at is a MIN so it never moves.
+    // The cache would then serve themes that predate the new comment for its whole TTL. Keyed on the
+    // newest call instead, which is monotonic by construction.
+    const newest = calls.reduce((m, c) => (c.started_at > m ? c.started_at : m), "");
+    const key = `${withText.length}:${commented}:${newest}`;
     if (cache.key === key && Date.now() - cache.at < TTL_MS) return res.status(200).json(cache.value);
 
     const rows = withText.map((p) => ({
       conversation_id: p.conversation_id,
+      // The same person can appear more than once. Named so the model does not read one talkative
+      // tester as a groundswell; the server recounts distinct people afterwards regardless.
+      respondent: p.person_key,
       score: p.satisfaction_score,
       prefers: p.preference,
       in_their_words: {
@@ -117,8 +132,10 @@ export default async function handler(req, res) {
         {
           role: "user",
           content:
-            `${rows.length} respondents left free text. Comments with detectable personal data were ` +
-            `dropped upstream and are absent here.\n\n${JSON.stringify(rows, null, 1)}`,
+            `${rows.length} calls carried free text, from ` +
+            `${new Set(rows.map((r) => r.respondent).filter(Boolean)).size} distinct respondents. ` +
+            `Comments with detectable personal data were dropped upstream and are absent here.` +
+            `\n\n${JSON.stringify(rows, null, 1)}`,
         },
       ],
     });
@@ -126,7 +143,26 @@ export default async function handler(req, res) {
     const call = msg.content.find((b) => b.type === "tool_use" && b.name === "report_themes");
     if (!call) throw new Error("model returned no themes");
 
-    const value = { ready: true, ...call.input, based_on: { people: withText.length, comments: commented } };
+    // Recount `people` server-side from the ids the model cited rather than trusting the integer it
+    // reported. Two comments from one repeat caller must not read as two people agreeing — that is
+    // the same inflation the person-level rule exists to prevent, arriving through the LLM instead
+    // of through SQL. Arithmetic beats a self-reported count on a number leadership will quote.
+    const personOf = new Map(calls.map((c) => [c.conversation_id, c.person_key]));
+    const themes = (call.input.themes || []).map((t) => {
+      const ids = (t.conversation_ids || []).filter((id) => personOf.has(id));
+      const distinct = new Set(ids.map((id) => personOf.get(id)).filter(Boolean)).size;
+      return { ...t, conversation_ids: ids, people: distinct || ids.length, mentions: ids.length };
+    // A "theme" needs at least two distinct people. The prompt says so, but the prompt is not an
+    // enforcement mechanism; this is.
+    }).filter((t) => t.people >= 2);
+
+    const value = {
+      ready: true, themes, narrative: call.input.narrative,
+      based_on: {
+        comments: commented,
+        people_who_commented: new Set(calls.filter((c) => c.open_comments).map((c) => c.person_key).filter(Boolean)).size,
+      },
+    };
     cache = { key, at: Date.now(), value };
     res.setHeader("cache-control", "no-store");
     return res.status(200).json(value);

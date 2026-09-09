@@ -44,8 +44,15 @@ number is never selected by either view, so it cannot reach the API, the CSV, th
 screenshot of the page. Two limits worth stating before quoting a person count: two testers sharing
 a desk phone read as one person, and one tester using both a desk phone and a cell reads as two.
 
-`survey_people.changed_mind` flags anyone whose stated preference differed between their own calls.
-It is the most interesting fact the instrument can produce and it is invisible in any average.
+`survey_people.changed_mind` flags anyone whose stated preference genuinely differed between their
+own calls. It is the most interesting fact the instrument can produce and it is invisible in any
+average. It counts only `agent` / `person` / `no_preference`: `unclassified` is the view admitting it
+could not parse the wording, and counting it produced false reversals (migration 010).
+
+**Counts are per person; words are not.** Proportions read `survey_people` so one tester's three
+calls are one opinion. Free text reads `survey_answers`, because `survey_people` keeps only a
+person's FIRST call and a comment left on a later call would simply vanish. That was live: the only
+real comment we had was on a second call, so the page showed zero comments while one existed.
 
 ## Who can see it
 

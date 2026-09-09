@@ -229,6 +229,9 @@
   .mx-dot.agent{ background:var(--c-agent); }
   .mx-dot.person{ background:var(--c-person); }
   .mx-dot.none{ background:var(--c-none); }
+  /* Unclear is an outline, not a fill: it is an absence of a classification, and giving it a
+     solid colour would make it read as a fourth opinion rather than a gap in the data. */
+  .mx-dot.unclear{ background:transparent; box-shadow:inset 0 0 0 1.5px var(--c-none); }
   .mx-n{ font-size:.72rem; color:var(--sub); font-variant-numeric:tabular-nums; margin-bottom:6px; font-weight:600; }
   .mx-n.zero{ color:var(--faint); font-weight:400; }
   .mx-cell.flag{ background:color-mix(in srgb, var(--c-person) 9%, var(--paper)); }
@@ -248,16 +251,6 @@
   .cum text.fiftyl{ fill:var(--c-person); font-weight:600; }
   .cum .pt{ fill:var(--c-agent); }
   .cum-note{ font-size:.78rem; color:var(--sub); margin-top:12px; line-height:1.5; max-width:62ch; }
-
-  /* ---- distribution ---- */
-  .dist{ margin-top:8px; }
-  .dist-row{ display:grid; grid-template-columns:52px 1fr auto; gap:12px; align-items:center; padding:5px 0; }
-  .dist-lab{ font-size:.74rem; color:var(--sub); text-align:right; font-variant-numeric:tabular-nums; }
-  .dist-dots{ display:flex; flex-wrap:wrap; gap:3px; }
-  .dist-dot{ width:9px; height:9px; border-radius:50%; background:var(--c-agent); }
-  .dist-dot.person{ background:var(--c-person); }
-  .dist-dot.none{ background:var(--c-none); }
-  .dist-n{ font-size:.74rem; color:var(--faint); font-variant-numeric:tabular-nums; }
 
   /* ---- themes ---- */
   .thm{ display:grid; gap:0; margin-top:6px; border-top:1px solid var(--ink); }
@@ -405,7 +398,9 @@
   <section id="cmsec" hidden>
     <hr class="rule">
     <div class="shead"><div class="lbl">In their own words</div></div>
-    <p class="svy-lede">Every written answer to the last question, unedited. Click an id to read the call it came from.</p>
+    <p class="svy-lede">Every written answer to the last question, unedited, from every call — including
+      repeat calls, because a comment is a comment even when we only count the person once.
+      Click an id to read the call it came from.</p>
     <div id="cm"></div>
   </section>
 
@@ -606,11 +601,20 @@
         <div class="mx-dots">${dots(n,cls)}</div>
       </div>`;
 
+    // The "unclear" column appears only when somebody is actually in it. Hiding those people would
+    // undercount the grid against the headline n — and worse, a row where EVERY respondent was
+    // unparsed would render as three dashes and read as a rendering fault rather than as the thing
+    // it is: answers the bucketing could not classify, which is exactly what this page promises to
+    // keep visible rather than quietly round away.
+    const anyUnclear = rows.some((r) => r.unclassified > 0);
+    const cols = anyUnclear ? 4 : 3;
+
     const body=rows.filter(r=>r.agent+r.person+r.no_preference+r.unclassified>0).map(r=>`
       <div class="mx-cell rh">${r.score} <span class="st">${r.score===5?"best":r.score===1?"worst":""}</span></div>
       ${cell(r.agent,"agent",false)}
       ${cell(r.no_preference,"none",false)}
       ${cell(r.person,"person",r.score>=4)}
+      ${anyUnclear?cell(r.unclassified,"unclear",false):""}
     `).join("");
 
     const hbp=s.happy_but_prefers_person||0;
@@ -622,14 +626,25 @@
          <b>Satisfaction and preference are pointing the same way</b>, which is what makes the
          headline above worth acting on.</p>`;
 
+    const unclearN = rows.reduce((n,r)=>n+r.unclassified,0);
+    const unclearNote = unclearN
+      ? `<p class="mx-find">${unclearN===1
+            ? `One answer could not be bucketed from the caller's wording and sits in <b>Unclear</b>. It is`
+            : `${unclearN} answers could not be bucketed from the caller's wording and sit in <b>Unclear</b>. They are`}
+         counted here rather than dropped — read them in the call list below before treating the
+         split above as final.</p>`
+      : "";
+
     document.getElementById("mx").innerHTML=`
-      <div class="mx-grid" role="table" aria-label="Satisfaction rating against stated preference">
+      <div class="mx-grid" style="grid-template-columns:auto repeat(${cols},1fr)"
+           role="table" aria-label="Satisfaction rating against stated preference">
         <div class="mx-cell hd">Rating</div>
         <div class="mx-cell hd">Prefers Robin</div>
         <div class="mx-cell hd">No preference</div>
         <div class="mx-cell hd">Prefers a person</div>
+        ${anyUnclear?`<div class="mx-cell hd">Unclear</div>`:""}
         ${body}
-      </div>${finding}`;
+      </div>${finding}${unclearNote}`;
   }
 
   // ---- Cumulative share with its 95% interval ------------------------------------------------
@@ -689,13 +704,14 @@
       }
       nsec.hidden=false; tsec.hidden=false;
       document.getElementById("narr").innerHTML=
-        `<div class="narr"><div class="src">What the answers say · from ${t.based_on.comments} written comments</div>
+        `<div class="narr"><div class="src">What the answers say · from ${t.based_on.comments} written comment${t.based_on.comments===1?"":"s"} by ${t.based_on.people_who_commented} ${t.based_on.people_who_commented===1?"person":"people"}</div>
          <p>${esc(t.narrative)}</p></div>`;
       document.getElementById("thm").innerHTML=`<div class="thm">${(t.themes||[]).map(th=>`
         <div class="thm-i">
           <div class="thm-top">
             <span class="thm-lab">${esc(th.label)}</span>
-            <span class="thm-n">${th.people} ${th.people===1?"person":"people"} · ${esc(th.sentiment)}</span>
+            <span class="thm-n">${th.people} ${th.people===1?"person":"people"}${
+              th.mentions>th.people?` · ${th.mentions} mentions`:""} · ${esc(th.sentiment)}</span>
           </div>
           <div class="thm-sum">${esc(th.summary)}</div>
           <div class="thm-q ${esc(th.sentiment)}">“${esc(th.quote)}”</div>
@@ -797,9 +813,12 @@
     sec.hidden=false;
     document.getElementById("cm").innerHTML=`
       <div class="svy-cm" style="margin-top:6px;padding-top:0;border-top:0">
-        ${com.redacted?`<div class="lbl" style="margin-bottom:8px"><span class="accent">${com.redacted} withheld</span></div>`:""}
+        <div class="lbl" style="margin-bottom:10px">${com.given} comment${com.given===1?"":"s"}
+          from ${com.people_who_commented} ${com.people_who_commented===1?"person":"people"}${
+          com.redacted?` · <span class="accent">${com.redacted} withheld</span>`:""}</div>
         ${rows.map(c=>`<div class="svy-cmt">“${esc(c.text)}”
-          <button class="cid" data-id="${esc(c.conversation_id)}" style="margin-left:8px">${esc(String(c.conversation_id).slice(-8))}</button></div>`).join("")}
+          <button class="cid" data-id="${esc(c.conversation_id)}" style="margin-left:8px">${esc(String(c.conversation_id).slice(-8))}</button>
+          ${c.response_seq>1?`<span class="lbl" style="margin-left:6px">call ${c.response_seq}</span>`:""}</div>`).join("")}
         ${com.redacted?`<div class="svy-cmt redacted">${com.redacted} answer${com.redacted===1?" was":"s were"} dropped for containing something
           personal — an account number, a Social Security Number or similar. The rate is kept, the words are not.</div>`:""}
       </div>`;
