@@ -7,6 +7,7 @@
 // (grader hasn't run), the per-question grid degrades gracefully to "not graded yet" rather
 // than inventing numbers.
 import { sb } from "../lib/supabase.js";
+import { surveyPeople, surveyCalls, score, wilson } from "../lib/survey-data.js";
 
 const q = (s) => encodeURIComponent(s);
 const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : null);
@@ -57,89 +58,152 @@ const sentBucket = (s) => {
 // verification, no substantive exchange — so it is excluded from the denominator rather than
 // counted as a miss. A transferred call is not a failure; the survey is built to stay silent there.
 // ---------------------------------------------------------------------------------------------
-function summariseSurvey(rows) {
-  if (!Array.isArray(rows) || rows.length === 0) return { calls: 0, awaiting_first_call: true };
+export function summariseSurvey(people, calls) {
+  if (!Array.isArray(calls) || calls.length === 0) return { calls: 0, people: 0, awaiting_first_call: true };
 
-  const judged = rows.filter((r) => r.survey_verdict === "success" || r.survey_verdict === "failure");
-  const asked = rows.filter((r) => r.survey_offered === true);
-  const answered = rows.filter((r) => r.satisfaction_raw || r.prefer_agent_raw);
+  // ---- Operational: did she ASK when she should have? Correctly a CALL-level question. ----
+  const judged = calls.filter((r) => r.survey_verdict === "success" || r.survey_verdict === "failure");
+  const offered = calls.filter((r) => r.survey_offered === true);
+  const answeredCalls = calls.filter((r) => r.satisfaction_raw || r.prefer_agent_raw);
 
-  // Number(null) is 0, not NaN — so a plain Number().filter(isFinite) silently averages every
-  // unanswered call in as a zero and craters the mean. Reject null/""/undefined explicitly.
-  const score = (v) => (v === null || v === undefined || v === "" ? null : Number.isFinite(Number(v)) ? Number(v) : null);
-  const scores = rows.map((r) => score(r.satisfaction_score)).filter((n) => n !== null);
-  const tally = (key, vals) => Object.fromEntries(vals.map((v) => [v, rows.filter((r) => r[key] === v).length]));
+  // ---- Everything below is PERSON-level. One tester, one opinion, however often they called. ----
+  const scores = people.map((r) => score(r.satisfaction_score)).filter((n) => n !== null);
+  const tally = (key, vals) => Object.fromEntries(vals.map((v) => [v, people.filter((r) => r[key] === v).length]));
 
   const prefs = tally("preference", ["agent", "person", "no_preference", "unclassified"]);
   const decided = prefs.agent + prefs.person + prefs.no_preference;
 
+  // The cross-tab. A leader's first real question is not "what was the average" but "did anyone
+  // rate this highly and STILL want a human?" — the cell that decides whether a good satisfaction
+  // score actually supports rolling this out. A bar chart cannot show it; this grid is the answer.
+  const matrix = [5, 4, 3, 2, 1].map((s) => ({
+    score: s,
+    agent: people.filter((r) => r.satisfaction_score === s && r.preference === "agent").length,
+    person: people.filter((r) => r.satisfaction_score === s && r.preference === "person").length,
+    no_preference: people.filter((r) => r.satisfaction_score === s && r.preference === "no_preference").length,
+    unclassified: people.filter((r) => r.satisfaction_score === s && (r.preference === "unclassified" || r.preference === null)).length,
+  }));
+  // Named because it is the finding, not a cell reference: people who liked the call and still
+  // want a person next time. If this is non-zero the headline is softer than it looks.
+  const happy_but_prefers_person = people.filter(
+    (r) => r.satisfaction_score >= 4 && r.preference === "person"
+  ).length;
+
+  // Cumulative, in the order people first responded. Not a day-over-day trend — with a two-week
+  // wave that is noise you get asked to explain. This answers the question that actually governs
+  // the wave: has the interval narrowed enough to stop collecting?
+  const cumulative = [];
+  let cAgent = 0, cPerson = 0, cNo = 0;
+  for (const p of people) {
+    if (p.preference === "agent") cAgent++;
+    else if (p.preference === "person") cPerson++;
+    else if (p.preference === "no_preference") cNo++;
+    else continue; // unclassified moves no line; it would flatten the interval without informing it
+    const n = cAgent + cPerson + cNo;
+    const w = wilson(cAgent, n);
+    cumulative.push({ n, at: p.first_at, agent: cAgent, person: cPerson, no_preference: cNo, pct: w.pct, lo: w.lo, hi: w.hi });
+  }
+
+  const recommendCounts = (() => {
+    const t = (v) => people.filter((r) => r.would_recommend === v).length;
+    const yes = t("yes"), no = t("no"), unclear = t("unclear");
+    return { yes, no, unclear, answered: yes + no + unclear, ci: (yes + no) ? wilson(yes, yes + no) : null };
+  })();
+
   return {
-    calls: rows.length,
-    // --- did she ask? ---
+    calls: calls.length,
+    people: people.length,
+    // Stated plainly so nobody has to infer it: this is why the two counts differ.
+    repeat_callers: people.filter((r) => r.repeat_caller).length,
+    // The one fact a call-level average would have buried entirely.
+    changed_mind: people.filter((r) => r.changed_mind).length,
+
     adherence: {
       eligible: judged.length,
       asked_when_eligible: judged.filter((r) => r.survey_verdict === "success").length,
-      pct: judged.length
-        ? Math.round((judged.filter((r) => r.survey_verdict === "success").length / judged.length) * 100)
-        : null,
-      ineligible: rows.length - judged.length,
+      pct: judged.length ? Math.round((judged.filter((r) => r.survey_verdict === "success").length / judged.length) * 100) : null,
+      ineligible: calls.length - judged.length,
       note: "ineligible = transferred, failed verification, or no substantive exchange",
     },
-    // --- who answered? ---
     response: {
-      offered: asked.length,
-      accepted: rows.filter((r) => r.survey_consent === "accepted").length,
-      declined: rows.filter((r) => r.survey_consent === "declined").length,
-      answered: answered.length,
-      rate_pct: asked.length ? Math.round((answered.length / asked.length) * 100) : null,
+      offered: offered.length,
+      accepted: calls.filter((r) => r.survey_consent === "accepted").length,
+      declined: calls.filter((r) => r.survey_consent === "declined").length,
+      answered: answeredCalls.length,
+      rate_pct: offered.length ? Math.round((answeredCalls.length / offered.length) * 100) : null,
     },
-    // --- the experiment ---
+
     preference: {
       ...prefs,
       decided,
-      agent_pct: decided ? Math.round((prefs.agent / decided) * 100) : null,
+      ci: decided ? wilson(prefs.agent, decided) : null,
       person_pct: decided ? Math.round((prefs.person / decided) * 100) : null,
-      // n is people-sized, not call-sized. At n=50 the margin is roughly +/-14 points, which is the
-      // difference between "clearly prefer Robin" and "a coin flip" — so the figure ships with it.
-      margin_pts: decided ? Math.round(98 / Math.sqrt(decided)) : null,
+      no_preference_pct: decided ? Math.round((prefs.no_preference / decided) * 100) : null,
     },
     satisfaction: {
       n: scores.length,
       mean: scores.length ? Number((scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(2)) : null,
       four_or_five: scores.filter((s) => s >= 4).length,
-      // Answers that came back as words we could not score ("pretty good"). Kept visible rather than
-      // dropped: a rising count means the mean is computed on a shrinking slice of what was said.
-      unparsed: answered.filter((r) => r.satisfaction_raw && score(r.satisfaction_score) === null).length,
+      // Answers given in words we could not score ("pretty good"). Kept visible rather than dropped:
+      // a rising count means the mean covers a shrinking slice of what was actually said.
+      unparsed: people.filter((r) => r.satisfaction_raw && score(r.satisfaction_score) === null).length,
+      // No `distribution` array: it was computed here and rendered nowhere. The cross-tab's rows
+      // already ARE the distribution, broken down by preference, which is strictly more useful.
     },
-    // Q3, added at the boss's request. Close to question 2 by construction — a stated intention
-    // next to a revealed preference — so they are reported side by side rather than averaged into
-    // one "satisfaction" number that hides which is which.
-    recommend: (() => {
-      const t = (v) => rows.filter((r) => r.would_recommend === v).length;
-      const yes = t("yes"), no = t("no"), unclear = t("unclear"), answered = yes + no + unclear;
-      return { yes, no, unclear, answered, yes_pct: (yes + no) ? Math.round((yes / (yes + no)) * 100) : null };
+    recommend: { ...recommendCounts, yes_pct: recommendCounts.ci ? recommendCounts.ci.pct : null },
+    matrix,
+    happy_but_prefers_person,
+    cumulative,
+
+    // FREE TEXT IS CALL-LEVEL, DELIBERATELY, and this is the one place the person-level rule must
+    // NOT apply. That rule exists so one tester's three calls count as one OPINION; it was never
+    // meant to throw away their WORDS. survey_people keeps only a person's first surveyed call, so
+    // reading comments from it silently discards anything said on a later call.
+    //
+    // That is not hypothetical. On the data as it stands, the only real comment we have was left on
+    // Marcus's SECOND surveyed call — so the person-level read showed 0 comments while 1 existed,
+    // and the themes engine had nothing to cluster.
+    //
+    // `given` counts comments, not people, because that is what the number means. `people_who_commented`
+    // is reported alongside it so a handful of chatty repeat callers cannot look like broad feedback.
+    comments: (() => {
+      const withText = calls.filter((r) => r.survey_offered && (r.open_comments || r.comments_redacted));
+      const said = calls.filter((r) => r.survey_offered && r.open_comments);
+      return {
+        given: withText.length,
+        people_who_commented: new Set(withText.map((r) => r.person_key).filter(Boolean)).size,
+        redacted: withText.filter((r) => r.comments_redacted).length,
+        // `calls` arrives newest-first, so this is already in the right order.
+        recent: said.slice(0, 40).map((r) => ({
+          conversation_id: r.conversation_id, started_at: r.started_at,
+          person_key: r.person_key, response_seq: r.response_seq, text: r.open_comments,
+        })),
+      };
     })(),
-    // Q4, the only free-text field in the instrument. `redacted` counts answers that tripped the
-    // PII scan in the view and were dropped — the rate stays visible, the words never do.
-    comments: {
-      given: rows.filter((r) => r.open_comments || r.comments_redacted).length,
-      redacted: rows.filter((r) => r.comments_redacted).length,
-      recent: rows.filter((r) => r.open_comments).slice(0, 25)
-        .map((r) => ({ conversation_id: r.conversation_id, started_at: r.started_at, text: r.open_comments })),
-    },
-    // Should always be 0. The prompt forbids surveying on a transfer, so anything here means the gate
-    // leaked and the pre-transfer failure mode is back. Surfaced as an alarm, not a statistic.
-    leaked_pre_transfer: rows.filter((r) => r.offer_context === "pre_transfer").length,
-    verbatims: rows
+    // Should always be 0. The prompt forbids surveying on a transfer, so anything here means the
+    // gate leaked and the pre-transfer failure mode is back. Surfaced as an alarm, not a statistic.
+    leaked_pre_transfer: calls.filter((r) => r.offer_context === "pre_transfer").length,
+
+    // Every answered CALL, newest first — repeats included on purpose. The page's call browser
+    // reads this, and a person's later calls are exactly what makes changed_mind auditable.
+    verbatims: calls
       .filter((r) => r.satisfaction_raw || r.prefer_agent_raw)
-      .slice(0, 40)
+      .slice(0, 300)
       .map((r) => ({
         conversation_id: r.conversation_id,
         started_at: r.started_at,
+        person_key: r.person_key,
+        response_seq: r.response_seq,
+        duration_seconds: r.duration_seconds,
+        topic: r.topic || r.plan_topic,
         satisfaction: r.satisfaction_raw,
+        satisfaction_score: r.satisfaction_score,
         prefer_agent: r.prefer_agent_raw,
         preference: r.preference,
         would_recommend: r.would_recommend,
+        would_recommend_raw: r.would_recommend_raw,
+        open_comments: r.open_comments,
+        comments_redacted: r.comments_redacted,
       })),
   };
 }
@@ -157,15 +221,15 @@ export default async function handler(req, res) {
     ]);
 
     // The survey is a TEMPORARY testing instrument, not part of the permanent quality picture — the
-    // grader is that. It reads from the survey_answers view, which projects the answers out of
-    // raw_payload and excludes pre-survey calls on its own (see the view's comment). Deliberately
+    // grader is that. It reads survey_people (one row per tester, for every
+    // number a decision is quoted from) and survey_answers (one row per call, for adherence and
+    // the call browser). Both exclude pre-survey calls on their own — see migration 009. Deliberately
     // self-contained so it can be deleted in one block when the customer wave closes.
     // Failing soft: a survey outage must never take the rest of the dashboard down with it.
     let survey = null;
     try {
-      survey = summariseSurvey(
-        await sb(`survey_answers?in_survey_era=is.true&select=conversation_id,started_at,survey_offered,survey_consent,offer_context,satisfaction_raw,satisfaction_score,prefer_agent_raw,preference,would_recommend_raw,would_recommend,open_comments,comments_redacted,survey_verdict&order=started_at.desc.nullslast`)
-      );
+      const [people, callRows] = await Promise.all([surveyPeople(), surveyCalls()]);
+      survey = summariseSurvey(people, callRows);
     } catch (e) {
       console.error("survey block failed (dashboard continues without it):", String(e.message || e));
     }

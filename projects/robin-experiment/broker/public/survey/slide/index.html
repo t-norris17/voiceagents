@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Robin — Survey slide</title>
+<style>
+
+
+  :root {
+    --paper:#f2f0ea; --ink:#17181c; --sub:#6c7075; --faint:#a29e95;
+    --line:#d7d3c9; --hair:#e4e1d8;
+    --accent:#b8501e;
+    --sans:"Helvetica Neue",Helvetica,Arial,system-ui,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --paper:#15161a; --ink:#ecebe6; --sub:#9a9ea4; --faint:#6a6e74;
+      --line:#2b2d33; --hair:#212329; --accent:#e08a4a; }
+  }
+  :root[data-theme="light"]{ --paper:#f2f0ea; --ink:#17181c; --sub:#6c7075; --faint:#a29e95; --line:#d7d3c9; --hair:#e4e1d8; --accent:#b8501e; }
+  :root[data-theme="dark"]{ --paper:#15161a; --ink:#ecebe6; --sub:#9a9ea4; --faint:#6a6e74; --line:#2b2d33; --hair:#212329; --accent:#e08a4a; }
+
+  /* ---- chart palette -------------------------------------------------------------------
+     Three categories, drawn from the page's existing ink/accent system rather than an
+     imported chart palette — this is a monochrome editorial sheet and a set of bright hues
+     would read as a different document pasted in.
+
+     Validated with the dataviz validator in both modes. The two checks it fails (lightness
+     band, chroma floor) are a categorical-HUE rubric applied to a mono+accent system, where
+     lightness IS the encoding; the three checks that protect the reader all pass with room:
+       light  ink/accent/neutral  normal ΔE 20.7 · protan 12.2 · contrast all ≥3:1
+       dark   ink/accent/neutral  normal ΔE 22.5 · protan 16.6 · contrast all ≥3:1
+     --c-none started as --line and was re-stepped twice: --line failed contrast (1.31:1) and
+     --sub failed the dark normal-vision floor at ΔE 14.1, under the hard floor of 15.
+     Colour never carries identity alone here — every mark is also directly labelled. */
+  :root{ --c-agent:#17181c; --c-person:#b8501e; --c-none:#4a4f57; }
+  @media (prefers-color-scheme: dark){
+    :root{ --c-agent:#ecebe6; --c-person:#e08a4a; --c-none:#6a6e74; }
+  }
+  :root[data-theme="light"]{ --c-agent:#17181c; --c-person:#b8501e; --c-none:#4a4f57; }
+  :root[data-theme="dark"]{ --c-agent:#ecebe6; --c-person:#e08a4a; --c-none:#6a6e74; }
+
+  /* ---- 16:9 board sized for a projector -------------------------------------------------
+     Not a shrunk dashboard. A slide is read from eight feet away by someone who did not open
+     it themselves, so it carries four figures and one sentence, at sizes that survive a
+     screenshot dropped into PowerPoint at 1920x1080.
+
+     Deliberately NOT a server-rendered PNG: headless Chromium on a serverless function is slow
+     and fragile, and an exported image is stale the moment another tester calls. This route is
+     always current — screenshot it, or print to PDF. */
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; background:var(--paper); color:var(--ink);
+    font-family:var(--sans); -webkit-font-smoothing:antialiased; }
+  .stage{ min-height:100vh; display:grid; place-items:center; padding:24px; }
+  .board{ width:min(100%,1280px); aspect-ratio:16/9; background:var(--paper);
+    border:2px solid var(--ink); padding:clamp(26px,3.4vw,52px);
+    display:flex; flex-direction:column; container-type:inline-size; }
+  .b-top{ display:flex; align-items:baseline; justify-content:space-between; gap:20px;
+    padding-bottom:12px; border-bottom:2px solid var(--ink); }
+  .b-top h1{ margin:0; font-size:clamp(.95rem,1.5cqi,1.35rem); font-weight:800;
+    text-transform:uppercase; letter-spacing:.04em; }
+  .b-top .n{ font-size:clamp(.7rem,1.1cqi,.9rem); color:var(--sub); font-variant-numeric:tabular-nums; }
+  .b-q{ font-size:clamp(1rem,2.1cqi,1.7rem); font-weight:600; margin:clamp(16px,2.4cqi,30px) 0 0;
+    max-width:30ch; line-height:1.25; }
+  .b-hero{ display:flex; align-items:baseline; gap:clamp(14px,2cqi,26px); margin-top:clamp(8px,1.4cqi,18px); }
+  .b-hero .fig{ font-size:clamp(3.4rem,11cqi,8rem); font-weight:800; line-height:.82; letter-spacing:-.04em; }
+  .b-hero .un{ font-size:clamp(1rem,2.4cqi,2rem); font-weight:700; color:var(--sub); }
+  .b-hero .ci{ font-size:clamp(.75rem,1.3cqi,1.05rem); color:var(--sub); line-height:1.4; }
+  .b-hero .ci b{ color:var(--ink); }
+  .b-bar{ display:flex; height:clamp(14px,1.9cqi,24px); margin-top:clamp(14px,2cqi,24px);
+    border:2px solid var(--ink); overflow:hidden; }
+  .b-bar span{ display:block; height:100%; }
+  .b-bar .a{ background:var(--c-agent); } .b-bar .n{ background:var(--c-none); } .b-bar .p{ background:var(--c-person); }
+  .b-key{ display:flex; gap:clamp(14px,2.2cqi,30px); flex-wrap:wrap; margin-top:10px;
+    font-size:clamp(.66rem,1.15cqi,.92rem); color:var(--sub); }
+  .b-key i{ display:inline-block; width:.72em; height:.72em; margin-right:.5em; }
+  .b-key .a i{ background:var(--c-agent); } .b-key .n i{ background:var(--c-none); } .b-key .p i{ background:var(--c-person); }
+  .b-grid{ display:grid; grid-template-columns:repeat(3,1fr); margin-top:auto;
+    border-top:1px solid var(--line); padding-top:clamp(12px,1.8cqi,22px); }
+  .b-m{ padding:0 clamp(12px,1.8cqi,22px); border-left:1px solid var(--line); }
+  .b-m:first-child{ padding-left:0; border-left:0; }
+  .b-m .v{ font-size:clamp(1.3rem,3.4cqi,2.5rem); font-weight:800; line-height:1; letter-spacing:-.02em; }
+  .b-m .v .u{ font-size:.45em; color:var(--sub); font-weight:700; }
+  .b-m .c{ font-size:clamp(.62rem,1.05cqi,.84rem); color:var(--sub); margin-top:7px; line-height:1.4; }
+  .b-m.flag .v{ color:var(--accent); }
+  .b-foot{ margin-top:clamp(10px,1.5cqi,18px); font-size:clamp(.58rem,.95cqi,.76rem);
+    color:var(--faint); display:flex; justify-content:space-between; gap:16px; }
+  .tools{ display:flex; gap:16px; align-items:center; margin:16px auto 0; max-width:1280px;
+    font-size:.7rem; letter-spacing:.12em; text-transform:uppercase; }
+  .tools a,.tools button{ font:inherit; letter-spacing:inherit; text-transform:inherit;
+    color:var(--sub); background:none; border:0; cursor:pointer; text-decoration:none; padding:0; }
+  .tools a:hover,.tools button:hover{ color:var(--ink); }
+  @media print{
+    .tools{ display:none; } .stage{ padding:0; min-height:0; }
+    .board{ border:0; width:100%; }
+  }
+</style>
+</head>
+<body>
+<div class="stage"><div class="board" id="board">
+  <div class="b-top"><h1>Robin · viability survey</h1><div class="n">loading…</div></div>
+</div></div>
+<div class="tools">
+  <a href="/survey/">← Full results</a>
+  <button id="themebtn">Flip theme</button>
+  <button onclick="window.print()">Print / PDF</button>
+</div>
+<script>
+  const esc=(s)=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+  // A slide that quietly shows a stale or absent number is worse than one that says so: it gets
+  // screenshotted and presented. Every state below is spelled out on the board itself.
+  function render(s){
+    const b=document.getElementById("board");
+    if(!s || s.awaiting_first_call || !s.people){
+      b.innerHTML=`<div class="b-top"><h1>Robin · viability survey</h1><div class="n">no responses yet</div></div>
+        <p class="b-q">No one has answered the survey yet, so there is nothing to show.</p>`;
+      return;
+    }
+    const p=s.preference||{}, ci=p.ci, sat=s.satisfaction||{}, rec=s.recommend||{}, a=s.adherence||{};
+    const settled = ci && (ci.lo>50 || ci.hi<50);
+    const pc=(n)=>p.decided?((n/p.decided)*100).toFixed(2)+"%":"0%";
+    b.innerHTML=`
+      <div class="b-top">
+        <h1>Robin · viability survey</h1>
+        <div class="n">${s.people} ${s.people===1?"respondent":"respondents"} · ${s.calls} call${s.calls===1?"":"s"} · ${new Date().toLocaleDateString([], {month:"short",day:"numeric",year:"numeric"})}</div>
+      </div>
+      <p class="b-q">Asked at the end of a call: would you rather handle this with Robin, or hold for a person, even if it took longer?</p>
+      <div class="b-hero">
+        <div class="fig">${ci?ci.pct:"—"}<span class="un">%</span></div>
+        <div class="ci">chose <b>Robin</b><br>${ci?`95% confidence: <b>${ci.lo}–${ci.hi}%</b>`:""}
+          ${ci?`<br>${settled?"Clears a coin flip.":"<b>Still spans a coin flip — not yet decisive.</b>"}`:""}</div>
+      </div>
+      <div class="b-bar" role="img" aria-label="${p.agent} Robin, ${p.no_preference} no preference, ${p.person} a person">
+        <span class="a" style="width:${pc(p.agent)}"></span>
+        <span class="n" style="width:${pc(p.no_preference)}"></span>
+        <span class="p" style="width:${pc(p.person)}"></span>
+      </div>
+      <div class="b-key">
+        <span class="a"><i></i>${p.agent} Robin</span>
+        <span class="n"><i></i>${p.no_preference} no preference</span>
+        <span class="p"><i></i>${p.person} a person</span>
+      </div>
+      <div class="b-grid">
+        <div class="b-m"><div class="v">${sat.mean??"—"}<span class="u">/5</span></div>
+          <div class="c">average rating${sat.n?`, ${sat.n} ${sat.n===1?"respondent":"respondents"}`:""}</div></div>
+        <div class="b-m"><div class="v">${rec.yes_pct!=null?rec.yes_pct:"—"}<span class="u">%</span></div>
+          <div class="c">would recommend it to someone else</div></div>
+        <div class="b-m${s.happy_but_prefers_person?" flag":""}"><div class="v">${s.happy_but_prefers_person??0}</div>
+          <div class="c">rated it 4 or 5 and still want a person next time</div></div>
+      </div>
+      <div class="b-foot">
+        <span>One response per person. ${a.pct!=null?`Asked on ${a.pct}% of eligible calls.`:""}</span>
+        <span>Internal test cohort — not customers.</span>
+      </div>`;
+  }
+
+  document.getElementById("themebtn").addEventListener("click",()=>{
+    const cur=document.documentElement.getAttribute("data-theme");
+    const dark=cur?cur==="dark":matchMedia("(prefers-color-scheme: dark)").matches;
+    document.documentElement.setAttribute("data-theme",dark?"light":"dark");
+  });
+
+  fetch("/api/metrics",{cache:"no-store"}).then(r=>r.json()).then(d=>render(d.survey))
+    .catch(e=>{ document.getElementById("board").innerHTML=
+      `<div class="b-top"><h1>Robin · viability survey</h1><div class="n">unavailable</div></div>
+       <p class="b-q">Couldn't load the numbers: ${esc(e.message)}</p>`; });
+</script>
+</body>
+</html>

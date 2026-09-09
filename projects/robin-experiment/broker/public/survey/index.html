@@ -153,14 +153,18 @@
   .svy-head-fig .un{ font-size:.95rem; font-weight:600; color:var(--sub); }
   .svy-head-fig .vs{ font-size:.82rem; color:var(--sub); line-height:1.45; }
   .svy-head-fig .vs b{ color:var(--ink); }
-  .bar .b-agent{ background:var(--ink); }
-  .bar .b-none{ background:var(--line); }
-  .bar .b-person{ background:var(--accent); }
-  .key .k-agent i{ background:var(--ink); } .key .k-none i{ background:var(--line); } .key .k-person i{ background:var(--accent); }
+  .bar .b-agent{ background:var(--c-agent); }
+  .bar .b-none{ background:var(--c-none); }
+  .bar .b-person{ background:var(--c-person); }
+  .key .k-agent i{ background:var(--c-agent); } .key .k-none i{ background:var(--c-none); } .key .k-person i{ background:var(--c-person); }
   .svy-moe{ font-size:.72rem; color:var(--faint); margin-top:10px; line-height:1.5; }
   .svy-moe b{ color:var(--sub); font-weight:600; }
-  .svy-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(128px,1fr)); gap:0; margin-top:30px;
+  .svy-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:0; margin-top:30px;
     border-top:1px solid var(--line); }
+  @media (max-width:620px){ .svy-grid{ grid-template-columns:repeat(2,1fr); } .svy-m{ padding-left:16px; border-left:1px solid var(--line); }
+    .svy-m:nth-child(odd){ padding-left:0; border-left:0; } }
+  .svy-foot{ font-size:.8rem; color:var(--sub); margin-top:18px; line-height:1.55; max-width:62ch; }
+  .svy-foot b{ color:var(--accent); font-weight:700; }
   .svy-m{ padding:16px 16px 4px; border-left:1px solid var(--line); }
   .svy-m:first-child{ padding-left:0; border-left:0; }
   .svy-m .n{ font-size:1.7rem; font-weight:800; letter-spacing:-.02em; line-height:1; }
@@ -185,6 +189,164 @@
   .svy-q .sc{ font-size:.78rem; color:var(--sub); font-variant-numeric:tabular-nums; white-space:nowrap; }
   /* ---- end survey ------------------------------------------------------------------------ */
 
+
+  /* ---- chart palette -------------------------------------------------------------------
+     Three categories, drawn from the page's existing ink/accent system rather than an
+     imported chart palette — this is a monochrome editorial sheet and a set of bright hues
+     would read as a different document pasted in.
+
+     Validated with the dataviz validator in both modes. The two checks it fails (lightness
+     band, chroma floor) are a categorical-HUE rubric applied to a mono+accent system, where
+     lightness IS the encoding; the three checks that protect the reader all pass with room:
+       light  ink/accent/neutral  normal ΔE 20.7 · protan 12.2 · contrast all ≥3:1
+       dark   ink/accent/neutral  normal ΔE 22.5 · protan 16.6 · contrast all ≥3:1
+     --c-none started as --line and was re-stepped twice: --line failed contrast (1.31:1) and
+     --sub failed the dark normal-vision floor at ΔE 14.1, under the hard floor of 15.
+     Colour never carries identity alone here — every mark is also directly labelled. */
+  :root{ --c-agent:#17181c; --c-person:#b8501e; --c-none:#4a4f57; }
+  @media (prefers-color-scheme: dark){
+    :root{ --c-agent:#ecebe6; --c-person:#e08a4a; --c-none:#6a6e74; }
+  }
+  :root[data-theme="light"]{ --c-agent:#17181c; --c-person:#b8501e; --c-none:#4a4f57; }
+  :root[data-theme="dark"]{ --c-agent:#ecebe6; --c-person:#e08a4a; --c-none:#6a6e74; }
+
+  /* ---- narrative ---- */
+  .narr{ margin-top:30px; padding:20px 22px; border:1px solid var(--line); background:var(--hair); }
+  .narr p{ margin:0; font-size:.95rem; line-height:1.62; max-width:64ch; }
+  .narr .src{ font-size:.66rem; text-transform:uppercase; letter-spacing:.14em; color:var(--faint); font-weight:600; margin-bottom:11px; }
+  .narr.pending p{ color:var(--sub); font-size:.86rem; }
+
+  /* ---- cross-tab matrix ---- */
+  .mx{ margin-top:18px; }
+  .mx-grid{ display:grid; grid-template-columns:auto repeat(3,1fr); gap:1px; background:var(--line); border:1px solid var(--line); }
+  .mx-cell{ background:var(--paper); padding:11px 12px; min-height:62px; }
+  .mx-cell.hd{ min-height:0; padding:9px 12px; font-size:.62rem; text-transform:uppercase; letter-spacing:.13em;
+    color:var(--faint); font-weight:600; }
+  .mx-cell.rh{ min-height:0; display:flex; align-items:center; gap:8px; font-size:.8rem; font-weight:600; white-space:nowrap; }
+  .mx-cell.rh .st{ color:var(--faint); font-weight:400; letter-spacing:.1em; }
+  .mx-dots{ display:flex; flex-wrap:wrap; gap:4px; align-items:flex-start; }
+  .mx-dot{ width:11px; height:11px; border-radius:50%; }
+  .mx-dot.agent{ background:var(--c-agent); }
+  .mx-dot.person{ background:var(--c-person); }
+  .mx-dot.none{ background:var(--c-none); }
+  /* Unclear is an outline, not a fill: it is an absence of a classification, and giving it a
+     solid colour would make it read as a fourth opinion rather than a gap in the data. */
+  .mx-dot.unclear{ background:transparent; box-shadow:inset 0 0 0 1.5px var(--c-none); }
+  .mx-n{ font-size:.72rem; color:var(--sub); font-variant-numeric:tabular-nums; margin-bottom:6px; font-weight:600; }
+  .mx-n.zero{ color:var(--faint); font-weight:400; }
+  .mx-cell.flag{ background:color-mix(in srgb, var(--c-person) 9%, var(--paper)); }
+  .mx-find{ margin-top:16px; font-size:.82rem; line-height:1.55; color:var(--sub); max-width:62ch; }
+  .mx-find b{ color:var(--ink); }
+  .mx-find.alarm b{ color:var(--accent); }
+
+  /* ---- cumulative confidence band ---- */
+  .cum{ margin-top:18px; }
+  .cum svg{ width:100%; height:auto; display:block; overflow:visible; max-height:340px; }
+  .cum .band{ fill:var(--c-agent); opacity:.11; }
+  .cum .lineC{ fill:none; stroke:var(--c-agent); stroke-width:2; stroke-linejoin:round; }
+  .cum .fifty{ stroke:var(--c-person); stroke-width:1.5; stroke-dasharray:4 4; }
+  .cum .ax{ stroke:var(--line); stroke-width:1; }
+  .cum text{ font-size:11px; fill:var(--faint); font-family:var(--sans); }
+  .cum text.val{ fill:var(--ink); font-weight:800; font-size:14px; }
+  .cum text.fiftyl{ fill:var(--c-person); font-weight:600; }
+  .cum .pt{ fill:var(--c-agent); }
+  .cum-note{ font-size:.78rem; color:var(--sub); margin-top:12px; line-height:1.5; max-width:62ch; }
+
+  /* ---- themes ---- */
+  .thm{ display:grid; gap:0; margin-top:6px; border-top:1px solid var(--ink); }
+  .thm-i{ padding:15px 0; border-bottom:1px solid var(--hair); }
+  .thm-top{ display:flex; align-items:baseline; justify-content:space-between; gap:14px; }
+  .thm-lab{ font-weight:700; font-size:.95rem; }
+  .thm-n{ font-size:.72rem; color:var(--sub); white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .thm-sum{ font-size:.86rem; color:var(--sub); margin-top:5px; line-height:1.5; max-width:64ch; }
+  .thm-q{ font-size:.86rem; margin-top:9px; padding-left:13px; border-left:2px solid var(--line); line-height:1.5; }
+  .thm-q.negative{ border-left-color:var(--c-person); }
+  .thm-ids{ margin-top:8px; display:flex; flex-wrap:wrap; gap:9px; }
+
+  /* ---- ask ---- */
+  .ask-form{ display:flex; gap:10px; margin-top:8px; }
+  .ask-form input{ flex:1; font:inherit; font-size:.9rem; padding:11px 13px; background:var(--paper);
+    color:var(--ink); border:1px solid var(--line); border-radius:0; }
+  .ask-form input:focus{ outline:2px solid var(--accent); outline-offset:-1px; border-color:var(--accent); }
+  .ask-form button{ font:inherit; font-size:.7rem; letter-spacing:.14em; text-transform:uppercase; font-weight:700;
+    padding:0 20px; background:var(--ink); color:var(--paper); border:1px solid var(--ink); cursor:pointer; }
+  .ask-form button:disabled{ opacity:.45; cursor:default; }
+  .ask-eg{ display:flex; flex-wrap:wrap; gap:8px; margin-top:11px; }
+  .ask-eg button{ font:inherit; font-size:.74rem; color:var(--sub); background:none; border:1px solid var(--line);
+    padding:4px 10px; cursor:pointer; text-align:left; }
+  .ask-eg button:hover{ color:var(--ink); border-color:var(--sub); }
+  .ask-out{ margin-top:18px; padding:17px 19px; border:1px solid var(--line); }
+  .ask-out p{ margin:0; font-size:.92rem; line-height:1.6; }
+  .ask-cav{ font-size:.78rem; color:var(--accent); margin-top:11px; line-height:1.5; }
+  .ask-cite{ margin-top:13px; display:flex; flex-wrap:wrap; gap:9px; align-items:baseline; }
+  .ask-cite .lbl{ font-size:.6rem; }
+  .cid{ font:inherit; font-size:.7rem; letter-spacing:.02em; color:var(--sub); background:none; border:0;
+    border-bottom:1px solid var(--line); padding:0 0 1px; cursor:pointer; font-variant-numeric:tabular-nums; }
+  .cid:hover{ color:var(--ink); border-bottom-color:var(--ink); }
+
+  /* ---- call browser ---- */
+  .srt{ display:flex; gap:16px; flex-wrap:wrap; margin:2px 0 4px; }
+  .srt button{ font:inherit; font-size:.66rem; letter-spacing:.12em; text-transform:uppercase; color:var(--faint);
+    background:none; border:0; padding:0 0 3px; cursor:pointer; border-bottom:2px solid transparent; }
+  .srt button[aria-pressed="true"]{ color:var(--ink); border-bottom-color:var(--ink); }
+  .cl{ border-top:1px solid var(--ink); }
+  .cl-row{ display:grid; grid-template-columns:1fr auto; gap:3px 18px; padding:13px 0;
+    border-bottom:1px solid var(--hair); align-items:baseline; cursor:pointer; }
+  .cl-row:hover .cl-said{ text-decoration:underline; text-underline-offset:3px; }
+  .cl-row:focus-visible{ outline:2px solid var(--accent); outline-offset:-2px; }
+  .cl-said{ font-size:.88rem; }
+  .cl-said .lead{ color:var(--faint); }
+  .cl-sub{ font-size:.7rem; color:var(--faint); letter-spacing:.02em; margin-top:3px; }
+  .cl-sub .rpt{ color:var(--accent); font-weight:700; text-transform:uppercase; letter-spacing:.1em; }
+  .cl-meta{ font-size:.76rem; color:var(--sub); white-space:nowrap; font-variant-numeric:tabular-nums; text-align:right; }
+  .cl-meta .tagp.person{ color:var(--accent); font-weight:700; }
+
+  /* ---- transcript drawer ---- */
+  .drw{ position:fixed; inset:0; background:color-mix(in srgb, var(--ink) 42%, transparent);
+    display:flex; justify-content:flex-end; z-index:50; }
+  .drw[hidden]{ display:none; }
+  .drw-p{ background:var(--paper); width:min(620px,100%); height:100%; overflow-y:auto;
+    padding:26px clamp(18px,4vw,34px) 44px; border-left:2px solid var(--ink); }
+  .drw-h{ display:flex; align-items:baseline; justify-content:space-between; gap:14px;
+    padding-bottom:12px; border-bottom:2px solid var(--ink); position:sticky; top:0; background:var(--paper); }
+  .drw-h .t{ font-size:.95rem; font-weight:800; text-transform:uppercase; letter-spacing:.03em; }
+  .drw-x{ font:inherit; font-size:.66rem; letter-spacing:.12em; text-transform:uppercase; background:none;
+    border:0; color:var(--sub); cursor:pointer; padding:4px; }
+  .drw-x:hover{ color:var(--ink); }
+  .drw-meta{ font-size:.74rem; color:var(--sub); margin-top:12px; line-height:1.7; font-variant-numeric:tabular-nums; }
+  .drw-meta b{ color:var(--ink); font-weight:600; }
+  .turn{ padding:11px 0; border-bottom:1px solid var(--hair); }
+  .turn:last-child{ border-bottom:0; }
+  .turn .who{ font-size:.6rem; text-transform:uppercase; letter-spacing:.16em; font-weight:700; color:var(--faint); }
+  .turn.agent .who{ color:var(--sub); }
+  .turn .said{ font-size:.88rem; line-height:1.55; margin-top:3px; }
+  .turn.caller .said{ font-weight:600; }
+  .drw-svy{ margin-top:20px; padding:14px 16px; border:1px solid var(--line); }
+  .drw-svy .lbl{ margin-bottom:9px; }
+  .drw-a{ display:grid; grid-template-columns:auto 1fr; gap:5px 14px; font-size:.84rem; line-height:1.5; }
+  .drw-a dt{ color:var(--faint); font-size:.66rem; text-transform:uppercase; letter-spacing:.1em;
+    font-weight:600; padding-top:3px; white-space:nowrap; }
+  .drw-a dd{ margin:0; }
+
+  /* ---- downloads ---- */
+  .dl{ display:flex; gap:12px; flex-wrap:wrap; margin-top:10px; }
+  .dl a{ font-size:.7rem; letter-spacing:.13em; text-transform:uppercase; font-weight:700; color:var(--ink);
+    text-decoration:none; border:1px solid var(--ink); padding:9px 16px; }
+  .dl a:hover{ background:var(--ink); color:var(--paper); }
+  .dl a.sec{ color:var(--sub); border-color:var(--line); font-weight:600; }
+  .dl a.sec:hover{ background:none; color:var(--ink); border-color:var(--ink); }
+  .dl-note{ font-size:.74rem; color:var(--faint); margin-top:12px; line-height:1.5; max-width:60ch; }
+
+  .key i.c-agent{ background:var(--c-agent); border-color:var(--c-agent); }
+  .key i.c-person{ background:var(--c-person); border-color:var(--c-person); }
+  .key i.c-none{ background:var(--c-none); border-color:var(--c-none); }
+
+  @media (max-width:560px){
+    .mx-grid{ grid-template-columns:auto repeat(3,1fr); font-size:.9em; }
+    .mx-cell{ padding:8px 7px; }
+    .ask-form{ flex-direction:column; }
+    .ask-form button{ padding:12px; }
+  }
 </style>
 </head>
 <body>
@@ -205,15 +367,98 @@
     <div id="svy"></div>
   </section>
 
+  <section id="narrsec" hidden>
+    <div id="narr"></div>
+  </section>
+
+  <section id="mxsec" hidden>
+    <hr class="rule">
+    <div class="shead"><div class="lbl">Rating against preference · one dot per person</div></div>
+    <p class="svy-lede">The cross-tab, not an average. The question a room asks first is whether anyone
+      rated the call highly and still wants a human next time — that cell decides how much weight the
+      headline can carry.</p>
+    <div class="mx" id="mx"></div>
+  </section>
+
+  <section id="cumsec" hidden>
+    <hr class="rule">
+    <div class="shead"><div class="lbl">How certain are we yet?</div></div>
+    <p class="svy-lede">The share preferring Robin as each new person answers, with the 95% interval
+      around it. Not a day-by-day trend, which at this sample size is noise. This answers whether
+      there is enough data to decide.</p>
+    <div class="cum" id="cum"></div>
+  </section>
+
+  <section id="thmsec" hidden>
+    <hr class="rule">
+    <div class="shead"><div class="lbl">What people said · themes</div></div>
+    <div id="thm"></div>
+  </section>
+
+  <section id="cmsec" hidden>
+    <hr class="rule">
+    <div class="shead"><div class="lbl">In their own words</div></div>
+    <p class="svy-lede">Every written answer to the last question, unedited, from every call — including
+      repeat calls, because a comment is a comment even when we only count the person once.
+      Click an id to read the call it came from.</p>
+    <div id="cm"></div>
+  </section>
+
+  <section id="asksec" hidden>
+    <hr class="rule">
+    <div class="shead"><div class="lbl">Ask the data</div></div>
+    <p class="svy-lede">Answered only from the survey rows, with the calls behind every answer cited.
+      If the rows can't answer it, it says so rather than guessing.</p>
+    <form class="ask-form" id="askform">
+      <input id="askq" type="text" maxlength="500" autocomplete="off"
+             placeholder="e.g. Did anyone who preferred a person say why?" aria-label="Ask a question about the survey data">
+      <button type="submit" id="asksend">Ask</button>
+    </form>
+    <div class="ask-eg" id="askeg"></div>
+    <div id="askout"></div>
+  </section>
+
+  <section id="clsec" hidden>
+    <hr class="rule">
+    <div class="shead"><div class="lbl">Every answered call</div></div>
+    <p class="svy-lede">Repeat calls included, so a person who answered more than once is visible
+      rather than averaged away. Open any row to read the transcript.</p>
+    <div class="srt" id="srt"></div>
+    <div class="cl" id="cl"></div>
+  </section>
+
+  <section id="dlsec" hidden>
+    <hr class="rule">
+    <div class="shead"><div class="lbl">Take it with you</div></div>
+    <div class="dl">
+      <a href="/api/survey-export?level=people">Download responses (CSV)</a>
+      <a class="sec" href="/api/survey-export?level=calls">Every call (CSV)</a>
+      <a class="sec" href="/survey/slide/">Presentation slide</a>
+    </div>
+    <p class="dl-note">The people file is one row per respondent and is the basis of every figure on
+      this page. The calls file includes repeats, for anyone checking the dedup. Comments that tripped
+      the personal-data scan are absent from both by design.</p>
+  </section>
+
   <footer>
     <span>Robin · Vertex Manufacturing 401(k) · <span id="gen"></span></span>
     <span class="xlink">Call quality and coverage live on the <a href="/dashboard/">experiment monitor</a>.</span>
   </footer>
 </div>
 
+<div class="drw" id="drw" hidden>
+  <div class="drw-p" role="dialog" aria-modal="true" aria-label="Call transcript">
+    <div class="drw-h">
+      <span class="t" id="drwt">Call</span>
+      <button class="drw-x" id="drwx">Close</button>
+    </div>
+    <div id="drwbody"></div>
+  </div>
+</div>
 <script>
   const esc=(s)=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-  let DATA=null;
+  const PRETTY={agent:"Robin",person:"a person",no_preference:"no preference",unclassified:"unclear"};
+  let DATA=null, SORT="recent";
 
   // Reads the same /api/metrics the monitor does, but renders ONLY its `survey` block. The survey is a
   // temporary instrument on its own page so that removing it later is deleting a directory, and so this
@@ -224,11 +469,13 @@
       if(!r.ok) throw new Error("HTTP "+r.status);
       DATA=await r.json();
       document.getElementById("banner").innerHTML="";
+      const s=DATA.survey||{};
       document.getElementById("mastmeta").innerHTML=
-        `<b>${DATA.window?.calls ?? 0}</b> call${DATA.window?.calls===1?"":"s"} on record<br>`+
+        `<b>${s.people ?? 0}</b> ${s.people===1?"person":"people"} · ${s.calls ?? 0} call${s.calls===1?"":"s"}<br>`+
         `<span class="soft">last updated <span id="gen2"></span></span>`;
-      renderSurvey();
+      renderSurvey(); renderMatrix(); renderCumulative(); renderComments(); renderCalls(); renderDownloads();
       stamp();
+      loadThemes();   // separate endpoint: costs a model call, so it is not on the 60s refresh
     }catch(e){
       document.getElementById("banner").innerHTML=
         `<div class="banner">Couldn't load live data: ${esc(e.message)}. Retrying…</div>`;
@@ -243,7 +490,7 @@
   // ---- SURVEY (temporary; delete with the instrument) --------------------------------------
   // Ordered by what can mislead you fastest, not by what's most interesting:
   //   1. adherence — if she isn't asking, every number under it comes from a biased slice
-  //   2. the preference split, with its margin of error attached, because at n=30 a 60/40 is noise
+  //   2. the preference split, with its interval attached, because at n=30 a 60/40 is noise
   //   3. what people actually said, so the buckets above stay auditable
   function renderSurvey(){
     const sec=document.getElementById("svysec"), el=document.getElementById("svy"), s=DATA.survey;
@@ -257,23 +504,24 @@
     }
 
     const a=s.adherence||{}, r=s.response||{}, p=s.preference||{}, sat=s.satisfaction||{},
-          rec=s.recommend||{}, com=s.comments||{};
+          rec=s.recommend||{}, com=s.comments||{}, ci=p.ci;
     document.getElementById("svymeta").textContent=
-      `${s.calls} call${s.calls===1?"":"s"} since it went live`;
+      `${s.people} ${s.people===1?"person":"people"}, ${s.calls} call${s.calls===1?"":"s"}`;
 
-    // Headline. Only claim a winner once the gap clears the margin; otherwise say it's too close.
-    const gap=Math.abs((p.agent_pct??0)-(p.person_pct??0));
-    const tooClose = p.decided>0 && gap<=(p.margin_pts??99);
-    const headFig = p.decided
+    // Only claim a winner once the interval clears 50%. Anything else is a coin flip with a
+    // decimal point on it, and a decision made on one is the failure this page exists to prevent.
+    const decided = p.decided||0;
+    const settled = ci && (ci.lo>50 || ci.hi<50);
+    const headFig = decided
       ? `<div class="svy-head-fig">
-           <div><div class="fig tnum">${p.agent_pct}<span class="un">%</span></div></div>
+           <div><div class="fig tnum">${ci.pct}<span class="un">%</span></div></div>
            <div class="vs">chose <b>Robin</b> over holding for a person.<br>
-             ${p.person_pct}% would rather wait for a person; ${Math.max(0,100-p.agent_pct-p.person_pct)}% had no preference.</div>
+             ${p.person_pct}% would rather wait for a person; ${p.no_preference_pct}% had no preference.</div>
          </div>`
       : `<div class="empty">Nobody has answered the preference question yet.</div>`;
 
-    const pc=(n)=>p.decided?((n/p.decided)*100).toFixed(2)+"%":"0%";
-    const bar = p.decided ? `
+    const pc=(n)=>decided?((n/decided)*100).toFixed(2)+"%":"0%";
+    const bar = decided ? `
       <div class="bar" role="img" aria-label="${p.agent} chose Robin, ${p.no_preference} no preference, ${p.person} chose a person">
         <span class="b-agent" style="width:${pc(p.agent)}"></span>
         <span class="b-none" style="width:${pc(p.no_preference)}"></span>
@@ -285,12 +533,12 @@
         <span class="k-person"><i></i>${p.person} would rather have a person</span>
       </div>
       <div class="svy-moe">
-        Based on <b>${p.decided} answer${p.decided===1?"":"s"}</b>, so the true figure is roughly
-        <b>±${p.margin_pts} points</b>.
-        ${tooClose
-          ? `The gap here is ${gap} point${gap===1?"":"s"} — inside the margin, so this is <b>too close to call yet</b>.`
-          : `The gap is ${gap} points, wider than the margin.`}
-        Count one answer per person, not per call.
+        From <b>${decided} ${decided===1?"person":"people"}</b>, so the true figure sits between
+        <b>${ci.lo}% and ${ci.hi}%</b> (95% confidence).
+        ${settled
+          ? `That range clears a coin flip, so the direction holds.`
+          : `That range spans 50%, so this is <b>still a coin flip</b> — not yet a result.`}
+        ${s.repeat_callers?`Counted one answer per person: ${s.repeat_callers} ${s.repeat_callers===1?"tester":"testers"} called more than once.`:``}
       </div>` : "";
 
     const adherenceWarn = a.pct!=null && a.pct<70;
@@ -311,49 +559,332 @@
         </div>` : "",
       sat.n ? `<div class="svy-m">
           <div class="n tnum">${sat.mean}<span class="un">/5</span></div>
-          <div class="cap">average rating across ${sat.n} answer${sat.n===1?"":"s"};
+          <div class="cap">average rating across ${sat.n} ${sat.n===1?"person":"people"};
           ${sat.four_or_five} gave a 4 or 5.${sat.unparsed?` ${sat.unparsed} answered in words we couldn't score.`:""}</div>
         </div>` : "",
-      a.ineligible ? `<div class="svy-m">
-          <div class="n tnum">${a.ineligible}</div>
-          <div class="cap">calls correctly excluded — transferred, or verification failed.</div>
-        </div>` : "",
     ].filter(Boolean).join("");
+
+    // Real, but footnotes rather than headline metrics — and keeping the tile row at four means it
+    // never breaks to a second line with one lonely tile on it.
+    const notes=[
+      s.changed_mind ? `<b>${s.changed_mind} ${s.changed_mind===1?"person":"people"} changed their answer between calls</b> —
+        worth reading those transcripts, it is the one thing an average cannot show you.` : "",
+      a.ineligible ? `${a.ineligible} call${a.ineligible===1?" was":"s were"} correctly excluded, having transferred or failed verification.` : "",
+    ].filter(Boolean).join(" ");
 
     // Should always be zero. Anything here means the prompt gate leaked on a transfer.
     const alarm = s.leaked_pre_transfer
       ? `<div class="svy-alarm">${s.leaked_pre_transfer} call${s.leaked_pre_transfer===1?"":"s"} were surveyed on the way into a transfer.
          She's told never to do that — the gate has leaked. Worth listening to those calls.</div>` : "";
 
-    const vb = (s.verbatims||[]).length ? `
-      <div class="svy-vb">
-        ${s.verbatims.map(v=>`
-          <div class="svy-q">
-            <div class="said">${v.prefer_agent?`<span class="lead">“</span>${esc(v.prefer_agent)}<span class="lead">”</span>`:`<span class="lead">— no answer to the second question —</span>`}</div>
-            <div class="tagp ${esc(v.preference||"")}">${esc((v.preference||"").replace("_"," "))}</div>
-            <div class="sc">${v.satisfaction?`rated ${esc(v.satisfaction)}`:`<span class="lead">no rating</span>`}</div>
-          </div>`).join("")}
-      </div>` : "";
-
-    // Free-text answers. The count of dropped ones is shown so the redaction RATE stays visible
-    // even though the words never do — that number is the compliance answer if anyone asks.
-    const comments = (com.recent||[]).length || com.redacted ? `
-      <div class="svy-cm">
-        <div class="lbl" style="margin-bottom:6px">In their own words${com.redacted?` · <span class="accent">${com.redacted} withheld</span>`:""}</div>
-        ${(com.recent||[]).map(c=>`<div class="svy-cmt">“${esc(c.text)}”</div>`).join("")}
-        ${com.redacted?`<div class="svy-cmt redacted">${com.redacted} answer${com.redacted===1?" was":"s were"} dropped for containing something
-          personal — an account number, a Social Security Number or similar. The rate is kept, the words are not.</div>`:""}
-      </div>` : "";
 
     el.innerHTML=`<div class="svy">
       <p class="svy-lede">Four questions at the end of a normal call, for the testing phase only. Not asked on transfers, or on
         callers who could not be verified. Testers are briefed beforehand, so the questions are stated
-        rather than offered.</p>
-      ${headFig}${bar}${metrics?`<div class="svy-grid">${metrics}</div>`:""}${alarm}${comments}${vb}
+        rather than offered. Every figure counts one answer per person.</p>
+      ${headFig}${bar}${metrics?`<div class="svy-grid">${metrics}</div>`:""}
+      ${notes?`<p class="svy-foot">${notes}</p>`:""}${alarm}
     </div>`;
   }
-  // ---- end survey ---------------------------------------------------------------------------
 
+  // ---- Cross-tab: rating against preference -------------------------------------------------
+  function renderMatrix(){
+    const sec=document.getElementById("mxsec"), s=DATA.survey;
+    const rows=(s&&s.matrix)||[];
+    const total=rows.reduce((n,r)=>n+r.agent+r.person+r.no_preference+r.unclassified,0);
+    if(!total){ sec.hidden=true; return; }
+    sec.hidden=false;
+
+    const dots=(n,cls)=>Array.from({length:n},()=>`<span class="mx-dot ${cls}"></span>`).join("");
+    const cell=(n,cls,flag)=>`<div class="mx-cell${flag&&n?" flag":""}">
+        <div class="mx-n${n?"":" zero"}">${n||"—"}</div>
+        <div class="mx-dots">${dots(n,cls)}</div>
+      </div>`;
+
+    // The "unclear" column appears only when somebody is actually in it. Hiding those people would
+    // undercount the grid against the headline n — and worse, a row where EVERY respondent was
+    // unparsed would render as three dashes and read as a rendering fault rather than as the thing
+    // it is: answers the bucketing could not classify, which is exactly what this page promises to
+    // keep visible rather than quietly round away.
+    const anyUnclear = rows.some((r) => r.unclassified > 0);
+    const cols = anyUnclear ? 4 : 3;
+
+    const body=rows.filter(r=>r.agent+r.person+r.no_preference+r.unclassified>0).map(r=>`
+      <div class="mx-cell rh">${r.score} <span class="st">${r.score===5?"best":r.score===1?"worst":""}</span></div>
+      ${cell(r.agent,"agent",false)}
+      ${cell(r.no_preference,"none",false)}
+      ${cell(r.person,"person",r.score>=4)}
+      ${anyUnclear?cell(r.unclassified,"unclear",false):""}
+    `).join("");
+
+    const hbp=s.happy_but_prefers_person||0;
+    const finding = hbp
+      ? `<p class="mx-find alarm"><b>${hbp} ${hbp===1?"person":"people"} rated the call 4 or 5 and still
+         want a human next time.</b> That is not dissatisfaction, it is a preference the satisfaction
+         score cannot see — and it is the number to bring to the room alongside the headline.</p>`
+      : `<p class="mx-find">Nobody who rated the call 4 or 5 asked for a human next time.
+         <b>Satisfaction and preference are pointing the same way</b>, which is what makes the
+         headline above worth acting on.</p>`;
+
+    const unclearN = rows.reduce((n,r)=>n+r.unclassified,0);
+    const unclearNote = unclearN
+      ? `<p class="mx-find">${unclearN===1
+            ? `One answer could not be bucketed from the caller's wording and sits in <b>Unclear</b>. It is`
+            : `${unclearN} answers could not be bucketed from the caller's wording and sit in <b>Unclear</b>. They are`}
+         counted here rather than dropped — read them in the call list below before treating the
+         split above as final.</p>`
+      : "";
+
+    document.getElementById("mx").innerHTML=`
+      <div class="mx-grid" style="grid-template-columns:auto repeat(${cols},1fr)"
+           role="table" aria-label="Satisfaction rating against stated preference">
+        <div class="mx-cell hd">Rating</div>
+        <div class="mx-cell hd">Prefers Robin</div>
+        <div class="mx-cell hd">No preference</div>
+        <div class="mx-cell hd">Prefers a person</div>
+        ${anyUnclear?`<div class="mx-cell hd">Unclear</div>`:""}
+        ${body}
+      </div>${finding}${unclearNote}`;
+  }
+
+  // ---- Cumulative share with its 95% interval ------------------------------------------------
+  function renderCumulative(){
+    const sec=document.getElementById("cumsec"), pts=(DATA.survey&&DATA.survey.cumulative)||[];
+    // One point is a line with no shape. Below three the band is wider than the chart is tall and
+    // the picture says less than the sentence above it already did.
+    if(pts.length<3){ sec.hidden=true; return; }
+    sec.hidden=false;
+
+    const W=680,H=300,L=40,R=56,T=18,B=34;
+    const x=(i)=>L+(pts.length===1?0:(i/(pts.length-1))*(W-L-R));
+    const y=(v)=>T+(1-v/100)*(H-T-B);
+    const top=pts.map((p,i)=>`${x(i)},${y(p.hi)}`).join(" ");
+    const bot=pts.map((p,i)=>`${x(i)},${y(p.lo)}`).reverse().join(" ");
+    const line=pts.map((p,i)=>`${i?"L":"M"}${x(i)},${y(p.pct)}`).join("");
+    const last=pts[pts.length-1];
+
+    document.getElementById("cum").innerHTML=`
+      <svg viewBox="0 0 ${W} ${H}" role="img"
+           aria-label="Share preferring Robin as respondents accumulate: currently ${last.pct}%, 95% interval ${last.lo} to ${last.hi} percent, from ${last.n} people">
+        <line class="ax" x1="${L}" y1="${y(0)}" x2="${W-R}" y2="${y(0)}"></line>
+        <line class="ax" x1="${L}" y1="${y(100)}" x2="${W-R}" y2="${y(100)}"></line>
+        <polygon class="band" points="${top} ${bot}"></polygon>
+        <line class="fifty" x1="${L}" y1="${y(50)}" x2="${W-R}" y2="${y(50)}"></line>
+        <path class="lineC" d="${line}"></path>
+        <circle class="pt" cx="${x(pts.length-1)}" cy="${y(last.pct)}" r="4"></circle>
+        <text x="${L-7}" y="${y(100)+4}" text-anchor="end">100%</text>
+        <text class="fiftyl" x="${L-7}" y="${y(50)+4}" text-anchor="end">50%</text>
+        <text x="${L-7}" y="${y(0)+4}" text-anchor="end">0%</text>
+        <text class="fiftyl" x="${W-R+6}" y="${y(50)+4}">coin flip</text>
+        <text class="val" x="${x(pts.length-1)}" y="${y(last.pct)-11}" text-anchor="end">${last.pct}%</text>
+        <text x="${L}" y="${H-6}">1st respondent</text>
+        <text x="${W-R}" y="${H-6}" text-anchor="end">${last.n}${last.n===1?"st":"th"}</text>
+      </svg>
+      <p class="cum-note">Shaded band is the 95% interval. It narrows as people answer.
+        ${last.lo>50
+          ? `It now sits entirely above the coin-flip line, so the preference for Robin is real at this sample size.`
+          : last.hi<50
+          ? `It now sits entirely below the coin-flip line, so the preference against Robin is real at this sample size.`
+          : `It still crosses the coin-flip line — <b>keep collecting</b>. The wave is not yet decisive.`}</p>`;
+  }
+
+  // ---- Themes and narrative (separate endpoint — costs a model call) -------------------------
+  async function loadThemes(){
+    const nsec=document.getElementById("narrsec"), tsec=document.getElementById("thmsec");
+    try{
+      const r=await fetch("/api/survey-themes",{cache:"no-store"});
+      const t=await r.json();
+      if(!t.ready){
+        nsec.hidden=false; tsec.hidden=true;
+        document.getElementById("narr").innerHTML=
+          `<div class="narr pending"><div class="src">Narrative</div><p>${esc(
+            t.error || `${t.reason||"Not enough written answers yet."} ${t.have!=null?`${t.have} of ${t.need} so far.`:""}`
+          )}</p></div>`;
+        return;
+      }
+      nsec.hidden=false; tsec.hidden=false;
+      document.getElementById("narr").innerHTML=
+        `<div class="narr"><div class="src">What the answers say · from ${t.based_on.comments} written comment${t.based_on.comments===1?"":"s"} by ${t.based_on.people_who_commented} ${t.based_on.people_who_commented===1?"person":"people"}</div>
+         <p>${esc(t.narrative)}</p></div>`;
+      document.getElementById("thm").innerHTML=`<div class="thm">${(t.themes||[]).map(th=>`
+        <div class="thm-i">
+          <div class="thm-top">
+            <span class="thm-lab">${esc(th.label)}</span>
+            <span class="thm-n">${th.people} ${th.people===1?"person":"people"}${
+              th.mentions>th.people?` · ${th.mentions} mentions`:""} · ${esc(th.sentiment)}</span>
+          </div>
+          <div class="thm-sum">${esc(th.summary)}</div>
+          <div class="thm-q ${esc(th.sentiment)}">“${esc(th.quote)}”</div>
+          <div class="thm-ids">${(th.conversation_ids||[]).map(id=>
+            `<button class="cid" data-id="${esc(id)}">${esc(id.slice(-8))}</button>`).join("")}</div>
+        </div>`).join("")}</div>`;
+    }catch(e){
+      nsec.hidden=false; tsec.hidden=true;
+      document.getElementById("narr").innerHTML=
+        `<div class="narr pending"><div class="src">Narrative</div><p>Theme analysis is unavailable right now.</p></div>`;
+    }
+  }
+
+  // ---- Ask the data --------------------------------------------------------------------------
+  const EXAMPLES=[
+    "Did anyone who preferred a person say why?",
+    "What did the lowest raters actually say?",
+    "Is there a topic where people wanted a human?",
+    "Did anyone change their mind between calls?",
+  ];
+  function initAsk(){
+    document.getElementById("asksec").hidden=false;
+    document.getElementById("askeg").innerHTML=
+      EXAMPLES.map(q=>`<button type="button" data-q="${esc(q)}">${esc(q)}</button>`).join("");
+    document.getElementById("askeg").addEventListener("click",(e)=>{
+      const b=e.target.closest("button[data-q]"); if(!b) return;
+      document.getElementById("askq").value=b.dataset.q;
+      document.getElementById("askform").requestSubmit();
+    });
+    document.getElementById("askform").addEventListener("submit",async(e)=>{
+      e.preventDefault();
+      const q=document.getElementById("askq").value.trim();
+      if(!q) return;
+      const btn=document.getElementById("asksend"), out=document.getElementById("askout");
+      btn.disabled=true; out.innerHTML=`<div class="ask-out"><p class="soft">Reading the rows…</p></div>`;
+      try{
+        const r=await fetch("/api/survey-ask",{method:"POST",headers:{"content-type":"application/json"},
+          body:JSON.stringify({question:q})});
+        const a=await r.json();
+        if(!r.ok) throw new Error(a.error||("HTTP "+r.status));
+        out.innerHTML=`<div class="ask-out">
+          <p>${esc(a.answer)}</p>
+          ${a.caveat?`<div class="ask-cav">${esc(a.caveat)}</div>`:""}
+          ${(a.cited||[]).length?`<div class="ask-cite"><span class="lbl">From these calls</span>${
+            a.cited.map(id=>`<button class="cid" data-id="${esc(id)}">${esc(String(id).slice(-8))}</button>`).join("")
+          }</div>`:""}
+        </div>`;
+      }catch(err){
+        out.innerHTML=`<div class="ask-out"><p class="soft">${esc(err.message)}</p></div>`;
+      }finally{ btn.disabled=false; }
+    });
+  }
+
+  // ---- Call browser ---------------------------------------------------------------------------
+  const SORTS={
+    recent:{label:"Most recent", fn:(a,b)=>String(b.started_at||"").localeCompare(String(a.started_at||""))},
+    lowest:{label:"Lowest rated", fn:(a,b)=>(a.satisfaction_score??99)-(b.satisfaction_score??99)},
+    highest:{label:"Highest rated",fn:(a,b)=>(b.satisfaction_score??-1)-(a.satisfaction_score??-1)},
+    person:{label:"Wanted a person", fn:(a,b)=>(a.preference==="person"?0:1)-(b.preference==="person"?0:1)},
+  };
+  function renderCalls(){
+    const sec=document.getElementById("clsec"), rows=(DATA.survey&&DATA.survey.verbatims)||[];
+    if(!rows.length){ sec.hidden=true; return; }
+    sec.hidden=false;
+    document.getElementById("srt").innerHTML=Object.entries(SORTS).map(([k,v])=>
+      `<button data-s="${k}" aria-pressed="${k===SORT}">${esc(v.label)}</button>`).join("");
+    const list=rows.slice().sort(SORTS[SORT].fn);
+    document.getElementById("cl").innerHTML=list.map(v=>`
+      <div class="cl-row" role="button" tabindex="0" data-id="${esc(v.conversation_id)}">
+        <div>
+          <div class="cl-said">${v.prefer_agent
+            ? `<span class="lead">“</span>${esc(v.prefer_agent)}<span class="lead">”</span>`
+            : `<span class="lead">— no answer to the preference question —</span>`}</div>
+          <div class="cl-sub">${esc(String(v.started_at||"").slice(0,16).replace("T"," "))}
+            ${v.topic?` · ${esc(v.topic)}`:""}
+            ${v.response_seq>1?` · <span class="rpt">call ${v.response_seq} by this person</span>`:""}
+            ${v.comments_redacted?` · comment withheld`:""}</div>
+        </div>
+        <div class="cl-meta">
+          <span class="tagp ${esc(v.preference||"")}">${esc(PRETTY[v.preference]||"unclear")}</span><br>
+          ${v.satisfaction_score!=null?`${v.satisfaction_score}/5`:v.satisfaction?esc(v.satisfaction):"—"}
+        </div>
+      </div>`).join("");
+  }
+  function initCalls(){
+    document.getElementById("srt").addEventListener("click",(e)=>{
+      const b=e.target.closest("button[data-s]"); if(!b) return;
+      SORT=b.dataset.s; renderCalls();
+    });
+  }
+
+  // Verbatim Q4 answers. Placed AFTER the narrative and themes on purpose: raw quotes ahead of the
+  // summary makes a reader build their own impression from whichever three they happen to read first,
+  // which is the anecdote trap this instrument exists to avoid.
+  function renderComments(){
+    const sec=document.getElementById("cmsec"), com=(DATA.survey&&DATA.survey.comments)||{};
+    const rows=com.recent||[];
+    if(!rows.length && !com.redacted){ sec.hidden=true; return; }
+    sec.hidden=false;
+    document.getElementById("cm").innerHTML=`
+      <div class="svy-cm" style="margin-top:6px;padding-top:0;border-top:0">
+        <div class="lbl" style="margin-bottom:10px">${com.given} comment${com.given===1?"":"s"}
+          from ${com.people_who_commented} ${com.people_who_commented===1?"person":"people"}${
+          com.redacted?` · <span class="accent">${com.redacted} withheld</span>`:""}</div>
+        ${rows.map(c=>`<div class="svy-cmt">“${esc(c.text)}”
+          <button class="cid" data-id="${esc(c.conversation_id)}" style="margin-left:8px">${esc(String(c.conversation_id).slice(-8))}</button>
+          ${c.response_seq>1?`<span class="lbl" style="margin-left:6px">call ${c.response_seq}</span>`:""}</div>`).join("")}
+        ${com.redacted?`<div class="svy-cmt redacted">${com.redacted} answer${com.redacted===1?" was":"s were"} dropped for containing something
+          personal — an account number, a Social Security Number or similar. The rate is kept, the words are not.</div>`:""}
+      </div>`;
+  }
+
+  function renderDownloads(){ document.getElementById("dlsec").hidden=!(DATA.survey&&DATA.survey.calls); }
+
+  // ---- Transcript drawer ----------------------------------------------------------------------
+  const drw=document.getElementById("drw");
+  async function openCall(id){
+    drw.hidden=false;
+    document.getElementById("drwt").textContent="Call";
+    document.getElementById("drwbody").innerHTML=`<p class="soft" style="margin-top:20px">Loading transcript…</p>`;
+    try{
+      const r=await fetch(`/api/survey-call?id=${encodeURIComponent(id)}`,{cache:"no-store"});
+      const d=await r.json();
+      if(!r.ok) throw new Error(d.error||("HTTP "+r.status));
+      const c=d.call, sv=c.survey||{};
+      document.getElementById("drwt").textContent=String(id).slice(-8);
+      const mins=c.duration_seconds!=null?`${Math.floor(c.duration_seconds/60)}m ${c.duration_seconds%60}s`:"—";
+      document.getElementById("drwbody").innerHTML=`
+        <div class="drw-meta">
+          <b>${esc(String(c.started_at||"").slice(0,16).replace("T"," "))}</b> · ${mins}
+          · ${esc(c.outcome||"—")} · verification ${esc(c.auth_outcome||"—")}
+          ${sv.person_key?`<br>respondent <b>${esc(sv.person_key)}</b>${sv.response_seq>1?` · their call #${sv.response_seq}`:""}`:""}
+        </div>
+        ${sv.satisfaction_raw||sv.prefer_agent_raw?`
+        <div class="drw-svy">
+          <div class="lbl">Their answers</div>
+          <dl class="drw-a">
+            ${sv.satisfaction_raw?`<dt>Rating</dt><dd>“${esc(sv.satisfaction_raw)}”${sv.satisfaction_score!=null?` — scored ${sv.satisfaction_score}/5`:""}</dd>`:""}
+            ${sv.prefer_agent_raw?`<dt>Prefers</dt><dd>“${esc(sv.prefer_agent_raw)}” — ${esc(PRETTY[sv.preference]||"unclear")}</dd>`:""}
+            ${sv.would_recommend_raw?`<dt>Recommend</dt><dd>“${esc(sv.would_recommend_raw)}” — ${esc(sv.would_recommend||"unclear")}</dd>`:""}
+            ${sv.open_comments?`<dt>Anything else</dt><dd>“${esc(sv.open_comments)}”</dd>`:""}
+            ${sv.comments_redacted?`<dt>Anything else</dt><dd class="soft">Withheld — contained something personal.</dd>`:""}
+          </dl>
+        </div>`:""}
+        <div style="margin-top:22px">
+          ${(d.transcript||[]).map(t=>`
+            <div class="turn ${esc(t.role)}">
+              <div class="who">${t.role==="agent"?"Robin":"Caller"}</div>
+              <div class="said">${esc(t.text)}</div>
+            </div>`).join("") || `<p class="soft">No transcript stored for this call.</p>`}
+        </div>`;
+    }catch(e){
+      document.getElementById("drwbody").innerHTML=`<p class="soft" style="margin-top:20px">Couldn't load that call: ${esc(e.message)}</p>`;
+    }
+  }
+  function closeDrawer(){ drw.hidden=true; }
+  drw.addEventListener("click",(e)=>{ if(e.target===drw) closeDrawer(); });
+  document.getElementById("drwx").addEventListener("click",closeDrawer);
+  document.addEventListener("keydown",(e)=>{ if(e.key==="Escape"&&!drw.hidden) closeDrawer(); });
+  // One delegated listener for every path into a transcript: call rows, theme citations, answer
+  // citations. They are rendered at different times by different fetches, so binding per element
+  // would mean re-binding on every render and silently missing whichever rendered last.
+  document.addEventListener("click",(e)=>{
+    const row=e.target.closest(".cl-row[data-id]"), cid=e.target.closest(".cid[data-id]");
+    if(row) openCall(row.dataset.id); else if(cid) openCall(cid.dataset.id);
+  });
+  document.addEventListener("keydown",(e)=>{
+    if(e.key!=="Enter"&&e.key!==" ") return;
+    const row=e.target.closest&&e.target.closest(".cl-row[data-id]");
+    if(row){ e.preventDefault(); openCall(row.dataset.id); }
+  });
+
+  initAsk(); initCalls();
   load();
   setInterval(load, 60000);
 </script>

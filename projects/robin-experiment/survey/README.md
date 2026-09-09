@@ -27,9 +27,44 @@ Three layers. Only the first two are new, and both are configuration, not code.
 | Layer | What | Where |
 |---|---|---|
 | Asking | `survey-block.txt`, pasted into the system prompt | ElevenLabs agent config |
-| Capturing | `data-collection-fields.json`, 5 fields | ElevenLabs, post-call analysis |
+| Capturing | `data-collection-fields.json` | ElevenLabs, post-call analysis |
 | Storing | already existed — post-call webhook → `/api/postcall` → `raw_payload` | Vercel broker → Supabase |
-| Reading | `read-results.sql` | SQL against `ai_call_events` |
+| Shaping | `survey_people` / `survey_answers` views (migration 009) | Supabase |
+| Reading | `/survey` page, `read-results.sql`, CSV export | Vercel broker |
+
+## One response per person
+
+`survey_answers` is one row per **call**; `survey_people` is one row per **person**, being their
+first surveyed call. **Every figure a decision rests on comes from `survey_people`.** 50–75 testers
+making 2–3 calls each is 50–75 opinions, not 180, and quoting the call-level count overstates n by
+roughly 2.5x — which is the first thing a sharp reader in the room will catch.
+
+A person is identified by a salted hash of the caller ID already present in `raw_payload`. The raw
+number is never selected by either view, so it cannot reach the API, the CSV, the page, or a
+screenshot of the page. Two limits worth stating before quoting a person count: two testers sharing
+a desk phone read as one person, and one tester using both a desk phone and a cell reads as two.
+
+`survey_people.changed_mind` flags anyone whose stated preference genuinely differed between their
+own calls. It is the most interesting fact the instrument can produce and it is invisible in any
+average. It counts only `agent` / `person` / `no_preference`: `unclassified` is the view admitting it
+could not parse the wording, and counting it produced false reversals (migration 010).
+
+**Counts are per person; words are not.** Proportions read `survey_people` so one tester's three
+calls are one opinion. Free text reads `survey_answers`, because `survey_people` keeps only a
+person's FIRST call and a comment left on a later call would simply vanish. That was live: the only
+real comment we had was on a second call, so the page showed zero comments while one existed.
+
+## Who can see it
+
+`/survey`, `/dashboard` and the survey APIs sit behind a shared password enforced by
+`broker/middleware.js`, which reads `SURVEY_PASSWORD`. **If that variable is unset the pages return
+503 rather than serving transcripts** — deliberately fail-closed.
+
+Vercel's own password protection is not usable here: it is per-deployment, not per-path, and any
+setting covering this project's production domain also covers `/api/verify_caller` and
+`/api/get_balance`, which ElevenLabs calls mid-call. Gating those would take Robin down rather than
+hide a dashboard. The middleware leaves Robin's endpoints and the post-call webhook open, and those
+authenticate themselves separately.
 
 `robin-prompt-WITH-survey.txt` is the complete assembled prompt: production's live prompt
 with the survey block inserted before `SOUNDING HUMAN`. That's the paste-ready text.
