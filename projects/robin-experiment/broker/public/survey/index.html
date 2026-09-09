@@ -382,42 +382,41 @@
 
   <section id="mxsec" hidden>
     <hr class="rule">
-    <div class="shead"><h2 class="sect-h">The catch <span class="qual">rating against preference, one dot per person</span></h2></div>
-    <p class="svy-lede">The cross-tab, not an average. The question a room asks first is whether anyone
-      rated the call highly and still wants a human next time — that cell decides how much weight the
-      headline can carry.</p>
+    <div class="shead"><h2 class="sect-h">Satisfaction vs. preference</h2></div>
+    <p class="svy-lede">Satisfaction rating against stated preference, one dot per person. Shows whether
+      anyone rated the call highly and would still choose a person next time.</p>
     <div class="mx" id="mx"></div>
   </section>
 
   <section id="thmsec" hidden>
     <hr class="rule">
-    <div class="shead"><h2 class="sect-h">Themes <span class="qual">what people said, clustered</span></h2></div>
+    <div class="shead"><h2 class="sect-h">Themes</h2></div>
     <div id="thm"></div>
   </section>
 
   <section id="cmsec" hidden>
     <hr class="rule">
-    <div class="shead"><h2 class="sect-h">In their own words</h2></div>
-    <p class="svy-lede">Every written answer to the last question, unedited, from every call — including
-      repeat calls, because a comment is a comment even when we only count the person once.
-      Click an id to read the call it came from.</p>
+    <div class="shead"><h2 class="sect-h">Written comments</h2></div>
+    <p class="svy-lede">Every written answer to the last question, unedited, from every call including
+      repeat calls. Comments are listed per call; the figures above still count one response per person.
+      Click a name to read the call it came from.</p>
     <div id="cm"></div>
   </section>
 
   <section id="cumsec" hidden>
     <hr class="rule">
-    <div class="shead"><h2 class="sect-h">Is there enough data yet?</h2></div>
-    <p class="svy-lede">The share preferring Robin as each new person answers, with the 95% interval
-      around it. Not a day-by-day trend, which at this sample size is noise. This answers whether
-      there is enough data to decide.</p>
+    <div class="shead"><h2 class="sect-h">Confidence and sample size</h2></div>
+    <p class="svy-lede">The share preferring Robin as each new person answers, with the 95% confidence
+      interval around it. Not a day-by-day trend, which would be unreliable at this sample size. Shows
+      whether enough responses have been collected to draw a conclusion.</p>
     <div class="cum" id="cum"></div>
   </section>
 
   <section id="asksec" hidden>
     <hr class="rule">
-    <div class="shead"><h2 class="sect-h">Ask the data</h2></div>
-    <p class="svy-lede">Answered only from the survey rows, with the calls behind every answer cited.
-      If the rows can't answer it, it says so rather than guessing.</p>
+    <div class="shead"><h2 class="sect-h">Ask a question</h2></div>
+    <p class="svy-lede">Answers come only from the survey responses, with the calls behind each answer
+      cited. If the data cannot answer a question, it says so.</p>
     <form class="ask-form" id="askform">
       <input id="askq" type="text" maxlength="500" autocomplete="off"
              placeholder="e.g. Did anyone who preferred a person say why?" aria-label="Ask a question about the survey data">
@@ -429,7 +428,7 @@
 
   <section id="clsec" hidden>
     <hr class="rule">
-    <div class="shead"><h2 class="sect-h">Every answered call</h2></div>
+    <div class="shead"><h2 class="sect-h">Individual calls</h2></div>
     <p class="svy-lede">Repeat calls included, so a person who answered more than once is visible
       rather than averaged away. Open any row to read the transcript.</p>
     <div class="srt" id="srt"></div>
@@ -438,14 +437,14 @@
 
   <section id="dlsec" hidden>
     <hr class="rule">
-    <div class="shead"><h2 class="sect-h">Take it with you</h2></div>
+    <div class="shead"><h2 class="sect-h">Downloads</h2></div>
     <div class="dl">
       <a href="/api/survey-export?level=people">Download responses (CSV)</a>
       <a class="sec" href="/api/survey-export?level=calls">Every call (CSV)</a>
       <a class="sec" href="/survey/slide/">Presentation slide</a>
     </div>
     <p class="dl-note">The people file is one row per respondent and is the basis of every figure on
-      this page. The calls file includes repeats, for anyone checking the dedup. Comments that tripped
+      this page. The calls file includes repeats, for anyone checking the per-person counts. Comments that tripped
       the personal-data scan are absent from both by design.</p>
   </section>
 
@@ -517,7 +516,7 @@
     document.getElementById("svymeta").textContent=
       `${s.people} ${s.people===1?"person":"people"}, ${s.calls} call${s.calls===1?"":"s"}`;
 
-    // Only claim a winner once the interval clears 50%. Anything else is a coin flip with a
+    // Only claim a winner once the interval clears 50%. Anything else is an even split with a
     // decimal point on it, and a decision made on one is the failure this page exists to prevent.
     const decided = p.decided||0;
     const settled = ci && (ci.lo>50 || ci.hi<50);
@@ -545,8 +544,8 @@
         From <b>${decided} ${decided===1?"person":"people"}</b>, so the true figure sits between
         <b>${ci.lo}% and ${ci.hi}%</b> (95% confidence).
         ${settled
-          ? `That range clears a coin flip, so the direction holds.`
-          : `That range spans 50%, so this is <b>still a coin flip</b> — not yet a result.`}
+          ? `That range sits entirely above 50%, so the preference is clear at this sample size.`
+          : `That range still spans 50%, so the result is <b>not yet conclusive</b>.`}
         ${s.repeat_callers?`Counted one answer per person: ${s.repeat_callers} ${s.repeat_callers===1?"tester":"testers"} called more than once.`:``}
       </div>` : "";
 
@@ -577,14 +576,14 @@
     // never breaks to a second line with one lonely tile on it.
     const notes=[
       s.changed_mind ? `<b>${s.changed_mind} ${s.changed_mind===1?"person":"people"} changed their answer between calls</b> —
-        worth reading those transcripts, it is the one thing an average cannot show you.` : "",
+        review those transcripts, as an average cannot show a change of preference.` : "",
       a.ineligible ? `${a.ineligible} call${a.ineligible===1?" was":"s were"} correctly excluded, having transferred or failed verification.` : "",
     ].filter(Boolean).join(" ");
 
     // Should always be zero. Anything here means the prompt gate leaked on a transfer.
     const alarm = s.leaked_pre_transfer
       ? `<div class="svy-alarm">${s.leaked_pre_transfer} call${s.leaked_pre_transfer===1?"":"s"} were surveyed on the way into a transfer.
-         She's told never to do that — the gate has leaked. Worth listening to those calls.</div>` : "";
+         The agent is instructed never to do this. Review those calls.</div>` : "";
 
 
     el.innerHTML=`<div class="svy">
@@ -629,11 +628,10 @@
     const hbp=s.happy_but_prefers_person||0;
     const finding = hbp
       ? `<p class="mx-find alarm"><b>${hbp} ${hbp===1?"person":"people"} rated the call 4 or 5 and still
-         want a human next time.</b> That is not dissatisfaction, it is a preference the satisfaction
-         score cannot see — and it is the number to bring to the room alongside the headline.</p>`
-      : `<p class="mx-find">Nobody who rated the call 4 or 5 asked for a human next time.
-         <b>Satisfaction and preference are pointing the same way</b>, which is what makes the
-         headline above worth acting on.</p>`;
+         want a person next time.</b> They were satisfied with the call and would still choose a person.
+         The satisfaction score alone does not show this, so report both figures together.</p>`
+      : `<p class="mx-find">No one who rated the call 4 or 5 asked for a person next time.
+         <b>Satisfaction and preference agree</b>, which strengthens the headline result.</p>`;
 
     const unclearN = rows.reduce((n,r)=>n+r.unclassified,0);
     const unclearNote = unclearN
@@ -657,6 +655,10 @@
   }
 
   // ---- Cumulative share with its 95% interval ------------------------------------------------
+  // 1st, 2nd, 3rd, 4th... including the 11th/12th/13th exceptions.
+  const ordinal=(n)=>{const t=n%100; if(t>=11&&t<=13) return n+"th";
+    return n+({1:"st",2:"nd",3:"rd"}[n%10]||"th");};
+
   function renderCumulative(){
     const sec=document.getElementById("cumsec"), pts=(DATA.survey&&DATA.survey.cumulative)||[];
     // One point is a line with no shape. Below three the band is wider than the chart is tall and
@@ -664,7 +666,7 @@
     if(pts.length<3){ sec.hidden=true; return; }
     sec.hidden=false;
 
-    const W=680,H=300,L=40,R=56,T=18,B=34;
+    const W=680,H=300,L=40,R=78,T=18,B=34;   // R leaves room for the "even split" label
     const x=(i)=>L+(pts.length===1?0:(i/(pts.length-1))*(W-L-R));
     const y=(v)=>T+(1-v/100)*(H-T-B);
     const top=pts.map((p,i)=>`${x(i)},${y(p.hi)}`).join(" ");
@@ -684,17 +686,17 @@
         <text x="${L-7}" y="${y(100)+4}" text-anchor="end">100%</text>
         <text class="fiftyl" x="${L-7}" y="${y(50)+4}" text-anchor="end">50%</text>
         <text x="${L-7}" y="${y(0)+4}" text-anchor="end">0%</text>
-        <text class="fiftyl" x="${W-R+6}" y="${y(50)+4}">coin flip</text>
+        <text class="fiftyl" x="${W-R+6}" y="${y(50)+4}">even split</text>
         <text class="val" x="${x(pts.length-1)}" y="${y(last.pct)-11}" text-anchor="end">${last.pct}%</text>
         <text x="${L}" y="${H-6}">1st respondent</text>
-        <text x="${W-R}" y="${H-6}" text-anchor="end">${last.n}${last.n===1?"st":"th"}</text>
+        <text x="${W-R}" y="${H-6}" text-anchor="end">${ordinal(last.n)}</text>
       </svg>
       <p class="cum-note">Shaded band is the 95% interval. It narrows as people answer.
         ${last.lo>50
-          ? `It now sits entirely above the coin-flip line, so the preference for Robin is real at this sample size.`
+          ? `It now sits entirely above 50%, so the preference for Robin holds at this sample size.`
           : last.hi<50
-          ? `It now sits entirely below the coin-flip line, so the preference against Robin is real at this sample size.`
-          : `It still crosses the coin-flip line — <b>keep collecting</b>. The wave is not yet decisive.`}</p>`;
+          ? `It now sits entirely below 50%, so the preference against Robin holds at this sample size.`
+          : `It still crosses 50%, so <b>more responses are needed</b> before the result is conclusive.`}</p>`;
   }
 
   // ---- Themes and narrative (separate endpoint — costs a model call) -------------------------
@@ -713,7 +715,7 @@
       }
       nsec.hidden=false; tsec.hidden=false;
       document.getElementById("narr").innerHTML=
-        `<div class="narr"><div class="src">What the answers say · from ${t.based_on.comments} written comment${t.based_on.comments===1?"":"s"} by ${t.based_on.people_who_commented} ${t.based_on.people_who_commented===1?"person":"people"}</div>
+        `<div class="narr"><div class="src">Summary · from ${t.based_on.comments} written comment${t.based_on.comments===1?"":"s"} by ${t.based_on.people_who_commented} ${t.based_on.people_who_commented===1?"person":"people"}</div>
          <p>${esc(t.narrative)}</p></div>`;
       document.getElementById("thm").innerHTML=`<div class="thm">${(t.themes||[]).map(th=>`
         <div class="thm-i">

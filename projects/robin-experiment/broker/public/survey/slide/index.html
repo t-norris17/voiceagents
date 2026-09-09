@@ -129,7 +129,7 @@
       <div class="b-hero">
         <div class="fig">${ci?ci.pct:"—"}<span class="un">%</span></div>
         <div class="ci">chose <b>Robin</b><br>${ci?`95% confidence: <b>${ci.lo}–${ci.hi}%</b>`:""}
-          ${ci?`<br>${settled?"Clears a coin flip.":"<b>Still spans a coin flip — not yet decisive.</b>"}`:""}</div>
+          ${ci?`<br>${settled?"Above an even split.":"<b>Still spans 50% — not yet conclusive.</b>"}`:""}</div>
       </div>
       <div class="b-bar" role="img" aria-label="${p.agent} Robin, ${p.no_preference} no preference, ${p.person} a person">
         <span class="a" style="width:${pc(p.agent)}"></span>
