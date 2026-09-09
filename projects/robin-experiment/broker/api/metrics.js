@@ -7,7 +7,7 @@
 // (grader hasn't run), the per-question grid degrades gracefully to "not graded yet" rather
 // than inventing numbers.
 import { sb } from "../lib/supabase.js";
-import { surveyPeople, surveyCalls, score, wilson } from "../lib/survey-data.js";
+import { surveyPeople, surveyCalls, score, wilson, respondentLabels } from "../lib/survey-data.js";
 
 const q = (s) => encodeURIComponent(s);
 const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : null);
@@ -59,6 +59,10 @@ const sentBucket = (s) => {
 // counted as a miss. A transferred call is not a failure; the survey is built to stay silent there.
 // ---------------------------------------------------------------------------------------------
 export function summariseSurvey(people, calls) {
+  // "P-1ea00145" is the right thing to store and the wrong thing to show a reader. Everything the
+  // page renders carries "Respondent 3" instead; the hash never leaves the server.
+  const names = respondentLabels(calls);
+  const who = (r) => names.get(r.person_key) || null;
   if (!Array.isArray(calls) || calls.length === 0) return { calls: 0, people: 0, awaiting_first_call: true };
 
   // ---- Operational: did she ASK when she should have? Correctly a CALL-level question. ----
@@ -176,7 +180,7 @@ export function summariseSurvey(people, calls) {
         // `calls` arrives newest-first, so this is already in the right order.
         recent: said.slice(0, 40).map((r) => ({
           conversation_id: r.conversation_id, started_at: r.started_at,
-          person_key: r.person_key, response_seq: r.response_seq, text: r.open_comments,
+          respondent: who(r), response_seq: r.response_seq, text: r.open_comments,
         })),
       };
     })(),
@@ -192,7 +196,7 @@ export function summariseSurvey(people, calls) {
       .map((r) => ({
         conversation_id: r.conversation_id,
         started_at: r.started_at,
-        person_key: r.person_key,
+        respondent: who(r),
         response_seq: r.response_seq,
         duration_seconds: r.duration_seconds,
         topic: r.topic || r.plan_topic,

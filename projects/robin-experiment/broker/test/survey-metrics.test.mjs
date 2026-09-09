@@ -130,3 +130,66 @@ test("adherence is a call-level question and stays one", () => {
 test("no rows is an empty state, not a crash or a zero", () => {
   assert.deepEqual(summariseSurvey([], []), { calls: 0, people: 0, awaiting_first_call: true });
 });
+
+// The answer a reader actually got, before this existed:
+//   "No. The only respondent, P-1ea00145, has changed_mind = false. They answered on two calls —
+//    2026-09-08 (conv_7701m218tczhe5182r1hrnfz117r) and 2026-09-09 (conv_0701m236q3cve3...)."
+// Correct, and unreadable by the person it was written for. The prompt now asks for prose; this
+// makes it deterministic, because a prompt is a request and this is a guarantee.
+test("hashes and raw ids never reach the reader", async () => {
+  const { readable } = await import("../lib/survey-data.js");
+  const labels = new Map([["P-1ea00145", "Respondent 1"]]);
+
+  const out = readable(
+    "The only respondent, P-1ea00145, answered on two calls — 8 September " +
+      "(conv_7701m218tczhe5182r1hrnfz117r) and 9 September (conv_0701m236q3cve3hr1rkftmamfkmz).",
+    labels
+  );
+  assert.match(out, /Respondent 1/);
+  assert.doesNotMatch(out, /P-[0-9a-f]{8}/, "no person_key hash in the prose");
+  assert.doesNotMatch(out, /conv_/, "no raw conversation id in the prose");
+  assert.match(out, /8 September/, "the substance survives the scrub");
+
+  assert.doesNotMatch(readable("P-deadbeef rated it 5.", labels), /P-deadbeef/,
+    "an unlabelled hash still must not reach the page");
+  assert.equal(readable("Nobody changed their mind.", labels), "Nobody changed their mind.",
+    "text with nothing to rewrite comes back untouched");
+  assert.equal(readable(null, labels), "");
+});
+
+test("respondent numbering is stable regardless of row order", async () => {
+  const { respondentLabels } = await import("../lib/survey-data.js");
+  const rows = [
+    { person_key: "P-bbb", started_at: "2026-09-09T13:00" },
+    { person_key: "P-aaa", started_at: "2026-09-08T19:44" },
+    { person_key: "P-bbb", started_at: "2026-09-08T20:00" },
+    { person_key: null, started_at: "2026-09-01" },
+  ];
+  const m = respondentLabels(rows);
+  assert.equal(m.get("P-aaa"), "Respondent 1", "numbered by who responded first");
+  assert.equal(m.get("P-bbb"), "Respondent 2");
+  assert.equal(m.size, 2, "rows without a person are not respondents");
+  assert.equal(respondentLabels([...rows].reverse()).get("P-aaa"), "Respondent 1", "order-independent");
+});
+
+// I have twice broken a SYSTEM prompt by typing a backtick inside its template literal while
+// editing the prose. `node --check` catches it only if someone runs it; this makes the suite catch
+// it, and pins the rules that keep answers readable.
+test("LLM system prompts are intact and still forbid raw ids in prose", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { fileURLToPath } = await import("node:url");
+  const { dirname, join } = await import("node:path");
+  const here = dirname(fileURLToPath(import.meta.url));
+
+  for (const f of ["survey-ask.js", "survey-themes.js"]) {
+    const src = readFileSync(join(here, "..", "api", f), "utf8");
+    const start = src.indexOf("const SYSTEM = `");
+    assert.ok(start > -1, `${f} should define a SYSTEM prompt`);
+    const body = src.slice(start + "const SYSTEM = `".length, src.indexOf("`;", start));
+    assert.equal(body.includes("`"), false, `${f}: a backtick inside the SYSTEM literal breaks it`);
+    assert.ok(body.length > 200, `${f}: SYSTEM prompt looks truncated`);
+  }
+  const ask = readFileSync(join(here, "..", "api", "survey-ask.js"), "utf8");
+  assert.match(ask, /NEVER print a person_key hash/);
+  assert.match(ask, /NEVER print a raw conversation id/);
+});
