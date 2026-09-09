@@ -76,12 +76,17 @@ transfer path at t=68, Marcus declined at t=80, and she closed at t=91 with no s
 clause saying a declined offer is not a transfer. Clause added, live as
 `agtvrsn_0701m240shshe47arv4tdf4a3099`.
 
-- **Suppression is unharmed**, which was the risk: suppressed-on-failed-verification 8/8,
-  suppressed-on-transfer 6/6.
-- **The desired behaviour does occur.** On a declined-transfer call Robin now says "Before I go, please
+- **Suppression is unharmed**, which was the risk: suppressed-on-failed-verification **8/8**,
+  suppressed-on-transfer **8/8**, and across all 16 suppression runs the survey leaked **zero** times.
+- **The desired behaviour occurs.** On a declined-transfer call Robin now says "Before I go, please
   answer the following questions. On a scale from one to five, how was this experience for you?"
-- **NOT verified as a rate.** The survey fired in 2 of 7 usable pre-fix runs and 3 of 5 post-fix. Right
-  direction, sample far too small to call it. Those runs were also Gemini-served (see `_model_note`).
+- **The survey fired in 2 of 7 usable pre-fix runs and 6 of 8 post-fix** (29% -> 75%).
+- Judge this test by whether the survey FIRED, not by its pass/fail verdict. 6 of 8 post-fix runs are
+  recorded as failures because the simulation timed out, but the survey had already fired in most of
+  them. v4 is the longest scenario in the suite — declining transfers stretches the call — and it hits
+  the harness's 60s-per-turn ceiling routinely. Shorten it or raise the turn budget before relying on
+  its verdicts.
+- **Still not a verified rate.** n=8 on a backup-model-served harness. Those runs were also Gemini-served (see `_model_note`).
   The real verification is the live `survey_asked_when_eligible` criterion on the next batch of calls,
   which already runs on every call and costs nothing extra.
 
