@@ -260,6 +260,21 @@
   .cum .pt{ fill:var(--c-agent); }
   .cum-note{ font-size:.78rem; color:var(--sub); margin-top:12px; line-height:1.5; max-width:62ch; }
 
+  /* ---- needs review ---- */
+  .rev{ border:1px solid var(--accent); margin-top:6px; }
+  .rev-i{ padding:14px 16px; border-top:1px solid var(--hair); cursor:pointer; }
+  .rev-i:first-child{ border-top:0; }
+  .rev-i:hover .rev-t{ text-decoration:underline; text-underline-offset:3px; }
+  .rev-i:focus-visible{ outline:2px solid var(--accent); outline-offset:-2px; }
+  .rev-top{ display:flex; align-items:baseline; justify-content:space-between; gap:14px; }
+  .rev-t{ font-weight:700; font-size:.9rem; }
+  .rev-m{ font-size:.72rem; color:var(--sub); white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .rev-why{ font-size:.66rem; text-transform:uppercase; letter-spacing:.1em; color:var(--accent);
+    font-weight:700; margin-top:4px; }
+  .rev-c{ font-size:.88rem; margin-top:8px; padding-left:12px; border-left:2px solid var(--accent);
+    line-height:1.5; }
+  .cl-row .flag{ color:var(--accent); font-weight:700; }
+
   /* ---- themes ---- */
   .thm{ display:grid; gap:0; margin-top:6px; border-top:1px solid var(--ink); }
   .thm-i{ padding:15px 0; border-bottom:1px solid var(--hair); }
@@ -376,6 +391,15 @@
     <div id="svy"></div>
   </section>
 
+  <section id="revsec" hidden>
+    <hr class="rule">
+    <div class="shead"><h2 class="sect-h">Needs review</h2></div>
+    <p class="svy-lede">Calls where the caller sounded unhappy, or rated the call 2 or lower. A rating
+      on its own would miss some of these: a caller can score a call 3 and still tell you something
+      went wrong. Open any row to read the transcript.</p>
+    <div id="rev"></div>
+  </section>
+
   <section id="narrsec" hidden>
     <div id="narr"></div>
   </section>
@@ -384,7 +408,7 @@
     <hr class="rule">
     <div class="shead"><h2 class="sect-h">Satisfaction vs. preference</h2></div>
     <p class="svy-lede">Satisfaction rating against stated preference, one dot per person. Shows whether
-      anyone rated the call highly and would still choose a person next time.</p>
+      anyone rated the call highly and would still choose a person next time. One dot per response.</p>
     <div class="mx" id="mx"></div>
   </section>
 
@@ -479,9 +503,9 @@
       document.getElementById("banner").innerHTML="";
       const s=DATA.survey||{};
       document.getElementById("mastmeta").innerHTML=
-        `<b>${s.people ?? 0}</b> ${s.people===1?"person":"people"} · ${s.calls ?? 0} call${s.calls===1?"":"s"}<br>`+
+        `<b>${s.people ?? 0}</b> response${s.people===1?"":"s"} · ${s.callers ?? 0} caller${s.callers===1?"":"s"} · ${s.calls ?? 0} call${s.calls===1?"":"s"}<br>`+
         `<span class="soft">last updated <span id="gen2"></span></span>`;
-      renderSurvey(); renderMatrix(); renderCumulative(); renderComments(); renderCalls(); renderDownloads();
+      renderSurvey(); renderReview(); renderMatrix(); renderCumulative(); renderComments(); renderCalls(); renderDownloads();
       stamp();
       loadThemes();   // separate endpoint: costs a model call, so it is not on the 60s refresh
     }catch(e){
@@ -514,7 +538,7 @@
     const a=s.adherence||{}, r=s.response||{}, p=s.preference||{}, sat=s.satisfaction||{},
           rec=s.recommend||{}, com=s.comments||{}, ci=p.ci;
     document.getElementById("svymeta").textContent=
-      `${s.people} ${s.people===1?"person":"people"}, ${s.calls} call${s.calls===1?"":"s"}`;
+      `${s.people} response${s.people===1?"":"s"} from ${s.callers} caller${s.callers===1?"":"s"}, ${s.calls} call${s.calls===1?"":"s"}`;
 
     // Only claim a winner once the interval clears 50%. Anything else is an even split with a
     // decimal point on it, and a decision made on one is the failure this page exists to prevent.
@@ -541,12 +565,14 @@
         <span class="k-person"><i></i>${p.person} would rather have a person</span>
       </div>
       <div class="svy-moe">
-        From <b>${decided} ${decided===1?"person":"people"}</b>, so the true figure sits between
+        From <b>${decided} response${decided===1?"":"s"}</b>, so the true figure sits between
         <b>${ci.lo}% and ${ci.hi}%</b> (95% confidence).
         ${settled
           ? `That range sits entirely above 50%, so the preference is clear at this sample size.`
           : `That range still spans 50%, so the result is <b>not yet conclusive</b>.`}
-        ${s.repeat_callers?`Counted one answer per person: ${s.repeat_callers} ${s.repeat_callers===1?"tester":"testers"} called more than once.`:``}
+        A response is one caller asking as one member; the same tester calling as a different member
+        is a separate response, because it is a separate experience.${
+        s.repeat_callers?` ${s.repeat_callers} called more than once as the same member, counted once.`:``}
       </div>` : "";
 
     const adherenceWarn = a.pct!=null && a.pct<70;
@@ -567,7 +593,7 @@
         </div>` : "",
       sat.n ? `<div class="svy-m">
           <div class="n tnum">${sat.mean}<span class="un">/5</span></div>
-          <div class="cap">average rating across ${sat.n} ${sat.n===1?"person":"people"};
+          <div class="cap">average rating across ${sat.n} response${sat.n===1?"":"s"};
           ${sat.four_or_five} gave a 4 or 5.${sat.unparsed?` ${sat.unparsed} answered in words we couldn't score.`:""}</div>
         </div>` : "",
     ].filter(Boolean).join("");
@@ -575,8 +601,8 @@
     // Real, but footnotes rather than headline metrics — and keeping the tile row at four means it
     // never breaks to a second line with one lonely tile on it.
     const notes=[
-      s.changed_mind ? `<b>${s.changed_mind} ${s.changed_mind===1?"person":"people"} changed their answer between calls</b> —
-        review those transcripts, as an average cannot show a change of preference.` : "",
+      s.changed_mind ? `<b>${s.changed_mind} respondent${s.changed_mind===1?"":"s"} changed their answer between calls
+        as the same member</b> — review those transcripts, as an average cannot show a change of preference.` : "",
       a.ineligible ? `${a.ineligible} call${a.ineligible===1?" was":"s were"} correctly excluded, having transferred or failed verification.` : "",
     ].filter(Boolean).join(" ");
 
@@ -589,10 +615,34 @@
     el.innerHTML=`<div class="svy">
       <p class="svy-lede">Four questions at the end of a normal call, for the testing phase only. Not asked on transfers, or on
         callers who could not be verified. Testers are briefed beforehand, so the questions are stated
-        rather than offered. Every figure counts one answer per person.</p>
+        rather than offered. Figures count one response per caller per member.</p>
       ${headFig}${bar}${metrics?`<div class="svy-grid">${metrics}</div>`:""}
       ${notes?`<p class="svy-foot">${notes}</p>`:""}${alarm}
     </div>`;
+  }
+
+  // ---- Calls that want a human listening ------------------------------------------------------
+  // The signal was already in the data — the post-call analysis marked the Dana call negative — and
+  // the page ignored it, so a complaint that Robin remarked on a member's age sat silently in a list
+  // between two five-star calls. Placed directly under the headline: a problem nobody scrolls to is
+  // a problem nobody sees.
+  function renderReview(){
+    const sec=document.getElementById("revsec"), r=(DATA.survey&&DATA.survey.review)||{};
+    if(!r.n){ sec.hidden=true; return; }
+    sec.hidden=false;
+    document.getElementById("rev").innerHTML=`<div class="rev">${(r.calls||[]).map(c=>{
+      const why=[c.sentiment==="negative"?"sounded unhappy":"",
+                 c.satisfaction_score!=null&&c.satisfaction_score<=2?`rated ${c.satisfaction_score}/5`:""]
+                 .filter(Boolean).join(" · ");
+      return `<div class="rev-i" role="button" tabindex="0" data-id="${esc(c.conversation_id)}"
+                   data-who="${esc(c.respondent||"")}">
+        <div class="rev-top">
+          <span class="rev-t">${esc(c.topic||"Call")}</span>
+          <span class="rev-m">${esc(c.respondent||"")}${c.satisfaction_score!=null?` · ${c.satisfaction_score}/5`:""}</span>
+        </div>
+        <div class="rev-why">${esc(why||"flagged")}</div>
+        ${c.comment?`<div class="rev-c">“${esc(c.comment)}”</div>`:""}
+      </div>`;}).join("")}</div>`;
   }
 
   // ---- Cross-tab: rating against preference -------------------------------------------------
@@ -800,7 +850,8 @@
           <div class="cl-sub">${esc(String(v.started_at||"").slice(0,16).replace("T"," "))}
             ${v.topic?` · ${esc(v.topic)}`:""}
             ${v.response_seq>1?` · <span class="rpt">call ${v.response_seq} by this person</span>`:""}
-            ${v.comments_redacted?` · comment withheld`:""}</div>
+            ${v.comments_redacted?` · comment withheld`:""}
+            ${v.needs_review?` · <span class="flag">needs review</span>`:""}</div>
         </div>
         <div class="cl-meta">
           <span class="tagp ${esc(v.preference||"")}">${esc(PRETTY[v.preference]||"unclear")}</span><br>
@@ -886,12 +937,12 @@
   // citations. They are rendered at different times by different fetches, so binding per element
   // would mean re-binding on every render and silently missing whichever rendered last.
   document.addEventListener("click",(e)=>{
-    const row=e.target.closest(".cl-row[data-id]"), cid=e.target.closest(".cid[data-id]");
+    const row=e.target.closest(".cl-row[data-id], .rev-i[data-id]"), cid=e.target.closest(".cid[data-id]");
     if(row) openCall(row.dataset.id, row.dataset.who); else if(cid) openCall(cid.dataset.id);
   });
   document.addEventListener("keydown",(e)=>{
     if(e.key!=="Enter"&&e.key!==" ") return;
-    const row=e.target.closest&&e.target.closest(".cl-row[data-id]");
+    const row=e.target.closest&&e.target.closest(".cl-row[data-id], .rev-i[data-id]");
     if(row){ e.preventDefault(); openCall(row.dataset.id); }
   });
 

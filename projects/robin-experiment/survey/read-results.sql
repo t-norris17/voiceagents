@@ -17,12 +17,16 @@
 
 -- ---------------------------------------------------------------------------------------------
 -- TWO views, defined ONCE in supabase/migrations/009_survey_person_dedup.sql and already applied:
---   survey_people   one row per PERSON (their first surveyed call). Quote decisions from here.
---   survey_answers  one row per CALL. Use it for adherence, and for auditing repeats.
+--   survey_people   one row per RESPONDENT (one caller as one member), their first surveyed call
+--                   under that persona. Quote decisions from here.
+--   survey_answers  one row per CALL. Use it for adherence, for ALL free text, and for repeats.
 --
--- The person/call distinction is not a nicety. 50-75 testers making 2-3 calls each is 50-75
--- opinions, not 180, and a headline quoted off survey_answers overstates n by roughly 2.5x.
--- A person is identified by a salted hash of caller ID; the raw number is never selected.
+-- A respondent is caller ID plus the member they verified as (migration 011), so one tester
+-- exercising several personas is several respondents on purpose - they had several distinct
+-- experiences. caller_key counts distinct handsets alongside it. Neither exposes a phone number.
+--
+-- Free text is the exception to "quote from survey_people": that view keeps only a first call, so
+-- comments must be read from survey_answers or later ones vanish.
 --
 -- It is deliberately not redefined here. An earlier version of this file carried its own copy of
 -- the parsing and eligibility logic, which is the same trap that let the prompt gate and the
