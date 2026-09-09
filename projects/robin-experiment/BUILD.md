@@ -2,13 +2,82 @@
 
 **Slug:** robin-experiment
 **Started:** 2026-07-23
-**Status:** active — see Session 5 for the current handoff
+**Status:** active — see Session 6 for the current handoff
 
 ---
 
 ## Session log
 
 <!-- Add new sessions at the top, newest first -->
+
+---
+
+### 2026-09-09 — Session 6 (two live-call defects, and the repo caught up to live)
+
+**What we did**
+
+- Fixed the **age remark**. On `conv_7701m23fw5m6fy2vn5h15srv4j7g` Robin said "RMDs start at age
+  seventy-three. Since you're well past that, I'm guessing you're either already taking them or
+  want to know how they work," twice in one call. The caller named it in question four: "a little
+  disrespectful." That call scored 3, went negative, and preferred a person. New
+  **DON'T CHARACTERISE THE CALLER'S SITUATION** block, placed high in the prompt.
+- Fixed the **dead air**. On `conv_0701m236q3cve3hr1rkftmamfkmz` the caller said "Um, five," Robin
+  called `skip_turn`, and eight seconds later the caller repeated himself: "That was a five. What?"
+  `skip_turn` has fired on **6 of 59 calls**, five times in one of them.
+- Root cause was config, not prompt: **`skip_turn`'s description was empty**, so the model picked
+  when to use it from its own prior. It now has one. The survey block's TAKE THE ANSWER AND MOVE ON
+  line also names the short-answer case — restating the rule alone would not have helped, since the
+  rule was already there and got ignored.
+
+**What broke / surprised us**
+
+- **A banned-word list would have contradicted the LOAN TRAP rule.** The first draft of the new
+  block banned the tokens "only" and "already"; the prompt elsewhere *requires* "this plan allows
+  only ONE loan outstanding" and "they already have a loan." Caught in the pre-ship read of the
+  diff. The block names full phrases attached to a caller fact instead.
+- **`agents_update` wrote a field that was never sent.** The call passed `prompt` only. The response
+  came back with `built_in_tools.skip_turn.description` populated with the exact text drafted in
+  this session — line breaks and all — and `metadata.updated_at` is identical across the update
+  response and a following read, so it was one write, not two. The outcome is correct and verified,
+  but the mechanism is **unexplained**. Session 4 left "merge-vs-replace semantics" open for partial
+  updates; this is a data point that the connector may do more than pass through. Treat any partial
+  `agents_update` as capable of touching fields you did not name, and read back after every write.
+- **The update response omits `phone_numbers`** (returns `[]`) where the read includes it. Not a
+  detachment — the following `agents_get` shows `+18335739530` still assigned. Don't panic on it.
+
+**Repo vs live drift, now closed**
+
+`survey/survey-block.txt` had question one as "Quick one to five, how was that for you?"; live Robin
+asks "On a scale from one to five, how was this experience for you?".
+`survey/robin-prompt-WITH-survey.txt` was staler still — it carried the abandoned TWO-question
+survey. Both now match live exactly, verified by diff (`grep -v '^$'` on both sides, zero
+differences). `elevenlabs-experiment-setup.md`'s paste-ready prompt would break Robin if pasted (it
+still says "INTRUST 401(k) Plan") and is now marked stale, pointing at the file that is kept in step.
+
+**Still open**
+
+- The live **Data Collection `satisfaction`** description still quotes the old question-one wording.
+  Cosmetic — both scores parsed — but live is internally inconsistent until it changes.
+- The **RMD coverage gap** behind that 3-star call: Robin answered an RMD question with no
+  `get_balance`, said "yes, you'd need to be taking them" (close to the tax-advice line the prompt
+  forbids), offered a transfer, and on refusal just repeated the age-73 fact. RMDs are in none of
+  the five KB documents. This is why that call went badly; the tone fix does not address it.
+- Neither prompt change has been **verified behaviourally**. `survey/simulation-tests.json` exists
+  and could be run against the updated agent.
+
+**Next session:**
+> Decide on the RMD coverage gap: either a KB article or an explicit "we don't cover RMDs, here's a
+> transfer" path. It is the substantive defect behind the only negative call in the survey era.
+>
+> Then run `survey/simulation-tests.json` against live Robin to confirm the two prompt changes
+> actually hold under pressure — neither has been tested past a config read.
+>
+> Rollback point for this session's live change: version `agtvrsn_6901m23g5bpgfq1arvgqzpnecwdr`
+> (pre-change). Current is `agtvrsn_5301m23vc77yfxqrdqnz01yyt0gy`.
+>
+> Carried over, still open: the three pre-existing live-agent defects (dead `get_plan_details` host,
+> the Account Recovery procedure's SSN instruction, the prompt fork), the `survey_people` /
+> `person_key` rename, and whether `needs_review` should include 3s.
 
 ---
 
