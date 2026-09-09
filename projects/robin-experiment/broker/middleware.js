@@ -11,6 +11,9 @@
 // WHAT IT DELIBERATELY LEAVES OPEN: Robin's own tool endpoints and the post-call webhook, which
 // authenticates itself with ELEVENLABS_WEBHOOK_SECRET and must accept unauthenticated POSTs.
 export const config = {
+  // Node, not edge: the build warns that the edge runtime is deprecated here, and nothing in this
+  // gate needs edge — it reads one env var and compares a string.
+  runtime: "nodejs",
   matcher: ["/survey/:path*", "/dashboard/:path*", "/api/metrics", "/api/survey-:path*"],
 };
 
