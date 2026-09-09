@@ -49,3 +49,42 @@ test("neighbouring paths are not swept in by prefix", () => {
 test("junk input does not throw or gate", () => {
   for (const p of [undefined, null, "", "not-a-path"]) assert.equal(isProtected(p), false);
 });
+
+// The middleware runs on every request, so a throw in it is an agent outage, not a broken page:
+// a 500 on /api/verify_caller fails every caller's verification mid-call. These prove it survives
+// whatever it is handed, and that Robin's paths still pass through untouched.
+test("middleware never throws, and lets Robin's endpoints through", async () => {
+  const { default: middleware } = await import("../middleware.js");
+  const before = process.env.SURVEY_PASSWORD;
+  process.env.SURVEY_PASSWORD = "test-password";
+  try {
+    for (const p of MUST_STAY_OPEN) {
+      const res = middleware({ url: `https://example.vercel.app${p}` });
+      assert.equal(res, undefined, `${p} should pass straight through`);
+    }
+    for (const bad of [undefined, null, "", "://nonsense", {}]) {
+      // Unparseable: denied, but crucially it returns a response rather than throwing.
+      const res = middleware({ url: bad });
+      assert.equal(res?.status, 401, "an unparseable URL is denied, not thrown on");
+    }
+    assert.doesNotThrow(() => middleware({}));
+    assert.doesNotThrow(() => middleware(undefined));
+  } finally {
+    if (before === undefined) delete process.env.SURVEY_PASSWORD;
+    else process.env.SURVEY_PASSWORD = before;
+  }
+});
+
+test("a protected path with no password set fails closed, not open", async () => {
+  const { default: middleware } = await import("../middleware.js");
+  const before = process.env.SURVEY_PASSWORD;
+  delete process.env.SURVEY_PASSWORD;
+  try {
+    const res = middleware({ url: "https://example.vercel.app/api/survey-export" });
+    assert.equal(res.status, 503, "unset password must lock the page, never serve it");
+    // ...while Robin still gets through, because her paths never reach the password check.
+    assert.equal(middleware({ url: "https://example.vercel.app/api/verify_caller" }), undefined);
+  } finally {
+    if (before !== undefined) process.env.SURVEY_PASSWORD = before;
+  }
+});

@@ -43,9 +43,24 @@ export function isProtected(pathname) {
   );
 }
 
+// Without a `matcher` this middleware runs on EVERY request, Robin's mid-call tool calls included.
+// That makes an exception in here an agent outage: a throw becomes a 500 on /api/verify_caller, and
+// every caller fails verification and gets transferred. So nothing between the request arriving and
+// the pass-through for Robin's paths is allowed to throw.
+//
+// A URL we cannot parse is denied rather than passed: it is not a shape ElevenLabs produces, and
+// guessing in the permissive direction is how a gate quietly stops being one.
+function pathnameOf(url) {
+  try {
+    return new URL(url).pathname;
+  } catch {
+    return null;
+  }
+}
+
 export default function middleware(request) {
-  const { pathname } = new URL(request.url);
-  if (!isProtected(pathname)) return;
+  const pathname = pathnameOf(request?.url);
+  if (pathname !== null && !isProtected(pathname)) return;
 
   const expected = process.env.SURVEY_PASSWORD;
 
@@ -63,7 +78,9 @@ export default function middleware(request) {
     );
   }
 
-  const header = request.headers.get("authorization") || "";
+  // Optional-chained for the same reason as pathnameOf: nothing on the path to Robin's
+  // pass-through, or to a clean 401, may throw.
+  const header = request?.headers?.get?.("authorization") || "";
   if (header.startsWith("Basic ")) {
     let decoded = "";
     try {
