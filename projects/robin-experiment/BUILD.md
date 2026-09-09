@@ -54,6 +54,28 @@ survey. Both now match live exactly, verified by diff (`grep -v '^$'` on both si
 differences). `elevenlabs-experiment-setup.md`'s paste-ready prompt would break Robin if pasted (it
 still says "INTRUST 401(k) Plan") and is now marked stale, pointing at the file that is kept in step.
 
+**Simulation results (79 runs against the updated live agent)**
+
+- **Tone fix: verified.** 12/12 on the corrected test, and **zero** occurrences of "well past" in any
+  agent response across 32 tone runs. Robin now says "Required Minimum Distributions must begin at age
+  seventy-three. Since you are seventy-three this year, your RMDs are due now" — the corrected phrasing,
+  and factually right where the old one was not.
+- **skip_turn fix: verified.** `skip_turn` appears in agent responses **once** in 79 runs, and that one
+  was after Robin's own plan-confirmation question, not after a short answer and not during the survey.
+  Zero in all 20 runs of the one-word-answer test. Base rate before the fix was 6 of 59 real calls.
+- **Eligibility gates: intact.** Suppressed-on-transfer 5/5, suppressed-on-failed-verification 5/5.
+- **Survey adherence: NOT clean.** 2 runs reached a natural close on an eligible call and Robin never
+  raised the survey, closing with "It was a pleasure assisting you today." The live evaluation criterion
+  agrees: `survey_verdict` on real survey-era calls is 3 success / 1 failure. Small n, but the simulation
+  and the real data point the same way. This is pre-existing, not caused by this session's change.
+
+**New defect found while reading transcripts**
+
+Robin sometimes speaks her filler wrapped in literal quotation marks. On real call
+`conv_9901kymzs07yfg0vat8pqg2eg2rb` at t=85s her entire turn was `"Okay...". "Right..."...`. The prompt's
+closing line already forbids this ("Speak ONLY the words meant to be heard"). One turn in 762 recorded,
+so rare, but it is real and it is on a Haiku-served production call, not a simulation artifact.
+
 **Still open**
 
 - The live **Data Collection `satisfaction`** description still quotes the old question-one wording.
