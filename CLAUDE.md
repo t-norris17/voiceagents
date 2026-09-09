@@ -31,6 +31,62 @@ Start at [`projects/nestegg-u-demo/START-HERE.md`](./projects/nestegg-u-demo/STA
 - **Update `BUILD.md` at the end of every working session** — its "Next session" block is the
   briefing the next chat reads first.
 
+## Working agreement — checkpoints and verification
+
+Written after a session where the work moved fast, the write-ups sounded thorough, and two defects
+reached the live database anyway. These rules are mechanical on purpose: each one is the thing that
+would have caught a specific defect that shipped.
+
+### Two checkpoints per feature
+
+1. **Design, before building.** Say what will be built and what it rests on. Wait for a yes.
+2. **Built, before moving on.** Show what was built against that design, and name anything that
+   drifted from it. Wait for a yes.
+
+A checkpoint is a stop with something to look at, not a status update. Building seven things and
+then presenting them is one checkpoint, not seven.
+
+### Prove the premise, not just the code
+
+Every defect in that session came from an unexamined assumption at a seam — SQL to API, API to page,
+config to platform, working tree to git. None came from a botched implementation. The tests covered
+the middle of things; the bugs were all in the joints.
+
+So before building on any claim about a system you did not just write, check it. One query or one
+`node -e` is almost always enough:
+
+- **Does this pattern actually compile?** `matcher: "/api/survey-:path*"` does not — path-to-regexp
+  throws on it. It would have shipped the CSV export and every call transcript ungated.
+- **Does this view contain these rows?** `survey_people` holds only a person's *first* call, so
+  reading comments from it showed zero while one existed.
+- **What values does this column actually take?** `preference` has four, not three; counting the
+  fourth made `changed_mind` fire on a parse failure.
+- **Is my work committed?** `git checkout <ref> -- <path>` silently overwrote six uncommitted files.
+
+### Say "unverified" when it is
+
+Never "negligible", "should be fine", or "probably" about something measurable. Measure it, or say
+plainly that it is unmeasured and why. **"I could not verify X, because Y"** is a good sentence and
+belongs in the summary rather than left out of it.
+
+### Destructive operations get a full stop
+
+Live agent config, migrations against the live Supabase project, anything on the production domain,
+and any git command that writes state:
+
+- Check state first, as its own command. `git status --short` before anything that could discard it.
+- One state-changing command per invocation, so there is a checkpoint between them.
+- Never suppress errors (`2>/dev/null`, `|| true`) on a command that writes. Suppression is for reads.
+- Treat `git checkout <ref> -- <path>`, `git restore --source`, `reset --hard` and `clean` as `rm`
+  on the paths they touch. Uncommitted work is in no reflog and no stash; it is simply gone.
+- Commit before rebranching. History can be rewritten later; lost work cannot.
+
+### Run the adversarial pass before shipping, not on request
+
+Re-read the finished diff hunting for what is wrong with it, rather than confirming that it works.
+In that session this pass found three real defects — but only because it was asked for, and by then
+two of them were live. It belongs before the PR.
+
 ## ElevenLabs reference
 
 Don't answer ElevenLabs capability questions from memory — check
