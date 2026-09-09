@@ -27,8 +27,20 @@ Everything the agent calls points at the deployed broker.
   it. What can I help you with?
   ```
 - **System tools:** **Skip turn** ON, **Transfer to number** ON, the rest off.
+- **Skip turn description** (leaving this blank makes Robin go silent on short answers — she called
+  `skip_turn` after a caller said "five" and left 8 seconds of dead air):
+  ```
+  Hand the turn back WITHOUT speaking, only when the caller is clearly mid-thought — they trailed
+  off, paused to look something up, or asked you to hold. Do NOT use it when they have finished a
+  turn, however short: a one-word answer ("five," "yes," "you") is a complete answer and needs a
+  reply. Never use it during the survey. When in doubt, respond.
+  ```
 
 ## 2. System prompt (paste-ready)
+
+> **Stale — do not paste.** This copy predates the survey and still says "INTRUST 401(k) Plan".
+> The prompt Robin actually runs is [`survey/robin-prompt-WITH-survey.txt`](./survey/robin-prompt-WITH-survey.txt),
+> kept byte-for-byte in step with the live agent. Kept here only as a record of the original build.
 
 ```
 You are Robin, the NestEgg U virtual assistant — a warm, efficient female-voiced agent for
