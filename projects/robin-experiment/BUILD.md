@@ -69,6 +69,31 @@ still says "INTRUST 401(k) Plan") and is now marked stale, pointing at the file 
   agrees: `survey_verdict` on real survey-era calls is 3 success / 1 failure. Small n, but the simulation
   and the real data point the same way. This is pre-existing, not caused by this session's change.
 
+**Gate fix: a transfer they turned down is not a transfer**
+
+Diagnosed from `conv_2601m218pga3fgc809erb1q619hp`, the only real adherence miss. Robin entered the
+transfer path at t=68, Marcus declined at t=80, and she closed at t=91 with no survey. Gate (a) had no
+clause saying a declined offer is not a transfer. Clause added, live as
+`agtvrsn_0701m240shshe47arv4tdf4a3099`.
+
+- **Suppression is unharmed**, which was the risk: suppressed-on-failed-verification 8/8,
+  suppressed-on-transfer 6/6.
+- **The desired behaviour does occur.** On a declined-transfer call Robin now says "Before I go, please
+  answer the following questions. On a scale from one to five, how was this experience for you?"
+- **NOT verified as a rate.** The survey fired in 2 of 7 usable pre-fix runs and 3 of 5 post-fix. Right
+  direction, sample far too small to call it. Those runs were also Gemini-served (see `_model_note`).
+  The real verification is the live `survey_asked_when_eligible` criterion on the next batch of calls,
+  which already runs on every call and costs nothing extra.
+
+**⚠️ The post-call webhook ID changed and nobody meant to change it**
+
+At 1788983254 the agent carried `post_call_webhook_id: 4deed01a5a2d420f8781ecdb1d7fa804`. After an
+update that sent ONLY the prompt field, it reads `933e9fc471ac45349b6a5768edab3cbb`. This is the second
+time an `agents_update` came back having altered a field that was not sent (the first was
+`skip_turn.description`). **Confirm in the ElevenLabs dashboard that the post-call webhook still points
+at the broker's `/api/postcall` before the wave.** If it does not, calls stop reaching `ai_call_events`
+and the survey silently collects nothing. Last confirmed good delivery: the 21:10 call on 2026-09-09.
+
 **New defect found while reading transcripts**
 
 Robin sometimes speaks her filler wrapped in literal quotation marks. On real call
