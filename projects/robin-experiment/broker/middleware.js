@@ -14,10 +14,39 @@ export const config = {
   // Node, not edge: the build warns that the edge runtime is deprecated here, and nothing in this
   // gate needs edge — it reads one env var and compares a string.
   runtime: "nodejs",
-  matcher: ["/survey/:path*", "/dashboard/:path*", "/api/metrics", "/api/survey-:path*"],
+  // Deliberately NO `matcher`. The first version of this file carried
+  // matcher: [..., "/api/survey-:path*"], which is not a valid path-to-regexp pattern at all — it
+  // throws "Can not repeat 'path' without a prefix and suffix", because a repeated parameter has
+  // to follow a "/". Had that shipped, /api/survey-export and /api/survey-call would have been
+  // UNGATED: the full CSV of every response and every transcript, served to anyone with the URL.
+  //
+  // A security boundary should not depend on a pattern dialect that fails silently at the edge and
+  // cannot be exercised from a preview deployment (Vercel's own SSO answers first there, so a 401
+  // from this gate is unobservable). So the middleware runs on everything and the decision lives in
+  // isProtected() below, in plain JavaScript, next to the tests that prove what it covers.
 };
 
+// Everything the survey publishes: the pages, and every endpoint that carries their data —
+// aggregate results, per-call transcripts, verbatim comments, the CSV export.
+const PROTECTED = ["/survey", "/dashboard", "/api/metrics", "/api/survey-"];
+
+// Robin's own endpoints and the post-call webhook are deliberately NOT in that list. ElevenLabs
+// calls verify_caller and get_balance mid-call and posts to /api/postcall unauthenticated (it
+// authenticates with ELEVENLABS_WEBHOOK_SECRET instead). Gating those would not hide a dashboard,
+// it would take the agent down — every caller would fail verification.
+export function isProtected(pathname) {
+  const p = String(pathname || "").split("?")[0];
+  return PROTECTED.some((base) =>
+    // Exact match, or a child path. "/surveys-of-something" must NOT match "/survey"; a prefix
+    // test alone would let a sibling route in, or lock one out, by accident.
+    base.endsWith("-") ? p.startsWith(base) : p === base || p.startsWith(base + "/")
+  );
+}
+
 export default function middleware(request) {
+  const { pathname } = new URL(request.url);
+  if (!isProtected(pathname)) return;
+
   const expected = process.env.SURVEY_PASSWORD;
 
   // Fail CLOSED. An unset password must not silently publish transcripts; it must break loudly
