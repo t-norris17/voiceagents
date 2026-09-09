@@ -16,8 +16,13 @@
 
 
 -- ---------------------------------------------------------------------------------------------
--- The view these queries read is `survey_answers`, defined ONCE in
--- supabase/migrations/007_survey_answers_view.sql and already applied.
+-- TWO views, defined ONCE in supabase/migrations/009_survey_person_dedup.sql and already applied:
+--   survey_people   one row per PERSON (their first surveyed call). Quote decisions from here.
+--   survey_answers  one row per CALL. Use it for adherence, and for auditing repeats.
+--
+-- The person/call distinction is not a nicety. 50-75 testers making 2-3 calls each is 50-75
+-- opinions, not 180, and a headline quoted off survey_answers overstates n by roughly 2.5x.
+-- A person is identified by a salted hash of caller ID; the raw number is never selected.
 --
 -- It is deliberately not redefined here. An earlier version of this file carried its own copy of
 -- the parsing and eligibility logic, which is the same trap that let the prompt gate and the
@@ -36,8 +41,8 @@ select
   preference,
   count(*)                                                                  as n,
   round(100.0 * count(*) / sum(count(*)) over (), 1)                        as pct
-from survey_answers
-where in_survey_era and preference is not null
+from survey_people
+where preference is not null
 group by preference
 order by n desc;
 
@@ -53,8 +58,8 @@ select
   count(*) - count(satisfaction_score)                as needs_hand_reading,
   round(avg(satisfaction_score), 2)                   as mean_score,
   count(*) filter (where satisfaction_score >= 4)     as four_or_five
-from survey_answers
-where in_survey_era and satisfaction_raw is not null;
+from survey_people
+where satisfaction_raw is not null;
 
 
 -- ---------------------------------------------------------------------------------------------
@@ -99,13 +104,30 @@ order by started_at desc;
 -- ---------------------------------------------------------------------------------------------
 select
   started_at::date  as day,
+  person_key,
+  response_seq,
   conversation_id,
-  survey_consent,
   satisfaction_raw,
   satisfaction_score,
   prefer_agent_raw,
   preference,
-  survey_verdict
+  would_recommend_raw,
+  would_recommend,
+  open_comments,
+  comments_redacted
 from survey_answers
 where in_survey_era and survey_offered
 order by started_at desc;
+
+
+-- ---------------------------------------------------------------------------------------------
+-- 6. REPEAT CALLERS AND CHANGED MINDS.
+--
+-- The single most interesting thing this instrument can produce, and the one a call-level average
+-- destroys: somebody who wanted Robin on their first call and a human on their third, or the
+-- reverse. Read those transcripts before quoting any headline.
+-- ---------------------------------------------------------------------------------------------
+select person_key, responses, changed_mind, first_at, preference as first_answer
+from survey_people
+where repeat_caller
+order by changed_mind desc, responses desc;
