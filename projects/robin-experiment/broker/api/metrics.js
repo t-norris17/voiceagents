@@ -117,6 +117,10 @@ export function summariseSurvey(people, calls) {
   return {
     calls: calls.length,
     people: people.length,
+    // Distinct handsets behind those respondents. A respondent is one caller AS ONE MEMBER, so a
+    // tester exercising several personas is several respondents on purpose (migration 011). Both
+    // figures ship together so neither has to stand in for the other.
+    callers: new Set(people.map((r) => r.caller_key).filter(Boolean)).size,
     // Stated plainly so nobody has to infer it: this is why the two counts differ.
     repeat_callers: people.filter((r) => r.repeat_caller).length,
     // The one fact a call-level average would have buried entirely.
@@ -188,6 +192,23 @@ export function summariseSurvey(people, calls) {
     // gate leaked and the pre-transfer failure mode is back. Surfaced as an alarm, not a statistic.
     leaked_pre_transfer: calls.filter((r) => r.offer_context === "pre_transfer").length,
 
+    // Calls a human should listen to. The survey already captured the Dana call correctly - a 3, a
+    // negative sentiment read, and a comment about Robin remarking on the member's age - and the
+    // page showed none of it, because nothing here ever read the sentiment column. A rating alone
+    // would have missed it: 3 out of 5 is not a bad score, and the complaint was about tone.
+    review: (() => {
+      const flagged = calls.filter((r) => r.survey_offered && r.needs_review);
+      return {
+        n: flagged.length,
+        calls: flagged.slice(0, 25).map((r) => ({
+          conversation_id: r.conversation_id, started_at: r.started_at,
+          respondent: who(r), topic: r.topic || r.plan_topic,
+          satisfaction_score: r.satisfaction_score, sentiment: r.overall_sentiment,
+          preference: r.preference, comment: r.open_comments,
+        })),
+      };
+    })(),
+
     // Every answered CALL, newest first — repeats included on purpose. The page's call browser
     // reads this, and a person's later calls are exactly what makes changed_mind auditable.
     verbatims: calls
@@ -202,6 +223,8 @@ export function summariseSurvey(people, calls) {
         topic: r.topic || r.plan_topic,
         satisfaction: r.satisfaction_raw,
         satisfaction_score: r.satisfaction_score,
+        sentiment: r.overall_sentiment,
+        needs_review: r.needs_review === true,
         prefer_agent: r.prefer_agent_raw,
         preference: r.preference,
         would_recommend: r.would_recommend,

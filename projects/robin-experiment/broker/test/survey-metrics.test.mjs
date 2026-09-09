@@ -193,3 +193,55 @@ test("LLM system prompts are intact and still forbid raw ids in prose", async ()
   assert.match(ask, /NEVER print a person_key hash/);
   assert.match(ask, /NEVER print a raw conversation id/);
 });
+
+// A tester exercising several personas from one handset is several respondents, by design: they had
+// several distinct experiences. This was live and wrong — one handset, three personas, and the
+// headline read only the first, so a "prefer a person" answer on the RMD call never reached it.
+test("responses and callers are both reported, and neither hides the other", async () => {
+  const { summariseSurvey } = await import("../api/metrics.js");
+  const p = (o) => ({ responses: 1, repeat_caller: false, changed_mind: false,
+                      first_at: "2026-09-01", conversation_id: "c", ...o });
+  const c = (o) => ({ conversation_id: "c", survey_offered: true, survey_verdict: "success", ...o });
+
+  const r = summariseSurvey(
+    [p({ person_key: "P-a", caller_key: "C-1", preference: "agent", satisfaction_score: 5 }),
+     p({ person_key: "P-b", caller_key: "C-1", preference: "agent", satisfaction_score: 5 }),
+     p({ person_key: "P-c", caller_key: "C-1", preference: "person", satisfaction_score: 3 })],
+    [c({}), c({}), c({})]
+  );
+  assert.equal(r.people, 3, "three personas from one handset are three responses");
+  assert.equal(r.callers, 1, "and the single caller is still reported");
+  assert.equal(r.preference.person, 1, "the 'prefer a person' answer must reach the headline");
+  assert.equal(r.preference.decided, 3);
+});
+
+// The Dana call: rated 3, sentiment negative, and a complaint about Robin remarking on the member's
+// age. A rating threshold alone misses it — 3 of 5 is not a bad score, and the objection was tone.
+test("a call flagged by sentiment reaches the review queue even with a middling rating", async () => {
+  const { summariseSurvey } = await import("../api/metrics.js");
+  const p = (o) => ({ responses: 1, first_at: "2026-09-01", conversation_id: "c", ...o });
+  const r = summariseSurvey(
+    [p({ person_key: "P-a", caller_key: "C-1", preference: "person", satisfaction_score: 3 })],
+    [{ conversation_id: "c9", survey_offered: true, survey_verdict: "success", person_key: "P-a",
+       satisfaction_raw: "A three.", satisfaction_score: 3, prefer_agent_raw: "I'll wait for a person",
+       overall_sentiment: "negative", needs_review: true,
+       topic: "RMDs", open_comments: "that was a little disrespectful" }]
+  );
+  assert.equal(r.review.n, 1);
+  assert.equal(r.review.calls[0].sentiment, "negative");
+  assert.match(r.review.calls[0].comment, /disrespectful/);
+  assert.equal(r.verbatims[0].needs_review, true, "and the call list shows the same flag");
+});
+
+test("a clean call is not flagged", async () => {
+  const { summariseSurvey } = await import("../api/metrics.js");
+  const r = summariseSurvey(
+    [{ person_key: "P-a", caller_key: "C-1", responses: 1, first_at: "d", conversation_id: "c",
+       preference: "agent", satisfaction_score: 5 }],
+    [{ conversation_id: "c", survey_offered: true, survey_verdict: "success", person_key: "P-a",
+       satisfaction_raw: "five", satisfaction_score: 5, prefer_agent_raw: "with you",
+       overall_sentiment: "positive", needs_review: false }]
+  );
+  assert.equal(r.review.n, 0);
+  assert.equal(r.verbatims[0].needs_review, false);
+});

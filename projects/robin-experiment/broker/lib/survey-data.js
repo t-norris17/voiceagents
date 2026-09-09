@@ -4,20 +4,23 @@
 // TEMPORARY: delete with the instrument after the customer wave.
 import { sb } from "./supabase.js";
 
-// Person-level. THIS is what a decision is quoted from: one row per tester, their first surveyed
-// call. See migration 009 for why first-response rather than an average across a person's calls.
+// Respondent-level. THIS is what a decision is quoted from: one row per RESPONDENT, meaning one
+// caller as one member, being their first surveyed call under that persona. See migration 011 for
+// why a respondent is caller+persona rather than caller alone, and 009 for why first-response
+// rather than an average.
 export const PEOPLE_COLS =
-  "person_key,responses,repeat_caller,changed_mind,first_at,last_at,conversation_id,started_at," +
-  "duration_seconds,topic,plan_topic,satisfaction_raw,satisfaction_score,prefer_agent_raw," +
-  "preference,would_recommend_raw,would_recommend,open_comments,comments_redacted";
+  "person_key,caller_key,responses,repeat_caller,changed_mind,needs_review,first_at,last_at," +
+  "conversation_id,started_at,duration_seconds,overall_sentiment,topic,plan_topic," +
+  "satisfaction_raw,satisfaction_score,prefer_agent_raw,preference,would_recommend_raw," +
+  "would_recommend,open_comments,comments_redacted";
 
-// Call-level. Used for the operational numbers (did Robin ask when she should have?) and for the
-// call browser, where seeing a person's second and third calls is the point.
+// Call-level. Used for the operational numbers (did Robin ask when she should have?), for all free
+// text, and for the call browser, where seeing a respondent's later calls is the point.
 export const CALL_COLS =
-  "conversation_id,started_at,duration_seconds,person_key,response_seq,survey_offered," +
-  "survey_consent,offer_context,survey_verdict,topic,plan_topic,satisfaction_raw," +
-  "satisfaction_score,prefer_agent_raw,preference,would_recommend_raw,would_recommend," +
-  "open_comments,comments_redacted";
+  "conversation_id,started_at,duration_seconds,caller_key,person_key,response_seq,survey_offered," +
+  "survey_consent,offer_context,survey_verdict,overall_sentiment,needs_review,topic,plan_topic," +
+  "satisfaction_raw,satisfaction_score,prefer_agent_raw,preference,would_recommend_raw," +
+  "would_recommend,open_comments,comments_redacted";
 
 export async function surveyPeople() {
   return (await sb(`survey_people?select=${PEOPLE_COLS}&order=first_at.asc.nullslast`)) || [];

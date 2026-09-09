@@ -32,17 +32,36 @@ Three layers. Only the first two are new, and both are configuration, not code.
 | Shaping | `survey_people` / `survey_answers` views (migration 009) | Supabase |
 | Reading | `/survey` page, `read-results.sql`, CSV export | Vercel broker |
 
-## One response per person
+## What counts as one response
 
-`survey_answers` is one row per **call**; `survey_people` is one row per **person**, being their
-first surveyed call. **Every figure a decision rests on comes from `survey_people`.** 50–75 testers
-making 2–3 calls each is 50–75 opinions, not 180, and quoting the call-level count overstates n by
-roughly 2.5x — which is the first thing a sharp reader in the room will catch.
+`survey_answers` is one row per **call**; `survey_people` is one row per **respondent** — *one
+caller as one member* — being their first surveyed call under that persona. **Every figure a
+decision rests on comes from `survey_people`.**
 
-A person is identified by a salted hash of the caller ID already present in `raw_payload`. The raw
-number is never selected by either view, so it cannot reach the API, the CSV, the page, or a
-screenshot of the page. Two limits worth stating before quoting a person count: two testers sharing
-a desk phone read as one person, and one tester using both a desk phone and a cell reads as two.
+Keying on the caller alone (migration 009) was wrong for how this is actually exercised: a small
+group calls many times, as many personas, from the same handset. Under that key all of it collapsed
+into one respondent and only the first answer was ever read. It cost a real finding — a tester
+called as Dana, hit a question Robin could not answer, said *"I would rather do it with you, but
+you're not able to help me, so I guess I'll wait for a person,"* and the headline never saw it.
+
+The same tester preferred Robin for a balance check and a person for RMDs. Those are two findings,
+not one opinion to average. So a respondent is caller ID **plus** the member they verified as
+(migration 011), and one tester exercising several personas is several respondents on purpose.
+
+Both figures are published: `caller_key` counts distinct handsets, `person_key` counts respondents.
+Neither exposes anything — the phone number is hashed and never selected, and `subject_ref` is
+already a synthetic identifier for a synthetic member.
+
+**Free text is the exception.** Comments read from `survey_answers`, not `survey_people`: the latter
+keeps only a first call, so a comment left on a later one would vanish. Counts are per respondent;
+words are not.
+
+## Calls that need a human
+
+`needs_review` flags a call with negative post-call sentiment **or** a rating of 2 or lower, and the
+page surfaces those directly under the headline. A rating threshold alone is not enough: the Dana
+call scored 3 out of 5 — not a bad number — while the caller was objecting to Robin remarking that
+they were "well past" 73. Tone problems do not always show up as low scores.
 
 `survey_people.changed_mind` flags anyone whose stated preference genuinely differed between their
 own calls. It is the most interesting fact the instrument can produce and it is invisible in any
