@@ -54,3 +54,40 @@ export function wilson(hits, n) {
     margin: Math.round(Math.max(centre + half - p, p - (centre - half)) * 100),
   };
 }
+
+// Human-readable names for respondents.
+//
+// person_key is a salted hash — "P-1ea00145". That is the right thing to store and the wrong thing
+// to put in front of a reader: an answer reading "P-1ea00145 answered on two calls" is correct and
+// unreadable, and a director does not care that we hash caller IDs. Numbering people in the order
+// they first responded gives "Respondent 3", which carries the same meaning and none of the noise.
+//
+// Derived from the calls, so the numbering is identical everywhere without a second query: a
+// person's ordinal is fixed by their earliest surveyed call, independent of row order.
+export function respondentLabels(calls) {
+  const earliest = new Map();
+  for (const c of calls) {
+    if (!c.person_key || !c.started_at) continue;
+    const seen = earliest.get(c.person_key);
+    if (!seen || c.started_at < seen) earliest.set(c.person_key, c.started_at);
+  }
+  const ordered = [...earliest.entries()].sort((a, b) => (a[1] < b[1] ? -1 : a[1] > b[1] ? 1 : 0));
+  return new Map(ordered.map(([key], i) => [key, `Respondent ${i + 1}`]));
+}
+
+// Any person_key that slipped into prose becomes its label; any raw conversation id becomes plain
+// words, since the ids an answer rests on are already rendered as clickable chips from `cited`.
+//
+// The prompt asks for this too, but a prompt is a request and this is a guarantee. The failure it
+// prevents is silent and ugly: "P-1ea00145 answered on two calls (conv_7701m218tczhe5182r1hrnfz117r)"
+// is a correct answer nobody can read.
+export function readable(text, labels) {
+  let out = String(text ?? "");
+  for (const [key, name] of labels) out = out.split(key).join(name);
+  out = out.replace(/\bP-[0-9a-f]{8}\b/g, "a respondent");
+  // "(conv_abc)" and ", conv_abc" are citation noise; take the wrapper with them.
+  out = out.replace(/\s*[([]\s*conv_[A-Za-z0-9]+\s*[)\]]/g, "");
+  out = out.replace(/\s*,\s*conv_[A-Za-z0-9]+/g, "");
+  out = out.replace(/\bconv_[A-Za-z0-9]+\b/g, "that call");
+  return out.replace(/\s{2,}/g, " ").trim();
+}

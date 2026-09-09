@@ -45,10 +45,18 @@
 
   .xlink{ font-size:.7rem; color:var(--faint); }
   .xlink a{ color:var(--sub); }
-  hr.rule{ border:0; border-top:1px solid var(--line); margin:44px 0 0; }
+  hr.rule{ border:0; border-top:1px solid var(--line); margin:0 0 22px; }
 
-  section{ margin-top:40px; }
+  section{ margin-top:56px; }
   .shead{ display:flex; align-items:baseline; justify-content:space-between; gap:16px; margin-bottom:2px; }
+  /* The page used .lbl (0.66rem, uppercase, muted) for BOTH section titles and the small labels
+     inside components, so on a sheet this long nothing announced a new section — a reader scrolling
+     past the cross-tab had no signal they had left it. Section titles are now real h2s at reading
+     size in full-strength ink; .lbl keeps the micro-labels, and the contrast between the two is
+     what does the signposting. */
+  .sect-h{ font-size:clamp(1.15rem,2.6vw,1.5rem); font-weight:800; letter-spacing:-.015em; line-height:1.15;
+    color:var(--ink); margin:0; }
+  .sect-h .qual{ font-weight:600; color:var(--sub); font-size:.62em; letter-spacing:0; }
   .tabset{ display:flex; gap:18px; }
   .tabset button{ font:inherit; font-size:.66rem; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); background:none; border:0; padding:0 0 4px; cursor:pointer; border-bottom:2px solid transparent; }
   .tabset button[aria-pressed="true"]{ color:var(--ink); border-bottom-color:var(--ink); }
@@ -361,7 +369,8 @@
 
   <section id="svysec" hidden>
     <div class="shead svy-head">
-      <div class="lbl">Would they rather use Robin? · <span id="svymeta"></span></div>
+      <h2 class="sect-h">Would they rather use Robin?
+        <span class="qual" id="svymeta"></span></h2>
       <span class="svy-tag">Test instrument</span>
     </div>
     <div id="svy"></div>
@@ -373,40 +382,40 @@
 
   <section id="mxsec" hidden>
     <hr class="rule">
-    <div class="shead"><div class="lbl">Rating against preference · one dot per person</div></div>
+    <div class="shead"><h2 class="sect-h">The catch <span class="qual">rating against preference, one dot per person</span></h2></div>
     <p class="svy-lede">The cross-tab, not an average. The question a room asks first is whether anyone
       rated the call highly and still wants a human next time — that cell decides how much weight the
       headline can carry.</p>
     <div class="mx" id="mx"></div>
   </section>
 
-  <section id="cumsec" hidden>
-    <hr class="rule">
-    <div class="shead"><div class="lbl">How certain are we yet?</div></div>
-    <p class="svy-lede">The share preferring Robin as each new person answers, with the 95% interval
-      around it. Not a day-by-day trend, which at this sample size is noise. This answers whether
-      there is enough data to decide.</p>
-    <div class="cum" id="cum"></div>
-  </section>
-
   <section id="thmsec" hidden>
     <hr class="rule">
-    <div class="shead"><div class="lbl">What people said · themes</div></div>
+    <div class="shead"><h2 class="sect-h">Themes <span class="qual">what people said, clustered</span></h2></div>
     <div id="thm"></div>
   </section>
 
   <section id="cmsec" hidden>
     <hr class="rule">
-    <div class="shead"><div class="lbl">In their own words</div></div>
+    <div class="shead"><h2 class="sect-h">In their own words</h2></div>
     <p class="svy-lede">Every written answer to the last question, unedited, from every call — including
       repeat calls, because a comment is a comment even when we only count the person once.
       Click an id to read the call it came from.</p>
     <div id="cm"></div>
   </section>
 
+  <section id="cumsec" hidden>
+    <hr class="rule">
+    <div class="shead"><h2 class="sect-h">Is there enough data yet?</h2></div>
+    <p class="svy-lede">The share preferring Robin as each new person answers, with the 95% interval
+      around it. Not a day-by-day trend, which at this sample size is noise. This answers whether
+      there is enough data to decide.</p>
+    <div class="cum" id="cum"></div>
+  </section>
+
   <section id="asksec" hidden>
     <hr class="rule">
-    <div class="shead"><div class="lbl">Ask the data</div></div>
+    <div class="shead"><h2 class="sect-h">Ask the data</h2></div>
     <p class="svy-lede">Answered only from the survey rows, with the calls behind every answer cited.
       If the rows can't answer it, it says so rather than guessing.</p>
     <form class="ask-form" id="askform">
@@ -420,7 +429,7 @@
 
   <section id="clsec" hidden>
     <hr class="rule">
-    <div class="shead"><div class="lbl">Every answered call</div></div>
+    <div class="shead"><h2 class="sect-h">Every answered call</h2></div>
     <p class="svy-lede">Repeat calls included, so a person who answered more than once is visible
       rather than averaged away. Open any row to read the transcript.</p>
     <div class="srt" id="srt"></div>
@@ -429,7 +438,7 @@
 
   <section id="dlsec" hidden>
     <hr class="rule">
-    <div class="shead"><div class="lbl">Take it with you</div></div>
+    <div class="shead"><h2 class="sect-h">Take it with you</h2></div>
     <div class="dl">
       <a href="/api/survey-export?level=people">Download responses (CSV)</a>
       <a class="sec" href="/api/survey-export?level=calls">Every call (CSV)</a>
@@ -780,7 +789,8 @@
       `<button data-s="${k}" aria-pressed="${k===SORT}">${esc(v.label)}</button>`).join("");
     const list=rows.slice().sort(SORTS[SORT].fn);
     document.getElementById("cl").innerHTML=list.map(v=>`
-      <div class="cl-row" role="button" tabindex="0" data-id="${esc(v.conversation_id)}">
+      <div class="cl-row" role="button" tabindex="0" data-id="${esc(v.conversation_id)}"
+           data-who="${esc(v.respondent||"")}">
         <div>
           <div class="cl-said">${v.prefer_agent
             ? `<span class="lead">“</span>${esc(v.prefer_agent)}<span class="lead">”</span>`
@@ -817,8 +827,7 @@
           from ${com.people_who_commented} ${com.people_who_commented===1?"person":"people"}${
           com.redacted?` · <span class="accent">${com.redacted} withheld</span>`:""}</div>
         ${rows.map(c=>`<div class="svy-cmt">“${esc(c.text)}”
-          <button class="cid" data-id="${esc(c.conversation_id)}" style="margin-left:8px">${esc(String(c.conversation_id).slice(-8))}</button>
-          ${c.response_seq>1?`<span class="lbl" style="margin-left:6px">call ${c.response_seq}</span>`:""}</div>`).join("")}
+          <button class="cid" data-id="${esc(c.conversation_id)}" style="margin-left:8px">${esc(c.respondent||"open call")}${c.response_seq>1?`, call ${c.response_seq}`:""}</button></div>`).join("")}
         ${com.redacted?`<div class="svy-cmt redacted">${com.redacted} answer${com.redacted===1?" was":"s were"} dropped for containing something
           personal — an account number, a Social Security Number or similar. The rate is kept, the words are not.</div>`:""}
       </div>`;
@@ -828,7 +837,7 @@
 
   // ---- Transcript drawer ----------------------------------------------------------------------
   const drw=document.getElementById("drw");
-  async function openCall(id){
+  async function openCall(id, who){
     drw.hidden=false;
     document.getElementById("drwt").textContent="Call";
     document.getElementById("drwbody").innerHTML=`<p class="soft" style="margin-top:20px">Loading transcript…</p>`;
@@ -843,7 +852,7 @@
         <div class="drw-meta">
           <b>${esc(String(c.started_at||"").slice(0,16).replace("T"," "))}</b> · ${mins}
           · ${esc(c.outcome||"—")} · verification ${esc(c.auth_outcome||"—")}
-          ${sv.person_key?`<br>respondent <b>${esc(sv.person_key)}</b>${sv.response_seq>1?` · their call #${sv.response_seq}`:""}`:""}
+          ${who?`<br><b>${esc(who)}</b>${sv.response_seq>1?` · their call #${sv.response_seq}`:""}`:""}
         </div>
         ${sv.satisfaction_raw||sv.prefer_agent_raw?`
         <div class="drw-svy">
@@ -876,7 +885,7 @@
   // would mean re-binding on every render and silently missing whichever rendered last.
   document.addEventListener("click",(e)=>{
     const row=e.target.closest(".cl-row[data-id]"), cid=e.target.closest(".cid[data-id]");
-    if(row) openCall(row.dataset.id); else if(cid) openCall(cid.dataset.id);
+    if(row) openCall(row.dataset.id, row.dataset.who); else if(cid) openCall(cid.dataset.id);
   });
   document.addEventListener("keydown",(e)=>{
     if(e.key!=="Enter"&&e.key!==" ") return;
