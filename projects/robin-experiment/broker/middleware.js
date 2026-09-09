@@ -14,16 +14,34 @@ export const config = {
   // Node, not edge: the build warns that the edge runtime is deprecated here, and nothing in this
   // gate needs edge — it reads one env var and compares a string.
   runtime: "nodejs",
-  // Deliberately NO `matcher`. The first version of this file carried
-  // matcher: [..., "/api/survey-:path*"], which is not a valid path-to-regexp pattern at all — it
-  // throws "Can not repeat 'path' without a prefix and suffix", because a repeated parameter has
-  // to follow a "/". Had that shipped, /api/survey-export and /api/survey-call would have been
-  // UNGATED: the full CSV of every response and every transcript, served to anyone with the URL.
+
+  // Every protected route, spelled out. Two reasons it looks like this rather than a tidy glob:
   //
-  // A security boundary should not depend on a pattern dialect that fails silently at the edge and
-  // cannot be exercised from a preview deployment (Vercel's own SSO answers first there, so a 401
-  // from this gate is unobservable). So the middleware runs on everything and the decision lives in
-  // isProtected() below, in plain JavaScript, next to the tests that prove what it covers.
+  // 1. LATENCY. Middleware is a real invocation, cold starts included. With no matcher it runs on
+  //    EVERY request — including /api/verify_caller and /api/get_balance, which ElevenLabs calls
+  //    while a caller is on the line. Putting a gate that has nothing to say about those requests
+  //    on the critical path of a live phone call buys nothing and costs the caller a wait.
+  //
+  // 2. THE PATTERN THAT NEVER COMPILED. An earlier version globbed the API routes as
+  //    "/api/survey-:path*", which is not merely wrong but INVALID — path-to-regexp throws
+  //    "Can not repeat 'path' without a prefix and suffix", because a repeated parameter must
+  //    follow a "/". Had it shipped, /api/survey-export and /api/survey-call would have served
+  //    the full CSV and every transcript to anyone with the URL. So the four endpoints are
+  //    literals: nothing to mis-parse, and a new one has to be added here deliberately.
+  //
+  // isProtected() below still re-checks the path. The matcher decides what runs; the predicate
+  // decides what is denied. If they ever disagree the predicate wins, and it is the tested one.
+  matcher: [
+    "/survey",
+    "/survey/:path*",
+    "/dashboard",
+    "/dashboard/:path*",
+    "/api/metrics",
+    "/api/survey-export",
+    "/api/survey-call",
+    "/api/survey-ask",
+    "/api/survey-themes",
+  ],
 };
 
 // Everything the survey publishes: the pages, and every endpoint that carries their data —

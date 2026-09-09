@@ -88,3 +88,41 @@ test("a protected path with no password set fails closed, not open", async () =>
     if (before !== undefined) process.env.SURVEY_PASSWORD = before;
   }
 });
+
+// The matcher decides what RUNS; isProtected decides what is DENIED. They are two lists, so they
+// can drift — and drift here is silent and one-directional: add api/survey-new.js, and isProtected
+// covers it (the "/api/survey-" prefix) while the matcher does not, so the middleware never runs
+// and the endpoint serves survey data to anyone. That is the same failure the invalid glob would
+// have caused, arriving by a different route.
+//
+// So this reads the actual endpoint files off disk and insists each one is named in the matcher.
+// A new survey endpoint fails the suite until it is gated.
+test("every /api/survey-* endpoint on disk is named in the matcher", async () => {
+  const { readdirSync } = await import("node:fs");
+  const { fileURLToPath } = await import("node:url");
+  const { dirname, join } = await import("node:path");
+  const here = dirname(fileURLToPath(import.meta.url));
+
+  const { config } = await import("../middleware.js");
+  const matcher = config.matcher;
+
+  const endpoints = readdirSync(join(here, "..", "api"))
+    .filter((f) => f.startsWith("survey-") && f.endsWith(".js"))
+    .map((f) => `/api/${f.replace(/\.js$/, "")}`);
+
+  assert.ok(endpoints.length > 0, "expected to find survey endpoints to check");
+  for (const route of endpoints) {
+    assert.ok(matcher.includes(route), `${route} exists but is not in middleware.js matcher — it would be UNGATED`);
+    assert.equal(isProtected(route), true, `${route} is not covered by isProtected either`);
+  }
+});
+
+// The reverse: nothing in the matcher should be a route the predicate would wave through, or the
+// middleware would run and then pass the request on anyway.
+test("every matcher route is one isProtected actually denies", async () => {
+  const { config } = await import("../middleware.js");
+  for (const route of config.matcher) {
+    const concrete = route.replace("/:path*", "/something");
+    assert.equal(isProtected(concrete), true, `matcher lists ${route} but isProtected says it is open`);
+  }
+});
