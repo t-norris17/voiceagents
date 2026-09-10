@@ -59,14 +59,23 @@ export default async function handler(req, res) {
     // A second explicit query rather than a PostgREST embed on the members select. The embed nests
     // under a response key this code would have to guess at, and a wrong guess reads as undefined —
     // a silent "no loan" instead of a loud failure. Two round trips on a demo backend cost nothing.
+    //
+    // Its own try/catch, so a loan-detail problem degrades instead of cascading. Without this, one
+    // bad response here throws to the outer handler and returns 500 — taking down the BALANCE lookup
+    // too, for every member flagged with a loan. Robin would lose figures she has always had in
+    // order to gain ones she never had. Falling through to loan:null is exactly her old behaviour.
     let loan = null;
     if (m.outstanding_loan) {
-      const loans = await sb(
-        `member_loans?subject_ref=eq.${ref}&status=eq.active&limit=1` +
-          `&select=purpose,principal_cents,balance_cents,interest_rate_pct,payment_cents,` +
-          `payment_frequency,payments_made,payments_remaining,next_payment_date,maturity_date`
-      );
-      loan = (loans && loans[0]) || null;
+      try {
+        const loans = await sb(
+          `member_loans?subject_ref=eq.${ref}&status=eq.active&limit=1` +
+            `&select=purpose,principal_cents,balance_cents,interest_rate_pct,payment_cents,` +
+            `payment_frequency,payments_made,payments_remaining,next_payment_date,maturity_date`
+        );
+        loan = (loans && loans[0]) || null;
+      } catch (e) {
+        console.error("get_balance: loan detail lookup failed, degrading to loan:null —", e.message);
+      }
     }
 
     return res.status(200).json(shapeBalance(m, loan));
