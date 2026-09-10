@@ -31,7 +31,9 @@
         "The agent never asked whether the caller would rather use the agent or hold for a person.",
         "The agent never asked whether the caller had twenty seconds or fifteen seconds for a couple of quick questions.",
         "After verification failed, the agent moved to connect the caller to a specialist."
-      ]
+      ],
+      "superseded_by": "test_2701m25w4234f3a8wy5s9vfwg1zd",
+      "superseded_reason": "Its conditions asserted the RETIRED questions. 'The agent never asked the caller to rate the call on a scale of one to five' became vacuously true the moment that question was removed, so half the gate stopped testing anything. A green suite that cannot fail is worse than no suite."
     },
     {
       "test_id": "test_7601m1pzfwdvfapvcjx2tcsep0vf",
@@ -46,7 +48,9 @@
         "The agent did NOT offer the caller 'two quick questions', 'twenty seconds', 'fifteen seconds', a short survey, or any similar preamble to a set of feedback questions.",
         "The agent connected the caller to a specialist, or offered to and was moving to do so, without any survey questions delaying the handover."
       ],
-      "_criterion_note": "Criterion 2 was widened deliberately. The first version read 'did not ask whether the caller would rather handle this with the agent or hold for a person', and the judge scored a FAILURE on Robin's ordinary 'walk you through the portal, or would you prefer the phone number?' — normal call handling, not the survey. A suppression test that fires on correct behaviour trains you to ignore it."
+      "_criterion_note": "Criterion 2 was widened deliberately. The first version read 'did not ask whether the caller would rather handle this with the agent or hold for a person', and the judge scored a FAILURE on Robin's ordinary 'walk you through the portal, or would you prefer the phone number?' — normal call handling, not the survey. A suppression test that fires on correct behaviour trains you to ignore it.",
+      "superseded_by": "test_4901m25w49e7fsbbf6k5krrytfgw",
+      "superseded_reason": "Same rot as the failed-verification gate: conditions written against the 1-5 rating and the 'twenty seconds' preamble, neither of which exists any more. Rewritten against the current four questions. This is the compliance-critical gate, so a vacuous condition here matters most."
     },
     {
       "test_id": "test_6701m23w32mcfkcb64596zaxbtab",
@@ -80,7 +84,9 @@
         "The agent NEVER used the skip_turn tool, and never handed the turn back to the caller without speaking, at any point in the conversation.",
         "The caller NEVER had to repeat an answer, ask 'what?', ask if the agent was still there, or otherwise prompt the agent because nothing came back. If the caller repeats an answer or asks whether the agent heard them, that is a FAILURE.",
         "The agent treated each one-word answer as a complete answer and moved on, rather than waiting for more or asking the caller to expand."
-      ]
+      ],
+      "superseded_by": "test_6501m25w0r6depjrmnw35ptgpwhw",
+      "superseded_reason": "Scripted Marcus saying 'Five / You / Yes / Nope' against the OLD question order, so his 'Five' now lands on the preference question. Rewritten, and extended: two consecutive 0-10 questions are a new failure mode, so the replacement checks they are asked separately, that the scale is said aloud both times, and that one number is never reused as the answer to both."
     },
     {
       "test_id": "test_8501m23w3xf9fzmr41nb7h879b58",
@@ -136,12 +142,55 @@
         "The agent asked an open closing question inviting anything else the caller wanted them to know.",
         "The agent asked the survey questions ONE AT A TIME and in order, waiting for each answer before asking the next.",
         "At no point did the agent read the survey questions back, repeat the caller's answers back to them, summarise their answers, or tell the caller what had been recorded."
-      ]
+      ],
+      "superseded_by": "test_2401m25w12bjfyjsjmv03vzmhf9v",
+      "superseded_reason": "Scripted answers to 'one to five' and 'would you recommend', neither of which exists any more, and asserted them in its success conditions. Rewritten for the current four questions, and it now checks that the PREFERENCE question comes first, which is the whole reason the order changed."
+    },
+    {
+      "test_id": "test_2401m25w12bjfyjsjmv03vzmhf9v",
+      "name": "Survey v2 — fires on a resolved call, preference asked first",
+      "type": "simulation",
+      "simulation_max_turns": 30,
+      "expects": "survey STATED not offered; preference asked FIRST with the 'even if it took longer' clause; both 0-10 questions asked separately",
+      "covers": "the reordered v2 question set",
+      "supersedes": "test_7401m23wh52wfv7spvs452145xmv",
+      "note": "Scenario and success_conditions live in ElevenLabs; fetch with agents_get_test. Recorded here so the active set is readable without an API call."
+    },
+    {
+      "test_id": "test_6501m25w0r6depjrmnw35ptgpwhw",
+      "name": "Survey v2 — one-word answers, and two 0-10 questions kept apart",
+      "type": "simulation",
+      "simulation_max_turns": 30,
+      "expects": "every one-word answer gets a spoken reply; skip_turn never used; the two 0-10 questions never merged",
+      "covers": "the skip_turn fix AND the new two-scales guard",
+      "supersedes": "test_5501m23w3avxexjsfxqsx7gq0kmp",
+      "note": "Scenario and success_conditions live in ElevenLabs; fetch with agents_get_test. Recorded here so the active set is readable without an API call."
+    },
+    {
+      "test_id": "test_2701m25w4234f3a8wy5s9vfwg1zd",
+      "name": "Survey v2 — suppressed on failed verification",
+      "type": "simulation",
+      "simulation_max_turns": 24,
+      "expects": "no survey at all; every condition names a question that currently exists",
+      "covers": "the eligibility gate",
+      "supersedes": "test_5101m1mbkfwefjpaj7najsbya6bf",
+      "note": "Scenario and success_conditions live in ElevenLabs; fetch with agents_get_test. Recorded here so the active set is readable without an API call."
+    },
+    {
+      "test_id": "test_4901m25w49e7fsbbf6k5krrytfgw",
+      "name": "Survey v2 — suppressed on a transfer",
+      "type": "simulation",
+      "simulation_max_turns": 30,
+      "expects": "no survey at all; the gate must beat the pre-transfer carve-out",
+      "covers": "the eligibility gate",
+      "supersedes": "test_7601m1pzfwdvfapvcjx2tcsep0vf",
+      "note": "Scenario and success_conditions live in ElevenLabs; fetch with agents_get_test. Recorded here so the active set is readable without an API call."
     }
   ],
   "_deleted": "test_5801m1mbkb7kfmyv1pfx0c82db1h 'Survey — fires before a transfer' was retired at v6. The pre-transfer ask only completed 9 times in 20 and its failure mode was hostile — offering two questions and then transferring mid-answer. Question two is hypothetical ('if you had a question like this again'), so it does not need to be asked at the transfer moment to be valid.",
   "_safe_against_live": "Running these against the LIVE agent does NOT pollute the survey dataset. Verified two ways on 2026-09-09: Session 5's 60 simulated calls against the clone produced ZERO rows in agents_list_conversations, and all 60 rows in ai_call_events carry a real external_number. Simulation runs are test-run objects, not conversations, so the post-call webhook never fires. This supersedes the earlier 'run against the clone, never the live agent' rule — verifying a live prompt change requires running against the live agent. Simulations DO call the real webhook tools (verify_caller, get_balance) with synthetic member IDs, which is harmless.",
   "_scenario_note": "Every scenario that asserts the survey FIRES must tell the simulated caller to decline a transfer. Robin offers a specialist whenever the Knowledge Base doesn't cover something, and a transfer legally suppresses the survey — so a scenario that lets the caller accept one is testing the gate, not adherence, and will fail on correct behaviour.",
   "_load_note": "Run ONE suite at a time: two suites launched together on 2026-09-09 (55 concurrent simulated calls) produced 6 'Simulation timed out' failures. A single suite produced none.",
-  "_model_note": "READ THIS BEFORE QUOTING A SIMULATION RESULT. The simulation harness does not run on the agent's configured LLM. Robin is configured for claude-haiku-4-5 with backup_llm_config 'default' and cascade_timeout_seconds 8; in simulation the cascade fires constantly. A single 24-run suite on 2026-09-09 was served by gemini-2.5-flash for 134 turns and claude-haiku-4-5 for only 14. This is NOT production behaviour — every recorded agent turn across the 10 real calls that carry the field shows claude-haiku-4-5 and zero Gemini. So a simulation pass means the prompt holds under the backup model, which is useful but is not the same as verifying the model production actually uses. To test Haiku specifically, set backup_llm_config preference to 'disabled' via agent_config_override on the run."
+  "_model_note": "READ THIS BEFORE QUOTING A SIMULATION RESULT. The simulation harness does not run on the agent's configured LLM. Robin is configured for claude-haiku-4-5 with backup_llm_config 'default' and cascade_timeout_seconds 8; in simulation the cascade fires constantly. A single 24-run suite on 2026-09-09 was served by gemini-2.5-flash for 134 turns and claude-haiku-4-5 for only 14. This is NOT production behaviour — every recorded agent turn across the 10 real calls that carry the field shows claude-haiku-4-5 and zero Gemini. So a simulation pass means the prompt holds under the backup model, which is useful but is not the same as verifying the model production actually uses. To test Haiku specifically, set backup_llm_config preference to 'disabled' via agent_config_override on the run.",
+  "_v2_note": "Survey v2 (2026-09-10) reordered and replaced the questions: preference FIRST, then NPS 0-10, then voice naturalness 0-10, then open comments. The 1-5 rating and the yes/no recommend question are retired. Every test below whose scenario scripted answers to the old questions, or whose conditions asserted them, has been superseded — including the two suppression gates, whose conditions had gone vacuously true rather than failing loudly."
 }
