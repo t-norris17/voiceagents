@@ -43,14 +43,13 @@ that she routes rather than guesses.
 | "Can I do Roth instead of pre-tax?" | ✅ Yes, but you have to elect it online — it isn't automatic |
 | "What's my balance?" | ✅ **Listen for the split** — $27,318.15 total but $19,122.70 vested. Ask "why are those different?" |
 | "What's my loan balance?" | ✅ **Her best card.** $5,490.37 left of $8,000 at 8.5%, $75.64 biweekly, 83 payments to go, scheduled payoff Nov 9 2029 |
-| "Can I take *another* loan out?" | ✅ **Routing done right** — one loan at a time, so no, not until this one's repaid. Limits stay unpublished |
+| "Can I take *another* loan out?" | ⚠️ **Watch this one closely.** She quotes the Vertex limits correctly ($1,000 min, lesser of $50k or 50% vested, 5yr/15yr, Prime+1%, $75+$25) but on 2026-09-10 she said "*if* you already have a loan" — conditional — when the account says he does. See the defect note below |
 | "When could I have joined the plan?" | ⚠️ See the warning below |
 
 **The moment worth catching:** the loan, then the balance split. Ask for the loan balance and the caller
 gets a figure a human would have to look up — $5,490.37, $75.64 biweekly, 83 payments left. Then ask
-whether they can take another one and watch the same call turn into a clean *no*: one loan at a time,
-and the amount limits are genuinely unpublished, so that half routes. **One question, both halves of
-the job.** The balance split is still there if you want it — $27,318.15 total against $19,122.70
+whether they can take another one — that half is **not yet reliable**, see below. **The balance split
+is still there if you want it** — $27,318.15 total against $19,122.70
 vested, the gap being profit-sharing money short of its three-year cliff.
 
 > **Expect whole dollars on the balance.** Robin says "$27,318" and "$19,123" — `get_balance` rounds
@@ -60,6 +59,16 @@ vested, the gap being profit-sharing money short of its three-year cliff.
 *Robin could not do this before.* On an earlier call she said "I can see that you have a loan
 outstanding, but I don't have the specific details like the balance, payment amount, or how much time
 is left on it" and transferred. That transfer is what this card now replaces.
+
+> **⚠️ OPEN DEFECT — the LOAN TRAP still fires generically.** On `conv_2701m268hce5e95990g5cx8htp24`
+> (2026-09-10) Scott asked to take a loan out as Marcus. Robin called `get_balance`, so she had
+> `outstanding_loan: true` in hand, and still answered *"You can only have one loan outstanding at a
+> time, so **if** you already have a loan, you'd need to pay that off first"* — the generic KB
+> sentence, with his actual situation left as a hypothetical. The true answer is that he cannot take
+> one right now because he already has one. Don't demo this question until it's fixed.
+>
+> Same call: `get_plan_details` fired against its dead host (`lumio-retirement.vercel.app`), failed,
+> and cost an audible *"Let me try that again..."* before she fell back to `get_balance`. Also open.
 
 ---
 

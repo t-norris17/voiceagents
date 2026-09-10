@@ -1,4 +1,6 @@
 # INTRUST 401(k) Plan — Plan Overview
+> **⚠️ STALE — does not drive the live agent.** Robin's live Knowledge Base is five **Vertex Manufacturing 401(k)** documents maintained in the ElevenLabs dashboard, with no source in this repo. This file is INTRUST-era and its plan facts differ from live: the Vertex loans article publishes full loan limits and terms ($1,000 min; lesser of $50,000 or 50% vested; 5yr/15yr; Prime+1%; $75 origination + $25/yr), where this file says limits are unpublished and the fee is $100. Verify against the live KB (`agents_get_kb_document`) before relying on anything here.
+
 
 *Source: 2025 INTRUST Enrollment Packet (recordkept by NestEgg U). Participant-facing summary for
 Robin's Knowledge Base. In any discrepancy, the Plan Document controls.*
