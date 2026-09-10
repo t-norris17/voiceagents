@@ -159,6 +159,10 @@
   .svy-head-fig{ display:flex; align-items:baseline; gap:14px; margin-top:22px; }
   .svy-head-fig .fig{ font-size:clamp(3rem,9vw,4.4rem); font-weight:800; line-height:.85; letter-spacing:-.035em; }
   .svy-head-fig .un{ font-size:.95rem; font-weight:600; color:var(--sub); }
+  /* The denominator carries the caution. At .95rem it read as a footnote to the numerator; a reader
+     who skims takes "18" and loses "of 24", which is exactly the misreading this hero replaced. */
+  .svy-head-fig .of{ font-size:clamp(1.3rem,3.4vw,1.9rem); font-weight:700; color:var(--sub);
+                     letter-spacing:-.02em; margin-left:6px; }
   .svy-head-fig .vs{ font-size:.82rem; color:var(--sub); line-height:1.45; }
   .svy-head-fig .vs b{ color:var(--ink); }
   .bar .b-agent{ background:var(--c-agent); }
@@ -211,12 +215,28 @@
      --c-none started as --line and was re-stepped twice: --line failed contrast (1.31:1) and
      --sub failed the dark normal-vision floor at ΔE 14.1, under the hard floor of 15.
      Colour never carries identity alone here — every mark is also directly labelled. */
-  :root{ --c-agent:#17181c; --c-person:#b8501e; --c-none:#4a4f57; }
+  :root{ --c-agent:#b8501e; --c-person:#2563a8; --c-none:#9a7d1e; }
+  /* One dot per respondent. The confidence band it replaces was answering "should we keep
+     collecting?", which is our question, not leadership's, and it required reading a statistical
+     construct to get there. Four dots look like four dots: nobody over-reads them, and nobody needs
+     it explained. */
+  .dotgrid{ display:flex; flex-wrap:wrap; gap:6px; margin:14px 0 6px; }
+  .dg{ width:15px; height:15px; border-radius:50%; display:block;
+       box-shadow:0 0 0 2px var(--paper); transition:transform .12s ease; }
+  .dg:hover{ transform:scale(1.35); }
+  .dg-agent{ background:var(--c-agent); }
+  .dg-person{ background:var(--c-person); }
+  .dg-none{ background:var(--c-none); }
+  /* Unclassified is deliberately hollow rather than a fourth hue: a generated 4th colour would be
+     indistinguishable from the others under CVD, and "we could not read this answer" is an absence,
+     which is what a hollow mark says. */
+  .dg-unclear{ background:transparent; box-shadow:0 0 0 2px var(--paper), inset 0 0 0 2px var(--faint); }
+  .dg-cap{ font-size:.82rem; color:var(--sub); margin:2px 0 0; }
   @media (prefers-color-scheme: dark){
-    :root{ --c-agent:#ecebe6; --c-person:#e08a4a; --c-none:#6a6e74; }
+    :root{ --c-agent:#cf7135; --c-person:#4f8ac2; --c-none:#ad8b2a; }
   }
-  :root[data-theme="light"]{ --c-agent:#17181c; --c-person:#b8501e; --c-none:#4a4f57; }
-  :root[data-theme="dark"]{ --c-agent:#ecebe6; --c-person:#e08a4a; --c-none:#6a6e74; }
+  :root[data-theme="light"]{ --c-agent:#b8501e; --c-person:#2563a8; --c-none:#9a7d1e; }
+  :root[data-theme="dark"]{ --c-agent:#cf7135; --c-person:#4f8ac2; --c-none:#ad8b2a; }
 
   /* ---- narrative ---- */
   .narr{ margin-top:30px; padding:20px 22px; border:1px solid var(--line); background:var(--hair); }
@@ -406,9 +426,10 @@
 
   <section id="mxsec" hidden>
     <hr class="rule">
-    <div class="shead"><h2 class="sect-h">Satisfaction vs. preference</h2></div>
-    <p class="svy-lede">Satisfaction rating against stated preference, one dot per person. Shows whether
-      anyone rated the call highly and would still choose a person next time. One dot per response.</p>
+    <div class="shead"><h2 class="sect-h">Recommendation vs. preference</h2></div>
+    <p class="svy-lede">How likely each person was to recommend Robin, against what they said they would
+      actually choose next time. Shows whether anyone would recommend it warmly and still want a person.
+      One dot per respondent.</p>
     <div class="mx" id="mx"></div>
   </section>
 
@@ -536,7 +557,8 @@
     }
 
     const a=s.adherence||{}, r=s.response||{}, p=s.preference||{}, sat=s.satisfaction||{},
-          rec=s.recommend||{}, com=s.comments||{}, ci=p.ci;
+          rec=s.recommend||{}, com=s.comments||{}, ci=p.ci,
+          nps=s.nps||{}, voice=s.voice||{}, inst=s.instrument||{};
     document.getElementById("svymeta").textContent=
       `${s.people} response${s.people===1?"":"s"} from ${s.callers} caller${s.callers===1?"":"s"}, ${s.calls} call${s.calls===1?"":"s"}`;
 
@@ -546,11 +568,23 @@
     const settled = ci && (ci.lo>50 || ci.hi<50);
     const headFig = decided
       ? `<div class="svy-head-fig">
-           <div><div class="fig tnum">${ci.pct}<span class="un">%</span></div></div>
-           <div class="vs">chose <b>Robin</b> over holding for a person.<br>
-             ${p.person_pct}% would rather wait for a person; ${p.no_preference_pct}% had no preference.</div>
+           <div><div class="fig tnum">${p.agent}<span class="of">of ${decided}</span></div></div>
+           <div class="vs">would rather use <b>Robin</b> than hold for a person &mdash; ${ci.pct}%.<br>
+             ${p.person} would rather wait for a person; ${p.no_preference} had no preference.</div>
          </div>`
       : `<div class="empty">Nobody has answered the preference question yet.</div>`;
+
+    // One dot per respondent, in the order they answered.
+    const dotList=(s.dots||[]);
+    const dgClass={agent:"dg-agent",person:"dg-person",no_preference:"dg-none"};
+    const dotGrid = dotList.length ? `
+      <div class="dotgrid" role="img"
+           aria-label="One dot per respondent: ${p.agent} prefer Robin, ${p.person} prefer a person, ${p.no_preference} no preference, out of ${dotList.length} respondents">
+        ${dotList.map(d=>`<span class="dg ${dgClass[d.preference]||"dg-unclear"}" title="${esc(d.respondent||("Respondent "+d.n))} &middot; ${
+          d.preference==="agent"?"prefers Robin":d.preference==="person"?"prefers a person":
+          d.preference==="no_preference"?"no preference":"answer unclear"}"></span>`).join("")}
+      </div>
+      <p class="dg-cap">Each dot is one respondent, in the order they answered.</p>` : "";
 
     const pc=(n)=>decided?((n/decided)*100).toFixed(2)+"%":"0%";
     const bar = decided ? `
@@ -587,14 +621,16 @@
           <div class="cap">of people asked gave an answer — ${r.answered} of ${r.offered}.
           ${r.declined?`${r.declined} declined.`:""}</div>
         </div>`,
-      rec.answered ? `<div class="svy-m">
-          <div class="n tnum">${rec.yes_pct!=null?rec.yes_pct:"—"}${rec.yes_pct!=null?'<span class="un">%</span>':""}</div>
-          <div class="cap">would recommend it to someone else — ${rec.yes} yes, ${rec.no} no.${rec.unclear?` ${rec.unclear} unclear.`:""}</div>
+      nps.n ? `<div class="svy-m">
+          <div class="n tnum">${nps.score>0?"+":""}${nps.score}</div>
+          <div class="cap">NPS from ${nps.n} response${nps.n===1?"":"s"} — ${nps.promoters} promoter${nps.promoters===1?"":"s"},
+          ${nps.passives} passive${nps.passives===1?"":"s"}, ${nps.detractors} detractor${nps.detractors===1?"":"s"}.
+          Runs &minus;100 to +100, so it is not a percentage.${nps.unparsed?` ${nps.unparsed} answered in words we couldn't score.`:""}</div>
         </div>` : "",
-      sat.n ? `<div class="svy-m">
-          <div class="n tnum">${sat.mean}<span class="un">/5</span></div>
-          <div class="cap">average rating across ${sat.n} response${sat.n===1?"":"s"};
-          ${sat.four_or_five} gave a 4 or 5.${sat.unparsed?` ${sat.unparsed} answered in words we couldn't score.`:""}</div>
+      voice.n ? `<div class="svy-m">
+          <div class="n tnum">${voice.mean}<span class="un">/10</span></div>
+          <div class="cap">average rating of how natural Robin's voice sounded, across ${voice.n}
+          response${voice.n===1?"":"s"}.${voice.unparsed?` ${voice.unparsed} answered in words we couldn't score.`:""}</div>
         </div>` : "",
     ].filter(Boolean).join("");
 
@@ -604,6 +640,10 @@
       s.changed_mind ? `<b>${s.changed_mind} respondent${s.changed_mind===1?"":"s"} changed their answer between calls
         as the same member</b> — review those transcripts, as an average cannot show a change of preference.` : "",
       a.ineligible ? `${a.ineligible} call${a.ineligible===1?" was":"s were"} correctly excluded, having transferred or failed verification.` : "",
+      (inst.v1 && inst.v2) ? `<b>${inst.v1} respondent${inst.v1===1?"":"s"} answered the retired 1-5 question and
+        ${inst.v2} answered the current NPS.</b> The preference figures above cover both, because that
+        question did not change. The retired ratings averaged ${sat.mean}/5 and are deliberately not
+        folded into the NPS, which measures something else on a different scale.` : "",
     ].filter(Boolean).join(" ");
 
     // Should always be zero. Anything here means the prompt gate leaked on a transfer.
@@ -616,7 +656,7 @@
       <p class="svy-lede">Four questions at the end of a normal call, for the testing phase only. Not asked on transfers, or on
         callers who could not be verified. Testers are briefed beforehand, so the questions are stated
         rather than offered. Figures count one response per caller per member.</p>
-      ${headFig}${bar}${metrics?`<div class="svy-grid">${metrics}</div>`:""}
+      ${headFig}${dotGrid}${bar}${metrics?`<div class="svy-grid">${metrics}</div>`:""}
       ${notes?`<p class="svy-foot">${notes}</p>`:""}${alarm}
     </div>`;
   }
@@ -632,13 +672,15 @@
     sec.hidden=false;
     document.getElementById("rev").innerHTML=`<div class="rev">${(r.calls||[]).map(c=>{
       const why=[c.sentiment==="negative"?"sounded unhappy":"",
+                 c.nps_score!=null&&c.nps_score<=6?`scored ${c.nps_score}/10`:
                  c.satisfaction_score!=null&&c.satisfaction_score<=2?`rated ${c.satisfaction_score}/5`:""]
                  .filter(Boolean).join(" · ");
       return `<div class="rev-i" role="button" tabindex="0" data-id="${esc(c.conversation_id)}"
                    data-who="${esc(c.respondent||"")}">
         <div class="rev-top">
           <span class="rev-t">${esc(c.topic||"Call")}</span>
-          <span class="rev-m">${esc(c.respondent||"")}${c.satisfaction_score!=null?` · ${c.satisfaction_score}/5`:""}</span>
+          <span class="rev-m">${esc(c.respondent||"")}${
+            c.nps_score!=null?` · ${c.nps_score}/10`:c.satisfaction_score!=null?` · ${c.satisfaction_score}/5`:""}</span>
         </div>
         <div class="rev-why">${esc(why||"flagged")}</div>
         ${c.comment?`<div class="rev-c">“${esc(c.comment)}”</div>`:""}
@@ -667,21 +709,31 @@
     const anyUnclear = rows.some((r) => r.unclassified > 0);
     const cols = anyUnclear ? 4 : 3;
 
+    const bandName={promoter:"Promoter",passive:"Passive",detractor:"Detractor"};
     const body=rows.filter(r=>r.agent+r.person+r.no_preference+r.unclassified>0).map(r=>`
-      <div class="mx-cell rh">${r.score} <span class="st">${r.score===5?"best":r.score===1?"worst":""}</span></div>
+      <div class="mx-cell rh">${bandName[r.band]} <span class="st">${r.range}</span></div>
       ${cell(r.agent,"agent",false)}
       ${cell(r.no_preference,"none",false)}
-      ${cell(r.person,"person",r.score>=4)}
+      ${cell(r.person,"person",r.band==="promoter")}
       ${anyUnclear?cell(r.unclassified,"unclear",false):""}
     `).join("");
 
-    const hbp=s.happy_but_prefers_person||0;
+    const hbp=s.promoter_but_prefers_person||0;
     const finding = hbp
-      ? `<p class="mx-find alarm"><b>${hbp} ${hbp===1?"person":"people"} rated the call 4 or 5 and still
-         want a person next time.</b> They were satisfied with the call and would still choose a person.
-         The satisfaction score alone does not show this, so report both figures together.</p>`
-      : `<p class="mx-find">No one who rated the call 4 or 5 asked for a person next time.
-         <b>Satisfaction and preference agree</b>, which strengthens the headline result.</p>`;
+      ? `<p class="mx-find alarm"><b>${hbp} ${hbp===1?"person":"people"} would recommend Robin warmly and still
+         want a person next time.</b> They scored 9 or 10 and would still choose to wait. The score alone
+         does not show this, so report both figures together.</p>`
+      : `<p class="mx-find">No one who scored Robin a 9 or 10 asked for a person next time.
+         <b>Score and preference agree</b>, which strengthens the headline result.</p>`;
+
+    // Respondents on the retired instrument have no NPS band, so the grid cannot place them. Said
+    // out loud rather than left for a reader to discover by adding the rows up against the headline.
+    const exV1=s.matrix_excluded_v1||0;
+    const v1Note = exV1
+      ? `<p class="mx-find">${exV1===1?"One respondent is":`${exV1} respondents are`} not in this grid:
+         ${exV1===1?"they":"they"} answered the retired 1-5 question, which has no NPS band. Their
+         preference still counts in the headline above.</p>`
+      : "";
 
     const unclearN = rows.reduce((n,r)=>n+r.unclassified,0);
     const unclearNote = unclearN
@@ -694,14 +746,14 @@
 
     document.getElementById("mx").innerHTML=`
       <div class="mx-grid" style="grid-template-columns:auto repeat(${cols},1fr)"
-           role="table" aria-label="Satisfaction rating against stated preference">
-        <div class="mx-cell hd">Rating</div>
+           role="table" aria-label="Likelihood to recommend against stated preference">
+        <div class="mx-cell hd">Would recommend</div>
         <div class="mx-cell hd">Prefers Robin</div>
         <div class="mx-cell hd">No preference</div>
         <div class="mx-cell hd">Prefers a person</div>
         ${anyUnclear?`<div class="mx-cell hd">Unclear</div>`:""}
         ${body}
-      </div>${finding}${unclearNote}`;
+      </div>${finding}${v1Note}${unclearNote}`;
   }
 
   // ---- Cumulative share with its 95% interval ------------------------------------------------
@@ -711,9 +763,10 @@
 
   function renderCumulative(){
     const sec=document.getElementById("cumsec"), pts=(DATA.survey&&DATA.survey.cumulative)||[];
-    // One point is a line with no shape. Below three the band is wider than the chart is tall and
-    // the picture says less than the sentence above it already did.
-    if(pts.length<3){ sec.hidden=true; return; }
+    // Below 20 respondents the band spans most of the chart, which is true but unreadable, and it
+    // is what made this chart get misread as a trend line. The dot grid under the headline carries
+    // the sample-size story until there is enough data for the interval to be worth looking at.
+    if(pts.length<20){ sec.hidden=true; return; }
     sec.hidden=false;
 
     const W=680,H=300,L=40,R=78,T=18,B=34;   // R leaves room for the "even split" label
@@ -827,10 +880,15 @@
   }
 
   // ---- Call browser ---------------------------------------------------------------------------
+  // A 1-5 answer and a 0-10 answer cannot be compared raw: a 5/5 would sort below a 6/10. Retired
+  // ratings are mapped onto the 0-10 basis so one "lowest rated" list covers both instruments.
+  const norm10=(v)=>v.nps_score!=null?v.nps_score
+    :v.satisfaction_score!=null?Math.round(((v.satisfaction_score-1)/4)*10):null;
+
   const SORTS={
     recent:{label:"Most recent", fn:(a,b)=>String(b.started_at||"").localeCompare(String(a.started_at||""))},
-    lowest:{label:"Lowest rated", fn:(a,b)=>(a.satisfaction_score??99)-(b.satisfaction_score??99)},
-    highest:{label:"Highest rated",fn:(a,b)=>(b.satisfaction_score??-1)-(a.satisfaction_score??-1)},
+    lowest:{label:"Lowest rated", fn:(a,b)=>(norm10(a)??99)-(norm10(b)??99)},
+    highest:{label:"Highest rated",fn:(a,b)=>(norm10(b)??-1)-(norm10(a)??-1)},
     person:{label:"Wanted a person", fn:(a,b)=>(a.preference==="person"?0:1)-(b.preference==="person"?0:1)},
   };
   function renderCalls(){
@@ -855,7 +913,9 @@
         </div>
         <div class="cl-meta">
           <span class="tagp ${esc(v.preference||"")}">${esc(PRETTY[v.preference]||"unclear")}</span><br>
-          ${v.satisfaction_score!=null?`${v.satisfaction_score}/5`:v.satisfaction?esc(v.satisfaction):"—"}
+          ${v.nps_score!=null?`${v.nps_score}/10`
+            :v.satisfaction_score!=null?`${v.satisfaction_score}/5`
+            :v.nps?esc(v.nps):v.satisfaction?esc(v.satisfaction):"—"}
         </div>
       </div>`).join("");
   }
@@ -907,11 +967,13 @@
           · ${esc(c.outcome||"—")} · verification ${esc(c.auth_outcome||"—")}
           ${who?`<br><b>${esc(who)}</b>${sv.response_seq>1?` · their call #${sv.response_seq}`:""}`:""}
         </div>
-        ${sv.satisfaction_raw||sv.prefer_agent_raw?`
+        ${sv.nps||sv.voice||sv.satisfaction_raw||sv.prefer_agent_raw?`
         <div class="drw-svy">
           <div class="lbl">Their answers</div>
           <dl class="drw-a">
-            ${sv.satisfaction_raw?`<dt>Rating</dt><dd>“${esc(sv.satisfaction_raw)}”${sv.satisfaction_score!=null?` — scored ${sv.satisfaction_score}/5`:""}</dd>`:""}
+            ${sv.nps?`<dt>Would recommend</dt><dd>“${esc(sv.nps)}”${sv.nps_score!=null?` — scored ${sv.nps_score}/10${sv.nps_band?` (${sv.nps_band})`:""}`:""}</dd>`:""}
+            ${sv.voice?`<dt>Voice</dt><dd>“${esc(sv.voice)}”${sv.voice_score!=null?` — scored ${sv.voice_score}/10`:""}</dd>`:""}
+            ${sv.satisfaction_raw?`<dt>Rating (retired 1-5)</dt><dd>“${esc(sv.satisfaction_raw)}”${sv.satisfaction_score!=null?` — scored ${sv.satisfaction_score}/5`:""}</dd>`:""}
             ${sv.prefer_agent_raw?`<dt>Prefers</dt><dd>“${esc(sv.prefer_agent_raw)}” — ${esc(PRETTY[sv.preference]||"unclear")}</dd>`:""}
             ${sv.would_recommend_raw?`<dt>Recommend</dt><dd>“${esc(sv.would_recommend_raw)}” — ${esc(sv.would_recommend||"unclear")}</dd>`:""}
             ${sv.open_comments?`<dt>Anything else</dt><dd>“${esc(sv.open_comments)}”</dd>`:""}

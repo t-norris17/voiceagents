@@ -89,23 +89,62 @@ test("redacted comments keep their count without their words", () => {
   assert.equal(r.comments.recent.length, 0, "the rate is kept, the words are not");
 });
 
-test("the cross-tab surfaces people who liked it and still want a human", () => {
+test("the cross-tab surfaces promoters who still want a human", () => {
   const r = summariseSurvey(
-    [person({ person_key: "P-1", satisfaction_score: 5, preference: "person" }),
-     person({ person_key: "P-2", satisfaction_score: 5, preference: "agent" }),
-     person({ person_key: "P-3", satisfaction_score: 2, preference: "person" })],
+    [person({ person_key: "P-1", in_nps_era: true, nps_score: 10, nps_band: "promoter", preference: "person" }),
+     person({ person_key: "P-2", in_nps_era: true, nps_score: 9,  nps_band: "promoter", preference: "agent" }),
+     person({ person_key: "P-3", in_nps_era: true, nps_score: 3,  nps_band: "detractor", preference: "person" })],
     [call({}), call({}), call({})]
   );
-  assert.equal(r.happy_but_prefers_person, 1, "a 2/person is dissatisfaction; a 5/person is not");
-  assert.deepEqual(r.matrix[0], { score: 5, agent: 1, person: 1, no_preference: 0, unclassified: 0 });
+  assert.equal(r.promoter_but_prefers_person, 1,
+    "a detractor wanting a person is dissatisfaction; a promoter wanting one is the finding");
+  assert.deepEqual(r.matrix[0],
+    { band: "promoter", range: "9-10", agent: 1, person: 1, no_preference: 0, unclassified: 0 });
 });
 
 test("unparsed preferences are kept in the matrix rather than dropped", () => {
   const r = summariseSurvey(
-    [person({ satisfaction_score: 4, preference: "unclassified" })], [call({})]
+    [person({ in_nps_era: true, nps_score: 8, nps_band: "passive", preference: "unclassified" })], [call({})]
   );
-  assert.equal(r.matrix.find((m) => m.score === 4).unclassified, 1);
+  assert.equal(r.matrix.find((m) => m.band === "passive").unclassified, 1);
   assert.equal(r.preference.decided, 0, "but it is not a vote");
+});
+
+test("respondents on the retired 1-5 instrument are reported, not silently dropped", () => {
+  const r = summariseSurvey(
+    [person({ person_key: "P-1", in_nps_era: false, satisfaction_score: 5, preference: "agent" }),
+     person({ person_key: "P-2", in_nps_era: true, nps_score: 9, nps_band: "promoter", preference: "agent" })],
+    [call({}), call({})]
+  );
+  assert.equal(r.matrix_excluded_v1, 1, "the v1 respondent cannot be placed in an NPS band");
+  assert.equal(r.instrument.v1, 1);
+  assert.equal(r.instrument.v2, 1);
+  assert.equal(r.nps.n, 1, "and their 5/5 must never be averaged into the NPS");
+});
+
+test("NPS is promoters minus detractors, not an average and not a percentage", () => {
+  const p = (i, sc, b) => person({ person_key: `P-${i}`, in_nps_era: true, nps_score: sc, nps_band: b, preference: "agent" });
+  const r = summariseSurvey(
+    [p(1, 10, "promoter"), p(2, 9, "promoter"), p(3, 8, "passive"), p(4, 3, "detractor")],
+    [call({}), call({}), call({}), call({})]
+  );
+  assert.equal(r.nps.promoters, 2);
+  assert.equal(r.nps.passives, 1);
+  assert.equal(r.nps.detractors, 1);
+  assert.equal(r.nps.score, 25, "(2 - 1) / 4 = +25, and passives count in the denominator");
+  assert.equal(r.nps.mean, 7.5, "the mean is a different number and both are published");
+});
+
+test("the dot grid has exactly one dot per respondent, in order", () => {
+  const r = summariseSurvey(
+    [person({ person_key: "P-1", preference: "agent" }),
+     person({ person_key: "P-2", preference: "person" }),
+     person({ person_key: "P-3", preference: "unclassified" })],
+    [call({}), call({}), call({})]
+  );
+  assert.equal(r.dots.length, 3, "sample size is the thing the grid must show honestly");
+  assert.deepEqual(r.dots.map((d) => d.preference), ["agent", "person", "unclassified"]);
+  assert.deepEqual(r.dots.map((d) => d.n), [1, 2, 3]);
 });
 
 test("the interval never claims more certainty than the sample supports", () => {

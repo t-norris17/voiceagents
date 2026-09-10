@@ -117,7 +117,8 @@
         <p class="b-q">No one has answered the survey yet, so there is nothing to show.</p>`;
       return;
     }
-    const p=s.preference||{}, ci=p.ci, sat=s.satisfaction||{}, rec=s.recommend||{}, a=s.adherence||{};
+    const p=s.preference||{}, ci=p.ci, sat=s.satisfaction||{}, rec=s.recommend||{}, a=s.adherence||{},
+          nps=s.nps||{}, voice=s.voice||{};
     const settled = ci && (ci.lo>50 || ci.hi<50);
     const pc=(n)=>p.decided?((n/p.decided)*100).toFixed(2)+"%":"0%";
     b.innerHTML=`
@@ -142,12 +143,12 @@
         <span class="p"><i></i>${p.person} a person</span>
       </div>
       <div class="b-grid">
-        <div class="b-m"><div class="v">${sat.mean??"—"}<span class="u">/5</span></div>
-          <div class="c">average rating${sat.n?`, ${sat.n} ${sat.n===1?"respondent":"respondents"}`:""}</div></div>
-        <div class="b-m"><div class="v">${rec.yes_pct!=null?rec.yes_pct:"—"}<span class="u">%</span></div>
-          <div class="c">would recommend it to someone else</div></div>
-        <div class="b-m${s.happy_but_prefers_person?" flag":""}"><div class="v">${s.happy_but_prefers_person??0}</div>
-          <div class="c">rated it 4 or 5 and still want a person next time</div></div>
+        <div class="b-m"><div class="v">${nps.score!=null?(nps.score>0?"+":"")+nps.score:"—"}</div>
+          <div class="c">NPS${nps.n?`, ${nps.n} ${nps.n===1?"respondent":"respondents"}`:""}</div></div>
+        <div class="b-m"><div class="v">${voice.mean??"—"}<span class="u">/10</span></div>
+          <div class="c">how natural Robin's voice sounded</div></div>
+        <div class="b-m${s.promoter_but_prefers_person?" flag":""}"><div class="v">${s.promoter_but_prefers_person??0}</div>
+          <div class="c">would recommend it warmly and still want a person</div></div>
       </div>
       <div class="b-foot">
         <span>One response per person. ${a.pct!=null?`Asked on ${a.pct}% of eligible calls.`:""}</span>

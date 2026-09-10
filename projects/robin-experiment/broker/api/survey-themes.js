@@ -83,7 +83,7 @@ export default async function handler(req, res) {
     // reading themes from it discards every comment left on a second or third call — which on the
     // data as it stands is 100% of them. Proportions are counted per person; words are not.
     const calls = (await surveyCalls()).filter((c) => c.survey_offered);
-    const withText = calls.filter((c) => c.open_comments || c.prefer_agent_raw || c.would_recommend_raw);
+    const withText = calls.filter((c) => c.open_comments || c.prefer_agent_raw || c.nps_raw || c.would_recommend_raw);
 
     const commented = calls.filter((c) => c.open_comments).length;
     if (commented < MIN_COMMENTS) {
@@ -111,10 +111,10 @@ export default async function handler(req, res) {
       // The same person can appear more than once. Named so the model does not read one talkative
       // tester as a groundswell; the server recounts distinct people afterwards regardless.
       respondent: p.person_key,
-      score: p.satisfaction_score,
+      score: p.nps_score != null ? p.nps_score : p.satisfaction_score,
       prefers: p.preference,
       in_their_words: {
-        rating: p.satisfaction_raw,
+        rating: p.nps_raw || p.satisfaction_raw,
         preference: p.prefer_agent_raw,
         recommend: p.would_recommend_raw,
         anything_else: p.open_comments,

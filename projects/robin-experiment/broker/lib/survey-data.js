@@ -10,17 +10,21 @@ import { sb } from "./supabase.js";
 // rather than an average.
 export const PEOPLE_COLS =
   "person_key,caller_key,responses,repeat_caller,changed_mind,needs_review,first_at,last_at," +
-  "conversation_id,started_at,duration_seconds,overall_sentiment,topic,plan_topic," +
-  "satisfaction_raw,satisfaction_score,prefer_agent_raw,preference,would_recommend_raw," +
-  "would_recommend,open_comments,comments_redacted";
+  "conversation_id,started_at,duration_seconds,overall_sentiment,in_nps_era,topic,plan_topic," +
+  "prefer_agent_raw,preference,nps_raw,nps_score,nps_band,voice_raw,voice_score," +
+  "open_comments,comments_redacted," +
+  // Retired v1 columns. Still selected because four respondents answered under the old
+  // instrument and their answers are not being thrown away.
+  "satisfaction_raw,satisfaction_score,would_recommend_raw,would_recommend";
 
 // Call-level. Used for the operational numbers (did Robin ask when she should have?), for all free
 // text, and for the call browser, where seeing a respondent's later calls is the point.
 export const CALL_COLS =
   "conversation_id,started_at,duration_seconds,caller_key,person_key,response_seq,survey_offered," +
-  "survey_consent,offer_context,survey_verdict,overall_sentiment,needs_review,topic,plan_topic," +
-  "satisfaction_raw,satisfaction_score,prefer_agent_raw,preference,would_recommend_raw," +
-  "would_recommend,open_comments,comments_redacted";
+  "survey_consent,offer_context,survey_verdict,overall_sentiment,needs_review,in_nps_era," +
+  "topic,plan_topic,prefer_agent_raw,preference,nps_raw,nps_score,nps_band," +
+  "voice_raw,voice_score,open_comments,comments_redacted," +
+  "satisfaction_raw,satisfaction_score,would_recommend_raw,would_recommend";
 
 export async function surveyPeople() {
   return (await sb(`survey_people?select=${PEOPLE_COLS}&order=first_at.asc.nullslast`)) || [];

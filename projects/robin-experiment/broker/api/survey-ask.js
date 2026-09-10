@@ -86,7 +86,7 @@ WRITE FOR A DIRECTOR, NOT FOR A DATABASE:
 11. Lead with the answer in a plain sentence. Keep it under about 80 words unless the question
     genuinely needs more.
 12. Do not quote column names at the reader. Say "nobody changed their mind", not
-    "changed_mind = false"; say "rated it 5", not "satisfaction_score = 5". The reader is a
+    "changed_mind = false"; say "scored it 9", not "nps_score = 9". The reader is a
     director, not the person who wrote the schema.`;
 
 export default async function handler(req, res) {

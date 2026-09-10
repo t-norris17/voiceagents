@@ -68,10 +68,21 @@ export function summariseSurvey(people, calls) {
   // ---- Operational: did she ASK when she should have? Correctly a CALL-level question. ----
   const judged = calls.filter((r) => r.survey_verdict === "success" || r.survey_verdict === "failure");
   const offered = calls.filter((r) => r.survey_offered === true);
-  const answeredCalls = calls.filter((r) => r.satisfaction_raw || r.prefer_agent_raw);
+  // Any answer to any question, under either instrument. prefer_agent_raw is listed first
+  // because under v2 it is question one and the only one guaranteed to survive a short call.
+  const answeredCalls = calls.filter(
+    (r) => r.prefer_agent_raw || r.nps_raw || r.voice_raw || r.satisfaction_raw
+  );
 
   // ---- Everything below is PERSON-level. One tester, one opinion, however often they called. ----
   const scores = people.map((r) => score(r.satisfaction_score)).filter((n) => n !== null);
+  const npsScores = people.map((r) => score(r.nps_score)).filter((n) => n !== null);
+  const voiceScores = people.map((r) => score(r.voice_score)).filter((n) => n !== null);
+  const band = (b) => people.filter((r) => r.nps_band === b).length;
+  // Respondents split by which instrument they answered, so v1 and v2 are never averaged
+  // together and neither silently vanishes from a count.
+  const v2 = people.filter((r) => r.in_nps_era).length;
+  const v1 = people.length - v2;
   const tally = (key, vals) => Object.fromEntries(vals.map((v) => [v, people.filter((r) => r[key] === v).length]));
 
   const prefs = tally("preference", ["agent", "person", "no_preference", "unclassified"]);
@@ -80,17 +91,26 @@ export function summariseSurvey(people, calls) {
   // The cross-tab. A leader's first real question is not "what was the average" but "did anyone
   // rate this highly and STILL want a human?" — the cell that decides whether a good satisfaction
   // score actually supports rolling this out. A bar chart cannot show it; this grid is the answer.
-  const matrix = [5, 4, 3, 2, 1].map((s) => ({
-    score: s,
-    agent: people.filter((r) => r.satisfaction_score === s && r.preference === "agent").length,
-    person: people.filter((r) => r.satisfaction_score === s && r.preference === "person").length,
-    no_preference: people.filter((r) => r.satisfaction_score === s && r.preference === "no_preference").length,
-    unclassified: people.filter((r) => r.satisfaction_score === s && (r.preference === "unclassified" || r.preference === null)).length,
+  // The cross-tab. A leader's first real question is not "what was the average" but "did anyone
+  // rate this highly and STILL want a human?" — the cell that decides whether a good score actually
+  // supports rolling this out. On a 0-10 scale the five rows would have become eleven, which is
+  // unreadable; the standard NPS bands collapse it to three and read better than the original.
+  const MATRIX_BANDS = ["promoter", "passive", "detractor"];
+  const matrix = MATRIX_BANDS.map((b) => ({
+    band: b,
+    range: b === "promoter" ? "9-10" : b === "passive" ? "7-8" : "0-6",
+    agent: people.filter((r) => r.nps_band === b && r.preference === "agent").length,
+    person: people.filter((r) => r.nps_band === b && r.preference === "person").length,
+    no_preference: people.filter((r) => r.nps_band === b && r.preference === "no_preference").length,
+    unclassified: people.filter((r) => r.nps_band === b && (r.preference === "unclassified" || r.preference === null)).length,
   }));
-  // Named because it is the finding, not a cell reference: people who liked the call and still
-  // want a person next time. If this is non-zero the headline is softer than it looks.
-  const happy_but_prefers_person = people.filter(
-    (r) => r.satisfaction_score >= 4 && r.preference === "person"
+  // Respondents the cross-tab cannot place, because they answered the retired 1-5 instrument. Shipped
+  // beside the grid so a reader can see the grid does not cover everyone, rather than assuming it does.
+  const matrix_excluded_v1 = people.filter((r) => !r.in_nps_era && r.preference).length;
+  // Named because it is the finding, not a cell reference: people who would recommend this warmly
+  // and still want a person next time. If this is non-zero the headline is softer than it looks.
+  const promoter_but_prefers_person = people.filter(
+    (r) => r.nps_band === "promoter" && r.preference === "person"
   ).length;
 
   // Cumulative, in the order people first responded. Not a day-over-day trend — with a two-week
@@ -158,9 +178,38 @@ export function summariseSurvey(people, calls) {
       // No `distribution` array: it was computed here and rendered nowhere. The cross-tab's rows
       // already ARE the distribution, broken down by preference, which is strictly more useful.
     },
+    // v2. The 0-10 likelihood-to-recommend question that replaced the 1-5 rating.
+    nps: {
+      n: npsScores.length,
+      promoters: band("promoter"),
+      passives: band("passive"),
+      detractors: band("detractor"),
+      // The NPS proper: promoters minus detractors, as a percentage of those who gave a number.
+      // Ranges -100 to +100 and is NOT a percentage of anything, which is why it ships beside the
+      // three raw counts rather than alone.
+      score: npsScores.length
+        ? Math.round(((band("promoter") - band("detractor")) / npsScores.length) * 100)
+        : null,
+      mean: npsScores.length ? Number((npsScores.reduce((a, b) => a + b, 0) / npsScores.length).toFixed(2)) : null,
+      unparsed: people.filter((r) => r.nps_raw && score(r.nps_score) === null).length,
+    },
+    // v2. How natural Robin's voice sounded, 0-10. Deliberately separate from nps: they are two
+    // different questions and merging them would hide whichever one is the problem.
+    voice: {
+      n: voiceScores.length,
+      mean: voiceScores.length ? Number((voiceScores.reduce((a, b) => a + b, 0) / voiceScores.length).toFixed(2)) : null,
+      unparsed: people.filter((r) => r.voice_raw && score(r.voice_score) === null).length,
+    },
+    instrument: { v1, v2 },
     recommend: { ...recommendCounts, yes_pct: recommendCounts.ci ? recommendCounts.ci.pct : null },
     matrix,
-    happy_but_prefers_person,
+    matrix_excluded_v1,
+    promoter_but_prefers_person,
+    // One entry per respondent, in the order they first answered. The page draws a dot per entry:
+    // four respondents is four dots, sixty is sixty. Sample size becomes something you SEE rather
+    // than something you compute off a confidence band, which is what the band was for and what
+    // nobody read it as.
+    dots: people.map((r, i) => ({ n: i + 1, preference: r.preference || "unclassified", respondent: who(r) })),
     cumulative,
 
     // FREE TEXT IS CALL-LEVEL, DELIBERATELY, and this is the one place the person-level rule must
@@ -204,6 +253,7 @@ export function summariseSurvey(people, calls) {
           conversation_id: r.conversation_id, started_at: r.started_at,
           respondent: who(r), topic: r.topic || r.plan_topic,
           satisfaction_score: r.satisfaction_score, sentiment: r.overall_sentiment,
+          nps_score: r.nps_score, nps_band: r.nps_band, voice_score: r.voice_score,
           preference: r.preference, comment: r.open_comments,
         })),
       };
@@ -212,7 +262,7 @@ export function summariseSurvey(people, calls) {
     // Every answered CALL, newest first — repeats included on purpose. The page's call browser
     // reads this, and a person's later calls are exactly what makes changed_mind auditable.
     verbatims: calls
-      .filter((r) => r.satisfaction_raw || r.prefer_agent_raw)
+      .filter((r) => r.prefer_agent_raw || r.nps_raw || r.voice_raw || r.satisfaction_raw)
       .slice(0, 300)
       .map((r) => ({
         conversation_id: r.conversation_id,
@@ -223,6 +273,11 @@ export function summariseSurvey(people, calls) {
         topic: r.topic || r.plan_topic,
         satisfaction: r.satisfaction_raw,
         satisfaction_score: r.satisfaction_score,
+        nps: r.nps_raw,
+        nps_score: r.nps_score,
+        nps_band: r.nps_band,
+        voice: r.voice_raw,
+        voice_score: r.voice_score,
         sentiment: r.overall_sentiment,
         needs_review: r.needs_review === true,
         prefer_agent: r.prefer_agent_raw,
