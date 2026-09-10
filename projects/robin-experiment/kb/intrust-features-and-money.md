@@ -5,10 +5,16 @@ any discrepancy, the Plan Document / Summary Plan Description controls.*
 
 ## Loans
 - The plan **allows participant loans**.
+- Only **one loan may be outstanding at a time** — an existing loan must be repaid before another.
 - There is a **$100 loan origination fee for each loan** you take from your account.
 - ⚠️ **The enrollment packet does not state loan limits or repayment terms.** Robin should share
-  what's known (loans are allowed; $100 fee) and **route specifics — how much, how long — to a
-  specialist at 866-412-9026**, not guess.
+  what's known (loans are allowed; one at a time; $100 fee) and **route specifics — how much, how
+  long — to a specialist at 866-412-9026**, not guess.
+- **A caller's own existing loan is a different question and is answerable.** Balance, rate, payment
+  amount and frequency, payments remaining, next payment date and scheduled payoff date come from
+  `get_balance` as a record lookup, not from this packet. The gap above is about *plan rules*, not
+  about reading a member their own account. See `robin-system-prompt.txt` → "THEIR OWN LOAN IS NOT
+  A PLAN RULE".
 
 ## Withdrawals & distributions
 - You generally **cannot withdraw deferrals or safe harbor contributions except on** severance from

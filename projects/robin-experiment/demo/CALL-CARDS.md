@@ -28,7 +28,7 @@ that she routes rather than guesses.
 | **Member ID** | **90002** |
 | **Date of birth** | **September 30, 1998** |
 | Balance | **$27,318.15** total · **$19,122.70 vested** |
-| Loan | yes, one outstanding |
+| Loan | **yes — $5,490.37 outstanding**, $75.64 biweekly, paid off Nov 2029 |
 | Currently deferring | 6% |
 
 *Twenty-eight, a couple of years in, just starting to pay attention to it.*
@@ -42,12 +42,24 @@ that she routes rather than guesses.
 | "Can I roll my old 401(k) from my last job into this one?" | ✅ Yes, plus the NestEgg U process and number |
 | "Can I do Roth instead of pre-tax?" | ✅ Yes, but you have to elect it online — it isn't automatic |
 | "What's my balance?" | ✅ **Listen for the split** — $27,318.15 total but $19,122.70 vested. Ask "why are those different?" |
-| "Can I take a loan out?" | ❌ **Nothing published on loans at all.** Good routing demo, bad answer demo |
+| "What's my loan balance?" | ✅ **His best card.** $5,490.37 left of $8,000 at 8.5%, $75.64 biweekly, 83 payments to go, scheduled payoff Nov 9 2029 |
+| "Can I take *another* loan out?" | ✅ **Routing done right** — one loan at a time, so no, not until this one's repaid. Limits stay unpublished |
 | "When could I have joined the plan?" | ⚠️ See the warning below |
 
-**The moment worth catching:** the balance split. Ask her why the two numbers differ — the gap is
-profit-sharing money that hasn't hit its three-year cliff yet. It's a small human beat that shows
-she understands what you *have* versus what you *own*.
+**The moment worth catching:** the loan, then the balance split. Ask for the loan balance and the caller
+gets a figure a human would have to look up — $5,490.37, $75.64 biweekly, 83 payments left. Then ask
+whether they can take another one and watch the same call turn into a clean *no*: one loan at a time,
+and the amount limits are genuinely unpublished, so that half routes. **One question, both halves of
+the job.** The balance split is still there if you want it — $27,318.15 total against $19,122.70
+vested, the gap being profit-sharing money short of its three-year cliff.
+
+> **Expect whole dollars on the balance.** Robin says "$27,318" and "$19,123" — `get_balance` rounds
+> account balances to the dollar on purpose, because that reads naturally aloud. Loan figures are the
+> exception and keep their cents, since a payment amount is exact. Not a defect; don't chase it live.
+
+*Robin could not do this before.* On an earlier call she said "I can see that you have a loan
+outstanding, but I don't have the specific details like the balance, payment amount, or how much time
+is left on it" and transferred. That transfer is what this card now replaces.
 
 ---
 

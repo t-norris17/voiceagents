@@ -64,3 +64,27 @@ export function dollars(cents) {
     style: "currency", currency: "USD", maximumFractionDigits: 0,
   });
 }
+
+// Exact-cents money, for loan figures. dollars() above rounds to whole dollars on purpose
+// (Robin says "twenty-seven thousand three hundred eighteen dollars" for a balance, which reads
+// naturally) but a loan payment or payoff amount is a precise figure — quoting $75 instead of
+// $75.64 is wrong, not terse. Deliberately a separate function: changing dollars() would silently
+// alter every figure Robin already quotes.
+export function dollarsExact(cents) {
+  return (Number(cents || 0) / 100).toLocaleString("en-US", {
+    style: "currency", currency: "USD",
+    minimumFractionDigits: 2, maximumFractionDigits: 2,
+  });
+}
+
+// ISO date -> "November 9, 2029", so the TTS speaks a date instead of reading digits.
+// timeZone:"UTC" is load-bearing: new Date("2029-11-09") is UTC midnight, so rendering it in any
+// negative-offset zone (Vercel functions are not guaranteed UTC) yields November 8. Verified.
+export function spokenDate(iso) {
+  if (!iso) return null;
+  const d = new Date(`${iso}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("en-US", {
+    month: "long", day: "numeric", year: "numeric", timeZone: "UTC",
+  });
+}
