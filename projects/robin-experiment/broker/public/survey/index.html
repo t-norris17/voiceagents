@@ -414,9 +414,8 @@
   <section id="revsec" hidden>
     <hr class="rule">
     <div class="shead"><h2 class="sect-h">Needs review</h2></div>
-    <p class="svy-lede">Calls where the caller sounded unhappy, or rated the call 2 or lower. A rating
-      on its own would miss some of these: a caller can score a call 3 and still tell you something
-      went wrong. Open any row to read the transcript.</p>
+    <p class="svy-lede">Calls where the caller sounded unhappy or scored Robin low. Open a row to read
+      the transcript.</p>
     <div id="rev"></div>
   </section>
 
@@ -427,9 +426,8 @@
   <section id="mxsec" hidden>
     <hr class="rule">
     <div class="shead"><h2 class="sect-h">Recommendation vs. preference</h2></div>
-    <p class="svy-lede">How likely each person was to recommend Robin, against what they said they would
-      actually choose next time. Shows whether anyone would recommend it warmly and still want a person.
-      One dot per respondent.</p>
+    <p class="svy-lede">What each person scored Robin, against what they would actually choose next
+      time. The cell to watch is a high score that still wants a person.</p>
     <div class="mx" id="mx"></div>
   </section>
 
@@ -442,26 +440,24 @@
   <section id="cmsec" hidden>
     <hr class="rule">
     <div class="shead"><h2 class="sect-h">Written comments</h2></div>
-    <p class="svy-lede">Every written answer to the last question, unedited, from every call including
-      repeat calls. Comments are listed per call; the figures above still count one response per person.
-      Click a name to read the call it came from.</p>
+    <p class="svy-lede">Everything people said in their own words, unedited. Listed per call, so someone
+      who called twice appears twice.</p>
     <div id="cm"></div>
   </section>
 
   <section id="cumsec" hidden>
     <hr class="rule">
     <div class="shead"><h2 class="sect-h">Confidence and sample size</h2></div>
-    <p class="svy-lede">The share preferring Robin as each new person answers, with the 95% confidence
-      interval around it. Not a day-by-day trend, which would be unreliable at this sample size. Shows
-      whether enough responses have been collected to draw a conclusion.</p>
+    <p class="svy-lede">Whether enough people have answered to call the result. Each step is one more
+      respondent, not one more day.</p>
     <div class="cum" id="cum"></div>
   </section>
 
   <section id="asksec" hidden>
     <hr class="rule">
     <div class="shead"><h2 class="sect-h">Ask a question</h2></div>
-    <p class="svy-lede">Answers come only from the survey responses, with the calls behind each answer
-      cited. If the data cannot answer a question, it says so.</p>
+    <p class="svy-lede">Answers come only from these responses, with the calls cited. If the data cannot
+      answer, it says so.</p>
     <form class="ask-form" id="askform">
       <input id="askq" type="text" maxlength="500" autocomplete="off"
              placeholder="e.g. Did anyone who preferred a person say why?" aria-label="Ask a question about the survey data">
@@ -474,8 +470,7 @@
   <section id="clsec" hidden>
     <hr class="rule">
     <div class="shead"><h2 class="sect-h">Individual calls</h2></div>
-    <p class="svy-lede">Repeat calls included, so a person who answered more than once is visible
-      rather than averaged away. Open any row to read the transcript.</p>
+    <p class="svy-lede">Every answered call, repeats included. Open a row to read the transcript.</p>
     <div class="srt" id="srt"></div>
     <div class="cl" id="cl"></div>
   </section>
@@ -599,14 +594,12 @@
         <span class="k-person"><i></i>${p.person} would rather have a person</span>
       </div>
       <div class="svy-moe">
-        From <b>${decided} response${decided===1?"":"s"}</b>, so the true figure sits between
-        <b>${ci.lo}% and ${ci.hi}%</b> (95% confidence).
+        With ${decided} response${decided===1?"":"s"}, the true figure is between <b>${ci.lo}% and ${ci.hi}%</b>.
         ${settled
-          ? `That range sits entirely above 50%, so the preference is clear at this sample size.`
-          : `That range still spans 50%, so the result is <b>not yet conclusive</b>.`}
-        A response is one caller asking as one member; the same tester calling as a different member
-        is a separate response, because it is a separate experience.${
-        s.repeat_callers?` ${s.repeat_callers} called more than once as the same member, counted once.`:``}
+          ? `That clears 50%, so the preference holds at this sample size.`
+          : `That still spans 50%, so it is <b>not yet conclusive</b>.`}
+        One response per person per member.${
+        s.repeat_callers?` ${s.repeat_callers} called more than once and are counted once.`:``}
       </div>` : "";
 
     const adherenceWarn = a.pct!=null && a.pct<70;
@@ -637,13 +630,11 @@
     // Real, but footnotes rather than headline metrics — and keeping the tile row at four means it
     // never breaks to a second line with one lonely tile on it.
     const notes=[
-      s.changed_mind ? `<b>${s.changed_mind} respondent${s.changed_mind===1?"":"s"} changed their answer between calls
-        as the same member</b> — review those transcripts, as an average cannot show a change of preference.` : "",
-      a.ineligible ? `${a.ineligible} call${a.ineligible===1?" was":"s were"} correctly excluded, having transferred or failed verification.` : "",
-      (inst.v1 && inst.v2) ? `<b>${inst.v1} respondent${inst.v1===1?"":"s"} answered the retired 1-5 question and
-        ${inst.v2} answered the current NPS.</b> The preference figures above cover both, because that
-        question did not change. The retired ratings averaged ${sat.mean}/5 and are deliberately not
-        folded into the NPS, which measures something else on a different scale.` : "",
+      s.changed_mind ? `<b>${s.changed_mind} respondent${s.changed_mind===1?"":"s"} gave a different answer on a
+        later call.</b> Worth reading those transcripts.` : "",
+      a.ineligible ? `${a.ineligible} call${a.ineligible===1?" was":"s were"} excluded — transferred or failed verification.` : "",
+      (inst.v1 && inst.v2) ? `${inst.v1} respondent${inst.v1===1?"":"s"} answered the retired 1-5 question
+        (averaging ${sat.mean}/5); ${inst.v2} answered the NPS. The two scales are never averaged together.` : "",
     ].filter(Boolean).join(" ");
 
     // Should always be zero. Anything here means the prompt gate leaked on a transfer.
@@ -653,9 +644,8 @@
 
 
     el.innerHTML=`<div class="svy">
-      <p class="svy-lede">Four questions at the end of a normal call, for the testing phase only. Not asked on transfers, or on
-        callers who could not be verified. Testers are briefed beforehand, so the questions are stated
-        rather than offered. Figures count one response per caller per member.</p>
+      <p class="svy-lede">How many people would rather use Robin than wait for a person next time.
+        Transfers and unverified callers are excluded.</p>
       ${headFig}${dotGrid}${bar}${metrics?`<div class="svy-grid">${metrics}</div>`:""}
       ${notes?`<p class="svy-foot">${notes}</p>`:""}${alarm}
     </div>`;
@@ -720,28 +710,25 @@
 
     const hbp=s.promoter_but_prefers_person||0;
     const finding = hbp
-      ? `<p class="mx-find alarm"><b>${hbp} ${hbp===1?"person":"people"} would recommend Robin warmly and still
-         want a person next time.</b> They scored 9 or 10 and would still choose to wait. The score alone
-         does not show this, so report both figures together.</p>`
-      : `<p class="mx-find">No one who scored Robin a 9 or 10 asked for a person next time.
-         <b>Score and preference agree</b>, which strengthens the headline result.</p>`;
+      ? `<p class="mx-find alarm"><b>${hbp} ${hbp===1?"person":"people"} scored Robin 9 or 10 and still want a
+         person next time.</b> Report both figures together; the score alone hides this.</p>`
+      : `<p class="mx-find">No one who scored Robin 9 or 10 asked for a person next time.
+         <b>Score and preference agree.</b></p>`;
 
     // Respondents on the retired instrument have no NPS band, so the grid cannot place them. Said
     // out loud rather than left for a reader to discover by adding the rows up against the headline.
     const exV1=s.matrix_excluded_v1||0;
     const v1Note = exV1
-      ? `<p class="mx-find">${exV1===1?"One respondent is":`${exV1} respondents are`} not in this grid:
-         ${exV1===1?"they":"they"} answered the retired 1-5 question, which has no NPS band. Their
-         preference still counts in the headline above.</p>`
+      ? `<p class="mx-find">${exV1===1?"One respondent":`${exV1} respondents`} answered the retired 1-5
+         question, so ${exV1===1?"they have":"they have"} no NPS band and ${exV1===1?"is":"are"} not in this
+         grid. Their preference still counts above.</p>`
       : "";
 
     const unclearN = rows.reduce((n,r)=>n+r.unclassified,0);
     const unclearNote = unclearN
-      ? `<p class="mx-find">${unclearN===1
-            ? `One answer could not be bucketed from the caller's wording and sits in <b>Unclear</b>. It is`
-            : `${unclearN} answers could not be bucketed from the caller's wording and sit in <b>Unclear</b>. They are`}
-         counted here rather than dropped — read them in the call list below before treating the
-         split above as final.</p>`
+      ? `<p class="mx-find">${unclearN===1?"One answer":`${unclearN} answers`} could not be bucketed and
+         ${unclearN===1?"sits":"sit"} in <b>Unclear</b>. Read ${unclearN===1?"it":"them"} in the call list
+         before treating the split as final.</p>`
       : "";
 
     document.getElementById("mx").innerHTML=`
