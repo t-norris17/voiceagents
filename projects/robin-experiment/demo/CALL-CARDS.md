@@ -42,7 +42,7 @@ that she routes rather than guesses.
 | "Can I roll my old 401(k) from my last job into this one?" | ✅ Yes, plus the NestEgg U process and number |
 | "Can I do Roth instead of pre-tax?" | ✅ Yes, but you have to elect it online — it isn't automatic |
 | "What's my balance?" | ✅ **Listen for the split** — $27,318.15 total but $19,122.70 vested. Ask "why are those different?" |
-| "What's my loan balance?" | ✅ **His best card.** $5,490.37 left of $8,000 at 8.5%, $75.64 biweekly, 83 payments to go, scheduled payoff Nov 9 2029 |
+| "What's my loan balance?" | ✅ **Her best card.** $5,490.37 left of $8,000 at 8.5%, $75.64 biweekly, 83 payments to go, scheduled payoff Nov 9 2029 |
 | "Can I take *another* loan out?" | ✅ **Routing done right** — one loan at a time, so no, not until this one's repaid. Limits stay unpublished |
 | "When could I have joined the plan?" | ⚠️ See the warning below |
 
