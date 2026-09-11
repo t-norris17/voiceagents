@@ -62,6 +62,30 @@ So before building on any claim about a system you did not just write, check it.
 - **What values does this column actually take?** `preference` has four, not three; counting the
   fourth made `changed_mind` fire on a parse failure.
 - **Is my work committed?** `git checkout <ref> -- <path>` silently overwrote six uncommitted files.
+- **Does the LIVE system agree with this file?** The repo is not the agent. Robin's Knowledge Base is
+  five **Vertex** documents in the ElevenLabs dashboard; `kb/` holds three **INTRUST** files that
+  drive nothing and contradict live on loan limits and fees. A whole design was built on `kb/` saying
+  loan limits are unpublished. They are published, in full, live.
+- **Did the tool actually return that?** A transcript shows what the agent *said*; `tool_results`
+  shows what it was *given*. `get_balance` came back `is_error: true, "Tool execution was abandoned
+  due to user input", latency 0` — the caller said "Okay" mid-lookup and killed it — and reading only
+  the transcript produced a confident, wrong diagnosis of a LOAN TRAP adherence failure.
+- **Was the code live when the call happened?** Compare the production promote's timestamp to the
+  conversation's `start_time_unix_secs`. The promote landed 37.6 minutes *after* the call it was
+  meant to explain. "It's deployed" is a belief until those two numbers say so.
+
+### Verify across the seam, not inside it
+
+Every miss above has one shape: verified inside one system, asserted about another. The repo said it,
+so live must be it. The transcript showed it, so the tool must have returned it. Someone said
+deployed, so it must have been deployed *at that moment*. Checking within a system is not checking
+the claim.
+
+When a conclusion crosses a boundary — repo→live, transcript→tool payload, push→promote, prompt→agent
+— the evidence has to come from the far side. And when reporting it, name the artifact: conversation
+id, field, value, timestamp. "She ignored `outstanding_loan`" is a claim; "`[56s] get_balance
+is_error=True`" is evidence. If the artifact cannot be produced, the finding is a hypothesis and gets
+labelled one.
 
 ### Say "unverified" when it is
 
