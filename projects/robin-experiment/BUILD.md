@@ -12,6 +12,83 @@
 
 ---
 
+### 2026-09-11 — Session 9 (the loan-wave handout, and a tool deletion stopped two steps in)
+
+**Status:** live agent is **`agtvrsn_8701m28xknxne5vb4rd1q77ff5nc`** (v115, "Add Spanish language
+support and localization presets", committed 1789153368 by Tanner in the dashboard). The handoff
+above named v114 `agtvrsn_0801…` as live; it is now the parent. **Rollback point is v114.** The
+phone number is assigned to the Main branch, not pinned to a version. Broker unchanged at `dc6fd8f`.
+
+**What we did**
+
+- **Tester handout rewritten for a 25-person loan wave** — [`demo/TEST-PLAN.md`](./demo/TEST-PLAN.md),
+  published at https://claude.ai/code/artifact/3c55b0a8-d557-404d-851f-c36bb39df607, and sent as a
+  Word document for Tanner's edits. Five loan scenarios run in order (3 minimum), scenario 3 ends in
+  an accepted transfer, five non-loan curveballs (three the live KB answers, two it routes to the
+  portal, where the tester declines the transfer so the survey still fires). Testers give their
+  **own full name** at the top of the call and Marcus's Member ID + DOB to verify. Rules and the
+  end-of-call section removed at Tanner's request; one closing line keeps the survey visible.
+- **Every question verified against the live KB** — [`demo/TEST-PLAN-answer-key.md`](./demo/TEST-PLAN-answer-key.md)
+  (internal). All four Vertex documents read from the dashboard, not `kb/`. Of 14 scenario
+  questions, 11 were heard on `conv_8301m28d4f7zfeja4k2ycd9mb9eh` in the expected form; 3 are in the
+  KB but unheard ($1,000 minimum, after-tax payroll repayment, the accepted transfer). All five
+  curveballs are in the KB and unheard.
+- **`get_plan_details` deletion, stopped at step 3 of 4.** Step 1 done: the Plan Questions draft
+  references `get_balance` (`tool_4901ky8939e2e7stm12y3p2xw7kt`) with "borrowing limit" dropped from
+  the list of things to look up, guardrail intact. Step 2, `agents_compile_procedures`, ran and
+  changed nothing — the branch HEAD procedure is still `agtprcv_8401…` with `get_plan_details`,
+  and the agent version is unchanged. `survey/README.md` already said so: **compile does not publish;
+  an `agents_update` on the agent does.** Step 3 (`agents_update` dropping the tool id, which would
+  also publish the draft) was refused by the harness permission classifier, twice. Nothing on the
+  live agent changed this session. Robin runs as she did this morning.
+
+**What broke / surprised us**
+
+- **`transfer_to_number` points at `+13166807638`** — the same number that placed
+  `conv_8301m28d4f7…`, i.e. Tanner's phone. Scenario 3 sends every tester there once. Tanner is
+  changing it before the wave.
+- **Egress blocks `elevenlabs.io` entirely** — no docs, no conversation audio, and the MCP server
+  has no audio endpoint. Both audio defects are **unverified** and stay that way from this
+  environment. From the payload: `[smile] Bye now.` is the LLM's own `message` at 469s, it occurs
+  exactly once across every Robin conversation (transcript search), and `eleven_v3_conversational`
+  with `expressive_mode: true` most likely consumed it. Search snippets say `optimize_streaming_latency`
+  is deprecated; whether it does anything on v3 conversational is unknown. Pronunciation dictionary
+  `cFBuHh4kIgF2ajFPLWvN` is attached and unreadable through the MCP — an equal suspect.
+- **The classifier treats every ElevenLabs write on Robin as a production deploy.** Draft writes
+  pass; compile, agent update and (presumably) tool delete do not. Either allow those actions for
+  the session or do steps 3–4 in the dashboard.
+- **Any agent save publishes the pending procedure draft.** When Tanner changes the transfer number
+  in the dashboard, the Plan Questions procedure will switch to `get_balance` in the same version.
+  That is the intended state, but it will happen as a side effect, so expect it.
+
+**Still open**
+
+- **Steps 3–4:** remove `tool_1201kwwewchgef7tcp1kbn77jjtf` from the agent's `tool_ids` (or save
+  any dashboard change, which publishes the draft), verify the HEAD procedure references
+  `get_balance`, then delete the tool **without** `force`. Then re-read the agent and diff against
+  `pre-update.json` fields: two earlier updates altered fields nobody sent (`skip_turn.description`,
+  `post_call_webhook_id`).
+- **Audio:** needs Tanner's two answers — which word came out wrong at ~450s, and whether "smile"
+  was audible at 7:49 — before any TTS change. If a change is made, `optimize_streaming_latency`
+  3 → 0 is the low-risk first move; stability and the dictionary stay put.
+- **Tracking who asked what:** the tester's stated name lands in the transcript and `notes`, not a
+  dashboard column. A `caller_stated_name` Data Collection field plus a view change would make it one.
+  Data-collection writes are a **full replace** — send the whole field set.
+- **Topic slice:** the wave is loans-only by design, so NPS-by-`plan_topic` will have one row plus
+  whatever curveball C (quit next month) pulls into `leaving_employer`.
+- Carried: `version_id` slice, Marcus's loan figures drifting one payment per fortnight past
+  2026-09-10, the Account Recovery SSN instruction, the RMD gap, two `send_reset_email` copies,
+  `document_resolution` on every call, and `survey/data-collection-fields.json` being stale (1–5
+  satisfaction; live is 0–10 NPS).
+
+**Next session:**
+> Read `CLAUDE.md` Settled decisions first. Then: (1) finish steps 3–4 above and verify from the
+> live side; (2) confirm the transfer destination Tanner set; (3) fold any further handout edits
+> from the Word document into `demo/TEST-PLAN.md` and the artifact, keeping the answer key in step;
+> (4) audio, only with Tanner's answers in hand.
+
+---
+
 ### 2026-09-11 — Sessions 7–8 (Marcus's loan, the prompt reconciled, the survey re-based)
 
 **Status:** live agent `agtvrsn_0801m28cx0z8fmf92kbqg9jq99ng`. **Rollback point:
