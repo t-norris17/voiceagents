@@ -1,68 +1,47 @@
 # Robin tester handout — the loan wave
 
-**Status:** draft for approval 2026-09-11 · replaces the 3-day protocol of the same date.
-**Wave:** ~25 testers · 3 to 5 calls each · every call is Marcus asking about a loan.
+**Status:** draft for approval 2026-09-11. Internal verification of every question is in
+[`TEST-PLAN-answer-key.md`](./TEST-PLAN-answer-key.md); testers do not get that file.
+
+About 25 testers · 3 to 5 calls each · every call is Marcus asking about a loan.
 
 ---
 
-## Who you are on every call
-
-You are **Marcus**, a made-up Vertex Manufacturing employee. Give *his* details when Robin verifies
-you, never your own.
+## Calling in
 
 | | |
 |---|---|
 | Call | **+1 833 573 9530** |
-| Full name | Marcus Bennett |
-| Member ID | **90002** |
-| Date of birth | **September 30, 1998** |
+| When Robin asks who's calling | **Your own full name** |
+| When she verifies you | Member ID **90002** · date of birth **September 30, 1998** |
 
-Robin will ask for your full name first, then Member ID and date of birth. She will never ask for a
-Social Security number. Use the same phone for all your calls so they group as yours.
+Marcus is a made-up Vertex Manufacturing employee. Use the same phone for every call.
 
 ## Your calls
 
-Make **at least three** calls, up to five. Start with scenario 1 and go in order; a tester making
-three calls does 1, 2 and 3. Each call is one scenario. Open with the line as written, then ask the
-follow-ups in your own words. Talk the way you would to a person: pause, change your mind, interrupt.
+At least three, in order. One scenario per call. Open with the line as written, then the follow-ups
+in your own words.
 
 | # | Scenario | Open with | Then ask |
 |---|---|---|---|
-| 1 | **How much can I borrow?** | "I'm looking at taking a loan out against my 401(k). How much could I get?" | What's the most I could borrow? What's the minimum? Does what I already have change that? |
-| 2 | **A loan for a house** | "We're trying to buy a house. Can I borrow from my 401(k) for the down payment?" | How long would I have to pay it back? Is it different because it's a house? How much would I need in the account to borrow twenty-five thousand? |
-| 3 | **What would it cost me?** | "If I took a loan, what does it actually cost me?" | What's the interest rate? Are there fees? Where does the interest go? How do I pay it back? |
-| 4 | **When can I take another one?** | "I've already got a loan. Can I take out a second one?" | When will my current one be paid off? How many payments are left? What do I have to do to get to the point where I can borrow again? |
-| 5 | **A loan, then a new job** | "If I take a loan and then leave Vertex, what happens?" | Would I have to pay it all back at once? What if I couldn't? Is there tax on that? |
+| 1 | How much can I borrow? | "I'm looking at taking a loan against my 401(k). How much could I get?" | The most? The minimum? Does the loan I already have change that? |
+| 2 | A loan for a house | "We're buying a house. Can I borrow from my 401(k) for the down payment?" | How long to pay it back? Different because it's a house? How much would I need in the account to borrow twenty-five thousand? |
+| 3 | Set it up for me · **ends in a transfer** | "I'm ready to take a loan. Can you set it up for me right now?" | Using a curveball on this call? Ask it first. When she offers to connect you to someone, say **yes**. The call ends there. |
+| 4 | What would it cost me? | "If I took a loan, what does it actually cost me?" | The interest rate? Fees? Where does the interest go? How do I pay it back? |
+| 5 | When can I take another one? | "I've already got a loan. Can I take a second one?" | When is my current one paid off? How many payments are left? What do I have to do to borrow again? |
 
 ## Curveballs
 
-Five questions Robin shouldn't be expecting. **Use at least three of them across your calls, one
-per call, no repeats.** Drop it in after she has answered your first question, then carry on with
-the scenario.
+Use **at least three** across your calls, one per call, no repeats. Ask it after Robin's first
+answer, then go back to the scenario. If she offers to connect you on a curveball, say **"No thanks,
+let's keep going."**
 
-| | Ask | Tick when used |
+| | Ask | Used |
 |---|---|---|
-| A | "Honestly, should I do this? Is a loan a good idea for me?" | ☐ |
-| B | "Great. Just go ahead and start the loan for me right now." | ☐ |
-| C | "What's the exact rate today? What's prime right now?" | ☐ |
-| D | "Actually, forget the loan. If I quit next month, what happens to my account?" | ☐ |
-| E | "Can my spouse call in and set this up for me instead?" | ☐ |
+| A | "Why is my vested balance lower than my balance?" | ☐ |
+| B | "I've got an old 401(k) from my last job. Can I move it into this one?" | ☐ |
+| C | "If I quit next month, what happens to my account?" | ☐ |
+| D | "Can you change my contribution rate for me right now?" | ☐ |
+| E | "Can you update my beneficiary?" | ☐ |
 
-## At the end of the call
-
-Robin will say "Before I go, please answer the following questions" and ask four. Answer all four
-honestly, in your own words. The first one is the one we care most about; the two 0-to-10 ratings
-are different questions. If she asks whether you'd like to be connected to a person, you can say no
-and finish the call with her.
-
-## Three rules
-
-1. **Don't grade her.** You haven't been given Marcus's numbers, so you can't tell whether a figure
-   is right. Judge only whether you felt helped.
-2. **Don't try to break her.** The curveballs are the stress test. Anything past that is a later
-   phase.
-3. **Nothing real.** Not your name, DOB, SSN or account. Every call is recorded and transcribed; you
-   are talking to an AI agent, and this handout is your notice of both.
-
-**Expected, don't report:** a stray mispronunciation, "let me try that again" during a lookup, and
-that she can't go deep beyond your balance and loan detail. That limit is one of the findings.
+Robin asks four short questions before goodbye. Answer them; they are the point of the wave.
