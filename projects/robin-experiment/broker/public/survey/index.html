@@ -165,6 +165,18 @@
                      letter-spacing:-.02em; margin-left:6px; }
   .svy-head-fig .vs{ font-size:.82rem; color:var(--sub); line-height:1.45; }
   .svy-head-fig .vs b{ color:var(--ink); }
+  /* NPS sits beside the ratio, deliberately smaller. It is a secondary reading of the same
+     responses, not a second headline, and it is a SIGNED INDEX (-100..+100) rather than a
+     percentage — hence the explicit sign and no % anywhere near it. */
+  .svy-nps{ margin-top:22px; padding-top:18px; border-top:1px solid var(--line);
+            display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }
+  .svy-nps .n{ font-size:clamp(1.8rem,4.6vw,2.5rem); font-weight:800; line-height:.9;
+               letter-spacing:-.03em; font-variant-numeric:tabular-nums; }
+  .svy-nps .lab{ font-size:.6rem; letter-spacing:.16em; text-transform:uppercase;
+                 color:var(--faint); font-weight:600; }
+  .svy-nps .split{ font-size:.78rem; color:var(--sub); line-height:1.45; }
+  .svy-nps .split b{ color:var(--ink); font-weight:700; }
+  .svy-nps .warnthin{ font-size:.72rem; color:var(--accent); font-weight:600; }
   .bar .b-agent{ background:var(--c-agent); }
   .bar .b-none{ background:var(--c-none); }
   .bar .b-person{ background:var(--c-person); }
@@ -519,7 +531,7 @@
       document.getElementById("banner").innerHTML="";
       const s=DATA.survey||{};
       document.getElementById("mastmeta").innerHTML=
-        `<b>${s.people ?? 0}</b> response${s.people===1?"":"s"} · ${s.callers ?? 0} caller${s.callers===1?"":"s"} · ${s.calls ?? 0} call${s.calls===1?"":"s"}<br>`+
+        `<b>${s.responses ?? 0}</b> response${s.responses===1?"":"s"} · ${s.people ?? 0} ${s.people===1?"person":"people"} · ${s.calls ?? 0} call${s.calls===1?"":"s"}<br>`+
         `<span class="soft">last updated <span id="gen2"></span></span>`;
       renderSurvey(); renderReview(); renderMatrix(); renderCumulative(); renderComments(); renderCalls(); renderDownloads();
       stamp();
@@ -555,7 +567,7 @@
           rec=s.recommend||{}, com=s.comments||{}, ci=p.ci,
           nps=s.nps||{}, voice=s.voice||{}, inst=s.instrument||{};
     document.getElementById("svymeta").textContent=
-      `${s.people} response${s.people===1?"":"s"} from ${s.callers} caller${s.callers===1?"":"s"}, ${s.calls} call${s.calls===1?"":"s"}`;
+      `${s.responses} response${s.responses===1?"":"s"} from ${s.people} ${s.people===1?"person":"people"}, ${s.calls} call${s.calls===1?"":"s"}`;
 
     // Only claim a winner once the interval clears 50%. Anything else is an even split with a
     // decimal point on it, and a decision made on one is the failure this page exists to prevent.
@@ -564,22 +576,42 @@
     const headFig = decided
       ? `<div class="svy-head-fig">
            <div><div class="fig tnum">${p.agent}<span class="of">of ${decided}</span></div></div>
-           <div class="vs">would rather use <b>Robin</b> than hold for a person &mdash; ${ci.pct}%.<br>
+           <div class="vs">responses would rather use <b>Robin</b> than hold for a person &mdash; ${ci.pct}%,
+             from <b>${s.people} ${s.people===1?"person":"people"}</b>.<br>
              ${p.person} would rather wait for a person; ${p.no_preference} had no preference.</div>
          </div>`
       : `<div class="empty">Nobody has answered the preference question yet.</div>`;
+
+    // NPS: promoters (9-10) minus detractors (0-6), as a share of everyone who gave a number.
+    // Passives (7-8) sit in the denominator and score nothing. Runs -100 to +100, so it is shown
+    // signed and never with a % — "+67%" would invite someone to read it as "67% of people".
+    const npsBlock = (nps.n||0) ? `
+      <div class="svy-nps">
+        <div>
+          <div class="lab">NPS</div>
+          <div class="n" style="color:${nps.score>0?"var(--c-agent)":nps.score<0?"var(--c-person)":"var(--sub)"}">${nps.score>0?"+":""}${nps.score}</div>
+        </div>
+        <div class="split">
+          <b>${nps.promoters}</b> promoter${nps.promoters===1?"":"s"} (9&ndash;10),
+          <b>${nps.passives}</b> passive${nps.passives===1?"":"s"} (7&ndash;8),
+          <b>${nps.detractors}</b> detractor${nps.detractors===1?"":"s"} (0&ndash;6)
+          across <b>${nps.n}</b> scored response${nps.n===1?"":"s"}. Mean ${nps.mean}.<br>
+          A net index from &minus;100 to +100, not a percentage of anyone.
+          ${nps.n<10?`<span class="warnthin">At ${nps.n} response${nps.n===1?"":"s"} a single answer moves this by roughly ${Math.round(100/nps.n)} points &mdash; read it as direction, not a score.</span>`:``}
+        </div>
+      </div>` : "";
 
     // One dot per respondent, in the order they answered.
     const dotList=(s.dots||[]);
     const dgClass={agent:"dg-agent",person:"dg-person",no_preference:"dg-none"};
     const dotGrid = dotList.length ? `
       <div class="dotgrid" role="img"
-           aria-label="One dot per respondent: ${p.agent} prefer Robin, ${p.person} prefer a person, ${p.no_preference} no preference, out of ${dotList.length} respondents">
+           aria-label="One dot per response: ${p.agent} prefer Robin, ${p.person} prefer a person, ${p.no_preference} no preference, out of ${dotList.length} responses">
         ${dotList.map(d=>`<span class="dg ${dgClass[d.preference]||"dg-unclear"}" title="${esc(d.respondent||("Respondent "+d.n))} &middot; ${
           d.preference==="agent"?"prefers Robin":d.preference==="person"?"prefers a person":
           d.preference==="no_preference"?"no preference":"answer unclear"}"></span>`).join("")}
       </div>
-      <p class="dg-cap">Each dot is one respondent, in the order they answered.</p>` : "";
+      <p class="dg-cap">Each dot is one response, in the order they were given.</p>` : "";
 
     const pc=(n)=>decided?((n/decided)*100).toFixed(2)+"%":"0%";
     const bar = decided ? `
@@ -598,8 +630,8 @@
         ${settled
           ? `That clears 50%, so the preference holds at this sample size.`
           : `That still spans 50%, so it is <b>not yet conclusive</b>.`}
-        One response per person per member.${
-        s.repeat_callers?` ${s.repeat_callers} called more than once and are counted once.`:``}
+        Every answered call counts as one response, because each tests a different scenario.${
+        s.repeat_callers?` ${s.repeat_callers} ${s.repeat_callers===1?"person":"people"} answered on more than one call.`:``}
       </div>` : "";
 
     const adherenceWarn = a.pct!=null && a.pct<70;
@@ -611,15 +643,12 @@
         </div>` : "",
       `<div class="svy-m">
           <div class="n tnum">${r.rate_pct??"—"}${r.rate_pct!=null?'<span class="un">%</span>':""}</div>
-          <div class="cap">of people asked gave an answer — ${r.answered} of ${r.offered}.
+          <div class="cap">of people asked gave an answer${r.answered!=null&&r.offered!=null?` — ${r.answered} of ${r.offered}`:""}.
           ${r.declined?`${r.declined} declined.`:""}</div>
         </div>`,
-      nps.n ? `<div class="svy-m">
-          <div class="n tnum">${nps.score>0?"+":""}${nps.score}</div>
-          <div class="cap">NPS from ${nps.n} response${nps.n===1?"":"s"} — ${nps.promoters} promoter${nps.promoters===1?"":"s"},
-          ${nps.passives} passive${nps.passives===1?"":"s"}, ${nps.detractors} detractor${nps.detractors===1?"":"s"}.
-          Runs &minus;100 to +100, so it is not a percentage.${nps.unparsed?` ${nps.unparsed} answered in words we couldn't score.`:""}</div>
-        </div>` : "",
+      // NPS moved to the hero, where it was asked for. Repeating it here said the same
+      // number twice in one screen and made the row look like four findings, not three.
+
       voice.n ? `<div class="svy-m">
           <div class="n tnum">${voice.mean}<span class="un">/10</span></div>
           <div class="cap">average rating of how natural Robin's voice sounded, across ${voice.n}
@@ -646,7 +675,7 @@
     el.innerHTML=`<div class="svy">
       <p class="svy-lede">How many people would rather use Robin than wait for a person next time.
         Transfers and unverified callers are excluded.</p>
-      ${headFig}${dotGrid}${bar}${metrics?`<div class="svy-grid">${metrics}</div>`:""}
+      ${headFig}${npsBlock}${dotGrid}${bar}${metrics?`<div class="svy-grid">${metrics}</div>`:""}
       ${notes?`<p class="svy-foot">${notes}</p>`:""}${alarm}
     </div>`;
   }

@@ -7,7 +7,7 @@
 // (grader hasn't run), the per-question grid degrades gracefully to "not graded yet" rather
 // than inventing numbers.
 import { sb } from "../lib/supabase.js";
-import { surveyPeople, surveyCalls, score, wilson, respondentLabels } from "../lib/survey-data.js";
+import { surveyResponses, surveyCalls, score, wilson, respondentLabels } from "../lib/survey-data.js";
 
 const q = (s) => encodeURIComponent(s);
 const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : null);
@@ -58,12 +58,12 @@ const sentBucket = (s) => {
 // verification, no substantive exchange — so it is excluded from the denominator rather than
 // counted as a miss. A transferred call is not a failure; the survey is built to stay silent there.
 // ---------------------------------------------------------------------------------------------
-export function summariseSurvey(people, calls) {
+export function summariseSurvey(opinions, calls) {
   // "P-1ea00145" is the right thing to store and the wrong thing to show a reader. Everything the
   // page renders carries "Respondent 3" instead; the hash never leaves the server.
   const names = respondentLabels(calls);
   const who = (r) => names.get(r.person_key) || null;
-  if (!Array.isArray(calls) || calls.length === 0) return { calls: 0, people: 0, awaiting_first_call: true };
+  if (!Array.isArray(calls) || calls.length === 0) return { calls: 0, people: 0, responses: 0, awaiting_first_call: true };
 
   // ---- Operational: did she ASK when she should have? Correctly a CALL-level question. ----
   const judged = calls.filter((r) => r.survey_verdict === "success" || r.survey_verdict === "failure");
@@ -74,16 +74,36 @@ export function summariseSurvey(people, calls) {
     (r) => r.prefer_agent_raw || r.nps_raw || r.voice_raw || r.satisfaction_raw
   );
 
-  // ---- Everything below is PERSON-level. One tester, one opinion, however often they called. ----
-  const scores = people.map((r) => score(r.satisfaction_score)).filter((n) => n !== null);
-  const npsScores = people.map((r) => score(r.nps_score)).filter((n) => n !== null);
-  const voiceScores = people.map((r) => score(r.voice_score)).filter((n) => n !== null);
-  const band = (b) => people.filter((r) => r.nps_band === b).length;
+  // ---- Everything below is RESPONSE-level: one row per answered call. ----
+  //
+  // Deliberate change for the testing wave. A tester places several calls, each exercising a
+  // different scenario, and their reaction to EACH is a real data point — a caller who prefers Robin
+  // for a balance lookup and a person for a loan rollover is telling us two different things. The
+  // person-level count is still computed, right here, and shipped beside every response figure so
+  // "N responses" can never be mistaken for "N people".
+  const personCount = new Set(opinions.map((r) => r.person_key).filter(Boolean)).size;
+  const perPerson = new Map();
+  for (const r of opinions) {
+    if (!r.person_key) continue;
+    if (!perPerson.has(r.person_key)) perPerson.set(r.person_key, []);
+    perPerson.get(r.person_key).push(r);
+  }
+  // Both are person facts, so both are counted over PEOPLE — not over rows, which would tally a
+  // two-call tester twice and quietly reintroduce the overcount this file exists to prevent.
+  const repeatCallers = [...perPerson.values()].filter((rs) => rs.length > 1).length;
+  const changedMind = [...perPerson.values()].filter(
+    (rs) => new Set(rs.map((r) => r.preference).filter((v) => v === "agent" || v === "person")).size > 1
+  ).length;
+
+  const scores = opinions.map((r) => score(r.satisfaction_score)).filter((n) => n !== null);
+  const npsScores = opinions.map((r) => score(r.nps_score)).filter((n) => n !== null);
+  const voiceScores = opinions.map((r) => score(r.voice_score)).filter((n) => n !== null);
+  const band = (b) => opinions.filter((r) => r.nps_band === b).length;
   // Respondents split by which instrument they answered, so v1 and v2 are never averaged
   // together and neither silently vanishes from a count.
-  const v2 = people.filter((r) => r.in_nps_era).length;
-  const v1 = people.length - v2;
-  const tally = (key, vals) => Object.fromEntries(vals.map((v) => [v, people.filter((r) => r[key] === v).length]));
+  const v2 = opinions.filter((r) => r.in_nps_era).length;
+  const v1 = opinions.length - v2;
+  const tally = (key, vals) => Object.fromEntries(vals.map((v) => [v, opinions.filter((r) => r[key] === v).length]));
 
   const prefs = tally("preference", ["agent", "person", "no_preference", "unclassified"]);
   const decided = prefs.agent + prefs.person + prefs.no_preference;
@@ -99,26 +119,26 @@ export function summariseSurvey(people, calls) {
   const matrix = MATRIX_BANDS.map((b) => ({
     band: b,
     range: b === "promoter" ? "9-10" : b === "passive" ? "7-8" : "0-6",
-    agent: people.filter((r) => r.nps_band === b && r.preference === "agent").length,
-    person: people.filter((r) => r.nps_band === b && r.preference === "person").length,
-    no_preference: people.filter((r) => r.nps_band === b && r.preference === "no_preference").length,
-    unclassified: people.filter((r) => r.nps_band === b && (r.preference === "unclassified" || r.preference === null)).length,
+    agent: opinions.filter((r) => r.nps_band === b && r.preference === "agent").length,
+    person: opinions.filter((r) => r.nps_band === b && r.preference === "person").length,
+    no_preference: opinions.filter((r) => r.nps_band === b && r.preference === "no_preference").length,
+    unclassified: opinions.filter((r) => r.nps_band === b && (r.preference === "unclassified" || r.preference === null)).length,
   }));
   // Respondents the cross-tab cannot place, because they answered the retired 1-5 instrument. Shipped
   // beside the grid so a reader can see the grid does not cover everyone, rather than assuming it does.
-  const matrix_excluded_v1 = people.filter((r) => !r.in_nps_era && r.preference).length;
-  // Named because it is the finding, not a cell reference: people who would recommend this warmly
+  const matrix_excluded_v1 = opinions.filter((r) => !r.in_nps_era && r.preference).length;
+  // Named because it is the finding, not a cell reference: opinions who would recommend this warmly
   // and still want a person next time. If this is non-zero the headline is softer than it looks.
-  const promoter_but_prefers_person = people.filter(
+  const promoter_but_prefers_person = opinions.filter(
     (r) => r.nps_band === "promoter" && r.preference === "person"
   ).length;
 
-  // Cumulative, in the order people first responded. Not a day-over-day trend — with a two-week
+  // Cumulative, in the order opinions first responded. Not a day-over-day trend — with a two-week
   // wave that is noise you get asked to explain. This answers the question that actually governs
   // the wave: has the interval narrowed enough to stop collecting?
   const cumulative = [];
   let cAgent = 0, cPerson = 0, cNo = 0;
-  for (const p of people) {
+  for (const p of opinions) {
     if (p.preference === "agent") cAgent++;
     else if (p.preference === "person") cPerson++;
     else if (p.preference === "no_preference") cNo++;
@@ -129,22 +149,23 @@ export function summariseSurvey(people, calls) {
   }
 
   const recommendCounts = (() => {
-    const t = (v) => people.filter((r) => r.would_recommend === v).length;
+    const t = (v) => opinions.filter((r) => r.would_recommend === v).length;
     const yes = t("yes"), no = t("no"), unclear = t("unclear");
     return { yes, no, unclear, answered: yes + no + unclear, ci: (yes + no) ? wilson(yes, yes + no) : null };
   })();
 
   return {
     calls: calls.length,
-    people: people.length,
+    people: personCount,
+    responses: opinions.length,
     // Distinct handsets behind those respondents. A respondent is one caller AS ONE MEMBER, so a
     // tester exercising several personas is several respondents on purpose (migration 011). Both
     // figures ship together so neither has to stand in for the other.
-    callers: new Set(people.map((r) => r.caller_key).filter(Boolean)).size,
+    callers: new Set(opinions.map((r) => r.caller_key).filter(Boolean)).size,
     // Stated plainly so nobody has to infer it: this is why the two counts differ.
-    repeat_callers: people.filter((r) => r.repeat_caller).length,
+    repeat_callers: repeatCallers,
     // The one fact a call-level average would have buried entirely.
-    changed_mind: people.filter((r) => r.changed_mind).length,
+    changed_mind: changedMind,
 
     adherence: {
       eligible: judged.length,
@@ -174,7 +195,7 @@ export function summariseSurvey(people, calls) {
       four_or_five: scores.filter((s) => s >= 4).length,
       // Answers given in words we could not score ("pretty good"). Kept visible rather than dropped:
       // a rising count means the mean covers a shrinking slice of what was actually said.
-      unparsed: people.filter((r) => r.satisfaction_raw && score(r.satisfaction_score) === null).length,
+      unparsed: opinions.filter((r) => r.satisfaction_raw && score(r.satisfaction_score) === null).length,
       // No `distribution` array: it was computed here and rendered nowhere. The cross-tab's rows
       // already ARE the distribution, broken down by preference, which is strictly more useful.
     },
@@ -191,14 +212,14 @@ export function summariseSurvey(people, calls) {
         ? Math.round(((band("promoter") - band("detractor")) / npsScores.length) * 100)
         : null,
       mean: npsScores.length ? Number((npsScores.reduce((a, b) => a + b, 0) / npsScores.length).toFixed(2)) : null,
-      unparsed: people.filter((r) => r.nps_raw && score(r.nps_score) === null).length,
+      unparsed: opinions.filter((r) => r.nps_raw && score(r.nps_score) === null).length,
     },
     // v2. How natural Robin's voice sounded, 0-10. Deliberately separate from nps: they are two
     // different questions and merging them would hide whichever one is the problem.
     voice: {
       n: voiceScores.length,
       mean: voiceScores.length ? Number((voiceScores.reduce((a, b) => a + b, 0) / voiceScores.length).toFixed(2)) : null,
-      unparsed: people.filter((r) => r.voice_raw && score(r.voice_score) === null).length,
+      unparsed: opinions.filter((r) => r.voice_raw && score(r.voice_score) === null).length,
     },
     instrument: { v1, v2 },
     recommend: { ...recommendCounts, yes_pct: recommendCounts.ci ? recommendCounts.ci.pct : null },
@@ -209,7 +230,7 @@ export function summariseSurvey(people, calls) {
     // four respondents is four dots, sixty is sixty. Sample size becomes something you SEE rather
     // than something you compute off a confidence band, which is what the band was for and what
     // nobody read it as.
-    dots: people.map((r, i) => ({ n: i + 1, preference: r.preference || "unclassified", respondent: who(r) })),
+    dots: opinions.map((r, i) => ({ n: i + 1, preference: r.preference || "unclassified", respondent: who(r) })),
     cumulative,
 
     // FREE TEXT IS CALL-LEVEL, DELIBERATELY, and this is the one place the person-level rule must
@@ -221,7 +242,7 @@ export function summariseSurvey(people, calls) {
     // Marcus's SECOND surveyed call — so the person-level read showed 0 comments while 1 existed,
     // and the themes engine had nothing to cluster.
     //
-    // `given` counts comments, not people, because that is what the number means. `people_who_commented`
+    // `given` counts comments, not opinions, because that is what the number means. `people_who_commented`
     // is reported alongside it so a handful of chatty repeat callers cannot look like broad feedback.
     comments: (() => {
       const withText = calls.filter((r) => r.survey_offered && (r.open_comments || r.comments_redacted));
@@ -310,8 +331,8 @@ export default async function handler(req, res) {
     // Failing soft: a survey outage must never take the rest of the dashboard down with it.
     let survey = null;
     try {
-      const [people, callRows] = await Promise.all([surveyPeople(), surveyCalls()]);
-      survey = summariseSurvey(people, callRows);
+      const [responseRows, callRows] = await Promise.all([surveyResponses(), surveyCalls()]);
+      survey = summariseSurvey(responseRows, callRows);
     } catch (e) {
       console.error("survey block failed (dashboard continues without it):", String(e.message || e));
     }

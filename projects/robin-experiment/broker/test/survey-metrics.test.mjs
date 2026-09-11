@@ -42,14 +42,47 @@ test("an answer we could not score is counted, never averaged", () => {
   assert.equal(r.satisfaction.mean, null);
 });
 
-test("proportions count people, not calls", () => {
+// CHANGED for the testing wave: the unit of opinion is now the RESPONSE, because one tester runs
+// several scenarios on purpose and each reaction is wanted. The overcount this file used to guard
+// against is now the intent — so what has to be guarded instead is that the two counts stay
+// DISTINCT and both ship, so "3 responses" can never be read as "3 people".
+test("three calls from one tester are three responses and one person", () => {
   const r = summariseSurvey(
-    [person({ responses: 3, repeat_caller: true, preference: "agent", satisfaction_score: 5 })],
+    [person({ person_key: "P-1", preference: "agent", nps_score: 10 }),
+     person({ person_key: "P-1", preference: "agent", nps_score: 9 }),
+     person({ person_key: "P-1", preference: "person", nps_score: 6 })],
     [call({ response_seq: 1 }), call({ response_seq: 2 }), call({ response_seq: 3 })]
   );
-  assert.equal(r.people, 1, "one tester is one opinion");
+  assert.equal(r.responses, 3, "every scenario counts");
+  assert.equal(r.people, 1, "and it is still one human being");
+  assert.equal(r.preference.decided, 3, "three reactions, three votes");
   assert.equal(r.calls, 3);
-  assert.equal(r.preference.decided, 1, "three calls must not read as three votes");
+});
+
+// repeat_callers and changed_mind are PERSON facts. Counting them over response rows would tally a
+// two-call tester twice and quietly reintroduce the overcount, in the one place it still matters.
+test("person-level facts are counted over people, never over rows", () => {
+  const r = summariseSurvey(
+    [person({ person_key: "P-1", preference: "agent" }),
+     person({ person_key: "P-1", preference: "person" }),
+     person({ person_key: "P-2", preference: "agent" })],
+    [call({}), call({}), call({})]
+  );
+  assert.equal(r.responses, 3);
+  assert.equal(r.people, 2);
+  assert.equal(r.repeat_callers, 1, "P-1 only, counted once despite two rows");
+  assert.equal(r.changed_mind, 1, "P-1 moved agent -> person; P-2 never moved");
+});
+
+test("a person whose preference never moves is not counted as changing their mind", () => {
+  const r = summariseSurvey(
+    [person({ person_key: "P-1", preference: "agent" }),
+     person({ person_key: "P-1", preference: "agent" }),
+     // unclassified must not read as a third opinion that "differs" from agent
+     person({ person_key: "P-1", preference: "unclassified" })],
+    [call({}), call({}), call({})]
+  );
+  assert.equal(r.changed_mind, 0);
   assert.equal(r.repeat_callers, 1);
 });
 
@@ -167,7 +200,7 @@ test("adherence is a call-level question and stays one", () => {
 });
 
 test("no rows is an empty state, not a crash or a zero", () => {
-  assert.deepEqual(summariseSurvey([], []), { calls: 0, people: 0, awaiting_first_call: true });
+  assert.deepEqual(summariseSurvey([], []), { calls: 0, people: 0, responses: 0, awaiting_first_call: true });
 });
 
 // The answer a reader actually got, before this existed:

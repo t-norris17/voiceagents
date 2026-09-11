@@ -30,6 +30,24 @@ export async function surveyPeople() {
   return (await sb(`survey_people?select=${PEOPLE_COLS}&order=first_at.asc.nullslast`)) || [];
 }
 
+// Response-level opinions. During the TESTING wave one tester deliberately places several calls,
+// each exercising a different scenario, and every one of those reactions is wanted — so the unit of
+// opinion is the RESPONSE, not the person. Person-level dedup still ships alongside (surveyPeople)
+// because "N people" is the number that has to survive a room, and the page shows both.
+//
+// Filtered to in_nps_era: the v1 instrument (1-5 satisfaction, yes/no recommend) asked different
+// questions, and mixing the two eras produced a dashboard where a respondent's pre-NPS first call
+// permanently masked the NPS they later gave. Clean start, v2 only. Nothing is deleted — the v1
+// rows are still in survey_answers and still reachable through surveyPeople.
+export async function surveyResponses() {
+  return (
+    (await sb(
+      `survey_answers?in_survey_era=is.true&in_nps_era=is.true&survey_offered=is.true` +
+        `&select=${CALL_COLS}&order=started_at.asc.nullslast`
+    )) || []
+  );
+}
+
 export async function surveyCalls() {
   return (await sb(`survey_answers?in_survey_era=is.true&select=${CALL_COLS}&order=started_at.desc.nullslast`)) || [];
 }
