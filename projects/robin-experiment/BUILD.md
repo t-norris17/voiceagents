@@ -2,13 +2,102 @@
 
 **Slug:** robin-experiment
 **Started:** 2026-07-23
-**Status:** active — see Session 6 for the current handoff
+**Status:** active — see Sessions 7–8 for the current handoff
 
 ---
 
 ## Session log
 
 <!-- Add new sessions at the top, newest first -->
+
+---
+
+### 2026-09-11 — Sessions 7–8 (Marcus's loan, the prompt reconciled, the survey re-based)
+
+**Status:** live agent `agtvrsn_0801m28cx0z8fmf92kbqg9jq99ng`. **Rollback point:
+`agtvrsn_6701m268gntcfhs8sq3h1hphg8dy`.** Broker pushed through `5dd8b21`; the last two commits
+(`c8b7e02` topic slice, `5dd8b21` NPS redesign) need a Vercel promote before they are live.
+
+**What we did**
+
+- **Marcus can be asked about his loan.** New `member_loans` table (migration 013) with a partial
+  unique index on `(subject_ref) where status='active'`, so the plan's one-loan rule cannot be
+  violated by data — verified by attempting a second active loan and getting `23505`. `get_balance`
+  returns a `loan` object; `dollarsExact()` and `spokenDate()` are deliberately separate from
+  `dollars()`, which rounds to whole dollars and is right for a balance but would quote $75 for a
+  $75.64 payment. Marcus's schedule is a checked amortisation, not invented figures.
+- **Verified live** on `conv_8301m28d4f7zfeja4k2ycd9mb9eh`: `get_balance` 683ms, `is_error` false,
+  Robin said "five thousand four hundred ninety dollars and thirty-seven cents… *scheduled* to be
+  paid off." The LOAN TRAP also fired **flat** this time, grounded in his real 83 remaining payments.
+- **Prompt pushed live** after reconciling repo against live. The drift was exactly three items,
+  bounded by diffing a transcription of the live prompt against the pre-edit repo file at `6e4853c`.
+  Repo and live are now equal for both prompt files.
+- **`get_balance` protected from interruptions** (`disable_during_tool_and_turn`), after a caller's
+  "Okay" mid-lookup returned `is_error: true, latency 0` and Robin answered with no account data.
+- **Survey re-based on RESPONSES, not people** — deliberate for the testing wave, where one tester
+  runs several scenarios and each reaction is wanted. People, `repeat_callers` and `changed_mind` are
+  still counted over PEOPLE. Filtered to `in_nps_era`: clean start, v2 only. Nothing deleted.
+- **NPS sliced by `plan_topic`**, plus `detractor_but_prefers_agent` — the cell that makes the
+  deployment case. **This is the highest-value thing in the dashboard and it only works if testers
+  spread across topics.** If every tester asks about loans it has one row and says nothing.
+- **NPS block redesigned** after the first attempt read as muddled: definition into the label,
+  composition into a diverging bar, thin-sample expressed as a rendered state.
+
+**What broke / surprised us — four corrections to my own claims**
+
+- **`kb/` is not the Knowledge Base.** Live is five **Vertex** documents in the dashboard, with no
+  source in this repo. `kb/` is INTRUST-era, drives nothing, and contradicts live on loan limits and
+  fees. A whole design rested on `kb/` saying limits are unpublished. They are published, in full.
+  Files now carry a staleness banner.
+- **`lumio-retirement.vercel.app` is NOT a dead host.** It answers. `document_resolution` returned
+  `{"logged":true,"ticket_id":"ticket_1"}` in 287ms. `get_plan_details` returns `{"found":false}`
+  because that deployment's database has no Marcus — a data mismatch, not a missing server. I
+  inferred "dead" from a `found:false`, which is a successful HTTP 200.
+- **A transcript is not a tool payload.** Reading only the transcript produced a confident, wrong
+  diagnosis of a LOAN TRAP failure when `tool_results` said the lookup had been aborted.
+- **Robin's derived loan figures were correct.** I flagged "she computed a borrowing limit" as a
+  defect. 50% of vested is $9,561.35 and she said "around nine thousand five hundred"; the clause I
+  accused her of dropping applies to the $50,000 prong, which is not binding. `max_loan_cents` is
+  read by **no code at all**. The real finding is weaker and more structural: four sources could
+  answer "what can he borrow" and only one is wired to anything, so nothing could have caught her
+  if she *had* been wrong.
+
+**Still open**
+
+- **`get_plan_details` should be deleted** — superseded by `get_balance`. It is the Plan Questions
+  procedure's `referenced_tool_ids` entry, so the tool and the procedure reference must be cleaned
+  **in the same change** or the procedure breaks.
+- **`[smile]`** — Robin's final turn on `conv_8301m28d4f7...` was `[smile] Bye now.`, against the
+  prompt's explicit bar on bracketed audio tags. Check the recording: `eleven_v3` runs with
+  `expressive_mode` on, so it may have been consumed as expression rather than spoken.
+- **A word came out wrong on the wire.** Transcript reads "Have a great day"; the caller heard
+  something else. **Unverified** — audio not reachable from the session. First suspect is
+  `optimize_streaming_latency: 3`; try 1–2 before touching stability or the pronunciation dictionary.
+- **`version_id` slice deferred.** It is in `raw_payload->'data'->>'version_id'` but is not a column
+  anywhere, so it needs view surgery on `survey_answers` (7,263 chars, 31 dependents) or a PostgREST
+  JSON-path fetch. I told Tanner it was "stamped on every conversation" — it is in the payload, not
+  in a column.
+- **Marcus's loan figures are point-in-time** and drift one payment every two weeks past 2026-09-10.
+  Re-run the amortisation if the demo slips a month.
+- Carried: the Account Recovery procedure's SSN instruction, the RMD coverage gap, two copies of
+  `send_reset_email` in the workspace, and `document_resolution` firing on every call.
+
+**Next session:**
+> **Read `CLAUDE.md` first — its "Settled decisions" block and the three new bullets in "Prove the
+> premise" are load-bearing.** Robin does NOT disclose she is a virtual assistant; that was
+> deliberate and is not a defect to fix.
+>
+> The live deliverable in flight is **the 3-day tester plan** (scenarios on the Marcus profile,
+> testing experience rather than accuracy). Two design decisions already made: testers get **no
+> answer key**, so they cannot grade accuracy even if they want to; and scenarios must **spread
+> across `plan_topic`** or the topic slice built this session has one row and tells you nothing.
+>
+> Then: delete `get_plan_details` together with its procedure reference, and chase the two audio
+> defects above.
+>
+> Verification habits that earned their place today, all three now in `CLAUDE.md`: read
+> `tool_results` not transcripts; compare promote timestamps to `start_time_unix_secs`; and check
+> live config before trusting any file in this repo.
 
 ---
 
