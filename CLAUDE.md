@@ -7,8 +7,14 @@ procedures, knowledge-base articles, demo scripts, and mock backends for each vo
 project. The agents themselves are configured in the **ElevenLabs dashboard** (configuration,
 not code); this repo is the source of truth for *what* to build and *how*.
 
-**Current focus:** the **NestEgg U password-reset demo** — a working demo due **Tue Jul 7**.
-Start at [`projects/nestegg-u-demo/START-HERE.md`](./projects/nestegg-u-demo/START-HERE.md).
+**Current focus:** the **Robin 50-user experiment** (`projects/robin-experiment/`) — a live
+ElevenLabs agent on a real phone number, with a 3-day tester wave pending approval.
+**Start at [`projects/robin-experiment/BUILD.md`](./projects/robin-experiment/BUILD.md)** and read
+its newest session entry first; it is the handoff briefing and it names what is live, what is
+broken, and what is next.
+
+*(`projects/nestegg-u-demo/` is the earlier password-reset demo, last touched 2026-07-06. It is not
+the current focus and its dates are stale.)*
 
 ---
 

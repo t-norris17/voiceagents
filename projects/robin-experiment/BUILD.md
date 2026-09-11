@@ -15,8 +15,9 @@
 ### 2026-09-11 — Sessions 7–8 (Marcus's loan, the prompt reconciled, the survey re-based)
 
 **Status:** live agent `agtvrsn_0801m28cx0z8fmf92kbqg9jq99ng`. **Rollback point:
-`agtvrsn_6701m268gntcfhs8sq3h1hphg8dy`.** Broker pushed through `5dd8b21`; the last two commits
-(`c8b7e02` topic slice, `5dd8b21` NPS redesign) need a Vercel promote before they are live.
+`agtvrsn_6701m268gntcfhs8sq3h1hphg8dy`.** Broker promoted through `008a2d0` — topic slice and NPS
+redesign are live. Survey dashboard: `voiceagents-seven.vercel.app/survey` (gated by
+`SURVEY_PASSWORD`).
 
 **What we did**
 
@@ -87,10 +88,15 @@
 > premise" are load-bearing.** Robin does NOT disclose she is a virtual assistant; that was
 > deliberate and is not a defect to fix.
 >
-> The live deliverable in flight is **the 3-day tester plan** (scenarios on the Marcus profile,
-> testing experience rather than accuracy). Two design decisions already made: testers get **no
-> answer key**, so they cannot grade accuracy even if they want to; and scenarios must **spread
-> across `plan_topic`** or the topic slice built this session has one row and tells you nothing.
+> **The 3-day tester plan is written and submitted for approval** — [`demo/TEST-PLAN.md`](./demo/TEST-PLAN.md),
+> published at https://claude.ai/code/artifact/30f17d77-27f7-4c66-b730-b6a392347b78. Eight scenarios
+> on the Marcus profile. Two decisions in it are load-bearing and should not be undone casually:
+> testers get **no answer key**, so they cannot grade accuracy even if they want to; and scenarios
+> **spread across `plan_topic`**, or the topic slice has one row and tells you nothing.
+> Waiting on approval — if it comes back with changes, they land in that file.
+>
+> Architecture of a Robin call, read off live config:
+> https://claude.ai/code/artifact/44838694-1dd8-418d-a7e1-7e8d09bcbc93
 >
 > Then: delete `get_plan_details` together with its procedure reference, and chase the two audio
 > defects above.
