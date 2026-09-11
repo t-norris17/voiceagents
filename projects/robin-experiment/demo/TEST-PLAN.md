@@ -1,92 +1,68 @@
-# Three Days with Robin — tester protocol
+# Robin tester handout — the loan wave
 
-**Status:** submitted for approval 2026-09-11 ·
-**Published:** https://claude.ai/code/artifact/30f17d77-27f7-4c66-b730-b6a392347b78
-
-10 internal testers · 5 calls each · 3 business days · target ~45 survey responses.
+**Status:** draft for approval 2026-09-11 · replaces the 3-day protocol of the same date.
+**Wave:** ~25 testers · 3 to 5 calls each · every call is Marcus asking about a loan.
 
 ---
 
-## The two design decisions that shape everything
+## Who you are on every call
 
-1. **Testers are not given the expected answers.** They will not know what Marcus's loan balance is
-   supposed to be, so they *cannot* grade accuracy even if they want to — only whether the call felt
-   like being helped. This is what lets the plan honestly claim to isolate experience. Accuracy is a
-   separate later exercise against a graded question bank, run by us from the transcripts.
-2. **Scenarios spread across `plan_topic`.** The dashboard slices NPS and preference by subject, and
-   that slice is the highest-value thing in it. If every tester asks about loans it has one row and
-   says nothing. S1–S8 span loans, rollover_in, leaving_employer and contributions_vesting.
-
-## Profile — everyone calls as the same synthetic member
-
-One profile across all testers on purpose: holding the account constant means differences in what
-testers report are about Robin, not about which balance they were handed.
+You are **Marcus**, a made-up Vertex Manufacturing employee. Give *his* details when Robin verifies
+you, never your own.
 
 | | |
 |---|---|
-| Member ID | `90002` |
-| Date of birth | September 30, 1998 |
-| Plan | Vertex Manufacturing 401(k) |
-| Number | +1 833 573 9530 |
+| Call | **+1 833 573 9530** |
+| Full name | Marcus Bennett |
+| Member ID | **90002** |
+| Date of birth | **September 30, 1998** |
 
-Marcus is invented. No real member record is touched. Testers give *Marcus's* details when verifying,
-never their own name, DOB, SSN or account number.
+Robin will ask for your full name first, then Member ID and date of birth. She will never ask for a
+Social Security number. Use the same phone for all your calls so they group as yours.
 
-## Scenarios
+## Your calls
 
-S1 and S2 are run by everyone, for a common baseline. Each tester picks **three more** from S3–S8,
-**from different subjects**.
+Make **at least three** calls, up to five. Start with scenario 1 and go in order; a tester making
+three calls does 1, 2 and 3. Each call is one scenario. Open with the line as written, then ask the
+follow-ups in your own words. Talk the way you would to a person: pause, change your mind, interrupt.
 
-| # | Scenario | Topic | Opening line | Watching for |
-|---|---|---|---|---|
-| S1 | Check the loan balance | loans | "I wanted to check on my 401(k) loan." | The straightforward case. Service, or a lookup you could have done yourself? |
-| S2 | Ask for a second loan | loans | "I'm thinking about taking out another loan — can I do that?" | **The most important call in the set.** The answer is no. A well-delivered no is the hardest thing any service does, and whether it beats a hold queue is nearly the whole question. |
-| S3 | Buying a house | loans | "I'm looking at buying a house and wondering what my options are." | Vague, open-ended, no single right answer. Does she stay useful? |
-| S4 | Roll in an old account | rollover_in | "I've got a 401(k) from my last job — can I move it over?" | A process rather than a number. Do you know what to *do* next? |
-| S5 | What if I leave | leaving_employer | "If I took another job, what happens to my account — and my loan?" | Two things at once. Does she connect the loan to the leaving? |
-| S6 | Two numbers, one account | contributions_vesting | "There are two different balances — what's the difference?" | Explaining a concept, not reading a figure. |
-| S7 | Change what I'm putting in | contributions_vesting | "I want to change my contribution — and can I do Roth?" | Handed homework, or walked through it? Two requests in one breath. |
-| S8 | Just get me a person | handoff | "I'd rather just talk to a person." | The handoff. **Produces NO survey response by design** — the gate suppresses it on a transfer. Doesn't count toward the five. |
+| # | Scenario | Open with | Then ask |
+|---|---|---|---|
+| 1 | **How much can I borrow?** | "I'm looking at taking a loan out against my 401(k). How much could I get?" | What's the most I could borrow? What's the minimum? Does what I already have change that? |
+| 2 | **A loan for a house** | "We're trying to buy a house. Can I borrow from my 401(k) for the down payment?" | How long would I have to pay it back? Is it different because it's a house? How much would I need in the account to borrow twenty-five thousand? |
+| 3 | **What would it cost me?** | "If I took a loan, what does it actually cost me?" | What's the interest rate? Are there fees? Where does the interest go? How do I pay it back? |
+| 4 | **When can I take another one?** | "I've already got a loan. Can I take out a second one?" | When will my current one be paid off? How many payments are left? What do I have to do to get to the point where I can borrow again? |
+| 5 | **A loan, then a new job** | "If I take a loan and then leave Vertex, what happens?" | Would I have to pay it all back at once? What if I couldn't? Is there tax on that? |
 
-## Tester instructions
+## Curveballs
 
-**Do:** talk normally (trail off, change your mind, interrupt); use the same phone every time so calls
-group as yours; ask follow-ups; answer all four questions honestly, especially the *reason* for the
-0–10.
+Five questions Robin shouldn't be expecting. **Use at least three of them across your calls, one
+per call, no repeats.** Drop it in after she has answered your first question, then carry on with
+the scenario.
 
-**Don't:** try to break her (later phase); grade whether she's right (you don't have the answers);
-over-enunciate to help her along; give real personal information.
+| | Ask | Tick when used |
+|---|---|---|
+| A | "Honestly, should I do this? Is a loan a good idea for me?" | ☐ |
+| B | "Great. Just go ahead and start the loan for me right now." | ☐ |
+| C | "What's the exact rate today? What's prime right now?" | ☐ |
+| D | "Actually, forget the loan. If I quit next month, what happens to my account?" | ☐ |
+| E | "Can my spouse call in and set this up for me instead?" | ☐ |
 
-**Known and expected, don't report:** she can't go deep on specifics beyond balance and loan detail
-(that limit is the finding); a stray bracketed word; an occasional mispronunciation; "let me try that
-again" mid-lookup.
+## At the end of the call
 
-## Data handling
+Robin will say "Before I go, please answer the following questions" and ask four. Answer all four
+honestly, in your own words. The first one is the one we care most about; the two 0-to-10 ratings
+are different questions. If she asks whether you'd like to be connected to a person, you can say no
+and finish the call with her.
 
-Collected: call audio and transcript, the four survey answers including verbatim comments, call
-metadata, and the tester's phone number — genuine personal data, hashed to an anonymous respondent
-key for all reporting and never displayed.
+## Three rules
 
-Not collected: any real member data; any tester's own SSN/DOB/account. No production system is
-touched.
+1. **Don't grade her.** You haven't been given Marcus's numbers, so you can't tell whether a figure
+   is right. Judge only whether you felt helped.
+2. **Don't try to break her.** The curveballs are the stress test. Anything past that is a later
+   phase.
+3. **Nothing real.** Not your name, DOB, SSN or account. Every call is recorded and transcribed; you
+   are talking to an AI agent, and this handout is your notice of both.
 
-**Disclosure.** Every tester is told in advance and in writing that they are calling an AI agent and
-that the call is recorded. Robin does not state this herself in-call — a deliberate decision on
-leadership's recommendation (see `CLAUDE.md` → Settled decisions). Because the wave is internal and
-testers are briefed beforehand, no caller in this pilot is unaware of what they are speaking to.
-
-## Success criteria — a baseline, not a bar
-
-| Measure | Threshold for a valid wave |
-|---|---|
-| Survey responses | ≥ 40, across ≥ 8 testers |
-| Survey adherence | ≥ 70% of eligible calls |
-| Subject coverage | ≥ 4 of 5 subjects represented |
-| Preference | **Reported, not targeted.** This wave sets the baseline. |
-| Recommendation index | **Reported, not targeted**, and not comparable to a company-level NPS benchmark — it asks about an agent mid-task, a different question. |
-
-Committing to a score threshold at this sample size would be false precision and would put pressure
-on the result rather than the method.
-
-**The one result that invalidates the wave:** low adherence. If Robin isn't reliably asking, every
-other figure is drawn from a skewed slice. That gets reported as such rather than worked around.
+**Expected, don't report:** a stray mispronunciation, "let me try that again" during a lookup, and
+that she can't go deep beyond your balance and loan detail. That limit is one of the findings.
