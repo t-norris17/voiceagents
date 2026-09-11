@@ -165,18 +165,32 @@
                      letter-spacing:-.02em; margin-left:6px; }
   .svy-head-fig .vs{ font-size:.82rem; color:var(--sub); line-height:1.45; }
   .svy-head-fig .vs b{ color:var(--ink); }
-  /* NPS sits beside the ratio, deliberately smaller. It is a secondary reading of the same
-     responses, not a second headline, and it is a SIGNED INDEX (-100..+100) rather than a
-     percentage — hence the explicit sign and no % anywhere near it. */
-  .svy-nps{ margin-top:22px; padding-top:18px; border-top:1px solid var(--line);
-            display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }
-  .svy-nps .n{ font-size:clamp(1.8rem,4.6vw,2.5rem); font-weight:800; line-height:.9;
-               letter-spacing:-.03em; font-variant-numeric:tabular-nums; }
+  /* NPS. Four elements, each doing one job: what it is, the number, its composition, its counts.
+     The definition sits IN the label rather than in a sentence underneath, the diverging bar shows
+     the arithmetic the score performs (promoters one way, detractors the other, passives inert),
+     and a thin sample is expressed as a STATE the number is rendered in rather than a warning
+     paragraph beside it. The prose that used to live here was defending the number; the structure
+     should carry it instead. */
+  .svy-nps{ margin-top:24px; padding-top:18px; border-top:1px solid var(--line); max-width:34rem; }
+  .svy-nps .top{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
   .svy-nps .lab{ font-size:.6rem; letter-spacing:.16em; text-transform:uppercase;
                  color:var(--faint); font-weight:600; }
-  .svy-nps .split{ font-size:.78rem; color:var(--sub); line-height:1.45; }
-  .svy-nps .split b{ color:var(--ink); font-weight:700; }
-  .svy-nps .warnthin{ font-size:.72rem; color:var(--accent); font-weight:600; }
+  .svy-nps .prov{ font-size:.6rem; letter-spacing:.14em; text-transform:uppercase; font-weight:600;
+                  color:var(--faint); border:1px solid var(--line); padding:2px 7px; white-space:nowrap; }
+  .svy-nps .n{ font-size:clamp(2.4rem,6vw,3.2rem); font-weight:800; line-height:1;
+               letter-spacing:-.035em; font-variant-numeric:tabular-nums; margin-top:6px; }
+  .svy-nps.thin .n{ color:var(--sub); }
+  .svy-nps .band{ display:flex; height:9px; margin-top:14px; gap:2px; }
+  .svy-nps .band span{ display:block; }
+  .svy-nps .s-pro{ background:var(--nps-pro); }
+  .svy-nps .s-pas{ background:var(--nps-pas); }
+  .svy-nps .s-det{ background:var(--nps-det); }
+  .svy-nps .counts{ display:flex; flex-wrap:wrap; gap:4px 18px; margin-top:10px;
+                    font-size:.75rem; color:var(--sub); font-variant-numeric:tabular-nums; }
+  .svy-nps .counts span{ display:inline-flex; align-items:center; gap:6px; }
+  .svy-nps .counts i{ width:8px; height:8px; flex:none; }
+  .svy-nps .counts b{ color:var(--ink); font-weight:700; }
+  .svy-nps .counts .nn{ color:var(--faint); }
   .bar .b-agent{ background:var(--c-agent); }
   .bar .b-none{ background:var(--c-none); }
   .bar .b-person{ background:var(--c-person); }
@@ -240,7 +254,8 @@
      --c-none started as --line and was re-stepped twice: --line failed contrast (1.31:1) and
      --sub failed the dark normal-vision floor at ΔE 14.1, under the hard floor of 15.
      Colour never carries identity alone here — every mark is also directly labelled. */
-  :root{ --c-agent:#b8501e; --c-person:#2563a8; --c-none:#9a7d1e; }
+  :root{ --c-agent:#b8501e; --c-person:#2563a8; --c-none:#9a7d1e;
+         --nps-pro:#2E6B4F; --nps-pas:#B9B2A8; --nps-det:#A8322A; }
   /* One dot per respondent. The confidence band it replaces was answering "should we keep
      collecting?", which is our question, not leadership's, and it required reading a statistical
      construct to get there. Four dots look like four dots: nobody over-reads them, and nobody needs
@@ -258,10 +273,13 @@
   .dg-unclear{ background:transparent; box-shadow:0 0 0 2px var(--paper), inset 0 0 0 2px var(--faint); }
   .dg-cap{ font-size:.82rem; color:var(--sub); margin:2px 0 0; }
   @media (prefers-color-scheme: dark){
-    :root{ --c-agent:#cf7135; --c-person:#4f8ac2; --c-none:#ad8b2a; }
+    :root{ --c-agent:#cf7135; --c-person:#4f8ac2; --c-none:#ad8b2a;
+           --nps-pro:#68BE91; --nps-pas:#6E665C; --nps-det:#EC786E; }
   }
-  :root[data-theme="light"]{ --c-agent:#b8501e; --c-person:#2563a8; --c-none:#9a7d1e; }
-  :root[data-theme="dark"]{ --c-agent:#cf7135; --c-person:#4f8ac2; --c-none:#ad8b2a; }
+  :root[data-theme="light"]{ --c-agent:#b8501e; --c-person:#2563a8; --c-none:#9a7d1e;
+                             --nps-pro:#2E6B4F; --nps-pas:#B9B2A8; --nps-det:#A8322A; }
+  :root[data-theme="dark"]{ --c-agent:#cf7135; --c-person:#4f8ac2; --c-none:#ad8b2a;
+                            --nps-pro:#68BE91; --nps-pas:#6E665C; --nps-det:#EC786E; }
 
   /* ---- narrative ---- */
   .narr{ margin-top:30px; padding:20px 22px; border:1px solid var(--line); background:var(--hair); }
@@ -595,22 +613,27 @@
          </div>`
       : `<div class="empty">Nobody has answered the preference question yet.</div>`;
 
-    // NPS: promoters (9-10) minus detractors (0-6), as a share of everyone who gave a number.
-    // Passives (7-8) sit in the denominator and score nothing. Runs -100 to +100, so it is shown
-    // signed and never with a % — "+67%" would invite someone to read it as "67% of people".
-    const npsBlock = (nps.n||0) ? `
-      <div class="svy-nps">
-        <div>
-          <div class="lab">NPS</div>
-          <div class="n" style="color:${nps.score>0?"var(--c-agent)":nps.score<0?"var(--c-person)":"var(--sub)"}">${nps.score>0?"+":""}${nps.score}</div>
+    // Promoters (9-10) minus detractors (0-6) over everyone who scored. Passives (7-8) sit in the
+    // denominator and move nothing, which is what the inert middle segment shows.
+    const nTot = nps.n||0, seg = (c)=>nTot?`flex:${c} 0 0%`:"flex:0";
+    const npsBlock = nTot ? `
+      <div class="svy-nps${nTot<10?" thin":""}">
+        <div class="top">
+          <div class="lab">NPS &middot; promoters minus detractors</div>
+          ${nTot<10?`<div class="prov" title="At ${nTot} response${nTot===1?"":"s"} one answer moves this by about ${Math.round(100/nTot)} points">Provisional</div>`:``}
         </div>
-        <div class="split">
-          <b>${nps.promoters}</b> promoter${nps.promoters===1?"":"s"} (9&ndash;10),
-          <b>${nps.passives}</b> passive${nps.passives===1?"":"s"} (7&ndash;8),
-          <b>${nps.detractors}</b> detractor${nps.detractors===1?"":"s"} (0&ndash;6)
-          across <b>${nps.n}</b> scored response${nps.n===1?"":"s"}. Mean ${nps.mean}.<br>
-          A net index from &minus;100 to +100, not a percentage of anyone.
-          ${nps.n<10?`<span class="warnthin">At ${nps.n} response${nps.n===1?"":"s"} a single answer moves this by roughly ${Math.round(100/nps.n)} points &mdash; read it as direction, not a score.</span>`:``}
+        <div class="n">${nps.score>0?"+":""}${nps.score}</div>
+        <div class="band" role="img"
+             aria-label="${nps.promoters} promoters, ${nps.passives} passives, ${nps.detractors} detractors out of ${nTot} scored responses">
+          <span class="s-pro" style="${seg(nps.promoters)}"></span>
+          <span class="s-pas" style="${seg(nps.passives)}"></span>
+          <span class="s-det" style="${seg(nps.detractors)}"></span>
+        </div>
+        <div class="counts">
+          <span><i class="s-pro"></i><b>${nps.promoters}</b> promoter${nps.promoters===1?"":"s"}</span>
+          <span><i class="s-pas"></i><b>${nps.passives}</b> passive${nps.passives===1?"":"s"}</span>
+          <span><i class="s-det"></i><b>${nps.detractors}</b> detractor${nps.detractors===1?"":"s"}</span>
+          <span class="nn">n&thinsp;=&thinsp;${nTot}</span>
         </div>
       </div>` : "";
 
