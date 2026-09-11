@@ -60,15 +60,23 @@ vested, the gap being profit-sharing money short of its three-year cliff.
 outstanding, but I don't have the specific details like the balance, payment amount, or how much time
 is left on it" and transferred. That transfer is what this card now replaces.
 
-> **⚠️ OPEN DEFECT — the LOAN TRAP still fires generically.** On `conv_2701m268hce5e95990g5cx8htp24`
-> (2026-09-10) Scott asked to take a loan out as Marcus. Robin called `get_balance`, so she had
-> `outstanding_loan: true` in hand, and still answered *"You can only have one loan outstanding at a
-> time, so **if** you already have a loan, you'd need to pay that off first"* — the generic KB
-> sentence, with his actual situation left as a hypothetical. The true answer is that he cannot take
-> one right now because he already has one. Don't demo this question until it's fixed.
+> **⚠️ OPEN DEFECT — an interruption silently drops a tool call.** On
+> `conv_2701m268hce5e95990g5cx8htp24` (2026-09-10) Scott asked to take a loan out as Marcus. Robin
+> called `get_plan_details`, which hit its dead host and returned `{"found":false}`; she said
+> *"Let me try that again..."* and called `get_balance` — and that call came back
+> **`is_error: true, "Tool execution was abandoned due to user input"`, latency 0.** Scott had said
+> "Okay" while it was in flight, and the interruption killed it.
 >
-> Same call: `get_plan_details` fired against its dead host (`lumio-retirement.vercel.app`), failed,
-> and cost an audible *"Let me try that again..."* before she fell back to `get_balance`. Also open.
+> So she answered with **no account data at all**, giving the generic KB line *"so **if** you already
+> have a loan, you'd need to pay that off first"* — a hypothetical, when the account says he has one.
+> That reads as a LOAN TRAP failure and isn't: she never received `outstanding_loan`. **The real
+> defect is that she proceeded as if she had, rather than retrying or saying she couldn't check.**
+>
+> Practical effect for demos: a caller saying "okay" or "mhm" while Robin is mid-lookup can silently
+> strip her data. Stay quiet while she says she's checking something.
+>
+> Also open: `get_plan_details` still points at `lumio-retirement.vercel.app` and should be deleted
+> — `get_balance` supersedes it, and its only contribution here was four wasted seconds.
 
 ---
 
