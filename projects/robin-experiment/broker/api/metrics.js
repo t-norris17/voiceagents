@@ -105,6 +105,37 @@ export function summariseSurvey(opinions, calls) {
   const v1 = opinions.length - v2;
   const tally = (key, vals) => Object.fromEntries(vals.map((v) => [v, opinions.filter((r) => r[key] === v).length]));
 
+  // NPS over an arbitrary slice of responses. Same formula as the headline: promoters minus
+  // detractors over everyone who gave a number, as a signed index.
+  const npsOf = (rows) => {
+    const scored = rows.filter((r) => score(r.nps_score) !== null);
+    if (!scored.length) return null;
+    const b = (name) => scored.filter((r) => r.nps_band === name).length;
+    return {
+      n: scored.length, promoters: b("promoter"), passives: b("passive"), detractors: b("detractor"),
+      score: Math.round((b("promoter") / scored.length) * 100) - Math.round((b("detractor") / scored.length) * 100),
+    };
+  };
+
+  // THE SLICE THAT TELLS YOU WHAT TO DO ON MONDAY. An aggregate NPS says how it went; this says
+  // WHERE it went badly, which is the difference between a number and a work item. "+40 on balances,
+  // -20 on rollovers" names the next KB article. Topics with one or two responses are kept rather
+  // than hidden — the page shows n beside every score so a thin slice reads as thin.
+  const topics = [...new Set(opinions.map((r) => r.plan_topic).filter(Boolean))];
+  const by_topic = topics
+    .map((topic) => {
+      const rows = opinions.filter((r) => r.plan_topic === topic);
+      return {
+        topic,
+        responses: rows.length,
+        agent: rows.filter((r) => r.preference === "agent").length,
+        person: rows.filter((r) => r.preference === "person").length,
+        decided: rows.filter((r) => r.preference === "agent" || r.preference === "person").length,
+        nps: npsOf(rows),
+      };
+    })
+    .sort((a, b) => b.responses - a.responses || a.topic.localeCompare(b.topic));
+
   const prefs = tally("preference", ["agent", "person", "no_preference", "unclassified"]);
   const decided = prefs.agent + prefs.person + prefs.no_preference;
 
@@ -226,6 +257,13 @@ export function summariseSurvey(opinions, calls) {
     matrix,
     matrix_excluded_v1,
     promoter_but_prefers_person,
+    // The mirror of the line above, and the stronger argument of the two. Someone who scores Robin
+    // a 6 or below and would STILL rather use her than hold for a person is saying the thing no
+    // satisfaction number can: even when it disappoints me, I choose it. That is the deployment case.
+    detractor_but_prefers_agent: opinions.filter(
+      (r) => r.nps_band === "detractor" && r.preference === "agent"
+    ).length,
+    by_topic,
     // One entry per respondent, in the order they first answered. The page draws a dot per entry:
     // four respondents is four dots, sixty is sixty. Sample size becomes something you SEE rather
     // than something you compute off a confidence band, which is what the band was for and what

@@ -317,3 +317,45 @@ test("a clean call is not flagged", async () => {
   assert.equal(r.review.n, 0);
   assert.equal(r.verbatims[0].needs_review, false);
 });
+
+// The slice is the point of collecting plan_topic at all: an aggregate says how it went, this says
+// where. If grouping or the per-slice NPS is wrong, the page names the wrong KB article to write.
+test("NPS and preference slice by topic, with n attached to every slice", () => {
+  const r = summariseSurvey(
+    [person({ person_key: "P-1", plan_topic: "loans",     preference: "agent",  nps_score: 10, nps_band: "promoter" }),
+     person({ person_key: "P-2", plan_topic: "loans",     preference: "agent",  nps_score: 9,  nps_band: "promoter" }),
+     person({ person_key: "P-3", plan_topic: "rollover_in", preference: "person", nps_score: 4, nps_band: "detractor" }),
+     person({ person_key: "P-4", plan_topic: "rollover_in", preference: "agent",  nps_score: 3, nps_band: "detractor" })],
+    [call({}), call({}), call({}), call({})]
+  );
+  const loans = r.by_topic.find((s) => s.topic === "loans");
+  const roll  = r.by_topic.find((s) => s.topic === "rollover_in");
+  assert.equal(loans.responses, 2);
+  assert.equal(loans.nps.score, 100, "two promoters, no detractors");
+  assert.equal(roll.nps.score, -100, "two detractors, no promoters");
+  assert.equal(roll.agent, 1, "preference and NPS are independent within a slice");
+  assert.equal(roll.decided, 2);
+});
+
+// The deployment argument: someone who scores her badly and would still rather use her than hold.
+test("a detractor who still prefers Robin is counted, and is not the same as a promoter who does not", () => {
+  const r = summariseSurvey(
+    [person({ person_key: "P-1", nps_band: "detractor", nps_score: 4, preference: "agent" }),
+     person({ person_key: "P-2", nps_band: "promoter",  nps_score: 10, preference: "person" }),
+     person({ person_key: "P-3", nps_band: "detractor", nps_score: 2, preference: "person" })],
+    [call({}), call({}), call({})]
+  );
+  assert.equal(r.detractor_but_prefers_agent, 1, "P-1 only");
+  assert.equal(r.promoter_but_prefers_person, 1, "P-2 only — the warning cell, not this one");
+});
+
+test("a topic nobody was asked about does not appear as an empty slice", () => {
+  const r = summariseSurvey(
+    [person({ person_key: "P-1", plan_topic: "loans", preference: "agent" }),
+     person({ person_key: "P-2", plan_topic: null,    preference: "agent" })],
+    [call({}), call({})]
+  );
+  assert.equal(r.by_topic.length, 1);
+  assert.equal(r.by_topic[0].topic, "loans");
+  assert.equal(r.by_topic[0].nps, null, "no scores in the slice is null, never 0");
+});
