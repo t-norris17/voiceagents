@@ -42,6 +42,19 @@ phone number is assigned to the Main branch, not pinned to a version. Broker unc
   also publish the draft) was refused by the harness permission classifier, twice. Nothing on the
   live agent changed this session. Robin runs as she did this morning.
 
+- **Loans KB document updated live (2026-09-14)** — `omgR8I0aJlWd7BAUptbJ`, in place, same id, via
+  `agents_update_kb_document` with `content`. Two new sections: "Contributing while you have a loan"
+  (yes; match continues; repayments are a separate after-tax deduction) and "Paying a loan off early"
+  (full payoff, no penalty). Source of truth is now
+  [`kb/vertex/vertex-401k-loans.md`](./kb/vertex/vertex-401k-loans.md); `kb/vertex/README.md` maps
+  live ids to sources. **Verified from the far side:** the RAG index rebuilt on its own
+  (`last_updated 1789404496`, new chunk ids), and both sections are the top chunk for their
+  question. `agents_get_kb_dependents` shows Robin and the survey-test clone
+  (`agent_7401m1f4033qene9ybgt78d3saw4`) both use this document, so the clone got the change too.
+  One side effect: the document is now stored as markdown text where it used to be rendered HTML
+  (`content_format` still reads `html`); it chunks as one large block plus a tail rather than
+  several small ones. Retrieval works; watch `rag_retrieval_info` on the first live loan call.
+
 **What broke / surprised us**
 
 - **`transfer_to_number` points at `+13166807638`** — the same number that placed
