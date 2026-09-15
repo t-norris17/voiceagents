@@ -57,6 +57,21 @@
   .sect-h{ font-size:clamp(1.15rem,2.6vw,1.5rem); font-weight:800; letter-spacing:-.015em; line-height:1.15;
     color:var(--ink); margin:0; }
   .sect-h .qual{ font-weight:600; color:var(--sub); font-size:.62em; letter-spacing:0; }
+  /* ---- section-title tooltips: what the section shows, how to read it ---- */
+  .tipw{ position:relative; display:inline-block; vertical-align:baseline; margin-left:6px; }
+  .tip{ appearance:none; border:1px solid var(--line); background:transparent; color:var(--sub);
+        width:1.05em; height:1.05em; border-radius:50%; font:600 .55em/1 var(--sans); padding:0;
+        cursor:help; vertical-align:middle; display:inline-flex; align-items:center; justify-content:center; }
+  .tip:hover,.tip:focus-visible,.tipw.open .tip{ color:var(--ink); border-color:var(--sub); outline:none; }
+  .tip:focus-visible{ box-shadow:0 0 0 2px var(--accent); }
+  .tip-box{ position:absolute; left:0; top:calc(100% + 8px); z-index:20; width:min(34ch,80vw);
+            background:var(--paper); color:var(--ink); border:1px solid var(--line); border-radius:6px;
+            padding:10px 12px; font:400 .8rem/1.45 var(--sans); letter-spacing:0; text-align:left;
+            box-shadow:0 6px 18px rgba(0,0,0,.12); opacity:0; visibility:hidden; transition:opacity .12s; }
+  .tip-box b{ color:var(--sub); font-weight:600; }
+  .tip:hover + .tip-box,.tip:focus-visible + .tip-box,.tipw.open .tip-box{ opacity:1; visibility:visible; }
+  .shead .tip-box,.svy-head .tip-box{ left:auto; right:0; }
+  @media (prefers-reduced-motion:reduce){ .tip-box{ transition:none; } }
   .tabset{ display:flex; gap:18px; }
   .tabset button{ font:inherit; font-size:.66rem; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); background:none; border:0; padding:0 0 4px; cursor:pointer; border-bottom:2px solid transparent; }
   .tabset button[aria-pressed="true"]{ color:var(--ink); border-bottom-color:var(--ink); }
@@ -448,7 +463,7 @@
   <section id="svysec" hidden>
     <div class="shead svy-head">
       <h2 class="sect-h">Would they rather use Robin?
-        <span class="qual" id="svymeta"></span></h2>
+        <span class="qual" id="svymeta"></span><span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-svy">?</button><span class="tip-box" role="tooltip" id="tip-svy"><b>What it shows.</b> How many responses chose Robin over holding for a person, with a 95% interval. The recommendation bar splits promoters (9–10), passives (7–8) and detractors (0–6). Every topic row carries its n.<br><br><b>How to read it.</b> A winner is called only when the interval clears 50%. Read whether it says “holds,” not the decimal. Responses, not people: one tester with five calls is five responses.</span></span></h2>
       <span class="svy-tag">Test instrument</span>
     </div>
     <div id="svy"></div>
@@ -456,7 +471,7 @@
 
   <section id="revsec" hidden>
     <hr class="rule">
-    <div class="shead"><h2 class="sect-h">Needs review</h2></div>
+    <div class="shead"><h2 class="sect-h">Needs review<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-rev">?</button><span class="tip-box" role="tooltip" id="tip-rev"><b>What it shows.</b> Calls with negative sentiment or a low score, each opening to its transcript.<br><br><b>How to read it.</b> Read these first. An empty list on a small sample means nothing.</span></span></h2></div>
     <p class="svy-lede">Calls where the caller sounded unhappy or scored Robin low. Open a row to read
       the transcript.</p>
     <div id="rev"></div>
@@ -468,7 +483,7 @@
 
   <section id="mxsec" hidden>
     <hr class="rule">
-    <div class="shead"><h2 class="sect-h">Recommendation vs. preference</h2></div>
+    <div class="shead"><h2 class="sect-h">Recommendation vs. preference<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-mx">?</button><span class="tip-box" role="tooltip" id="tip-mx"><b>What it shows.</b> The score bucket someone gave Robin against what they said they would choose next time.<br><br><b>How to read it.</b> The diagonal is expected. A promoter who still wants a person: trust isn’t there yet. A detractor who would still use Robin: convenience beats the flaws.</span></span></h2></div>
     <p class="svy-lede">What each person scored Robin, against what they would actually choose next
       time. The cell to watch is a high score that still wants a person.</p>
     <div class="mx" id="mx"></div>
@@ -476,13 +491,13 @@
 
   <section id="thmsec" hidden>
     <hr class="rule">
-    <div class="shead"><h2 class="sect-h">Themes</h2></div>
+    <div class="shead"><h2 class="sect-h">Themes<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-thm">?</button><span class="tip-box" role="tooltip" id="tip-thm"><b>What it shows.</b> Free-text answers clustered by a model into at most six themes, named in callers’ own words, one quote and the calls behind each. It won’t run until there are enough comments.<br><br><b>How to read it.</b> Two comments is two people. Click through to the calls.</span></span></h2></div>
     <div id="thm"></div>
   </section>
 
   <section id="cmsec" hidden>
     <hr class="rule">
-    <div class="shead"><h2 class="sect-h">Written comments</h2></div>
+    <div class="shead"><h2 class="sect-h">Written comments<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-cm">?</button><span class="tip-box" role="tooltip" id="tip-cm"><b>What it shows.</b> Every comment, verbatim, one per call. Personal details are scrubbed; a marker shows where.<br><br><b>How to read it.</b> Read all of them.</span></span></h2></div>
     <p class="svy-lede">Everything people said in their own words, unedited. Listed per call, so someone
       who called twice appears twice.</p>
     <div id="cm"></div>
@@ -490,7 +505,7 @@
 
   <section id="cumsec" hidden>
     <hr class="rule">
-    <div class="shead"><h2 class="sect-h">Confidence and sample size</h2></div>
+    <div class="shead"><h2 class="sect-h">Confidence and sample size<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-cum">?</button><span class="tip-box" role="tooltip" id="tip-cum"><b>What it shows.</b> The preference share redrawn one respondent at a time, with its 95% band.<br><br><b>How to read it.</b> The result is callable once the band stops crossing 50%. At n=30 a 60/40 is noise.</span></span></h2></div>
     <p class="svy-lede">Whether enough people have answered to call the result. Each step is one more
       respondent, not one more day.</p>
     <div class="cum" id="cum"></div>
@@ -498,7 +513,7 @@
 
   <section id="asksec" hidden>
     <hr class="rule">
-    <div class="shead"><h2 class="sect-h">Ask a question</h2></div>
+    <div class="shead"><h2 class="sect-h">Ask a question<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-ask">?</button><span class="tip-box" role="tooltip" id="tip-ask"><b>What it shows.</b> Plain-English questions answered only from these survey rows, with the calls cited. It says when it can’t answer.<br><br><b>How to read it.</b> Test a hunch, then open the cited calls. It sees nothing outside the survey.</span></span></h2></div>
     <p class="svy-lede">Answers come only from these responses, with the calls cited. If the data cannot
       answer, it says so.</p>
     <form class="ask-form" id="askform">
@@ -512,7 +527,7 @@
 
   <section id="clsec" hidden>
     <hr class="rule">
-    <div class="shead"><h2 class="sect-h">Individual calls</h2></div>
+    <div class="shead"><h2 class="sect-h">Individual calls<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-cl">?</button><span class="tip-box" role="tooltip" id="tip-cl"><b>What it shows.</b> Every answered call, newest first, repeats included, each opening to its transcript.<br><br><b>How to read it.</b> The audit trail. Anyone who answered differently on a later call is found here.</span></span></h2></div>
     <p class="svy-lede">Every answered call, repeats included. Open a row to read the transcript.</p>
     <div class="srt" id="srt"></div>
     <div class="cl" id="cl"></div>
@@ -520,7 +535,7 @@
 
   <section id="dlsec" hidden>
     <hr class="rule">
-    <div class="shead"><h2 class="sect-h">Downloads</h2></div>
+    <div class="shead"><h2 class="sect-h">Downloads<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-dl">?</button><span class="tip-box" role="tooltip" id="tip-dl"><b>What it shows.</b> The people file is one row per respondent and the basis of every figure on this page. The calls file includes repeats.<br><br><b>How to read it.</b> Start from the people file to check the page.</span></span></h2></div>
     <div class="dl">
       <a href="/api/survey-export?level=people">Download responses (CSV)</a>
       <a class="sec" href="/api/survey-export?level=calls">Every call (CSV)</a>
@@ -1088,6 +1103,18 @@
   initAsk(); initCalls();
   load();
   setInterval(load, 60000);
+</script>
+<script>
+  // Tap-to-toggle for the section tooltips (hover and focus are pure CSS). One open at a time;
+  // Escape or a tap anywhere else closes it.
+  (function(){
+    const close=()=>document.querySelectorAll(".tipw.open").forEach(w=>w.classList.remove("open"));
+    document.addEventListener("click",e=>{
+      const b=e.target.closest(".tip"); const wasOpen=b&&b.parentElement.classList.contains("open");
+      close(); if(b&&!wasOpen) b.parentElement.classList.add("open");
+    });
+    document.addEventListener("keydown",e=>{ if(e.key==="Escape") close(); });
+  })();
 </script>
 </body>
 </html>
