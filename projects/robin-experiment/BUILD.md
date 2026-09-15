@@ -55,6 +55,23 @@ phone number is assigned to the Main branch, not pinned to a version. Broker unc
   (`content_format` still reads `html`); it chunks as one large block plus a tail rather than
   several small ones. Retrieval works; watch `rag_retrieval_info` on the first live loan call.
 
+- **Survey dashboard reworked for a cold reader (2026-09-15)** — `broker/public/survey/index.html`,
+  on the branch, **not promoted**. Order is answer → reasons → proof: hero, then the score-vs-choice
+  grid (retitled, with the changed-mind and detractor-who-prefers-Robin lines under it), Needs
+  review, **What people said** (themes and comments merged: each theme is a `<details>` whose body
+  is the comments behind it, unplaced comments under "Other comments", plain list until themes are
+  ready), **Is the sample big enough?** (adherence line moved here from the hero; section now
+  renders below 20 respondents with a "chart appears at 20" note), Every call, Downloads. Every
+  section title carries a "?" tooltip with "what it shows / how to read it"; the dot grid has its
+  own ("Each dot represents one call"). **Ask a question** is a floating bottom-right button that
+  opens a panel; same endpoint and gate. Dropped as fluff: the "Test instrument" tag, the model
+  narrative paragraph, the adherence and response-rate hero tiles, both retired-scale footnotes,
+  the "Unclear" prose under the grid, the repeat-caller count, the dot-order caption. Voice now
+  sits beside NPS with the same thin-sample state. Verified by rendering with a 25-call fixture
+  served over local HTTP (Playwright routes do not intercept `file://` fetches, and a catch-all
+  route registered last shadows specific ones); tests 50/50. Reader's guide
+  (`survey/READING-THE-DASHBOARD.md` and the published page) updated to the new section names.
+
 **What broke / surprised us**
 
 - **`transfer_to_number` points at `+13166807638`** — the same number that placed

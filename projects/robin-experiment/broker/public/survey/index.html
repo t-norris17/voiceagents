@@ -168,8 +168,6 @@
   /* ---- SURVEY (temporary; delete this block with the instrument) ------------------------- */
   .svy{ margin-top:10px; }
   .svy-head{ display:flex; align-items:baseline; justify-content:space-between; gap:14px; }
-  .svy-tag{ font-size:.6rem; letter-spacing:.16em; text-transform:uppercase; color:var(--faint); font-weight:600;
-    border:1px solid var(--line); padding:2px 7px; white-space:nowrap; }
   .svy-lede{ font-size:.82rem; color:var(--sub); margin:12px 0 0; max-width:56ch; line-height:1.5; }
   .svy-head-fig{ display:flex; align-items:baseline; gap:14px; margin-top:22px; }
   .svy-head-fig .fig{ font-size:clamp(3rem,9vw,4.4rem); font-weight:800; line-height:.85; letter-spacing:-.035em; }
@@ -212,10 +210,6 @@
   .key .k-agent i{ background:var(--c-agent); } .key .k-none i{ background:var(--c-none); } .key .k-person i{ background:var(--c-person); }
   .svy-moe{ font-size:.72rem; color:var(--faint); margin-top:10px; line-height:1.5; }
   .svy-moe b{ color:var(--sub); font-weight:600; }
-  .svy-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:0; margin-top:30px;
-    border-top:1px solid var(--line); }
-  @media (max-width:620px){ .svy-grid{ grid-template-columns:repeat(2,1fr); } .svy-m{ padding-left:16px; border-left:1px solid var(--line); }
-    .svy-m:nth-child(odd){ padding-left:0; border-left:0; } }
   /* The topic slice. Deliberately a plain table and not a chart: the reader's job here is to find
      the worst row, which a sorted column does faster than any bar. */
   .svy-topic{ margin-top:28px; border-top:1px solid var(--line); padding-top:16px; }
@@ -231,12 +225,6 @@
   .svy-topic .thin{ color:var(--faint); font-size:.72rem; }
   .svy-foot{ font-size:.8rem; color:var(--sub); margin-top:18px; line-height:1.55; max-width:62ch; }
   .svy-foot b{ color:var(--accent); font-weight:700; }
-  .svy-m{ padding:16px 16px 4px; border-left:1px solid var(--line); }
-  .svy-m:first-child{ padding-left:0; border-left:0; }
-  .svy-m .n{ font-size:1.7rem; font-weight:800; letter-spacing:-.02em; line-height:1; }
-  .svy-m .n .un{ font-size:.8rem; font-weight:600; color:var(--sub); margin-left:2px; letter-spacing:0; }
-  .svy-m .cap{ font-size:.72rem; color:var(--sub); margin-top:9px; line-height:1.45; }
-  .svy-m.warn .n{ color:var(--accent); }
   .svy-alarm{ font-size:.78rem; color:var(--accent); font-weight:600; border:1px solid var(--accent);
     padding:11px 14px; margin-top:24px; line-height:1.5; }
   .svy-cm{ margin-top:30px; padding-top:18px; border-top:1px solid var(--line); }
@@ -286,7 +274,6 @@
      indistinguishable from the others under CVD, and "we could not read this answer" is an absence,
      which is what a hollow mark says. */
   .dg-unclear{ background:transparent; box-shadow:0 0 0 2px var(--paper), inset 0 0 0 2px var(--faint); }
-  .dg-cap{ font-size:.82rem; color:var(--sub); margin:2px 0 0; }
   @media (prefers-color-scheme: dark){
     :root{ --c-agent:#cf7135; --c-person:#4f8ac2; --c-none:#ad8b2a;
            --nps-pro:#68BE91; --nps-pas:#6E665C; --nps-det:#EC786E; }
@@ -295,12 +282,6 @@
                              --nps-pro:#2E6B4F; --nps-pas:#B9B2A8; --nps-det:#A8322A; }
   :root[data-theme="dark"]{ --c-agent:#cf7135; --c-person:#4f8ac2; --c-none:#ad8b2a;
                             --nps-pro:#68BE91; --nps-pas:#6E665C; --nps-det:#EC786E; }
-
-  /* ---- narrative ---- */
-  .narr{ margin-top:30px; padding:20px 22px; border:1px solid var(--line); background:var(--hair); }
-  .narr p{ margin:0; font-size:.95rem; line-height:1.62; max-width:64ch; }
-  .narr .src{ font-size:.66rem; text-transform:uppercase; letter-spacing:.14em; color:var(--faint); font-weight:600; margin-bottom:11px; }
-  .narr.pending p{ color:var(--sub); font-size:.86rem; }
 
   /* ---- cross-tab matrix ---- */
   .mx{ margin-top:18px; }
@@ -337,6 +318,8 @@
   .cum text.fiftyl{ fill:var(--c-person); font-weight:600; }
   .cum .pt{ fill:var(--c-agent); }
   .cum-note{ font-size:.78rem; color:var(--sub); margin-top:12px; line-height:1.5; max-width:62ch; }
+  .cum-note b{ color:var(--ink); }
+  .cum-note.alarm{ border:1px solid var(--accent); padding:10px 12px; }
 
   /* ---- needs review ---- */
   .rev{ border:1px solid var(--accent); margin-top:6px; }
@@ -448,6 +431,51 @@
     .ask-form{ flex-direction:column; }
     .ask-form button{ padding:12px; }
   }
+
+  /* ---- rework 2026-09-15: plain ledes, voice beside NPS, merged comments, floating ask ---- */
+  .svy-stats{ display:grid; grid-template-columns:minmax(0,34rem) minmax(0,14rem); gap:0 32px; align-items:start; }
+  @media (max-width:620px){ .svy-stats{ grid-template-columns:1fr; } }
+  .svy-voice{ margin-top:24px; padding-top:18px; border-top:1px solid var(--line); }
+  .svy-voice .lab{ font-size:.6rem; letter-spacing:.16em; text-transform:uppercase; color:var(--faint); font-weight:600; }
+  .svy-voice .n{ font-size:clamp(2.4rem,6vw,3.2rem); font-weight:800; line-height:1; letter-spacing:-.035em; font-variant-numeric:tabular-nums; margin-top:6px; }
+  .svy-voice .n .un{ font-size:1rem; font-weight:600; color:var(--sub); letter-spacing:0; margin-left:2px; }
+  .svy-voice .counts{ margin-top:10px; font-size:.75rem; color:var(--sub); }
+  .svy-voice.thin .n{ color:var(--sub); }
+  .dg-tipw{ margin-left:4px; align-self:center; font-size:.85rem; }
+  .dg-tipw .tip{ width:1.3em; height:1.3em; }
+  .dotgrid .tip-box{ left:auto; right:0; }
+  .said-meta{ font-size:.72rem; color:var(--sub); margin:8px 0 10px; }
+  .said-meta .accent{ color:var(--accent); }
+  details.thm-i{ padding:0; }
+  details.thm-i > summary{ list-style:none; cursor:pointer; padding:15px 0; }
+  details.thm-i > summary::-webkit-details-marker{ display:none; }
+  details.thm-i > summary:focus-visible{ outline:2px solid var(--accent); outline-offset:-2px; }
+  details.thm-i > summary .thm-lab::before{ content:"▸ "; color:var(--faint); font-size:.8em; }
+  details.thm-i[open] > summary .thm-lab::before{ content:"▾ "; }
+  .thm-body{ padding:0 0 16px 18px; }
+  .thm-body .svy-cmt{ font-size:.86rem; }
+  .said-rest{ margin-top:18px; }
+  .said-rest .lbl{ margin-bottom:6px; }
+  .askfab{ position:fixed; right:22px; bottom:22px; z-index:60; display:inline-flex; align-items:center; gap:10px;
+    font:inherit; font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; font-weight:700;
+    background:var(--ink); color:var(--paper); border:1px solid var(--ink); border-radius:999px; padding:11px 18px 11px 12px;
+    cursor:pointer; box-shadow:0 8px 24px rgba(0,0,0,.18); }
+  .askfab[hidden]{ display:none; }
+  .askfab:hover{ background:var(--accent); border-color:var(--accent); }
+  .askfab:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+  .askfab-i{ display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%;
+    background:var(--paper); color:var(--ink); font-size:.8rem; font-weight:800; }
+  .askpanel{ position:fixed; right:22px; bottom:78px; z-index:60; width:min(420px,calc(100vw - 32px)); max-height:min(70vh,640px);
+    overflow-y:auto; background:var(--paper); color:var(--ink); border:1px solid var(--ink); box-shadow:0 14px 40px rgba(0,0,0,.22);
+    padding:16px 18px 20px; }
+  .askpanel[hidden]{ display:none; }
+  .askpanel-h{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding-bottom:10px; border-bottom:2px solid var(--ink); }
+  .askpanel-h .t{ font-size:.85rem; font-weight:800; text-transform:uppercase; letter-spacing:.03em; }
+  .askpanel-lede{ font-size:.78rem; color:var(--sub); margin:10px 0 0; line-height:1.5; }
+  .askpanel .ask-form{ flex-direction:column; }
+  .askpanel .ask-form button{ padding:11px; }
+  .askpanel .ask-out{ margin-top:14px; padding:13px 14px; }
+  @media (max-width:560px){ .askfab{ right:14px; bottom:14px; } .askpanel{ right:14px; bottom:68px; } }
 </style>
 </head>
 <body>
@@ -463,87 +491,55 @@
   <section id="svysec" hidden>
     <div class="shead svy-head">
       <h2 class="sect-h">Would they rather use Robin?
-        <span class="qual" id="svymeta"></span><span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-svy">?</button><span class="tip-box" role="tooltip" id="tip-svy"><b>What it shows.</b> How many responses chose Robin over holding for a person, with a 95% interval. The recommendation bar splits promoters (9–10), passives (7–8) and detractors (0–6). Every topic row carries its n.<br><br><b>How to read it.</b> A winner is called only when the interval clears 50%. Read whether it says “holds,” not the decimal. Responses, not people: one tester with five calls is five responses.</span></span></h2>
-      <span class="svy-tag">Test instrument</span>
+        <span class="qual" id="svymeta"></span><span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-svy">?</button><span class="tip-box" role="tooltip" id="tip-svy"><b>What it shows.</b> How many responses chose Robin over holding for a person, with a 95% range. Transferred calls and failed verifications are excluded. The recommendation bar splits promoters (9–10), passives (7–8) and detractors (0–6). Voice is the average 0–10 rating.<br><br><b>How to read it.</b> A winner is called only when the range clears 50%. Read whether it says “holds,” not the decimal. Responses, not people: one tester with five calls is five responses.</span></span></h2>
     </div>
     <div id="svy"></div>
   </section>
 
-  <section id="revsec" hidden>
-    <hr class="rule">
-    <div class="shead"><h2 class="sect-h">Needs review<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-rev">?</button><span class="tip-box" role="tooltip" id="tip-rev"><b>What it shows.</b> Calls with negative sentiment or a low score, each opening to its transcript.<br><br><b>How to read it.</b> Read these first. An empty list on a small sample means nothing.</span></span></h2></div>
-    <p class="svy-lede">Calls where the caller sounded unhappy or scored Robin low. Open a row to read
-      the transcript.</p>
-    <div id="rev"></div>
-  </section>
-
-  <section id="narrsec" hidden>
-    <div id="narr"></div>
-  </section>
-
   <section id="mxsec" hidden>
     <hr class="rule">
-    <div class="shead"><h2 class="sect-h">Recommendation vs. preference<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-mx">?</button><span class="tip-box" role="tooltip" id="tip-mx"><b>What it shows.</b> The score bucket someone gave Robin against what they said they would choose next time.<br><br><b>How to read it.</b> The diagonal is expected. A promoter who still wants a person: trust isn’t there yet. A detractor who would still use Robin: convenience beats the flaws.</span></span></h2></div>
-    <p class="svy-lede">What each person scored Robin, against what they would actually choose next
-      time. The cell to watch is a high score that still wants a person.</p>
+    <div class="shead"><h2 class="sect-h">Score vs. what they’d choose<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-mx">?</button><span class="tip-box" role="tooltip" id="tip-mx"><b>What it shows.</b> The 0–10 score someone gave Robin against what they said they would choose next time. One dot per call.<br><br><b>How to read it.</b> The diagonal is expected. A promoter who still wants a person: trust isn’t there yet. A detractor who would still use Robin: convenience beats the flaws.</span></span></h2></div>
+    <p class="svy-lede">The score they gave against the choice they’d make. Watch the two corners.</p>
     <div class="mx" id="mx"></div>
   </section>
 
-  <section id="thmsec" hidden>
+  <section id="revsec" hidden>
     <hr class="rule">
-    <div class="shead"><h2 class="sect-h">Themes<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-thm">?</button><span class="tip-box" role="tooltip" id="tip-thm"><b>What it shows.</b> Free-text answers clustered by a model into at most six themes, named in callers’ own words, one quote and the calls behind each. It won’t run until there are enough comments.<br><br><b>How to read it.</b> Two comments is two people. Click through to the calls.</span></span></h2></div>
-    <div id="thm"></div>
+    <div class="shead"><h2 class="sect-h">Needs review<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-rev">?</button><span class="tip-box" role="tooltip" id="tip-rev"><b>What it shows.</b> Calls with negative sentiment or a score of 6 or below, each opening to its transcript.<br><br><b>How to read it.</b> Read these first. An empty list on a small sample means nothing.</span></span></h2></div>
+    <p class="svy-lede">Calls that went badly. Click one to read it.</p>
+    <div id="rev"></div>
   </section>
 
-  <section id="cmsec" hidden>
+  <section id="saidsec" hidden>
     <hr class="rule">
-    <div class="shead"><h2 class="sect-h">Written comments<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-cm">?</button><span class="tip-box" role="tooltip" id="tip-cm"><b>What it shows.</b> Every comment, verbatim, one per call. Personal details are scrubbed; a marker shows where.<br><br><b>How to read it.</b> Read all of them.</span></span></h2></div>
-    <p class="svy-lede">Everything people said in their own words, unedited. Listed per call, so someone
-      who called twice appears twice.</p>
-    <div id="cm"></div>
+    <div class="shead"><h2 class="sect-h">What people said<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-said">?</button><span class="tip-box" role="tooltip" id="tip-said"><b>What it shows.</b> Every written comment, verbatim, one per call, grouped under themes a model found once there are enough comments. Each theme carries one quote; open it to read the comments behind it. Personal details are scrubbed.<br><br><b>How to read it.</b> Two comments is two people. The themes are an index, not a finding; the comments are the evidence.</span></span></h2></div>
+    <p class="svy-lede">In their own words.</p>
+    <div id="said"></div>
   </section>
 
   <section id="cumsec" hidden>
     <hr class="rule">
-    <div class="shead"><h2 class="sect-h">Confidence and sample size<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-cum">?</button><span class="tip-box" role="tooltip" id="tip-cum"><b>What it shows.</b> The preference share redrawn one respondent at a time, with its 95% band.<br><br><b>How to read it.</b> The result is callable once the band stops crossing 50%. At n=30 a 60/40 is noise.</span></span></h2></div>
-    <p class="svy-lede">Whether enough people have answered to call the result. Each step is one more
-      respondent, not one more day.</p>
+    <div class="shead"><h2 class="sect-h">Is the sample big enough?<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-cum">?</button><span class="tip-box" role="tooltip" id="tip-cum"><b>What it shows.</b> How often Robin actually asked the survey, and the headline share redrawn one respondent at a time with its 95% range. The chart appears at 20 respondents.<br><br><b>How to read it.</b> The result is callable once the shaded band stops crossing 50%. At n=30 a 60/40 is noise. If Robin asked on fewer than 70% of eligible calls, every figure above rests on a biased slice.</span></span></h2></div>
+    <p class="svy-lede">Whether the headline can be trusted yet.</p>
     <div class="cum" id="cum"></div>
-  </section>
-
-  <section id="asksec" hidden>
-    <hr class="rule">
-    <div class="shead"><h2 class="sect-h">Ask a question<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-ask">?</button><span class="tip-box" role="tooltip" id="tip-ask"><b>What it shows.</b> Plain-English questions answered only from these survey rows, with the calls cited. It says when it can’t answer.<br><br><b>How to read it.</b> Test a hunch, then open the cited calls. It sees nothing outside the survey.</span></span></h2></div>
-    <p class="svy-lede">Answers come only from these responses, with the calls cited. If the data cannot
-      answer, it says so.</p>
-    <form class="ask-form" id="askform">
-      <input id="askq" type="text" maxlength="500" autocomplete="off"
-             placeholder="e.g. Did anyone who preferred a person say why?" aria-label="Ask a question about the survey data">
-      <button type="submit" id="asksend">Ask</button>
-    </form>
-    <div class="ask-eg" id="askeg"></div>
-    <div id="askout"></div>
   </section>
 
   <section id="clsec" hidden>
     <hr class="rule">
-    <div class="shead"><h2 class="sect-h">Individual calls<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-cl">?</button><span class="tip-box" role="tooltip" id="tip-cl"><b>What it shows.</b> Every answered call, newest first, repeats included, each opening to its transcript.<br><br><b>How to read it.</b> The audit trail. Anyone who answered differently on a later call is found here.</span></span></h2></div>
-    <p class="svy-lede">Every answered call, repeats included. Open a row to read the transcript.</p>
+    <div class="shead"><h2 class="sect-h">Every call<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-cl">?</button><span class="tip-box" role="tooltip" id="tip-cl"><b>What it shows.</b> Every answered call, newest first, repeats included, each opening to its transcript.<br><br><b>How to read it.</b> The audit trail. Anyone who answered differently on a later call is found here.</span></span></h2></div>
+    <p class="svy-lede">Click a call to read it.</p>
     <div class="srt" id="srt"></div>
     <div class="cl" id="cl"></div>
   </section>
 
   <section id="dlsec" hidden>
     <hr class="rule">
-    <div class="shead"><h2 class="sect-h">Downloads<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-dl">?</button><span class="tip-box" role="tooltip" id="tip-dl"><b>What it shows.</b> The people file is one row per respondent and the basis of every figure on this page. The calls file includes repeats.<br><br><b>How to read it.</b> Start from the people file to check the page.</span></span></h2></div>
+    <div class="shead"><h2 class="sect-h">Downloads<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-dl">?</button><span class="tip-box" role="tooltip" id="tip-dl"><b>What it shows.</b> The people file is one row per respondent and the basis of every figure on this page. The calls file includes repeats. Comments that tripped the personal-data scan are absent from both.<br><br><b>How to read it.</b> Start from the people file to check the page.</span></span></h2></div>
     <div class="dl">
       <a href="/api/survey-export?level=people">Download responses (CSV)</a>
       <a class="sec" href="/api/survey-export?level=calls">Every call (CSV)</a>
       <a class="sec" href="/survey/slide/">Presentation slide</a>
     </div>
-    <p class="dl-note">The people file is one row per respondent and is the basis of every figure on
-      this page. The calls file includes repeats, for anyone checking the per-person counts. Comments that tripped
-      the personal-data scan are absent from both by design.</p>
   </section>
 
   <footer>
@@ -560,6 +556,24 @@
     </div>
     <div id="drwbody"></div>
   </div>
+</div>
+
+<button class="askfab" id="askfab" type="button" aria-expanded="false" aria-controls="askpanel" hidden>
+  <span class="askfab-i" aria-hidden="true">?</span> Ask the data
+</button>
+<div class="askpanel" id="askpanel" role="dialog" aria-label="Ask a question about the survey data" hidden>
+  <div class="askpanel-h">
+    <span class="t">Ask the data</span>
+    <button class="drw-x" id="askx" type="button">Close</button>
+  </div>
+  <p class="askpanel-lede">Answers come only from the survey responses, with the calls cited. If they can’t answer, it says so.</p>
+  <form class="ask-form" id="askform">
+    <input id="askq" type="text" maxlength="500" autocomplete="off"
+           placeholder="Did anyone who preferred a person say why?" aria-label="Ask a question about the survey data">
+    <button type="submit" id="asksend">Ask</button>
+  </form>
+  <div class="ask-eg" id="askeg"></div>
+  <div id="askout"></div>
 </div>
 <script>
   const esc=(s)=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -652,17 +666,25 @@
         </div>
       </div>` : "";
 
-    // One dot per respondent, in the order they answered.
+    // Voice sits beside NPS: same scale, same thin-sample treatment.
+    const voiceBlock = voice.n ? `
+      <div class="svy-voice${voice.n<10?" thin":""}">
+        <div class="lab">Voice &middot; how natural, 0&ndash;10</div>
+        <div class="n">${voice.mean}<span class="un">/10</span></div>
+        <div class="counts">n&thinsp;=&thinsp;${voice.n}${voice.unparsed?` &middot; ${voice.unparsed} answered in words`:""}</div>
+      </div>` : "";
+
+    // One dot per call. Order carries nothing a reader needs; the tooltip says what a dot is.
     const dotList=(s.dots||[]);
     const dgClass={agent:"dg-agent",person:"dg-person",no_preference:"dg-none"};
     const dotGrid = dotList.length ? `
       <div class="dotgrid" role="img"
-           aria-label="One dot per response: ${p.agent} prefer Robin, ${p.person} prefer a person, ${p.no_preference} no preference, out of ${dotList.length} responses">
+           aria-label="One dot per call: ${p.agent} prefer Robin, ${p.person} prefer a person, ${p.no_preference} no preference, out of ${dotList.length} calls">
         ${dotList.map(d=>`<span class="dg ${dgClass[d.preference]||"dg-unclear"}" title="${esc(d.respondent||("Respondent "+d.n))} &middot; ${
           d.preference==="agent"?"prefers Robin":d.preference==="person"?"prefers a person":
           d.preference==="no_preference"?"no preference":"answer unclear"}"></span>`).join("")}
-      </div>
-      <p class="dg-cap">Each dot is one response, in the order they were given.</p>` : "";
+        <span class="tipw dg-tipw"><button type="button" class="tip" aria-label="About the dots" aria-describedby="tip-dots">?</button><span class="tip-box" role="tooltip" id="tip-dots">Each dot represents one call. Hover a dot for that caller&rsquo;s answer. A hollow dot is an answer that could not be read as a preference.</span></span>
+      </div>` : "";
 
     const pc=(n)=>decided?((n/decided)*100).toFixed(2)+"%":"0%";
     const bar = decided ? `
@@ -679,23 +701,18 @@
       <div class="svy-moe">
         With ${decided} response${decided===1?"":"s"}, the true figure is between <b>${ci.lo}% and ${ci.hi}%</b>.
         ${settled
-          ? `That clears 50%, so the preference holds at this sample size.`
+          ? `That clears 50%, so the preference <b>holds</b> at this sample size.`
           : `That still spans 50%, so it is <b>not yet conclusive</b>.`}
-        Every answered call counts as one response, because each tests a different scenario.${
-        s.repeat_callers?` ${s.repeat_callers} ${s.repeat_callers===1?"person":"people"} answered on more than one call.`:``}
       </div>` : "";
 
-    // Sliced by what the caller actually asked about. The aggregate tells you how it went; this
-    // tells you where, which is the difference between a number and a decision.
+    // Sliced by what the caller asked about.
     const TOPIC_LABEL = { loans:"Loans", rollover_in:"Rolling money in", leaving_employer:"Leaving the employer",
                           contributions_vesting:"Contributions & vesting", other:"Other" };
     const slices = s.by_topic||[];
     const topicBlock = slices.length ? `
       <div class="svy-topic">
         <h4>By what they called about</h4>
-        <p class="sub">Where the experience differs, not just how it averaged. Read the smallest NPS
-          first &mdash; that is the next thing to fix. <b>n</b> is on every row because a one-response
-          slice is a hint, not a finding.</p>
+        <p class="sub">Where it differs by what they asked.</p>
         <table>
           <thead><tr><th>Topic</th><th>Responses</th><th>Prefer Robin</th><th>NPS</th><th>Split</th></tr></thead>
           <tbody>${slices.map(x=>`
@@ -710,48 +727,21 @@
         </table>
       </div>` : "";
 
-    const adherenceWarn = a.pct!=null && a.pct<70;
-    const metrics=[
-      a.eligible ? `<div class="svy-m${adherenceWarn?" warn":""}">
-          <div class="n tnum">${a.pct}<span class="un">%</span></div>
-          <div class="cap">of eligible calls had the survey asked — ${a.asked_when_eligible} of ${a.eligible}.
-          ${adherenceWarn?"<b>Low. The figures above rest on a thin sample.</b>":""}</div>
-        </div>` : "",
-      `<div class="svy-m">
-          <div class="n tnum">${r.rate_pct??"—"}${r.rate_pct!=null?'<span class="un">%</span>':""}</div>
-          <div class="cap">of people asked gave an answer${r.answered!=null&&r.offered!=null?` — ${r.answered} of ${r.offered}`:""}.
-          ${r.declined?`${r.declined} declined.`:""}</div>
-        </div>`,
-      // NPS moved to the hero, where it was asked for. Repeating it here said the same
-      // number twice in one screen and made the row look like four findings, not three.
-
-      voice.n ? `<div class="svy-m">
-          <div class="n tnum">${voice.mean}<span class="un">/10</span></div>
-          <div class="cap">average rating of how natural Robin's voice sounded, across ${voice.n}
-          response${voice.n===1?"":"s"}.${voice.unparsed?` ${voice.unparsed} answered in words we couldn't score.`:""}</div>
-        </div>` : "",
-    ].filter(Boolean).join("");
-
-    // Real, but footnotes rather than headline metrics — and keeping the tile row at four means it
-    // never breaks to a second line with one lonely tile on it.
-    const notes=[
-      s.changed_mind ? `<b>${s.changed_mind} respondent${s.changed_mind===1?"":"s"} gave a different answer on a
-        later call.</b> Worth reading those transcripts.` : "",
-      a.ineligible ? `${a.ineligible} call${a.ineligible===1?" was":"s were"} excluded — transferred or failed verification.` : "",
-      (inst.v1 && inst.v2) ? `${inst.v1} respondent${inst.v1===1?"":"s"} answered the retired 1-5 question
-        (averaging ${sat.mean}/5); ${inst.v2} answered the NPS. The two scales are never averaged together.` : "",
-    ].filter(Boolean).join(" ");
+    // One line of exclusions, because it is caveat two of the page. Adherence moved to the
+    // sample-size section; the retired-scale and repeat-caller notes are gone.
+    const notes = a.ineligible
+      ? `${a.ineligible} call${a.ineligible===1?" was":"s were"} excluded &mdash; transferred or failed verification.` : "";
 
     // Should always be zero. Anything here means the prompt gate leaked on a transfer.
     const alarm = s.leaked_pre_transfer
       ? `<div class="svy-alarm">${s.leaked_pre_transfer} call${s.leaked_pre_transfer===1?"":"s"} were surveyed on the way into a transfer.
          The agent is instructed never to do this. Review those calls.</div>` : "";
 
-
     el.innerHTML=`<div class="svy">
-      <p class="svy-lede">How many people would rather use Robin than wait for a person next time.
-        Transfers and unverified callers are excluded.</p>
-      ${headFig}${npsBlock}${dotGrid}${bar}${metrics?`<div class="svy-grid">${metrics}</div>`:""}${topicBlock}
+      <p class="svy-lede">How many would rather use Robin than wait for a person.</p>
+      ${headFig}${dotGrid}${bar}
+      <div class="svy-stats">${npsBlock}${voiceBlock}</div>
+      ${topicBlock}
       ${notes?`<p class="svy-foot">${notes}</p>`:""}${alarm}
     </div>`;
   }
@@ -814,38 +804,29 @@
     `).join("");
 
     const hbp=s.promoter_but_prefers_person||0;
+    const dbp=s.detractor_but_prefers_agent||0;
     const finding = hbp
       ? `<p class="mx-find alarm"><b>${hbp} ${hbp===1?"person":"people"} scored Robin 9 or 10 and still want a
          person next time.</b> Report both figures together; the score alone hides this.</p>`
       : `<p class="mx-find">No one who scored Robin 9 or 10 asked for a person next time.
          <b>Score and preference agree.</b></p>`;
-
-    // Respondents on the retired instrument have no NPS band, so the grid cannot place them. Said
-    // out loud rather than left for a reader to discover by adding the rows up against the headline.
-    const exV1=s.matrix_excluded_v1||0;
-    const v1Note = exV1
-      ? `<p class="mx-find">${exV1===1?"One respondent":`${exV1} respondents`} answered the retired 1-5
-         question, so ${exV1===1?"they have":"they have"} no NPS band and ${exV1===1?"is":"are"} not in this
-         grid. Their preference still counts above.</p>`
-      : "";
-
-    const unclearN = rows.reduce((n,r)=>n+r.unclassified,0);
-    const unclearNote = unclearN
-      ? `<p class="mx-find">${unclearN===1?"One answer":`${unclearN} answers`} could not be bucketed and
-         ${unclearN===1?"sits":"sit"} in <b>Unclear</b>. Read ${unclearN===1?"it":"them"} in the call list
-         before treating the split as final.</p>`
-      : "";
+    const finding2 = dbp
+      ? `<p class="mx-find"><b>${dbp} ${dbp===1?"person":"people"} scored Robin 6 or below and would still choose her</b>
+         over waiting for a person.</p>` : "";
+    const changed = s.changed_mind
+      ? `<p class="mx-find"><b>${s.changed_mind} ${s.changed_mind===1?"person":"people"} gave a different answer on a later call.</b>
+         Worth reading those transcripts.</p>` : "";
 
     document.getElementById("mx").innerHTML=`
       <div class="mx-grid" style="grid-template-columns:auto repeat(${cols},1fr)"
-           role="table" aria-label="Likelihood to recommend against stated preference">
-        <div class="mx-cell hd">Would recommend</div>
+           role="table" aria-label="Score given against stated preference">
+        <div class="mx-cell hd">Score they gave</div>
         <div class="mx-cell hd">Prefers Robin</div>
         <div class="mx-cell hd">No preference</div>
         <div class="mx-cell hd">Prefers a person</div>
         ${anyUnclear?`<div class="mx-cell hd">Unclear</div>`:""}
         ${body}
-      </div>${finding}${v1Note}${unclearNote}`;
+      </div>${finding}${finding2}${changed}`;
   }
 
   // ---- Cumulative share with its 95% interval ------------------------------------------------
@@ -854,12 +835,25 @@
     return n+({1:"st",2:"nd",3:"rd"}[n%10]||"th");};
 
   function renderCumulative(){
-    const sec=document.getElementById("cumsec"), pts=(DATA.survey&&DATA.survey.cumulative)||[];
-    // Below 20 respondents the band spans most of the chart, which is true but unreadable, and it
-    // is what made this chart get misread as a trend line. The dot grid under the headline carries
-    // the sample-size story until there is enough data for the interval to be worth looking at.
-    if(pts.length<20){ sec.hidden=true; return; }
+    const sec=document.getElementById("cumsec"), s=DATA.survey||{}, pts=s.cumulative||[];
+    if(!s.calls){ sec.hidden=true; return; }
     sec.hidden=false;
+
+    // Adherence lives here, not in the hero: it is the one figure that can invalidate the wave,
+    // but it is a check on the headline, not a headline.
+    const a=s.adherence||{}, r=s.response||{};
+    const warn = a.pct!=null && a.pct<70;
+    const adherence = a.eligible ? `
+      <p class="cum-note${warn?" alarm":""}">Robin asked the survey on <b>${a.pct}%</b> of eligible calls (${a.asked_when_eligible} of ${a.eligible})${
+        r.rate_pct!=null?`; <b>${r.rate_pct}%</b> of those asked answered${r.declined?`, ${r.declined} declined`:""}`:""}.
+        ${warn?`<b class="accent">Below 70%: every figure above rests on a biased slice.</b>`:""}</p>` : "";
+
+    // Below 20 respondents the band spans most of the chart, which is true but unreadable.
+    if(pts.length<20){
+      document.getElementById("cum").innerHTML=`${adherence}
+        <p class="cum-note">${pts.length} respondent${pts.length===1?"":"s"} so far. The confidence chart appears at 20.</p>`;
+      return;
+    }
 
     const W=680,H=300,L=40,R=78,T=18,B=34;   // R leaves room for the "even split" label
     const x=(i)=>L+(pts.length===1?0:(i/(pts.length-1))*(W-L-R));
@@ -869,9 +863,9 @@
     const line=pts.map((p,i)=>`${i?"L":"M"}${x(i)},${y(p.pct)}`).join("");
     const last=pts[pts.length-1];
 
-    document.getElementById("cum").innerHTML=`
+    document.getElementById("cum").innerHTML=`${adherence}
       <svg viewBox="0 0 ${W} ${H}" role="img"
-           aria-label="Share preferring Robin as respondents accumulate: currently ${last.pct}%, 95% interval ${last.lo} to ${last.hi} percent, from ${last.n} people">
+           aria-label="Share preferring Robin as respondents accumulate: currently ${last.pct}%, 95% range ${last.lo} to ${last.hi} percent, from ${last.n} people">
         <line class="ax" x1="${L}" y1="${y(0)}" x2="${W-R}" y2="${y(0)}"></line>
         <line class="ax" x1="${L}" y1="${y(100)}" x2="${W-R}" y2="${y(100)}"></line>
         <polygon class="band" points="${top} ${bot}"></polygon>
@@ -886,49 +880,65 @@
         <text x="${L}" y="${H-6}">1st respondent</text>
         <text x="${W-R}" y="${H-6}" text-anchor="end">${ordinal(last.n)}</text>
       </svg>
-      <p class="cum-note">Shaded band is the 95% interval. It narrows as people answer.
+      <p class="cum-note">Shaded band is the 95% range.
         ${last.lo>50
-          ? `It now sits entirely above 50%, so the preference for Robin holds at this sample size.`
+          ? `It sits above 50%, so the preference for Robin <b>holds</b> at this sample size.`
           : last.hi<50
-          ? `It now sits entirely below 50%, so the preference against Robin holds at this sample size.`
-          : `It still crosses 50%, so <b>more responses are needed</b> before the result is conclusive.`}</p>`;
+          ? `It sits below 50%, so the preference against Robin <b>holds</b> at this sample size.`
+          : `It still crosses 50%, so <b>more responses are needed</b>.`}</p>`;
   }
 
-  // ---- Themes and narrative (separate endpoint — costs a model call) -------------------------
+  // ---- What people said: comments, grouped by theme once themes are ready --------------------
+  // Themes and comments are one dataset at two zoom levels, so they render as one section: each
+  // theme is a <details> whose body is the comments behind it; anything the model did not place
+  // sits under "Other comments". Until themes are ready, the comments render as a plain list.
+  let THEMES=null;
+  function renderSaid(){
+    const sec=document.getElementById("saidsec"), com=(DATA.survey&&DATA.survey.comments)||{};
+    const rows=com.recent||[];
+    if(!rows.length && !com.redacted){ sec.hidden=true; return; }
+    sec.hidden=false;
+    const cmt=(c)=>`<div class="svy-cmt">“${esc(c.text)}”
+      <button class="cid" data-id="${esc(c.conversation_id)}" style="margin-left:8px">${esc(c.respondent||"open call")}${c.response_seq>1?`, call ${c.response_seq}`:""}</button></div>`;
+    const meta=`<div class="said-meta">${com.given} comment${com.given===1?"":"s"} from ${com.people_who_commented} ${com.people_who_commented===1?"person":"people"}${
+      com.redacted?` · <span class="accent">${com.redacted} withheld for personal details</span>`:""}${
+      THEMES&&THEMES.ready?` · ${THEMES.themes.length} theme${THEMES.themes.length===1?"":"s"}`:
+      THEMES&&THEMES.have!=null?` · themes appear at ${THEMES.need} comments (${THEMES.have} so far)`:""}</div>`;
+
+    let body="";
+    if(THEMES&&THEMES.ready){
+      const placed=new Set();
+      body=`<div class="thm">${(THEMES.themes||[]).map(th=>{
+        const ids=new Set(th.conversation_ids||[]);
+        const mine=rows.filter(c=>ids.has(c.conversation_id)); mine.forEach(c=>placed.add(c.conversation_id));
+        return `<details class="thm-i">
+          <summary>
+            <div class="thm-top">
+              <span class="thm-lab">${esc(th.label)}</span>
+              <span class="thm-n">${th.people} ${th.people===1?"person":"people"}${th.mentions>th.people?` · ${th.mentions} mentions`:""} · ${esc(th.sentiment)}</span>
+            </div>
+            <div class="thm-sum">${esc(th.summary)}</div>
+            <div class="thm-q ${esc(th.sentiment)}">“${esc(th.quote)}”</div>
+          </summary>
+          <div class="thm-body">${mine.length?mine.map(cmt).join(""):`<div class="svy-cmt redacted">No stored comment text for this theme.</div>`}</div>
+        </details>`;}).join("")}</div>`;
+      const rest=rows.filter(c=>!placed.has(c.conversation_id));
+      if(rest.length) body+=`<div class="said-rest"><div class="lbl">Other comments</div>${rest.map(cmt).join("")}</div>`;
+    }else{
+      body=`<div class="svy-cm" style="margin-top:0;padding-top:0;border-top:0">${rows.map(cmt).join("")}</div>`;
+    }
+    const redacted = com.redacted?`<div class="svy-cmt redacted">${com.redacted} answer${com.redacted===1?" was":"s were"} dropped for containing something
+      personal — an account number, a Social Security Number or similar.</div>`:"";
+    document.getElementById("said").innerHTML=meta+body+redacted;
+  }
+
+  // Separate endpoint — costs a model call, so it is not on the 60s refresh.
   async function loadThemes(){
-    const nsec=document.getElementById("narrsec"), tsec=document.getElementById("thmsec");
     try{
       const r=await fetch("/api/survey-themes",{cache:"no-store"});
-      const t=await r.json();
-      if(!t.ready){
-        nsec.hidden=false; tsec.hidden=true;
-        document.getElementById("narr").innerHTML=
-          `<div class="narr pending"><div class="src">Narrative</div><p>${esc(
-            t.error || `${t.reason||"Not enough written answers yet."} ${t.have!=null?`${t.have} of ${t.need} so far.`:""}`
-          )}</p></div>`;
-        return;
-      }
-      nsec.hidden=false; tsec.hidden=false;
-      document.getElementById("narr").innerHTML=
-        `<div class="narr"><div class="src">Summary · from ${t.based_on.comments} written comment${t.based_on.comments===1?"":"s"} by ${t.based_on.people_who_commented} ${t.based_on.people_who_commented===1?"person":"people"}</div>
-         <p>${esc(t.narrative)}</p></div>`;
-      document.getElementById("thm").innerHTML=`<div class="thm">${(t.themes||[]).map(th=>`
-        <div class="thm-i">
-          <div class="thm-top">
-            <span class="thm-lab">${esc(th.label)}</span>
-            <span class="thm-n">${th.people} ${th.people===1?"person":"people"}${
-              th.mentions>th.people?` · ${th.mentions} mentions`:""} · ${esc(th.sentiment)}</span>
-          </div>
-          <div class="thm-sum">${esc(th.summary)}</div>
-          <div class="thm-q ${esc(th.sentiment)}">“${esc(th.quote)}”</div>
-          <div class="thm-ids">${(th.conversation_ids||[]).map(id=>
-            `<button class="cid" data-id="${esc(id)}">${esc(id.slice(-8))}</button>`).join("")}</div>
-        </div>`).join("")}</div>`;
-    }catch(e){
-      nsec.hidden=false; tsec.hidden=true;
-      document.getElementById("narr").innerHTML=
-        `<div class="narr pending"><div class="src">Narrative</div><p>Theme analysis is unavailable right now.</p></div>`;
-    }
+      THEMES=await r.json();
+    }catch(e){ THEMES=null; }
+    renderSaid();
   }
 
   // ---- Ask the data --------------------------------------------------------------------------
@@ -939,7 +949,12 @@
     "Did anyone change their mind between calls?",
   ];
   function initAsk(){
-    document.getElementById("asksec").hidden=false;
+    const fab=document.getElementById("askfab"), panel=document.getElementById("askpanel");
+    fab.hidden=false;
+    const setOpen=(o)=>{ panel.hidden=!o; fab.setAttribute("aria-expanded",String(o)); if(o) document.getElementById("askq").focus(); };
+    fab.addEventListener("click",()=>setOpen(panel.hidden));
+    document.getElementById("askx").addEventListener("click",()=>setOpen(false));
+    document.addEventListener("keydown",(e)=>{ if(e.key==="Escape"&&!panel.hidden) setOpen(false); });
     document.getElementById("askeg").innerHTML=
       EXAMPLES.map(q=>`<button type="button" data-q="${esc(q)}">${esc(q)}</button>`).join("");
     document.getElementById("askeg").addEventListener("click",(e)=>{
@@ -1018,25 +1033,7 @@
     });
   }
 
-  // Verbatim Q4 answers. Placed AFTER the narrative and themes on purpose: raw quotes ahead of the
-  // summary makes a reader build their own impression from whichever three they happen to read first,
-  // which is the anecdote trap this instrument exists to avoid.
-  function renderComments(){
-    const sec=document.getElementById("cmsec"), com=(DATA.survey&&DATA.survey.comments)||{};
-    const rows=com.recent||[];
-    if(!rows.length && !com.redacted){ sec.hidden=true; return; }
-    sec.hidden=false;
-    document.getElementById("cm").innerHTML=`
-      <div class="svy-cm" style="margin-top:6px;padding-top:0;border-top:0">
-        <div class="lbl" style="margin-bottom:10px">${com.given} comment${com.given===1?"":"s"}
-          from ${com.people_who_commented} ${com.people_who_commented===1?"person":"people"}${
-          com.redacted?` · <span class="accent">${com.redacted} withheld</span>`:""}</div>
-        ${rows.map(c=>`<div class="svy-cmt">“${esc(c.text)}”
-          <button class="cid" data-id="${esc(c.conversation_id)}" style="margin-left:8px">${esc(c.respondent||"open call")}${c.response_seq>1?`, call ${c.response_seq}`:""}</button></div>`).join("")}
-        ${com.redacted?`<div class="svy-cmt redacted">${com.redacted} answer${com.redacted===1?" was":"s were"} dropped for containing something
-          personal — an account number, a Social Security Number or similar. The rate is kept, the words are not.</div>`:""}
-      </div>`;
-  }
+  function renderComments(){ renderSaid(); }
 
   function renderDownloads(){ document.getElementById("dlsec").hidden=!(DATA.survey&&DATA.survey.calls); }
 
