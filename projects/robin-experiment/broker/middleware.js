@@ -41,12 +41,14 @@ export const config = {
     "/api/survey-call",
     "/api/survey-ask",
     "/api/survey-themes",
+    "/api/calls",
+    "/api/call-scores",
   ],
 };
 
 // Everything the survey publishes: the pages, and every endpoint that carries their data —
 // aggregate results, per-call transcripts, verbatim comments, the CSV export.
-const PROTECTED = ["/survey", "/dashboard", "/api/metrics", "/api/survey-"];
+const PROTECTED = ["/survey", "/dashboard", "/api/metrics", "/api/survey-", "/api/calls", "/api/call-scores"];
 
 // Robin's own endpoints and the post-call webhook are deliberately NOT in that list. ElevenLabs
 // calls verify_caller and get_balance mid-call and posts to /api/postcall unauthenticated (it
@@ -79,6 +81,17 @@ function pathnameOf(url) {
 export default function middleware(request) {
   const pathname = pathnameOf(request?.url);
   if (pathname !== null && !isProtected(pathname)) return;
+
+  // THE PORTAL'S DOOR. robin-portal proxies these same paths server-side and identifies itself
+  // with one header carrying a shared secret. This branch is inert until ROBIN_INTERNAL_SECRET is
+  // set on this deployment, so adding it changes nothing for anyone until the portal exists; and
+  // it is checked BEFORE the password so that, once v1 removes the Basic branch below, the header
+  // is the only way in. Same constant-time compare as the password.
+  const internal = process.env.ROBIN_INTERNAL_SECRET;
+  if (internal) {
+    const supplied = request?.headers?.get?.("x-robin-internal") || "";
+    if (supplied && timingSafeEqual(supplied, internal)) return;
+  }
 
   const expected = process.env.SURVEY_PASSWORD;
 

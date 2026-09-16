@@ -15,13 +15,15 @@
 // Factory's critic: a model can be generous with a number, it can't be generous with a quote that
 // isn't in the source.
 //
-// Limitation worth knowing: only documents published through our pipeline have a kb_articles row.
-// A document uploaded straight into the ElevenLabs dashboard has no text on our side, so those
-// answers grade as `no_source` — visible, not silently scored. Fetching document text from the
-// ElevenLabs KB API would close that gap and is the obvious next step.
+// Sources come from two places. Documents published through our pipeline have a kb_articles row.
+// Documents uploaded straight into the ElevenLabs dashboard (every live Vertex document, as of
+// 2026-09) do not, so lib/kb-text.js fetches their text from the ElevenLabs KB API when
+// ELEVENLABS_API_KEY is set on this deployment. Without the key those answers still grade as
+// `no_source` — visible, not silently scored.
 import Anthropic from "@anthropic-ai/sdk";
 import { sb } from "../lib/supabase.js";
 import { scoreAnswer } from "../lib/score.js";
+import { fetchElevenLabsDocument } from "../lib/kb-text.js";
 
 const client = new Anthropic(); // ANTHROPIC_API_KEY
 const MAX_PER_RUN = 10; // bound latency/cost per invocation; later polls catch up the rest
@@ -190,7 +192,15 @@ async function loadSources(ids, cache) {
       rows = await sb(`kb_articles?elevenlabs_document_id=in.(${q(list)})&select=elevenlabs_document_id,title,body_md`);
     } catch (_) { rows = []; }
     for (const r of rows || []) cache.set(String(r.elevenlabs_document_id), { title: r.title, body_md: r.body_md });
-    for (const id of missing) if (!cache.has(id)) cache.set(id, null); // remember the miss
+    // Documents uploaded straight into the ElevenLabs dashboard have no kb_articles row — which is
+    // every live Vertex document today — so ask ElevenLabs for the text. Read-only, cached for the
+    // run, and skipped entirely when ELEVENLABS_API_KEY is not set: without the key this behaves
+    // exactly as before (the answer grades `no_source`).
+    for (const id of missing) {
+      if (cache.has(id)) continue;
+      const doc = await fetchElevenLabsDocument(id);
+      cache.set(id, doc); // a null remembers the miss
+    }
   }
   const found = [];
   for (const id of ids) { const v = cache.get(id); if (v) found.push(v); }
