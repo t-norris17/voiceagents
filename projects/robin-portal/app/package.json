@@ -1,0 +1,19 @@
+{
+  "name": "robin-portal",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prebuild": "node scripts/copy-modules.mjs",
+    "predev": "node scripts/copy-modules.mjs",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "next": "15.5.4",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "server-only": "0.0.1"
+  }
+}

@@ -1,0 +1,9 @@
+node_modules/
+.next/
+.env*.local
+# populated at build by scripts/copy-modules.mjs; the sources of truth live in the broker and cleaner
+public/survey/
+public/robin-q-tester/
+public/dashboard/
+public/factory/
+public/vendor/
