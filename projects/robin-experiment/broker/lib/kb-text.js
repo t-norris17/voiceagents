@@ -49,3 +49,24 @@ export async function fetchElevenLabsDocument(documentId, { fetchImpl = fetch } 
     return null;
   }
 }
+
+// The summary ElevenLabs writes after every call (analysis.transcript_summary, with its short
+// title). Read on demand for the portal's call drawer; never stored, never required. Same rules as
+// the document read: inert without the key, null on any failure.
+export async function fetchConversationSummary(conversationId, { fetchImpl = fetch } = {}) {
+  const key = process.env.ELEVENLABS_API_KEY;
+  if (!key) return null;
+  if (!/^[A-Za-z0-9_-]{6,80}$/.test(String(conversationId || ""))) return null;
+  try {
+    const res = await fetchImpl(`${BASE}/v1/convai/conversations/${encodeURIComponent(conversationId)}`, {
+      headers: { "xi-api-key": key },
+    });
+    if (!res.ok) return null;
+    const conv = await res.json();
+    const text = String(conv?.analysis?.transcript_summary || "").trim();
+    if (!text) return null;
+    return { title: String(conv?.analysis?.call_summary_title || "").trim() || null, text };
+  } catch {
+    return null;
+  }
+}

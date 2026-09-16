@@ -111,3 +111,40 @@ footer { margin-top: 52px; padding-top: 14px; border-top: 1px solid var(--line);
 #rp-home { position: fixed; left: 18px; bottom: 18px; z-index: 70; font-size: .68rem; line-height: 1; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; text-decoration: none; padding: 10px 14px; background: var(--ink); color: var(--paper); border: 1px solid var(--ink); border-radius: 999px; box-shadow: 0 2px 10px rgba(0,0,0,.18); }
 #rp-home:hover { background: var(--paper); color: var(--ink); }
 @media print { #rp-home { display: none; } }
+
+/* about: knowledge and abilities in plain words, the live name beside each in small type */
+.kl ul { margin: 4px 0 10px; padding-left: 18px; }
+.kl li { margin: 3px 0; font-size: .86rem; }
+.kl-h { font-size: .66rem; text-transform: uppercase; letter-spacing: .14em; color: var(--sub); font-weight: 600; margin-top: 4px; }
+.kl .raw { color: var(--faint); font-size: .72rem; }
+
+/* grade results in the drawer */
+.gr-verdict { margin-top: 10px; font-size: .92rem; line-height: 1.5; }
+.gr-verdict b { font-weight: 700; }
+.gr-verdict .bad { color: var(--accent); font-weight: 700; }
+.gr-q { padding: 14px 0; border-bottom: 1px solid var(--hair); }
+.gr-q .q { font-weight: 700; font-size: .9rem; }
+.gr-q .rating { display: inline-block; font-size: .62rem; letter-spacing: .14em; text-transform: uppercase; font-weight: 700; padding: 2px 8px; border: 1px solid var(--ink); border-radius: 999px; margin-left: 8px; vertical-align: 2px; }
+.gr-q .rating.bad { color: var(--accent); border-color: var(--accent); }
+.gr-q .rating.mid { color: var(--sub); border-color: var(--line); }
+.gr-q .a { font-size: .84rem; margin-top: 6px; color: var(--sub); }
+.gr-q .a b { color: var(--ink); font-weight: 600; }
+.gr-q .claims { margin: 10px 0 0; padding: 0; list-style: none; }
+.gr-q .claims li { font-size: .8rem; padding: 6px 0 6px 14px; border-left: 3px solid var(--line); margin-top: 6px; }
+.gr-q .claims li.bad { border-left-color: var(--accent); }
+.gr-q .claims .verdict { font-size: .62rem; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; color: var(--sub); }
+.gr-q .claims li.bad .verdict { color: var(--accent); }
+.gr-q .claims .src { display: block; color: var(--sub); font-style: italic; margin-top: 2px; }
+.gr-q .judg { font-size: .74rem; color: var(--sub); margin-top: 8px; }
+.gr-q .judg .bad { color: var(--accent); font-weight: 700; }
+.gr-act { margin-top: 12px; padding: 12px 14px; border: 1px solid var(--ink); }
+.gr-act .h { font-size: .66rem; text-transform: uppercase; letter-spacing: .18em; color: var(--sub); font-weight: 600; }
+.gr-act ul { margin: 6px 0 0; padding-left: 18px; }
+.gr-act li { font-size: .84rem; margin: 4px 0; }
+.gr-act li b { font-weight: 700; }
+.gr-act li.win { color: var(--sub); }
+.gr-none { font-size: .84rem; color: var(--sub); margin-top: 8px; }
+.sum { margin-top: 14px; padding: 12px 14px; background: var(--hair); }
+.sum .h { font-size: .66rem; text-transform: uppercase; letter-spacing: .18em; color: var(--sub); font-weight: 600; }
+.sum .t { font-weight: 700; margin-top: 4px; }
+.sum p { margin: 6px 0 0; font-size: .86rem; line-height: 1.5; white-space: pre-line; }

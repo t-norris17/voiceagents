@@ -28,8 +28,8 @@ export default async function Home() {
   const responses = metrics?.survey?.responses ?? null;
 
   const doors = [
-    { href: "/survey/", t: "Survey", d: "Would they rather use Robin than wait for a person? Every number opens to the call behind it.", n: responses, un: "responses" },
-    { href: "/grader", t: "Grader", d: "Scores what Robin said against what she read on each call. Grade new calls and read the evidence.", n: summary?.ungraded_in_window ?? null, un: "ungraded, 7 days" },
+    { href: "/survey/", t: "Quality", d: "Would they rather use Robin than wait for a person? What callers said, and every number opens to the call behind it.", n: responses, un: "responses" },
+    { href: "/grader", t: "Accuracy", d: "Was what Robin said true to the documents she read on each call? Grade new calls and read the evidence.", n: summary?.ungraded_in_window ?? null, un: "ungraded, 7 days" },
     { href: "/factory/", t: "Knowledge Factory", d: "Turn a messy source into a Robin-ready article, test it, publish it to her Knowledge Base.", n: null, un: null },
     { href: "/robin-q-tester/", t: "Question Tester", d: "Ask a question the way a caller would and see what Robin's published knowledge answers.", n: null, un: null },
     { href: "/calls", t: "Calls", d: "Every recent call: who verified, what they asked, how it ended, and the transcript.", n: summary?.last_24h ?? null, un: "calls, 24 h" },

@@ -3,13 +3,14 @@
 //
 //   broker/public/survey          -> public/survey          (/survey/, /survey/slide/)
 //   broker/public/robin-q-tester  -> public/robin-q-tester  (/robin-q-tester/)
-//   broker/public/dashboard       -> public/dashboard       (/dashboard/, linked from the survey footer)
 //   cleaner/public/index.html     -> public/factory/index.html (/factory/)
 //   cleaner/public/vendor         -> public/vendor          (the cleaner imports /vendor/pdf.min.mjs)
 //
-// After the copy, each module page gets one thing the sources do not have: a fixed "Robin portal"
-// link back to the landing page (bottom-left; the survey's Ask button owns bottom-right). It is
-// appended to the copy only, so the pages stay byte-identical where they are served on their own.
+// After the copy, each module page gets two things the sources do not have: the portal's masthead
+// (wordmark and the same nav as the landing page) at the top, and a fixed "Robin portal" link at the
+// bottom-left (the survey's Ask button owns bottom-right). Both are added to the copy only, so the
+// pages stay byte-identical where they are served on their own. The slide gets neither: it is the
+// projector artifact.
 //
 // Runs as `prebuild`. Fails loudly if a source is missing: a silently empty door is worse than a
 // failed build.
@@ -26,7 +27,6 @@ const cleaner = join(projects, "content-cleaner", "cleaner", "public");
 const jobs = [
   [join(broker, "survey"), join(app, "public", "survey")],
   [join(broker, "robin-q-tester"), join(app, "public", "robin-q-tester")],
-  [join(broker, "dashboard"), join(app, "public", "dashboard")],
   [join(cleaner, "index.html"), join(app, "public", "factory", "index.html")],
   [join(cleaner, "vendor"), join(app, "public", "vendor")],
 ];
@@ -52,14 +52,45 @@ const HOME_LINK = `
 </style>
 `;
 
-const pages = ["survey/index.html", "survey/slide/index.html", "robin-q-tester/index.html", "dashboard/index.html", "factory/index.html"];
-for (const rel of pages) {
+// The masthead. Colours come from each page's own tokens where it has them (all three define
+// --paper/--ink/--sub), with the portal's values as the fallback, so a page that forces a theme
+// carries the bar with it.
+const MAST = (current) => `
+<div class="rp-mast"><div class="rp-in"><a class="rp-wm" href="/">Robin</a><nav aria-label="Sections">${[
+  ["/survey/", "Quality"], ["/grader", "Accuracy"], ["/factory/", "Knowledge Factory"],
+  ["/robin-q-tester/", "Question Tester"], ["/calls", "Calls"], ["/about", "About Robin"],
+].map(([h, l]) => `<a href="${h}"${h === current ? ' aria-current="page"' : ""}>${l}</a>`).join("")}</nav></div></div>
+<style>
+.rp-mast{background:var(--paper,#f2f0ea);border-bottom:2px solid var(--ink,#17181c);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+.rp-in{max-width:920px;margin:0 auto;padding:16px 40px 12px;display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.rp-wm{font-size:1.25rem;font-weight:800;letter-spacing:.02em;text-transform:uppercase;text-decoration:none;color:var(--ink,#17181c)}
+.rp-mast nav{display:flex;gap:16px;flex-wrap:wrap}
+.rp-mast nav a{font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:var(--sub,#6c7075);text-decoration:none;padding-bottom:3px;border-bottom:2px solid transparent}
+.rp-mast nav a:hover,.rp-mast nav a[aria-current="page"]{color:var(--ink,#17181c);border-bottom-color:var(--ink,#17181c)}
+@media (max-width:640px){.rp-in{padding:14px 18px 10px}}
+.rp-hide-tag .tag{display:none}
+</style>
+`;
+
+const pages = [
+  ["survey/index.html", "/survey/"],
+  ["robin-q-tester/index.html", "/robin-q-tester/"],
+  ["factory/index.html", "/factory/"],
+  ["survey/slide/index.html", null],
+];
+for (const [rel, current] of pages) {
   const file = join(app, "public", rel);
-  const html = readFileSync(file, "utf8");
-  if (!html.includes("</body>")) {
-    console.error(`copy-modules: no </body> in ${rel}, cannot add the portal link`);
+  let html = readFileSync(file, "utf8");
+  if (!html.includes("</body>") || !html.includes("<body>")) {
+    console.error(`copy-modules: no <body> in ${rel}, cannot add the portal chrome`);
     process.exit(1);
   }
-  writeFileSync(file, html.replace("</body>", `${HOME_LINK}</body>`));
-  console.log(`copy-modules: portal link -> public/${rel}`);
+  if (current) {
+    // The masthead goes first inside <body>; the page's own small kicker line (.tag) is hidden
+    // because the masthead now says whose page this is.
+    html = html.replace("<body>", `<body class="rp-hide-tag">${MAST(current)}`);
+  }
+  html = html.replace("</body>", `${HOME_LINK}</body>`);
+  writeFileSync(file, html);
+  console.log(`copy-modules: portal chrome -> public/${rel}`);
 }

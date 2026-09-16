@@ -4,12 +4,12 @@ import HomeLink from "./components/HomeLink.js";
 
 export const metadata = {
   title: "Robin",
-  description: "One front door for Robin: survey, grader, knowledge factory, question tester, calls.",
+  description: "One front door for Robin: quality, accuracy, knowledge factory, question tester, calls.",
 };
 
 const DOORS = [
-  { href: "/survey/", label: "Survey" },
-  { href: "/grader", label: "Grader" },
+  { href: "/survey/", label: "Quality" },
+  { href: "/grader", label: "Accuracy" },
   { href: "/factory/", label: "Knowledge Factory" },
   { href: "/robin-q-tester/", label: "Question Tester" },
   { href: "/calls", label: "Calls" },

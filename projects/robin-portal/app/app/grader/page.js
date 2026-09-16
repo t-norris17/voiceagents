@@ -1,5 +1,5 @@
 "use client";
-// The grader's face. It grades what Robin said against what she read; this page lists calls by
+// The Accuracy page, the grader's face. It grades what Robin said against what she read; this page lists calls by
 // graded / not graded, runs the grader on demand, and opens each call to the evidence.
 import { useCallback, useEffect, useState } from "react";
 import CallDrawer from "../components/CallDrawer.js";
@@ -42,8 +42,8 @@ export default function GraderPage() {
     <>
       <div className="page-h">
         <div>
-          <h1>Grader</h1>
-          <p>Scores what Robin said against the documents she actually read on that call. No answer key. Grades up to ten calls per run; run it again to catch up.</p>
+          <h1>Accuracy</h1>
+          <p>Was what Robin said true to the documents she actually read on that call? No answer key. Grades up to ten calls per run; run it again to catch up. Open a call for its grade results.</p>
         </div>
         <button className="btn" type="button" onClick={grade} disabled={busy}>{busy ? "Grading…" : "Grade new calls"}</button>
       </div>

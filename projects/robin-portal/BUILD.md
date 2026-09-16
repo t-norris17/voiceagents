@@ -12,6 +12,64 @@
 
 ---
 
+### 2026-09-16 — Session 3 (second round of live feedback)
+
+**Status after session:** built and verified against the mock; on the branch, awaiting promote and
+one migration
+
+**What Tanner asked for, and what was built:**
+- **Overlap named.** Calls vs the old Monitor (Monitor dropped from the build and from the survey
+  footer); Question Tester vs the Factory's QA step (to fold later); the survey's "Every call" vs
+  Calls (later). Grader and Survey are different axes, accuracy and experience, which is why:
+- **Quality and Accuracy.** The survey door is Quality (rename only, umbrella later if wanted); the
+  grader door is Accuracy so the pair reads as two axes. Routes unchanged. The survey page's own
+  title is renamed at the source.
+- **One masthead everywhere.** `copy-modules.mjs` injects the portal masthead (wordmark, same nav,
+  current page marked) at the top of the copied survey, tester and factory pages, using each page's
+  own colour tokens with the portal's as fallback, and hides each page's small kicker line. The slide
+  gets nothing: it is the projector artifact.
+- **Simple and Advanced** on the survey (`broker/public/survey/index.html`, so the standalone link
+  has it too). Simple is the slide's content reflowed: the question, the headline share with its
+  interval, the split bar, NPS, voice, promoters-who-still-want-a-person, a needs-review line, and
+  the cohort caveat; every figure opens the Advanced section it came from. Simple is the default
+  for everyone, remembered per browser, `?view=advanced` overrides. Advanced is the page as it was.
+  The Ask button stays in both.
+- **Grade results** (`CallDrawer.js`). A verdict line (asked, answered, with a problem), a "What to
+  do" box derived from the rows (fix the answer or the document, check a claim, write content,
+  retrieval miss, and the correct declines listed in grey as wins), then per question: rating as a
+  word (Correct, Incomplete, Wrong), Robin's answer, each claim with its verdict and the verbatim
+  source span, and the three judgments in words. The 5-point number is gone from the page. The
+  claims need **migration 003** (`call_question_scores.evidence`, additive, nullable): the grader
+  writes it when the column exists and drops it when it does not; the endpoint reads it the same
+  way; until then the drawer shows the reviewer note lines instead. `/api/call-scores` now also
+  returns the demand record from `call_questions`.
+- **Summary above every transcript**, ElevenLabs' own `analysis.transcript_summary` and title, read
+  on demand by `/api/survey-call` with the broker's key, cached per instance (misses not cached),
+  caller-side scrub applied, labelled as ElevenLabs' words. Verified the field carries text on
+  `conv_8301m28d4f7zfeja4k2ycd9mb9eh`.
+- **About: Knowledge.** Documents become topics and tools become abilities in plain words
+  (`lib/robin-facts.js`), each with the live name in small type beside it; anything unmapped shows
+  raw. The NestEgg reset article and two of its tools are still on the agent and so still show.
+
+**Verified:** broker tests 55, portal tests 4, build clean; every route 200 through the mock and
+`/dashboard` now 404; masthead present on survey, tester and factory and absent on the slide;
+screenshots read for home, Simple, Advanced, factory, tester, About, the grade drawer and the
+calls drawer.
+
+**Found on the way, from the live database:** 39 calls carry a richer "grader rev 4" schema
+(handoff, transfer class, bluffs, content gaps) written through 2026-08-05 by a grader that is not
+in this repo; the current grader (47 calls, latest 19:19 UTC today) writes the simpler rows. The
+portal renders what the current grader writes. Also: those 19:19 rows grade `grounded` against the
+five Vertex documents, which is the proof the broker's new ElevenLabs key works.
+
+**Next session:**
+> Tanner: promote the branch build; apply migration 003 (Supabase SQL editor, the file in
+> `broker/supabase/migrations/`), then "Grade new calls" once and open a call to see the claims with
+> their source quotes. Then: fold the Question Tester into the Factory; the survey's "Every call"
+> into Calls; remove the NestEgg leftovers from the agent; v1 auth.
+
+---
+
 ### 2026-09-16 — Session 2 (first live feedback: one proxy defect, one env mismatch)
 
 **Status after session:** deployed; blocked on the two secrets matching between projects

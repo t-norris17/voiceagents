@@ -19,7 +19,7 @@ function timingSafeEqual(a, b) {
 
 // The copied module pages live in public/ and Next serves public files by exact path only, so the
 // directory URLs the pages are linked by (with or without the trailing slash) map to index.html.
-const MODULE_DIRS = /^\/(survey\/slide|survey|robin-q-tester|dashboard|factory)\/?$/;
+const MODULE_DIRS = /^\/(survey\/slide|survey|robin-q-tester|factory)\/?$/;
 
 export function middleware(request) {
   // The wiring check is the one path outside the gate (exact match only): it reports booleans and

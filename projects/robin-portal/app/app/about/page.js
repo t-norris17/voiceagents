@@ -4,6 +4,7 @@
 // trusting a file over the platform.
 import { getRobinStatus } from "../../lib/elevenlabs.js";
 import { brokerJson } from "../../lib/broker.js";
+import { describeAbilities, describeKnowledge } from "../../lib/robin-facts.js";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "About Robin" };
@@ -40,10 +41,19 @@ export default async function About() {
           </dd>
           <dt>Model</dt>
           <dd>{s.llm || "—"}<span className="muted"> · voice {s.tts_model || "—"}</span></dd>
-          <dt>Knows</dt>
-          <dd><div className="chips">{s.knowledge_base.map((k) => <span className="chip" key={k}>{k}</span>)}</div></dd>
-          <dt>Can do</dt>
-          <dd><div className="chips">{s.tools.map((k) => <span className="chip" key={k}>{k}</span>)}</div></dd>
+          <dt>Knowledge</dt>
+          <dd>
+            <div className="kl">
+              <div className="kl-h">She can answer questions about</div>
+              <ul>{describeKnowledge(s.knowledge_base).map((k) => (
+                <li key={k.label}>{k.label}<span className="raw"> · {k.raw.join(", ")}</span></li>
+              ))}</ul>
+              <div className="kl-h">She can</div>
+              <ul>{describeAbilities(s.tools).map((k) => (
+                <li key={k.raw}>{k.label}<span className="raw"> · {k.raw}</span></li>
+              ))}</ul>
+            </div>
+          </dd>
           {s.procedures.length > 0 && (<><dt>Procedures</dt><dd>{s.procedures.join(" · ")}</dd></>)}
           <dt>Calls</dt>
           <dd>{summary ? <>{summary.last_7d} in the last 7 days · {summary.last_24h} in the last 24 hours</> : <span className="muted">unavailable</span>}</dd>

@@ -8,6 +8,12 @@
 // TEMPORARY: delete with the instrument after the customer wave.
 import { sb } from "../lib/supabase.js";
 import { CALL_COLS } from "../lib/survey-data.js";
+import { fetchConversationSummary } from "../lib/kb-text.js";
+
+// ElevenLabs' own post-call summary, read on demand and remembered per function instance. It sits
+// ABOVE the transcript, never instead of it: the transcript stays the trust anchor and the summary
+// is labelled as ElevenLabs' words. The caller-side scrub below is applied to it as well.
+const SUMMARIES = new Map(); // conversation_id -> { title, text } | null
 
 // Same patterns the survey_answers view uses on open comments, applied to what the CALLER said.
 // A tester reading a member ID aloud is normal and expected; storing it in a transcript that a
@@ -37,6 +43,11 @@ export default async function handler(req, res) {
     const [row] = (await sb(`ai_call_events?conversation_id=eq.${id}&select=conversation_id,started_at,duration_seconds,outcome,transfer_reason,auth_outcome,transcript&limit=1`)) || [];
     if (!row) return res.status(404).json({ error: "not found" });
 
+    // A miss is not cached: a transient failure should not hide the summary for the life of the instance.
+    const sum = SUMMARIES.get(id) || (await fetchConversationSummary(id));
+    if (sum) SUMMARIES.set(id, sum);
+    const summary = sum ? { title: sum.title, text: scrubCaller(sum.text) } : null;
+
     const turns = Array.isArray(row.transcript) ? row.transcript : [];
     const transcript = turns
       .map((t) => {
@@ -60,6 +71,7 @@ export default async function handler(req, res) {
         survey: meta || null,
       },
       transcript,
+      summary,
     });
   } catch (e) {
     console.error("survey-call failed:", String(e.message || e));
