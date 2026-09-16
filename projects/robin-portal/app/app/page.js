@@ -1,5 +1,6 @@
-// The landing page. An information block read live from ElevenLabs, then five doors, each with one
-// line and, where cheap, one live number. Server-rendered; numbers revalidate every 60 seconds.
+// The landing page. Name, one sentence, the phone number, a one-line live status, then five doors,
+// each with one line and, where cheap, one live number. The full configuration read from
+// ElevenLabs lives on /about. Server-rendered; numbers revalidate every 60 seconds.
 import { getRobinStatus } from "../lib/elevenlabs.js";
 import { brokerJson } from "../lib/broker.js";
 
@@ -41,29 +42,17 @@ export default async function Home() {
           <h1>{s?.name || "Robin"}, the 401(k) voice agent</h1>
           <p className="lede">
             Answers plan questions and looks up a verified caller's own figures over the phone, for the
-            Vertex Manufacturing 401(k). Built on ElevenLabs; this page reads her live configuration.
+            Vertex Manufacturing 401(k). Built on ElevenLabs.
           </p>
           {s?.phone && <div className="phone tnum">{s.phone}</div>}
           {!s && <div className="warn">Live status unavailable: {status?.reason || "unknown"}. The doors still work.</div>}
         </div>
         {s && (
-          <dl className="facts">
-            <dt>Version</dt>
-            <dd>
-              {s.version_seq != null ? `v${s.version_seq}` : s.version_id}
-              {s.version_description ? <> · {s.version_description}</> : null}
-              {s.version_committed_at ? <span className="muted"> · {age(s.version_committed_at)}</span> : null}
-            </dd>
-            <dt>Model</dt>
-            <dd>{s.llm || "—"}<span className="muted"> · voice {s.tts_model || "—"}</span></dd>
-            <dt>Knows</dt>
-            <dd><div className="chips">{s.knowledge_base.map((k) => <span className="chip" key={k}>{k}</span>)}</div></dd>
-            <dt>Can do</dt>
-            <dd><div className="chips">{s.tools.map((k) => <span className="chip" key={k}>{k}</span>)}</div></dd>
-            {s.procedures.length > 0 && (<><dt>Procedures</dt><dd>{s.procedures.join(" · ")}</dd></>)}
-            <dt>Calls</dt>
-            <dd>{summary ? <>{summary.last_7d} in the last 7 days</> : <span className="muted">unavailable</span>}</dd>
-          </dl>
+          <a className="status-line" href="/about">
+            <span className="dot" aria-hidden="true" />
+            <span>Live{s.version_seq != null ? `, v${s.version_seq}` : ""}{s.version_committed_at ? ` · updated ${age(s.version_committed_at)}` : ""}</span>
+            <span className="more">About Robin &rarr;</span>
+          </a>
         )}
       </section>
 

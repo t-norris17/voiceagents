@@ -46,6 +46,20 @@ grader's KB fetch.
 `scripts/copy-modules.mjs` into the copy only; the sources are untouched. Screenshots checked on the
 survey (beside its Ask button) and the factory.
 
+**Later the same day, after Tanner's redeploys (portal `dpl_869M2CAR…` at 18:59 UTC, broker
+`dpl_7Nk1MH1V…` at 18:59):** verified across the seam. His first hits at 19:01 were still served by
+the old portal deployment (`dpl_3JYq…` in the log) while the alias moved, and the broker still
+answered 401; from 19:02:38 the new deployment served `/` and the broker logged `/api/calls 200`
+and `/api/metrics 200`. Secret matches. The information block rendered, so the new ElevenLabs key
+is accepted (version_seq 116 is the proof once `/api/health` is live).
+
+**Added in the second push:** the same "← Robin portal" pill on Grader, Calls and About
+(`app/components/HomeLink.js`, hidden on `/`); **`/api/health`**, the one path outside the gate,
+reporting `broker.secret_accepted`, `elevenlabs.key_accepted`, `version_seq` and the deployed
+commit, cached 30 s (so the wiring can be checked from a phone or the connector without the
+password); and **About Robin** (`/about`, in the masthead): the configuration block moved off the
+landing page, which now carries the name, one sentence, the number, and a one-line live status.
+
 **Next session:**
 > Tanner: (1) set `ROBIN_INTERNAL_SECRET` to one value on both `robin-portal` and `voiceagents`,
 > (2) an ElevenLabs key with Agents Platform enabled as `ELEVENLABS_API_KEY` on both, (3) **redeploy

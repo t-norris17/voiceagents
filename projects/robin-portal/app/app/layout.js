@@ -1,5 +1,6 @@
 import "./globals.css";
 import Link from "next/link";
+import HomeLink from "./components/HomeLink.js";
 
 export const metadata = {
   title: "Robin",
@@ -12,6 +13,7 @@ const DOORS = [
   { href: "/factory/", label: "Knowledge Factory" },
   { href: "/robin-q-tester/", label: "Question Tester" },
   { href: "/calls", label: "Calls" },
+  { href: "/about", label: "About Robin" },
 ];
 
 export default function RootLayout({ children }) {
@@ -28,6 +30,7 @@ export default function RootLayout({ children }) {
             </nav>
           </div>
           {children}
+          <HomeLink />
           <footer>
             <span>Robin · Vertex Manufacturing 401(k)</span>
             <span>Robin's own call path never runs through this portal.</span>
