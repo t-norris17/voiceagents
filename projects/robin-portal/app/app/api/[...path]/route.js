@@ -35,6 +35,17 @@ async function proxy(request, { params }) {
     return Response.json({ error: `${up.name} unreachable: ${String(e?.message || e)}` }, { status: 502 });
   }
 
+  // An upstream 401 means the broker did not accept ROBIN_INTERNAL_SECRET, never that the person is
+  // unauthenticated: they passed the portal's own gate to get here. Forwarding it as a 401 makes the
+  // browser discard the portal password it just sent and prompt again on the next page (seen in the
+  // first live deploy's logs). So it becomes a 502 that names the cause.
+  if (res.status === 401) {
+    return Response.json(
+      { error: `${up.name} rejected the portal's internal secret. Set ROBIN_INTERNAL_SECRET to the same value on this project and on the ${up.name}'s own Vercel project, then redeploy both.` },
+      { status: 502 }
+    );
+  }
+
   const out = new Headers();
   for (const h of ["content-type", "content-disposition", "cache-control"]) {
     const v = res.headers.get(h);

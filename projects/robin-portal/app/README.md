@@ -28,6 +28,11 @@ Vercel project with **root directory `projects/robin-portal/app`**, linked to th
 | `ELEVENLABS_API_KEY` | read-only use here: agent, version, KB names |
 | `ELEVENLABS_AGENT_ID` | `agent_8301kwj5qa8ve1atremxxwjjp9f8` |
 
+Env vars are read at deploy time. After adding or changing any of them, **redeploy the project**
+(Deployments -> ... -> Redeploy); the running deployment keeps the values it was built with. When the
+broker rejects the portal's secret, the proxy answers 502 with that sentence, never a 401, so the
+browser keeps the portal password.
+
 ## Tests
 
 `npm test` covers the route map. The gate and proxy were exercised end to end against a mock of the

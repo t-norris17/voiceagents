@@ -12,6 +12,49 @@
 
 ---
 
+### 2026-09-16 — Session 2 (first live feedback: one proxy defect, one env mismatch)
+
+**Status after session:** deployed; blocked on the two secrets matching between projects
+
+**What Tanner saw on the live portal:** a password prompt on every click; Calls and Grader failing
+with `unexpected token 'A' ... is not valid JSON`; the survey's live data and the landing page's
+information block both 401.
+
+**What the logs said (portal `dpl_3JYqJM3e…`, broker `dpl_DgndeDfC…`):** every page served 200
+once the password was entered; every proxied API call came back 401; and the *broker's* log shows
+those same requests (`/api/calls`, `/api/metrics`, 15:06–15:08 UTC) rejected by its own gate. So the
+portal reached the broker and the broker did not accept the internal header: `ROBIN_INTERNAL_SECRET`
+differs between the two projects, or the portal is still running the deployment from before its env
+vars were set (its last deploy is 15:00:13 UTC; the project changed at 15:05:11 and was not
+redeployed). Env vars are read at deploy time. **Unverified which of the two: the connector cannot
+read env values, and should not.**
+
+**The defect that made it worse:** the proxy forwarded the broker's 401 to the browser as a 401.
+The browser had just sent the portal password with that request, took the 401 as "wrong password",
+dropped it, and prompted again on the next click. The body of that 401 is the text
+`Authentication required.`, which is the `'A'` in the JSON error. Fixed: an upstream 401 is now a
+502 with the sentence that names the fix (`app/api/[...path]/route.js`). Verified against the mock:
+wrong secret gives 502 with that JSON on `/api/metrics` and `/api/calls`; matching secret gives 200;
+anonymous stays 401; `/api/postcall` stays 404.
+
+**The information block's 401** is a separate seam: it comes from the ElevenLabs API, so the key on
+the portal is set but rejected (a missing key gives a "not set" message instead). Most likely the
+key was created without the Agents Platform permission. Same key, same need, on the broker for the
+grader's KB fetch.
+
+**Also added:** a fixed "← Robin portal" link, bottom-left, on every copied module page, injected by
+`scripts/copy-modules.mjs` into the copy only; the sources are untouched. Screenshots checked on the
+survey (beside its Ask button) and the factory.
+
+**Next session:**
+> Tanner: (1) set `ROBIN_INTERNAL_SECRET` to one value on both `robin-portal` and `voiceagents`,
+> (2) an ElevenLabs key with Agents Platform enabled as `ELEVENLABS_API_KEY` on both, (3) **redeploy
+> both**, (4) rotate `PORTAL_PASSWORD` (a temporary one was shared in chat). Then open the portal:
+> the doors should load without a second prompt, and the landing block should show v116. Then "Grade
+> new calls" and confirm a Vertex call no longer grades `no_source`.
+
+---
+
 ### 2026-09-16 — Session 1 (v0 built, not yet deployed)
 
 **Time spent:** one session
