@@ -47,6 +47,24 @@
   killed the shell instead of the server. Cost twenty minutes. Kill by PID.
 - **Playwright refuses to render a 401**, so the anonymous gate check is a plain request.
 
+**Deploying it (same day, later):**
+- The connector cannot create Vercel projects (403), so `robin-portal` was created in the dashboard.
+  Three things went wrong, all with one cause: **Vercel keys everything off the production branch,
+  and `main` did not carry the portal.** The root-directory picker never offered
+  `projects/robin-portal/app`; the branch name ended up in the Root Directory field (build log:
+  "The specified Root Directory 'claude/robin-experiment-…' does not exist"); and "Redeploy"
+  rebuilds the same `main` commit whatever the branch setting says.
+- **Fix: `main` fast-forwarded to the branch** (`513cc52` → `3dc7e14`, 42 commits, with Tanner's
+  explicit yes). The branch had been production in practice for weeks. Side effect, as predicted:
+  the broker project built from `main` and is live with the seam changes (inert until env vars);
+  the cleaner rebuilt identical code.
+- **Vercel refused Next.js 15.5.4** (`VULNERABLE_NEXTJS_VERSION`, CVE-2025-66478). Bumped to
+  15.5.25, the maintained backport on the same line; tests, build and the mock end-to-end check
+  pass. Pushed to the branch and to `main`.
+- Local gotcha that cost real time twice: `pkill -f <pattern>` matched the shell running it and
+  killed the shell, leaving a stale `next start` answering the port. Track servers by `$!` and kill
+  by PID.
+
 **Decisions made:**
 - **Copy the module pages at build; proxy their APIs 1:1** (SPEC). Confirmed working with the
   survey page unmodified.
