@@ -19,9 +19,13 @@ function timingSafeEqual(a, b) {
 
 // The copied module pages live in public/ and Next serves public files by exact path only, so the
 // directory URLs the pages are linked by (with or without the trailing slash) map to index.html.
-const MODULE_DIRS = /^\/(survey\/slide|survey|robin-q-tester|dashboard|factory)\/?$/;
+const MODULE_DIRS = /^\/(survey\/slide|survey|robin-q-tester|factory)\/?$/;
 
 export function middleware(request) {
+  // The wiring check is the one path outside the gate (exact match only): it reports booleans and
+  // Robin's version number, nothing else, so it can be read from anywhere when the doors are dark.
+  if (request.nextUrl.pathname === "/api/health") return NextResponse.next();
+
   const expected = process.env.PORTAL_PASSWORD;
   if (!expected) {
     return new NextResponse(

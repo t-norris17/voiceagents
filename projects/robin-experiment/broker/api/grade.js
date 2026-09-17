@@ -226,6 +226,21 @@ function issueLines(a, s) {
   return out.join(" · ") || null;
 }
 
+// Upsert the scored rows. If the live table does not yet have the `evidence` column (migration
+// 003), PostgREST rejects the whole batch naming that column; strip it and write the rest, so a
+// pending migration never costs a grading run.
+async function upsertScores(rows) {
+  const path = "call_question_scores?on_conflict=conversation_id,question_key";
+  const opts = { method: "POST", prefer: "resolution=merge-duplicates,return=minimal" };
+  try {
+    await sb(path, { ...opts, body: rows });
+  } catch (e) {
+    if (!/evidence/.test(String(e?.message || e))) throw e;
+    console.error("grade: evidence column missing (apply migration 003); writing rows without it");
+    await sb(path, { ...opts, body: rows.map(({ evidence, ...r }) => r) });
+  }
+}
+
 async function gradeCall(call, sourceCache) {
   const convText = serializeTranscript(call.transcript);
   if (!convText) return { conversation_id: call.conversation_id, rows: [], askedRows: [], security_flag: false, security_detail: null, empty: true };
@@ -292,6 +307,20 @@ Review this call per your instructions. Return ONLY the structured JSON.`;
       graded_by: "llm",
       reviewed: false,
       reviewer_note: issueLines(a, s),
+      // The evidence behind the score, so the portal can show each claim with the verbatim source
+      // span that supports or contradicts it, and the three judgments in words. Needs migration
+      // 003 (call_question_scores.evidence); until it is applied the write below drops the column.
+      evidence: {
+        claims: (a.claims || []).map((c) => ({
+          claim: String(c.claim || "").trim(),
+          source_quote: String(c.source_quote || "").trim(),
+          verdict: c.verdict,
+        })).filter((c) => c.claim),
+        answered_the_question: a.answered_the_question !== false,
+        complete: a.complete !== false,
+        appropriately_routed: a.appropriately_routed !== false,
+        note: String(a.note || "").trim() || null,
+      },
     });
   }
 
@@ -345,11 +374,7 @@ export default async function handler(req, res) {
       try {
         if (rows.length) {
           if (rows.every((x) => x.grounding === "no_source")) noSource += 1;
-          await sb("call_question_scores?on_conflict=conversation_id,question_key", {
-            method: "POST",
-            prefer: "resolution=merge-duplicates,return=minimal",
-            body: rows,
-          });
+          await upsertScores(rows);
           scoredRows += rows.length;
         }
         if (askedRows && askedRows.length) {

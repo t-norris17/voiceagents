@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Robin — Would they rather use her?</title>
+<title>Robin — Quality: would they rather use her?</title>
 <style>
 
   :root {
@@ -476,17 +476,56 @@
   .askpanel .ask-form button{ padding:11px; }
   .askpanel .ask-out{ margin-top:14px; padding:13px 14px; }
   @media (max-width:560px){ .askfab{ right:14px; bottom:14px; } .askpanel{ right:14px; bottom:68px; } }
+
+  /* ---- view modes: Simple (the presentation slide, reflowed) and Advanced (everything) ------ */
+  .mast{ flex-wrap:wrap; }
+  .modes{ display:inline-flex; border:1px solid var(--ink); border-radius:999px; overflow:hidden; align-self:center; }
+  .modes button{ font:inherit; font-size:.64rem; letter-spacing:.14em; text-transform:uppercase; font-weight:700; padding:7px 14px; background:none; color:var(--ink); border:0; cursor:pointer; }
+  .modes button[aria-selected="true"]{ background:var(--ink); color:var(--paper); }
+  body[data-mode="simple"] .sheet > section:not(#simplesec){ display:none; }
+  body[data-mode="advanced"] #simplesec{ display:none; }
+  section[hidden]{ display:none !important; }
+  .sm-q{ margin:26px 0 0; font-size:1.05rem; color:var(--sub); max-width:52ch; line-height:1.45; }
+  a.sm-hero{ display:grid; grid-template-columns:auto 1fr; gap:6px 22px; align-items:end; margin-top:18px; text-decoration:none; color:inherit; }
+  .sm-hero .fig{ font-size:clamp(4rem,14vw,7rem); font-weight:800; line-height:.82; letter-spacing:-.04em; }
+  .sm-hero .fig .un{ font-size:1.4rem; font-weight:600; color:var(--sub); letter-spacing:0; margin-left:4px; }
+  .sm-hero .ci{ font-size:.92rem; color:var(--sub); line-height:1.5; padding-bottom:6px; }
+  .sm-hero .ci b{ color:var(--ink); }
+  .sm-bar{ display:flex; height:16px; margin:18px 0 8px; border:1px solid var(--ink); background:var(--paper); overflow:hidden; }
+  .sm-bar .a{ background:var(--c-agent); } .sm-bar .n{ background:var(--c-none); } .sm-bar .p{ background:var(--c-person); }
+  .sm-key{ display:flex; gap:18px; flex-wrap:wrap; font-size:.78rem; color:var(--sub); }
+  .sm-key i{ display:inline-block; width:10px; height:10px; margin-right:6px; vertical-align:-1px; }
+  .sm-key .a i{ background:var(--c-agent); } .sm-key .n i{ background:var(--c-none); } .sm-key .p i{ background:var(--c-person); }
+  .sm-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:28px; }
+  @media (max-width:620px){ .sm-grid{ grid-template-columns:1fr; } a.sm-hero{ grid-template-columns:1fr; } }
+  .sm-m{ display:block; text-decoration:none; color:inherit; border-top:2px solid var(--ink); padding-top:12px; }
+  .sm-m:hover .c{ color:var(--ink); }
+  .sm-m .v{ font-size:clamp(2rem,5vw,2.8rem); font-weight:800; letter-spacing:-.03em; line-height:1; }
+  .sm-m .v .u{ font-size:1rem; color:var(--sub); font-weight:600; letter-spacing:0; }
+  .sm-m .c{ font-size:.78rem; color:var(--sub); margin-top:8px; line-height:1.4; }
+  .sm-m.flag .v, .sm-m.flag .c b{ color:var(--accent); }
+  .sm-foot{ display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-top:26px; padding-top:12px; border-top:1px solid var(--line); font-size:.72rem; color:var(--faint); }
+  .sm-more{ display:inline-block; margin-top:22px; font-size:.7rem; letter-spacing:.14em; text-transform:uppercase; font-weight:700; color:var(--ink); text-decoration:none; border-bottom:2px solid var(--ink); }
 </style>
 </head>
 <body>
 <div class="sheet">
 
   <div class="mast">
-    <h1 class="wm">Robin · Survey</h1>
+    <h1 class="wm">Robin · Quality</h1>
+    <div class="modes" role="tablist" aria-label="View">
+      <button type="button" role="tab" data-mode="simple">Simple</button>
+      <button type="button" role="tab" data-mode="advanced">Advanced</button>
+    </div>
     <div class="meta" id="mastmeta"></div>
   </div>
 
   <div id="banner"></div>
+
+  <section id="simplesec" hidden>
+    <p class="sm-q">Asked at the end of a call: would you rather handle this with Robin, or hold for a person, even if it took longer?</p>
+    <div id="simple"></div>
+  </section>
 
   <section id="svysec" hidden>
     <div class="shead svy-head">
@@ -544,7 +583,6 @@
 
   <footer>
     <span>Robin · Vertex Manufacturing 401(k) · <span id="gen"></span></span>
-    <span class="xlink">Call quality and coverage live on the <a href="/dashboard/">experiment monitor</a>.</span>
   </footer>
 </div>
 
@@ -593,7 +631,7 @@
       document.getElementById("mastmeta").innerHTML=
         `<b>${s.responses ?? 0}</b> response${s.responses===1?"":"s"} · ${s.people ?? 0} ${s.people===1?"person":"people"} · ${s.calls ?? 0} call${s.calls===1?"":"s"}<br>`+
         `<span class="soft">last updated <span id="gen2"></span></span>`;
-      renderSurvey(); renderReview(); renderMatrix(); renderCumulative(); renderComments(); renderCalls(); renderDownloads();
+      renderSimple(); renderSurvey(); renderReview(); renderMatrix(); renderCumulative(); renderComments(); renderCalls(); renderDownloads();
       stamp();
       loadThemes();   // separate endpoint: costs a model call, so it is not on the 60s refresh
     }catch(e){
@@ -612,6 +650,55 @@
   //   1. adherence — if she isn't asking, every number under it comes from a biased slice
   //   2. the preference split, with its interval attached, because at n=30 a 60/40 is noise
   //   3. what people actually said, so the buckets above stay auditable
+  // ---- Simple: the presentation slide's content, reflowed into the page. The default view for
+  // everyone; every figure opens the Advanced section it came from. ----------------------------
+  function renderSimple(){
+    const sec=document.getElementById("simplesec"), el=document.getElementById("simple"), s=DATA.survey;
+    if(!s){ sec.hidden=true; return; }
+    sec.hidden=false;
+    if(s.awaiting_first_call || !s.people){ el.innerHTML=`<div class="empty">No one has answered the survey yet, so there is nothing to show.</div>`; return; }
+    const p=s.preference||{}, ci=p.ci, a=s.adherence||{}, nps=s.nps||{}, voice=s.voice||{}, rev=s.review||{};
+    const settled = ci && (ci.lo>50 || ci.hi<50);
+    const pc=(n)=>p.decided?((n/p.decided)*100).toFixed(2)+"%":"0%";
+    const go=(id)=>`href="#${id}" data-goto="${id}"`;
+    const flagged=s.promoter_but_prefers_person||0;
+    el.innerHTML=`
+      <a class="sm-hero" ${go("svysec")}>
+        <div class="fig tnum">${ci?ci.pct:"—"}<span class="un">%</span></div>
+        <div class="ci">chose <b>Robin</b> over holding for a person, from <b>${s.people} ${s.people===1?"person":"people"}</b>${ci?`<br>95% confidence: <b>${ci.lo}–${ci.hi}%</b>`:""}${ci?`<br>${settled?"Above an even split.":"<b>Still spans 50%, not yet conclusive.</b>"}`:""}</div>
+      </a>
+      <div class="sm-bar" role="img" aria-label="${p.agent||0} Robin, ${p.no_preference||0} no preference, ${p.person||0} a person">
+        <span class="a" style="width:${pc(p.agent||0)}"></span><span class="n" style="width:${pc(p.no_preference||0)}"></span><span class="p" style="width:${pc(p.person||0)}"></span>
+      </div>
+      <div class="sm-key"><span class="a"><i></i>${p.agent||0} Robin</span><span class="n"><i></i>${p.no_preference||0} no preference</span><span class="p"><i></i>${p.person||0} a person</span></div>
+      <div class="sm-grid">
+        <a class="sm-m" ${go("svysec")}><div class="v tnum">${nps.score!=null?(nps.score>0?"+":"")+nps.score:"—"}</div><div class="c">NPS${nps.n?`, ${nps.n} ${nps.n===1?"respondent":"respondents"}`:""}. Promoters minus detractors.</div></a>
+        <a class="sm-m" ${go("svysec")}><div class="v tnum">${voice.mean??"—"}<span class="u">/10</span></div><div class="c">how natural Robin's voice sounded</div></a>
+        <a class="sm-m${flagged?" flag":""}" ${go("mxsec")}><div class="v tnum">${flagged}</div><div class="c">would recommend it warmly and still want a person</div></a>
+      </div>
+      ${rev.n?`<a class="sm-m flag" ${go("revsec")} style="margin-top:14px;border-top:0"><div class="c"><b>${rev.n} call${rev.n===1?"":"s"} need${rev.n===1?"s":""} review.</b> Read ${rev.n===1?"it":"them"} first.</div></a>`:""}
+      <div class="sm-foot"><span>One response per person. ${a.pct!=null?`Robin asked on ${a.pct}% of eligible calls.`:""}</span><span>Internal test cohort, not customers.</span></div>
+      <a class="sm-more" href="#svysec" data-goto="svysec">Everything, in detail &rarr;</a>`;
+  }
+  const MODE_KEY="robin-quality-view";
+  function setMode(m, persist){
+    m = m==="advanced" ? "advanced" : "simple";
+    document.body.setAttribute("data-mode", m);
+    document.querySelectorAll(".modes button").forEach(b=>b.setAttribute("aria-selected", String(b.dataset.mode===m)));
+    if(persist){ try{ localStorage.setItem(MODE_KEY, m); }catch{} }
+  }
+  (function initMode(){
+    const q=new URLSearchParams(location.search).get("view");
+    let m=q; if(!m){ try{ m=localStorage.getItem(MODE_KEY); }catch{} }
+    setMode(m||"simple", !!q);
+    document.querySelectorAll(".modes button").forEach(b=>b.addEventListener("click",()=>setMode(b.dataset.mode,true)));
+    document.addEventListener("click",(e)=>{
+      const a=e.target.closest("[data-goto]"); if(!a) return;
+      e.preventDefault(); setMode("advanced", true);
+      const t=document.getElementById(a.dataset.goto); if(t) t.scrollIntoView({behavior:"smooth", block:"start"});
+    });
+  })();
+
   function renderSurvey(){
     const sec=document.getElementById("svysec"), el=document.getElementById("svy"), s=DATA.survey;
     if(!s){ sec.hidden=true; return; }          // survey removed, or the block failed server-side

@@ -1,5 +1,6 @@
-// The landing page. An information block read live from ElevenLabs, then five doors, each with one
-// line and, where cheap, one live number. Server-rendered; numbers revalidate every 60 seconds.
+// The landing page. Name, one sentence, the phone number, a one-line live status, then five doors,
+// each with one line and, where cheap, one live number. The full configuration read from
+// ElevenLabs lives on /about. Server-rendered; numbers revalidate every 60 seconds.
 import { getRobinStatus } from "../lib/elevenlabs.js";
 import { brokerJson } from "../lib/broker.js";
 
@@ -27,8 +28,8 @@ export default async function Home() {
   const responses = metrics?.survey?.responses ?? null;
 
   const doors = [
-    { href: "/survey/", t: "Survey", d: "Would they rather use Robin than wait for a person? Every number opens to the call behind it.", n: responses, un: "responses" },
-    { href: "/grader", t: "Grader", d: "Scores what Robin said against what she read on each call. Grade new calls and read the evidence.", n: summary?.ungraded_in_window ?? null, un: "ungraded, 7 days" },
+    { href: "/survey/", t: "Quality", d: "Would they rather use Robin than wait for a person? What callers said, and every number opens to the call behind it.", n: responses, un: "responses" },
+    { href: "/grader", t: "Accuracy", d: "Was what Robin said true to the documents she read on each call? Grade new calls and read the evidence.", n: summary?.ungraded_in_window ?? null, un: "ungraded, 7 days" },
     { href: "/factory/", t: "Knowledge Factory", d: "Turn a messy source into a Robin-ready article, test it, publish it to her Knowledge Base.", n: null, un: null },
     { href: "/robin-q-tester/", t: "Question Tester", d: "Ask a question the way a caller would and see what Robin's published knowledge answers.", n: null, un: null },
     { href: "/calls", t: "Calls", d: "Every recent call: who verified, what they asked, how it ended, and the transcript.", n: summary?.last_24h ?? null, un: "calls, 24 h" },
@@ -41,29 +42,17 @@ export default async function Home() {
           <h1>{s?.name || "Robin"}, the 401(k) voice agent</h1>
           <p className="lede">
             Answers plan questions and looks up a verified caller's own figures over the phone, for the
-            Vertex Manufacturing 401(k). Built on ElevenLabs; this page reads her live configuration.
+            Vertex Manufacturing 401(k). Built on ElevenLabs.
           </p>
           {s?.phone && <div className="phone tnum">{s.phone}</div>}
           {!s && <div className="warn">Live status unavailable: {status?.reason || "unknown"}. The doors still work.</div>}
         </div>
         {s && (
-          <dl className="facts">
-            <dt>Version</dt>
-            <dd>
-              {s.version_seq != null ? `v${s.version_seq}` : s.version_id}
-              {s.version_description ? <> · {s.version_description}</> : null}
-              {s.version_committed_at ? <span className="muted"> · {age(s.version_committed_at)}</span> : null}
-            </dd>
-            <dt>Model</dt>
-            <dd>{s.llm || "—"}<span className="muted"> · voice {s.tts_model || "—"}</span></dd>
-            <dt>Knows</dt>
-            <dd><div className="chips">{s.knowledge_base.map((k) => <span className="chip" key={k}>{k}</span>)}</div></dd>
-            <dt>Can do</dt>
-            <dd><div className="chips">{s.tools.map((k) => <span className="chip" key={k}>{k}</span>)}</div></dd>
-            {s.procedures.length > 0 && (<><dt>Procedures</dt><dd>{s.procedures.join(" · ")}</dd></>)}
-            <dt>Calls</dt>
-            <dd>{summary ? <>{summary.last_7d} in the last 7 days</> : <span className="muted">unavailable</span>}</dd>
-          </dl>
+          <a className="status-line" href="/about">
+            <span className="dot" aria-hidden="true" />
+            <span>Live{s.version_seq != null ? `, v${s.version_seq}` : ""}{s.version_committed_at ? ` · updated ${age(s.version_committed_at)}` : ""}</span>
+            <span className="more">About Robin &rarr;</span>
+          </a>
         )}
       </section>
 
