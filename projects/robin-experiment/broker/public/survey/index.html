@@ -31,6 +31,8 @@
   .mast .wm{ font-size:1.4rem; font-weight:800; letter-spacing:.02em; text-transform:uppercase; margin:0; }
   .mast .meta{ font-size:.72rem; color:var(--sub); text-align:right; line-height:1.7; letter-spacing:.02em; }
   .mast .meta b{ color:var(--ink); font-weight:600; }
+  .mast .meta .guide{ color:var(--ink); font-weight:600; text-decoration:none; border-bottom:1px solid var(--line); }
+  .mast .meta .guide:hover{ border-bottom-color:var(--ink); }
   .themebtn{ font:inherit; font-size:.66rem; letter-spacing:.1em; text-transform:uppercase; background:none; border:0; color:var(--sub); cursor:pointer; padding:0; margin-left:10px; }
   .themebtn:hover{ color:var(--ink); }
 
@@ -578,6 +580,7 @@
       <a href="/api/survey-export?level=people">Download responses (CSV)</a>
       <a class="sec" href="/api/survey-export?level=calls">Every call (CSV)</a>
       <a class="sec" href="/survey/slide/">Presentation slide</a>
+      <a class="sec" href="/survey/guide/">Judgement guide</a>
     </div>
   </section>
 
@@ -630,7 +633,8 @@
       const s=DATA.survey||{};
       document.getElementById("mastmeta").innerHTML=
         `<b>${s.responses ?? 0}</b> response${s.responses===1?"":"s"} · ${s.people ?? 0} ${s.people===1?"person":"people"} · ${s.calls ?? 0} call${s.calls===1?"":"s"}<br>`+
-        `<span class="soft">last updated <span id="gen2"></span></span>`;
+        `<span class="soft">last updated <span id="gen2"></span></span><br>`+
+        `<a class="guide" href="/survey/guide/">How to judge these numbers &rarr;</a>`;
       renderSimple(); renderSurvey(); renderReview(); renderMatrix(); renderCumulative(); renderComments(); renderCalls(); renderDownloads();
       stamp();
       loadThemes();   // separate endpoint: costs a model call, so it is not on the 60s refresh
