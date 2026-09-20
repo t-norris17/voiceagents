@@ -1,0 +1,193 @@
+<title>Robin Wave Judgement Guide</title>
+<style>
+  :root {
+    --paper: #f2f0ea; --ink: #17181c; --sub: #6c7075; --faint: #a29e95;
+    --line: #d7d3c9; --hair: #e4e1d8; --accent: #b8501e;
+    --good: #2f7a52; --warn: #9a7d1e; --bad: #b8501e; --tint: #ebe8e0;
+    --sans: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #15161a; --ink: #ecebe6; --sub: #9a9ea4; --faint: #6a6e74;
+      --line: #2b2d33; --hair: #212329; --accent: #e08a4a;
+      --good: #6fbf8f; --warn: #d1b04a; --bad: #e08a4a; --tint: #1c1e23;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #15161a; --ink: #ecebe6; --sub: #9a9ea4; --faint: #6a6e74;
+    --line: #2b2d33; --hair: #212329; --accent: #e08a4a;
+    --good: #6fbf8f; --warn: #d1b04a; --bad: #e08a4a; --tint: #1c1e23;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  .sheet { max-width: 820px; margin: 0 auto; padding-block: clamp(28px, 6vw, 56px) 64px; padding-inline: clamp(18px, 5vw, 44px); }
+  .mast { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-bottom: 12px; border-bottom: 2px solid var(--ink); }
+  .wm { font-size: 1.25rem; font-weight: 800; letter-spacing: .02em; text-transform: uppercase; }
+  .meta { font-size: .72rem; color: var(--sub); text-align: right; line-height: 1.6; }
+  h1 { font-size: clamp(1.7rem, 4.2vw, 2.4rem); font-weight: 800; letter-spacing: -.025em; line-height: 1.08; margin: 30px 0 0; text-wrap: balance; }
+  .lede { color: var(--sub); max-width: 62ch; margin: 12px 0 0; font-size: 1rem; }
+  h2 { font-size: .68rem; letter-spacing: .18em; text-transform: uppercase; font-weight: 700; color: var(--sub); margin: 40px 0 10px; padding-top: 14px; border-top: 1px solid var(--line); }
+  h3 { font-size: 1.05rem; font-weight: 800; letter-spacing: -.01em; margin: 0; }
+  p { margin: 8px 0 0; max-width: 66ch; }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 32px; }
+  @media (max-width: 640px) { .split { grid-template-columns: 1fr; } }
+  .split .k { font-size: .66rem; letter-spacing: .14em; text-transform: uppercase; font-weight: 700; margin-bottom: 6px; }
+  .split .k.yes { color: var(--good); } .split .k.no { color: var(--bad); }
+  .split ul { margin: 0; padding-left: 18px; font-size: .92rem; }
+  .split li { margin: 4px 0; }
+  .measure { display: grid; grid-template-columns: 1fr; gap: 0; border-top: 1px solid var(--line); margin-top: 6px; }
+  .m { display: grid; grid-template-columns: minmax(150px, .38fr) 1fr; gap: 6px 26px; padding: 16px 0; border-bottom: 1px solid var(--hair); }
+  @media (max-width: 640px) { .m { grid-template-columns: 1fr; } }
+  .m .name { font-weight: 800; font-size: 1rem; letter-spacing: -.01em; }
+  .m .q { font-size: .8rem; color: var(--sub); margin-top: 3px; line-height: 1.4; }
+  .m .read p { margin-top: 0; font-size: .92rem; }
+  .m .read p + p { margin-top: 6px; }
+  .rule { font-size: .86rem; padding: 8px 12px; background: var(--tint); margin-top: 8px; border-left: 3px solid var(--ink); }
+  .rule b { font-weight: 700; }
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; margin-top: 10px; font-variant-numeric: tabular-nums; }
+  th { text-align: left; font-size: .64rem; letter-spacing: .14em; text-transform: uppercase; color: var(--sub); font-weight: 700; padding: 6px 10px 6px 0; border-bottom: 1px solid var(--ink); }
+  td { padding: 8px 10px 8px 0; border-bottom: 1px solid var(--hair); vertical-align: top; }
+  td.s { white-space: nowrap; font-weight: 700; }
+  .feel { font-size: .66rem; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; }
+  .feel.bad { color: var(--bad); } .feel.warn { color: var(--warn); } .feel.good { color: var(--good); }
+  .tw { overflow-x: auto; }
+  .note { font-size: .82rem; color: var(--sub); margin-top: 8px; max-width: 66ch; }
+  .check { margin: 10px 0 0; padding: 0; list-style: none; counter-reset: c; }
+  .check li { position: relative; padding: 9px 0 9px 34px; border-bottom: 1px solid var(--hair); font-size: .92rem; }
+  .check li::before { counter-increment: c; content: counter(c); position: absolute; left: 0; top: 8px; width: 22px; height: 22px; border: 1px solid var(--ink); border-radius: 50%; font-size: .68rem; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; }
+  .cmp td:first-child { color: var(--sub); }
+  footer { margin-top: 44px; padding-top: 12px; border-top: 1px solid var(--line); font-size: .7rem; color: var(--faint); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  a { color: var(--ink); }
+</style>
+
+<div class="sheet">
+  <div class="mast">
+    <div class="wm">Robin · Judgement guide</div>
+    <div class="meta">Customer wave · from 21 Sep 2026<br>Read alongside the Quality page</div>
+  </div>
+
+  <h1>How to judge what the testers told us</h1>
+  <p class="lede">Up to 50 employees call Robin with scripted loan questions and answer four survey questions at the end. This page says what each number means, what counts as good for a voice agent in a retirement plan, and when a number is strong enough to repeat out loud.</p>
+
+  <h2>What this test can and cannot tell you</h2>
+  <div class="split">
+    <div>
+      <div class="k yes">It can tell you</div>
+      <ul>
+        <li>Whether people who use Robin would choose her again over holding for a person.</li>
+        <li>Whether what she said was true to the plan documents she read.</li>
+        <li>How she sounds, and what people say in their own words.</li>
+        <li>Where she runs out of knowledge, question by question.</li>
+      </ul>
+    </div>
+    <div>
+      <div class="k no">It cannot tell you</div>
+      <ul>
+        <li>How 100,000 members will feel. The testers are employees on a script with a synthetic account; that is a different crowd, and no sample size closes that gap.</li>
+        <li>Adoption or call volume. Nobody chose to call.</li>
+        <li>Anything to a decimal place. Fifty people is a direction, not a measurement.</li>
+      </ul>
+    </div>
+  </div>
+  <p class="note">Employees asked to test something rate it generously. Read every score as a ceiling, roughly 10 to 20 points kinder than members would be.</p>
+
+  <h2>The four survey numbers</h2>
+  <div class="measure">
+    <div class="m">
+      <div>
+        <div class="name">Preference</div>
+        <div class="q">"Next time, would you rather handle this with Robin, or hold for a person, even if it took longer?"</div>
+      </div>
+      <div class="read">
+        <p>The headline. Shown as the share choosing Robin, with a range beside it: given what these people said, the true share for people like them most likely falls in that range. Small group, wide range.</p>
+        <div class="rule">The page only says the preference <b>holds</b> when the whole range sits above 50%. Otherwise it says <b>not yet conclusive</b>, which means the group was too small to be sure, not that Robin lost.</div>
+        <div class="tw"><table>
+          <tr><th>Respondents</th><th>Choose Robin for "holds"</th><th>Range at that count</th></tr>
+          <tr><td class="s">25</td><td>18 or more (72%)</td><td>about 52 to 86%</td></tr>
+          <tr><td class="s">50</td><td>32 or more (64%)</td><td>about 50 to 76%</td></tr>
+        </table></div>
+      </div>
+    </div>
+
+    <div class="m">
+      <div>
+        <div class="name">NPS</div>
+        <div class="q">"Zero to ten, how likely would you be to recommend handling a question this way?"</div>
+      </div>
+      <div class="read">
+        <p>Nines and tens are fans, zero through six are critics, sevens and eights are set aside. The score is percent fans minus percent critics, from minus 100 to plus 100. The sign is the headline; the split underneath is the story. With 50 people one person moves it 2 to 4 points.</p>
+        <div class="tw"><table>
+          <tr><th>Score</th><th>What it means</th><th>How to feel</th></tr>
+          <tr><td class="s">below 0</td><td>More critics than fans</td><td><span class="feel bad">Problem</span> · read the detractor calls first</td></tr>
+          <tr><td class="s">0 to 20</td><td>Tolerated, not liked</td><td><span class="feel warn">Tepid</span> · fine for a first wave, find the drag</td></tr>
+          <tr><td class="s">20 to 40</td><td>Clearly positive</td><td><span class="feel good">Good</span> · with employee bias, 20 is the real floor of good</td></tr>
+          <tr><td class="s">40 to 60</td><td>Enthusiasm</td><td><span class="feel good">Strong</span> · human-agent territory</td></tr>
+          <tr><td class="s">above 60</td><td>Almost no critics</td><td><span class="feel good">Great, and check it</span> · did the critics answer at all?</td></tr>
+        </table></div>
+      </div>
+    </div>
+
+    <div class="m">
+      <div>
+        <div class="name">Voice</div>
+        <div class="q">"Zero to ten, how natural did my voice sound?"</div>
+      </div>
+      <div class="read">
+        <p>An average out of ten. There is no industry scale for this; these bands are our judgement. Below 6 is a defect to fix before members hear it. 6 to 7 is acceptable. 8 and up is good. A single low score with a comment is worth more than the average: it usually names a specific mispronunciation or a stray sound.</p>
+      </div>
+    </div>
+
+    <div class="m">
+      <div>
+        <div class="name">Fans who still want a person</div>
+        <div class="q">Gave a 9 or 10, and would still rather hold for a person.</div>
+      </div>
+      <div class="read">
+        <p>The trust signal. These people liked the experience and did not trust it with their money. Any count above one in ten respondents is a finding on its own, and the comments from that group are the most useful words in the whole survey. The page flags each one.</p>
+      </div>
+    </div>
+  </div>
+
+  <h2>Accuracy and safety, from the Accuracy page</h2>
+  <p>The survey says how the call felt. The grader says whether what Robin said was true to the plan documents she read on that call. Both matter; a pleasant wrong answer is the worst outcome in a retirement plan.</p>
+  <div class="tw"><table>
+    <tr><th>Measure</th><th>Standard for this wave</th><th>If it misses</th></tr>
+    <tr><td class="s">Security flags</td><td>Zero. Account details before verification, or any personal data read back.</td><td>Stop and fix before the next call. Not negotiable.</td></tr>
+    <tr><td class="s">Contradicted the source</td><td>Zero answers that state something the plan document says differently.</td><td>Fix the document or the prompt the same day.</td></tr>
+    <tr><td class="s">Not in the source</td><td>Read each one. A true claim with no document behind it still needs a source or needs to go.</td><td>Add the content, or teach her to route.</td></tr>
+    <tr><td class="s">Could not answer</td><td>Expected. A gap the writing queue fixes is not a Robin defect; a bluff is.</td><td>Content gaps go to the Knowledge Factory.</td></tr>
+  </table></div>
+
+  <h2>Whether the numbers can be trusted at all</h2>
+  <div class="tw"><table>
+    <tr><th>Check</th><th>Threshold</th><th>Why</th></tr>
+    <tr><td class="s">Survey asked when eligible</td><td>70% or more of eligible calls</td><td>Below that, Robin chose who got surveyed, and every figure above rests on a biased slice.</td></tr>
+    <tr><td class="s">Respondents</td><td>20 before the confidence chart appears</td><td>Under 20 the range is too wide to read.</td></tr>
+    <tr><td class="s">One phone per tester</td><td>Mobiles, not shared desk lines</td><td>A shared caller ID merges everyone behind it into one respondent.</td></tr>
+  </table></div>
+
+  <h2>Comparators, with their limits</h2>
+  <p>There is no trustworthy published NPS for AI voice agents; vendor figures are marketing and whole-company scores are not scores for a channel. These anchors are approximate and are the honest ones to bring into the room.</p>
+  <div class="tw"><table class="cmp">
+    <tr><th>Reference</th><th>Typical NPS</th></tr>
+    <tr><td>Traditional phone menus (press 1 for balances)</td><td class="s">negative, often −20 or worse</td></tr>
+    <tr><td>Banks, rated as a company</td><td class="s">+30s</td></tr>
+    <tr><td>Leading retirement providers, rated as a company</td><td class="s">+50 to +70</td></tr>
+    <tr><td>A good human agent, rated right after the call</td><td class="s">above +50</td></tr>
+  </table></div>
+  <p class="note">The comparison that matters most is our own: the satisfaction or NPS the call center collects for the same loan question handled by a person. Robin within 10 points of that on a first wave is a win. Above it is a headline.</p>
+
+  <h2>Before anyone quotes a number</h2>
+  <ol class="check">
+    <li>Say how many people answered, in the same breath as the figure.</li>
+    <li>Quote the range, not the decimal. "Between about 52 and 86 percent," never "72.0 percent."</li>
+    <li>If the page says "not yet conclusive," say that. It is a finding about the sample, not a verdict on Robin.</li>
+    <li>Read every detractor's transcript before the meeting. On 50 people that is a handful of calls and the whole story is usually in them.</li>
+    <li>Present it as a readiness result: people who tried Robin preferred her, she was accurate, here is what they said. The claim "members will prefer Robin" waits for an opt-in pilot with real members.</li>
+  </ol>
+
+  <footer>
+    <span>Robin · Vertex Manufacturing 401(k) · customer wave</span>
+    <span>Every figure on the Quality page opens to the call behind it.</span>
+  </footer>
+</div>

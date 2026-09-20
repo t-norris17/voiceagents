@@ -76,6 +76,7 @@ const pages = [
   ["survey/index.html", "/survey/"],
   ["robin-q-tester/index.html", "/robin-q-tester/"],
   ["factory/index.html", "/factory/"],
+  ["survey/guide/index.html", "/survey/"],
   ["survey/slide/index.html", null],
 ];
 for (const [rel, current] of pages) {
