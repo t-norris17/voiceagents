@@ -12,7 +12,7 @@ export const PEOPLE_COLS =
   "person_key,caller_key,responses,repeat_caller,changed_mind,needs_review,first_at,last_at," +
   "conversation_id,started_at,duration_seconds,overall_sentiment,in_nps_era,topic,plan_topic," +
   "prefer_agent_raw,preference,nps_raw,nps_score,nps_band,voice_raw,voice_score," +
-  "open_comments,comments_redacted," +
+  "open_comments,comments_redacted,caller_name," +
   // Retired v1 columns. Still selected because four respondents answered under the old
   // instrument and their answers are not being thrown away.
   "satisfaction_raw,satisfaction_score,would_recommend_raw,would_recommend";
@@ -23,7 +23,7 @@ export const CALL_COLS =
   "conversation_id,started_at,duration_seconds,caller_key,person_key,response_seq,survey_offered," +
   "survey_consent,offer_context,survey_verdict,overall_sentiment,needs_review,in_nps_era," +
   "topic,plan_topic,prefer_agent_raw,preference,nps_raw,nps_score,nps_band," +
-  "voice_raw,voice_score,open_comments,comments_redacted," +
+  "voice_raw,voice_score,open_comments,comments_redacted,caller_name," +
   "satisfaction_raw,satisfaction_score,would_recommend_raw,would_recommend";
 
 export async function surveyPeople() {
@@ -89,15 +89,24 @@ export function wilson(hits, n) {
 //
 // Derived from the calls, so the numbering is identical everywhere without a second query: a
 // person's ordinal is fixed by their earliest surveyed call, independent of row order.
+// A respondent's label is the full name they gave Robin (caller_name, the name most recently given
+// across their calls, so a first-call mishearing is corrected by a later one), and "Respondent N"
+// in order of first call when no name was captured. Names started being captured with the customer
+// wave; every testing-wave call stays a numbered respondent.
 export function respondentLabels(calls) {
-  const earliest = new Map();
+  const earliest = new Map(), latestName = new Map();
   for (const c of calls) {
     if (!c.person_key || !c.started_at) continue;
     const seen = earliest.get(c.person_key);
     if (!seen || c.started_at < seen) earliest.set(c.person_key, c.started_at);
+    const name = String(c.caller_name || "").trim();
+    if (name) {
+      const prev = latestName.get(c.person_key);
+      if (!prev || c.started_at > prev.at) latestName.set(c.person_key, { at: c.started_at, name });
+    }
   }
   const ordered = [...earliest.entries()].sort((a, b) => (a[1] < b[1] ? -1 : a[1] > b[1] ? 1 : 0));
-  return new Map(ordered.map(([key], i) => [key, `Respondent ${i + 1}`]));
+  return new Map(ordered.map(([key], i) => [key, latestName.get(key)?.name || `Respondent ${i + 1}`]));
 }
 
 // Any person_key that slipped into prose becomes its label; any raw conversation id becomes plain

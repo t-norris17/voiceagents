@@ -12,6 +12,22 @@
 
 ---
 
+### 2026-09-20 — Customer wave cutover (applied live, day before the wave)
+
+- **Migration 014 applied to the live project.** `experiment_waves` holds one row, `customer`,
+  starting 2026-09-21 00:00 Central (05:00 UTC). `survey_answers.in_survey_era` now also requires
+  `started_at` on or after `survey_wave_start()`, and `response_seq` restarts inside the wave, so an
+  internal tester's first wave call counts as a first call. `caller_name` added to both views and to
+  the broker's column lists; respondent labels use it when present. Verified: raw calls 108 before
+  and after; survey-era calls 52 → 0 and respondents 8 → 0 until the first wave call; the same
+  clause with a Sep 8 start reproduces the 52. Calls and Accuracy untouched.
+- **Robin change Tanner makes in the dashboard:** Data Collection field `caller_name` (string,
+  "the caller's full name exactly as they gave it when introducing themselves; empty if they never
+  gave one"). Post-call analysis only; the call path is unchanged. Must exist before the first
+  tester call.
+- To move the start: `update experiment_waves set started_at = ... where wave = 'customer'`. To show
+  the testing wave again: delete the row.
+
 ### 2026-09-11 — Session 9 (the loan-wave handout, and a tool deletion stopped two steps in)
 
 **Status:** live agent is **`agtvrsn_8701m28xknxne5vb4rd1q77ff5nc`** (v115, "Add Spanish language
