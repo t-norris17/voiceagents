@@ -244,6 +244,20 @@ test("respondent numbering is stable regardless of row order", async () => {
   assert.equal(respondentLabels([...rows].reverse()).get("P-aaa"), "Respondent 1", "order-independent");
 });
 
+test("a respondent's label is the name they gave, most recent call wins, numbered otherwise", async () => {
+  const { respondentLabels } = await import("../lib/survey-data.js");
+  const rows = [
+    { person_key: "P-aaa", started_at: "2026-09-21T14:00", caller_name: "Dana Whitfield" },
+    { person_key: "P-aaa", started_at: "2026-09-21T16:00", caller_name: "Dana Whitfield-Ortiz" },
+    { person_key: "P-bbb", started_at: "2026-09-21T15:00", caller_name: "  " },
+    { person_key: "P-ccc", started_at: "2026-09-21T17:00", caller_name: null },
+  ];
+  const m = respondentLabels(rows);
+  assert.equal(m.get("P-aaa"), "Dana Whitfield-Ortiz", "the name most recently given");
+  assert.equal(m.get("P-bbb"), "Respondent 2", "blank name falls back to the number");
+  assert.equal(m.get("P-ccc"), "Respondent 3", "no name falls back to the number");
+});
+
 // I have twice broken a SYSTEM prompt by typing a backtick inside its template literal while
 // editing the prose. `node --check` catches it only if someone runs it; this makes the suite catch
 // it, and pins the rules that keep answers readable.
