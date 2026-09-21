@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- TITLE: a name, two to four words, specific enough to pick out of a list. Not a sentence. -->
+<title>Subject One Pager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+<style>
+/* ── Tokens ────────────────────────────────────────────────────────────── */
+:root{
+  --paper:#FCFCFD; --sheet:#FFFFFF; --ink:#1B1F24; --muted:#5D6671;
+  --rule:#DDE1E5; --accent:#15594C; --wash:#E8F0ED; --shadow:0 1px 2px rgba(27,31,36,.06),0 12px 40px rgba(27,31,36,.08);
+  --serif:"Newsreader",Georgia,"Times New Roman",serif;
+  --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#101317; --sheet:#171B20; --ink:#E7EAED; --muted:#99A2AD;
+    --rule:#2B3138; --accent:#5FB49B; --wash:#18302B; --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#101317; --sheet:#171B20; --ink:#E7EAED; --muted:#99A2AD;
+  --rule:#2B3138; --accent:#5FB49B; --wash:#18302B; --shadow:none;
+}
+
+/* ── Page ──────────────────────────────────────────────────────────────── */
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+     font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.sheet{background:var(--sheet);color:var(--ink);box-shadow:var(--shadow);
+       max-width:8.5in;margin:0 auto;padding:0.5in 16px;
+       display:flex;flex-direction:column;gap:22px}
+@media (min-width:700px){.sheet{padding:0.55in 0.6in}}
+
+/* ── Type scale ────────────────────────────────────────────────────────── */
+h1{font-family:var(--serif);font-weight:600;font-size:30px;line-height:1.08;margin:0;
+   letter-spacing:-.01em;text-wrap:balance}
+h2{font-family:var(--serif);font-weight:600;font-size:15px;line-height:1.2;margin:0;
+   letter-spacing:.005em;text-wrap:balance}
+h3{font-family:var(--sans);font-weight:600;font-size:9.5px;line-height:1.2;margin:0;
+   text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+p{margin:0}
+.lede{font-size:13.5px;line-height:1.5;color:var(--muted);max-width:56ch}
+.tnum{font-variant-numeric:tabular-nums}
+
+/* A section head is a serif line over a hairline that runs the full column. */
+.sect{display:flex;flex-direction:column;gap:11px}
+.sect > h2{padding-bottom:7px;border-bottom:1px solid var(--rule)}
+
+/* ── Masthead ──────────────────────────────────────────────────────────── */
+.mast{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;
+      gap:14px 24px;padding-bottom:16px;border-bottom:2px solid var(--ink)}
+.mast .id{display:flex;flex-direction:column;gap:7px;min-width:min(100%,34ch)}
+.eyebrow{font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:var(--accent)}
+.mast .meta{display:flex;flex-direction:column;gap:3px;text-align:left}
+@media (min-width:700px){.mast .meta{text-align:right}}
+.phone{font-family:var(--mono);font-size:16px;font-weight:500;letter-spacing:-.01em}
+.meta .k{font-size:10.5px;color:var(--muted)}
+
+/* ── Call flow: a real sequence, so it is numbered ─────────────────────── */
+.flow{display:grid;grid-template-columns:1fr;gap:12px 22px}
+@media (min-width:560px){.flow{grid-template-columns:repeat(2,1fr)}}
+@media (min-width:760px){.flow{grid-template-columns:repeat(4,1fr)}}
+.step{display:grid;grid-template-columns:auto 1fr;gap:3px 9px;align-content:start}
+.step .n{font-family:var(--mono);font-size:10.5px;font-weight:500;color:var(--accent);
+         padding-top:2px;grid-row:span 2}
+.step .t{font-weight:600;font-size:12.5px;line-height:1.25}
+.step .d{font-size:11.5px;line-height:1.42;color:var(--muted)}
+
+/* ── Two-column body ───────────────────────────────────────────────────── */
+.body2{display:grid;grid-template-columns:1fr;gap:22px}
+@media (min-width:760px){.body2{grid-template-columns:minmax(0,.94fr) minmax(0,1.06fr);gap:30px}}
+
+/* Setup: label / value pairs, values in mono because they are configuration. */
+.spec{display:flex;flex-direction:column;gap:9px}
+.spec .row{display:grid;grid-template-columns:1fr;gap:2px}
+.spec .lbl{font-size:11.5px;font-weight:600;line-height:1.3}
+.spec .val{font-size:11.5px;line-height:1.42;color:var(--muted)}
+.spec code{font-family:var(--mono);font-size:10.5px;color:var(--ink);
+           background:var(--wash);padding:.5px 4px;border-radius:2px;white-space:nowrap}
+
+/* Features: two groups, plain lists. No cards: these are items, not objects. */
+.feat{display:flex;flex-direction:column;gap:13px}
+.grp{display:flex;flex-direction:column;gap:6px}
+.grp ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:5px}
+.grp li{font-size:11.5px;line-height:1.42;padding-left:12px;position:relative;color:var(--muted)}
+.grp li::before{content:"";position:absolute;left:0;top:.52em;width:4px;height:4px;
+                border-radius:50%;background:var(--accent)}
+.grp li b{font-weight:600;color:var(--ink)}
+
+/* ── Benefits band ─────────────────────────────────────────────────────── */
+.gain{display:grid;grid-template-columns:1fr;gap:12px 22px}
+@media (min-width:560px){.gain{grid-template-columns:repeat(2,1fr)}}
+@media (min-width:760px){.gain{grid-template-columns:repeat(4,1fr)}}
+.gain .t{font-family:var(--serif);font-weight:600;font-size:13px;line-height:1.2;margin-bottom:3px}
+.gain .d{font-size:11.5px;line-height:1.42;color:var(--muted)}
+
+/* The honesty note is the one place that gets a fill, because it is the one
+   thing a reader must not skim past. */
+.note{background:var(--wash);border-left:2px solid var(--accent);padding:9px 12px;
+      font-size:11px;line-height:1.45;color:var(--ink)}
+footer{display:flex;flex-wrap:wrap;gap:4px 16px;justify-content:space-between;
+       padding-top:11px;border-top:1px solid var(--rule);font-size:10px;color:var(--muted)}
+
+/* ── Print: one Letter page ────────────────────────────────────────────── */
+@page{size:letter portrait;margin:0.42in}
+@media print{
+  :root{--paper:#fff;--sheet:#fff;--ink:#000;--muted:#3d4650;--rule:#c9ced3;
+        --accent:#0f4438;--wash:#eef3f1;--shadow:none}
+  body{background:#fff;font-size:9.2pt}
+  .sheet{max-width:none;margin:0;padding:0;box-shadow:none;gap:8pt}
+  h1{font-size:17.5pt} h2{font-size:10pt} h3{font-size:6.5pt}
+  .lede{font-size:8.3pt} .phone{font-size:10.5pt} .meta .k{font-size:6.8pt}
+  .mast{padding-bottom:7pt} .sect{gap:5pt} .sect > h2{padding-bottom:3pt}
+  .flow{grid-template-columns:repeat(4,1fr);gap:6pt 11pt}
+  .step .t{font-size:8pt} .step .d,.spec .lbl,.spec .val,.grp li,.gain .d{font-size:7.4pt}
+  .step .n{font-size:7pt} .spec code{font-size:7.2pt}
+  .body2{grid-template-columns:.94fr 1.06fr;gap:16pt} .spec{gap:3.5pt} .feat{gap:6pt}
+  .grp ul{gap:2.5pt} .step .d,.spec .val,.grp li,.gain .d{line-height:1.36}
+  .gain{grid-template-columns:repeat(4,1fr);gap:6pt 13pt} .gain .t{font-size:8.8pt}
+  .note{font-size:7.4pt;padding:6pt 9pt} footer{font-size:6.8pt;padding-top:6pt}
+  .sect,.step,.grp,.note,footer{break-inside:avoid}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<!--
+  ONE-PAGER TEMPLATE
+  ==================
+  Five blocks, in this order, and one Letter page. Do not add a sixth block; cut instead.
+
+    1. Masthead        who/what, one sentence, the one number that matters, as-of date
+    2. Sequence        how the thing works, as numbered steps (see the rule below)
+    3. Two columns     how it is set up  |  what it does and what you can see
+    4. Band            what it buys the reader, four items
+    5. Note            where this actually stands, including what is not proven
+
+  THE BAR FOR INCLUSION. Every line answers "so what" for someone who will never open the
+  system. Cut anything that is true but does not change a decision. When a fact appears in
+  two blocks, keep it in the one where a reader would look for it and delete the other.
+
+  VERIFY BEFORE YOU WRITE. Configuration facts come from the live system, never from a file
+  in this repo. If you cannot verify a number, leave it out or label it unverified. A claim
+  about results that nobody has measured does not go on the page; say so in the note instead.
+
+  NUMBERING IS INFORMATION. Use the numbered sequence block only when order actually matters.
+  If your subject has no sequence, replace .flow with a second .spec list and drop the numbers.
+
+  FITTING ONE PAGE. Cut words before you shrink type. When it still will not fit, in order:
+  merge two adjacent steps, drop the weakest bullet, trim the longest item in a row (a row is
+  as tall as its tallest cell), then reduce print sizes. Check with fit-check.mjs; see README.
+-->
+<main class="sheet">
+
+  <!-- 1. MASTHEAD. The headline is a claim, not a label: what this thing does, in five words. -->
+  <header class="mast">
+    <div class="id">
+      <div class="eyebrow">Owning team, plan or programme</div>
+      <h1>The headline claim</h1>
+      <p class="lede">One sentence that would satisfy a reader who reads nothing else: what it
+        does, for whom, and where it stops. Three lines maximum.</p>
+    </div>
+    <div class="meta">
+      <div class="phone tnum">The one number</div>
+      <div class="k">One line of status</div>
+      <div class="k tnum">As of DD Mon YYYY</div>
+    </div>
+  </header>
+
+  <!-- 2. SEQUENCE. Four steps across one row. Six fit in two rows but cost about 60px. -->
+  <section class="sect">
+    <h2>How it works</h2>
+    <div class="flow">
+      <div class="step"><span class="n">01</span><span class="t">Step title, four words</span>
+        <span class="d">What happens, in about twenty-five words. Name the thing that would
+          surprise a reader who assumed this step was trivial.</span></div>
+      <div class="step"><span class="n">02</span><span class="t">Step title</span>
+        <span class="d">Keep step descriptions within a few words of each other: the row is as
+          tall as its tallest cell, so one long step costs every column.</span></div>
+      <div class="step"><span class="n">03</span><span class="t">Step title</span>
+        <span class="d">Describe the mechanism, not the intent. "Routes on what the caller said"
+          beats "intelligently understands the request".</span></div>
+      <div class="step"><span class="n">04</span><span class="t">Step title</span>
+        <span class="d">The last step is usually what happens when the thing cannot finish, and
+          what gets recorded. Both matter more to a leader than the happy path.</span></div>
+    </div>
+  </section>
+
+  <div class="body2">
+
+    <!-- 3a. SETUP. Label plus plain-language value. Real identifiers go in <code>, because a
+         reader who wants to check one needs the string the platform actually uses. -->
+    <section class="sect">
+      <h2>How it is set up</h2>
+      <div class="spec">
+        <div class="row"><div class="lbl">Configuration area</div><div class="val">
+          Plain words first, then the live identifier in <code>monospace</code> where a reader
+          might want to verify it. Explain what the setting buys, not what it is called.</div></div>
+        <div class="row"><div class="lbl">Second area</div><div class="val">
+          Seven to nine rows is the working range. Fewer reads thin; more and the column runs
+          past its neighbour.</div></div>
+        <div class="row"><div class="lbl">Third area</div><div class="val">
+          Where a setting exists because something went wrong once, say so in a clause. That
+          clause is usually the most credible line on the page.</div></div>
+      </div>
+    </section>
+
+    <!-- 3b. WHAT IT DOES. Two groups: the thing itself, then what the team can see and do.
+         Lead each bullet with a bolded verb phrase so the column can be skimmed on the verbs. -->
+    <section class="sect">
+      <h2>What it does, and what you can see</h2>
+      <div class="feat">
+        <div class="grp">
+          <h3>Group one</h3>
+          <ul>
+            <li><b>Leads with a verb phrase</b> and finishes in one sentence of about twenty
+              words.</li>
+            <li><b>Names a guarantee</b> rather than a capability wherever there is one: what it
+              will not do is more informative than what it can.</li>
+          </ul>
+        </div>
+        <div class="grp">
+          <h3>Group two</h3>
+          <ul>
+            <li><b>Names the surface</b> and then what question it answers. A reader should be
+              able to tell which one to open without being told how it is built.</li>
+            <li><b>Covers every surface</b> that exists. A one-pager that omits one is a
+              one-pager somebody has to correct in the room.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- 4. BAND. Four benefits, each roughly twenty-two words. Structural consequences, not
+       adjectives: what the design makes impossible, cheap, or checkable. -->
+  <section class="sect">
+    <h2>What this buys you</h2>
+    <div class="gain">
+      <div><div class="t">A benefit as a claim</div><div class="d">Two sentences. The first
+        states the consequence, the second says why it holds.</div></div>
+      <div><div class="t">Second benefit</div><div class="d">Keep all four within a couple of
+        words of each other. The row is as tall as its tallest cell.</div></div>
+      <div><div class="t">Third benefit</div><div class="d">If a benefit needs a number to be
+        true and the number does not exist yet, it belongs in the note instead.</div></div>
+      <div><div class="t">Fourth benefit</div><div class="d">The weakest of the four is the one
+        to cut when the page does not fit.</div></div>
+    </div>
+    <!-- 5. NOTE. The one filled element, because it is the one thing a reader must not skim.
+         What stage this is at, what the data is, and what has not been measured. -->
+    <p class="note"><b>Where this stands.</b> The honest paragraph: what is live, what the data
+      really is, when it started, and what this page does not claim. Writing it well is what
+      keeps the rest of the page credible.</p>
+  </section>
+
+</main>
+</body>
+</html>

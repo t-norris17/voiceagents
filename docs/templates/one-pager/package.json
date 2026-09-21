@@ -1,0 +1,8 @@
+{
+  "name": "one-pager-fit-check",
+  "private": true,
+  "type": "module",
+  "description": "Proves a one-pager still fits on one Letter page. node fit-check.mjs <file.html>",
+  "scripts": { "check": "node fit-check.mjs" },
+  "dependencies": { "playwright-core": "^1.49.0" }
+}

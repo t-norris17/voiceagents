@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Robin 401(k) Voice Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+<style>
+/* ── Tokens ────────────────────────────────────────────────────────────── */
+:root{
+  --paper:#FCFCFD; --sheet:#FFFFFF; --ink:#1B1F24; --muted:#5D6671;
+  --rule:#DDE1E5; --accent:#15594C; --wash:#E8F0ED; --shadow:0 1px 2px rgba(27,31,36,.06),0 12px 40px rgba(27,31,36,.08);
+  --serif:"Newsreader",Georgia,"Times New Roman",serif;
+  --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#101317; --sheet:#171B20; --ink:#E7EAED; --muted:#99A2AD;
+    --rule:#2B3138; --accent:#5FB49B; --wash:#18302B; --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#101317; --sheet:#171B20; --ink:#E7EAED; --muted:#99A2AD;
+  --rule:#2B3138; --accent:#5FB49B; --wash:#18302B; --shadow:none;
+}
+
+/* ── Page ──────────────────────────────────────────────────────────────── */
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+     font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.sheet{background:var(--sheet);color:var(--ink);box-shadow:var(--shadow);
+       max-width:8.5in;margin:0 auto;padding:0.5in 16px;
+       display:flex;flex-direction:column;gap:22px}
+@media (min-width:700px){.sheet{padding:0.55in 0.6in}}
+
+/* ── Type scale ────────────────────────────────────────────────────────── */
+h1{font-family:var(--serif);font-weight:600;font-size:30px;line-height:1.08;margin:0;
+   letter-spacing:-.01em;text-wrap:balance}
+h2{font-family:var(--serif);font-weight:600;font-size:15px;line-height:1.2;margin:0;
+   letter-spacing:.005em;text-wrap:balance}
+h3{font-family:var(--sans);font-weight:600;font-size:9.5px;line-height:1.2;margin:0;
+   text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+p{margin:0}
+.lede{font-size:13.5px;line-height:1.5;color:var(--muted);max-width:56ch}
+.tnum{font-variant-numeric:tabular-nums}
+
+/* A section head is a serif line over a hairline that runs the full column. */
+.sect{display:flex;flex-direction:column;gap:11px}
+.sect > h2{padding-bottom:7px;border-bottom:1px solid var(--rule)}
+
+/* ── Masthead ──────────────────────────────────────────────────────────── */
+.mast{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;
+      gap:14px 24px;padding-bottom:16px;border-bottom:2px solid var(--ink)}
+.mast .id{display:flex;flex-direction:column;gap:7px;min-width:min(100%,34ch)}
+.eyebrow{font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:var(--accent)}
+.mast .meta{display:flex;flex-direction:column;gap:3px;text-align:left}
+@media (min-width:700px){.mast .meta{text-align:right}}
+.phone{font-family:var(--mono);font-size:16px;font-weight:500;letter-spacing:-.01em}
+.meta .k{font-size:10.5px;color:var(--muted)}
+
+/* ── Call flow: a real sequence, so it is numbered ─────────────────────── */
+.flow{display:grid;grid-template-columns:1fr;gap:12px 22px}
+@media (min-width:560px){.flow{grid-template-columns:repeat(2,1fr)}}
+@media (min-width:760px){.flow{grid-template-columns:repeat(4,1fr)}}
+.step{display:grid;grid-template-columns:auto 1fr;gap:3px 9px;align-content:start}
+.step .n{font-family:var(--mono);font-size:10.5px;font-weight:500;color:var(--accent);
+         padding-top:2px;grid-row:span 2}
+.step .t{font-weight:600;font-size:12.5px;line-height:1.25}
+.step .d{font-size:11.5px;line-height:1.42;color:var(--muted)}
+
+/* ── Two-column body ───────────────────────────────────────────────────── */
+.body2{display:grid;grid-template-columns:1fr;gap:22px}
+@media (min-width:760px){.body2{grid-template-columns:minmax(0,.94fr) minmax(0,1.06fr);gap:30px}}
+
+/* Setup: label / value pairs, values in mono because they are configuration. */
+.spec{display:flex;flex-direction:column;gap:9px}
+.spec .row{display:grid;grid-template-columns:1fr;gap:2px}
+.spec .lbl{font-size:11.5px;font-weight:600;line-height:1.3}
+.spec .val{font-size:11.5px;line-height:1.42;color:var(--muted)}
+.spec code{font-family:var(--mono);font-size:10.5px;color:var(--ink);
+           background:var(--wash);padding:.5px 4px;border-radius:2px;white-space:nowrap}
+
+/* Features: two groups, plain lists. No cards: these are items, not objects. */
+.feat{display:flex;flex-direction:column;gap:13px}
+.grp{display:flex;flex-direction:column;gap:6px}
+.grp ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:5px}
+.grp li{font-size:11.5px;line-height:1.42;padding-left:12px;position:relative;color:var(--muted)}
+.grp li::before{content:"";position:absolute;left:0;top:.52em;width:4px;height:4px;
+                border-radius:50%;background:var(--accent)}
+.grp li b{font-weight:600;color:var(--ink)}
+
+/* ── Benefits band ─────────────────────────────────────────────────────── */
+.gain{display:grid;grid-template-columns:1fr;gap:12px 22px}
+@media (min-width:560px){.gain{grid-template-columns:repeat(2,1fr)}}
+@media (min-width:760px){.gain{grid-template-columns:repeat(4,1fr)}}
+.gain .t{font-family:var(--serif);font-weight:600;font-size:13px;line-height:1.2;margin-bottom:3px}
+.gain .d{font-size:11.5px;line-height:1.42;color:var(--muted)}
+
+/* The honesty note is the one place that gets a fill, because it is the one
+   thing a reader must not skim past. */
+.note{background:var(--wash);border-left:2px solid var(--accent);padding:9px 12px;
+      font-size:11px;line-height:1.45;color:var(--ink)}
+footer{display:flex;flex-wrap:wrap;gap:4px 16px;justify-content:space-between;
+       padding-top:11px;border-top:1px solid var(--rule);font-size:10px;color:var(--muted)}
+
+/* ── Print: one Letter page ────────────────────────────────────────────── */
+@page{size:letter portrait;margin:0.42in}
+@media print{
+  :root{--paper:#fff;--sheet:#fff;--ink:#000;--muted:#3d4650;--rule:#c9ced3;
+        --accent:#0f4438;--wash:#eef3f1;--shadow:none}
+  body{background:#fff;font-size:9.2pt}
+  .sheet{max-width:none;margin:0;padding:0;box-shadow:none;gap:8pt}
+  h1{font-size:17.5pt} h2{font-size:10pt} h3{font-size:6.5pt}
+  .lede{font-size:8.3pt} .phone{font-size:10.5pt} .meta .k{font-size:6.8pt}
+  .mast{padding-bottom:7pt} .sect{gap:5pt} .sect > h2{padding-bottom:3pt}
+  .flow{grid-template-columns:repeat(4,1fr);gap:6pt 11pt}
+  .step .t{font-size:8pt} .step .d,.spec .lbl,.spec .val,.grp li,.gain .d{font-size:7.4pt}
+  .step .n{font-size:7pt} .spec code{font-size:7.2pt}
+  .body2{grid-template-columns:.94fr 1.06fr;gap:16pt} .spec{gap:3.5pt} .feat{gap:6pt}
+  .grp ul{gap:2.5pt} .step .d,.spec .val,.grp li,.gain .d{line-height:1.36}
+  .gain{grid-template-columns:repeat(4,1fr);gap:6pt 13pt} .gain .t{font-size:8.8pt}
+  .note{font-size:7.4pt;padding:6pt 9pt} footer{font-size:6.8pt;padding-top:6pt}
+  .sect,.step,.grp,.note,footer{break-inside:avoid}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main class="sheet">
+
+  <header class="mast">
+    <div class="id">
+      <div class="eyebrow">Vertex Manufacturing 401(k)</div>
+      <h1>Robin answers the plan line</h1>
+      <p class="lede">Picks up the plan line, proves who is calling, answers from the plan's own documents, reads
+        a member their own figures, and hands off to a person when she cannot finish.</p>
+    </div>
+    <div class="meta">
+      <div class="phone tnum">+1 833 573 9530</div>
+      <div class="k">Live on a real number, built on ElevenLabs</div>
+      <div class="k tnum">Configuration as of 21 Sep 2026</div>
+    </div>
+  </header>
+
+  <section class="sect">
+    <h2>How a call works</h2>
+    <div class="flow">
+      <div class="step"><span class="n">01</span><span class="t">She asks what you need</span>
+        <span class="d">Robin answers and asks what the caller needs before asking who they are.
+          A name spoken aloud is a greeting, not an identity.</span></div>
+      <div class="step"><span class="n">02</span><span class="t">She proves who is calling</span>
+        <span class="d">Member ID and date of birth, checked against the plan record. She names
+          the plan back and waits for a yes, and never asks for an SSN, user ID, password
+          or PIN.</span></div>
+      <div class="step"><span class="n">03</span><span class="t">She answers, or looks it up</span>
+        <span class="d">What the caller said routes to one of four procedures. Plan rules come
+          from the published documents; anything specific to this caller triggers a live account
+          lookup first.</span></div>
+      <div class="step"><span class="n">04</span><span class="t">She connects, then records</span>
+        <span class="d">Past what she can do, she offers to put the caller through rather than
+          read out a number. When the call ends, its transcript, topic, outcome and verification
+          write themselves to the record.</span></div>
+  </section>
+
+  <div class="body2">
+
+    <section class="sect">
+      <h2>How Robin is set up</h2>
+      <div class="spec">
+        <div class="row"><div class="lbl">Context-aware speech</div><div class="val">
+          <code>eleven_v3_conversational</code> with expressive delivery on. She reads a line the way
+          its meaning calls for rather than at one flat pitch: a dollar figure slows, a question
+          lifts. A pronunciation dictionary fixes plan terms a generic voice mangles.</div></div>
+        <div class="row"><div class="lbl">Turn-taking and interruptions</div><div class="val">
+          Turn model <code>turn_v3</code> with speculative turns, so she starts replying while the
+          caller is still finishing, and makes a short thinking sound past three seconds rather
+          than leave dead air. Interruptions are free, except during an identity check or a
+          balance lookup.</div></div>
+        <div class="row"><div class="lbl">Reasoning</div><div class="val">
+          <code>claude-haiku-4-5</code> at a low temperature, with a ten-minute cap on any one
+          call.</div></div>
+        <div class="row"><div class="lbl">Knowledge</div><div class="val">
+          Six plan documents: five searched per question, the portal guide always in context. She
+          answers from those only, and where they are silent says she is not certain and offers
+          a transfer.</div></div>
+        <div class="row"><div class="lbl">Account data</div><div class="val">
+          Two lookups against the plan record: identity, and the caller's own figures. No database
+          sits in the call path, so a published answer adds no call time and an outage in the
+          portal cannot reach a live call.</div></div>
+        <div class="row"><div class="lbl">Routing</div><div class="val">
+          Four procedures: account recovery, plan questions, loans, the online portal. Each is
+          triggered by what the caller says and bound to the documents it may use.</div></div>
+        <div class="row"><div class="lbl">Language</div><div class="val">
+          English, and Spanish with its own greeting, switched automatically when the caller
+          switches.</div></div>
+        <div class="row"><div class="lbl">Guardrails</div><div class="val">
+          Topic-focus and prompt-injection protection on, content filters set to end a call that goes
+          badly off the rails. Every call is recorded, transcribed and classified.</div></div>
+      </div>
+    </section>
+
+    <section class="sect">
+      <h2>What she does, and what you can see</h2>
+      <div class="feat">
+        <div class="grp">
+          <h3>On the call</h3>
+          <ul>
+            <li><b>Verifies the caller</b> from member ID and date of birth, before any answer, document,
+              or confirmation that an account exists.</li>
+            <li><b>Answers plan questions</b> on loans, rollovers, leaving the employer, contributions,
+              the match and vesting, from the published documents.</li>
+            <li><b>Reads their own figures</b>: balance, vested balance, and their loan down to the
+              payment, rate, payments left and payoff date.</li>
+            <li><b>Enforces the one-loan rule</b> by checking the caller's record first, so a general
+              rule is never delivered as though it were theirs.</li>
+            <li><b>Offers to connect them</b> to a specialist instead of handing out a number, giving the
+              number only if they would rather call themselves.</li>
+            <li><b>Coaches a locked account or password reset</b> without touching an SSN, user ID,
+              password or PIN.</li>
+            <li><b>Asks four survey questions</b> at the end of eligible calls, and stays silent where
+              asking would be wrong.</li>
+          </ul>
+        </div>
+        <div class="grp">
+          <h3>Around the call, behind one sign-in</h3>
+          <ul>
+            <li><b>Quality.</b> Whether callers would rather use Robin than hold for a person, how likely
+              they are to recommend her, how natural she sounded, and their own words. Every figure
+              opens the call behind it, with CSV export.</li>
+            <li><b>Accuracy.</b> Each call graded against the documents she actually read on it, claim by
+              claim, with the sentence backing each one. No answer key: what she said is checked
+              against what she was given.</li>
+            <li><b>Calls.</b> Every recent call: who verified, what they asked, how it ended, why it
+              transferred, the sentiment, and the transcript with caller details scrubbed.</li>
+            <li><b>Knowledge Factory.</b> Turn a plan document into answer cards, have a second model check
+              each claim against its source, then publish. Cards holding a name, SSN or account
+              number cannot be saved, and nothing publishes without a person.</li>
+            <li><b>Question Tester.</b> Ask a question the way a caller would and see what her
+              published knowledge answers, with no phone call.</li>
+            <li><b>About Robin.</b> Her configuration read live from the platform on every page load,
+              never from a document that may have drifted.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <section class="sect">
+    <h2>What this buys the plan</h2>
+    <div class="gain">
+      <div><div class="t">A gate that cannot be talked past</div><div class="d">Identity is proven before any
+        answer, including the general questions people assume are harmless. Pressure to skip it is
+        refused, not negotiated.</div></div>
+      <div><div class="t">Answers you can trace</div><div class="d">Every plan answer traces to a named
+        document and to the sentence that supports it. A wrong answer is findable, not
+        anecdotal.</div></div>
+      <div><div class="t">A limit becomes a handoff</div><div class="d">What she cannot do ends in a warm
+        transfer rather than homework. The caller moves forward on the call they are already
+        on.</div></div>
+      <div><div class="t">Changing her knowledge is a publish</div><div class="d">New or corrected content is
+        written, checked, approved by a person and published. Not a code change, and it leaves a
+        record.</div></div>
+    </div>
+    <p class="note"><b>Where this stands.</b> Robin is live on a real phone number and runs on synthetic member
+      data only. The customer wave began 21 September 2026, so results start from zero and
+      accumulate in the portal. This page describes what is built and how it is configured, and
+      claims no outcome not yet measured.</p>
+  </section>
+
+</main>
+</body>
+</html>
