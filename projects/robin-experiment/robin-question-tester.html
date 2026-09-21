@@ -10,84 +10,51 @@
 <style>
 :root{
   --paper:#FCFCFD; --sheet:#FFFFFF; --ink:#1B1F24; --muted:#5D6671; --faint:#8B939E;
-  --rule:#DDE1E5; --rule2:#EDEFF2; --accent:#15594C; --wash:#E8F0ED; --warn:#8A4B1F;
+  --rule:#DDE1E5; --rule2:#EDEFF2; --accent:#15594C; --wash:#E8F0ED;
+  --shadow:0 1px 2px rgba(27,31,36,.06),0 12px 40px rgba(27,31,36,.08);
   --serif:"Newsreader",Georgia,"Times New Roman",serif;
   --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --paper:#0F1216; --sheet:#141820; --ink:#E7EAED; --muted:#9AA3AE; --faint:#767F8B;
-  --rule:#2A3038; --rule2:#1E242B; --accent:#5FB49B; --wash:#17302B; --warn:#C08A57;
+  --paper:#101317; --sheet:#171B20; --ink:#E7EAED; --muted:#99A2AD; --faint:#767F8B;
+  --rule:#2B3138; --rule2:#1E242B; --accent:#5FB49B; --wash:#18302B; --shadow:none;
 }}
 :root[data-theme="dark"]{
-  --paper:#0F1216; --sheet:#141820; --ink:#E7EAED; --muted:#9AA3AE; --faint:#767F8B;
-  --rule:#2A3038; --rule2:#1E242B; --accent:#5FB49B; --wash:#17302B; --warn:#C08A57;
+  --paper:#101317; --sheet:#171B20; --ink:#E7EAED; --muted:#99A2AD; --faint:#767F8B;
+  --rule:#2B3138; --rule2:#1E242B; --accent:#5FB49B; --wash:#18302B; --shadow:none;
 }
 
 *{box-sizing:border-box}
 body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
-     font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
-.doc{background:var(--sheet);max-width:940px;margin:0 auto;padding-block:40px;padding-inline:16px;
-     display:flex;flex-direction:column;gap:38px}
-@media (min-width:720px){.doc{padding-block:56px;padding-inline:56px}}
+     font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.sheet{background:var(--sheet);color:var(--ink);box-shadow:var(--shadow);max-width:8.5in;
+       margin:0 auto;padding:0.5in 16px;display:flex;flex-direction:column;gap:20px}
+@media (min-width:700px){.sheet{padding:0.55in 0.6in}}
 
-h1{font-family:var(--serif);font-weight:600;font-size:34px;line-height:1.08;margin:0;letter-spacing:-.012em;text-wrap:balance}
-h2{font-family:var(--serif);font-weight:600;font-size:22px;line-height:1.2;margin:0;text-wrap:balance}
-h3{font-family:var(--sans);font-weight:600;font-size:14px;line-height:1.3;margin:0}
-p{margin:0;max-width:74ch}
+h1{font-family:var(--serif);font-weight:600;font-size:29px;line-height:1.08;margin:0;
+   letter-spacing:-.012em;text-wrap:balance}
+h2{font-family:var(--sans);font-weight:600;font-size:10px;line-height:1.2;margin:0;
+   text-transform:uppercase;letter-spacing:.11em;color:var(--faint)}
+p{margin:0}
 .tnum{font-variant-numeric:tabular-nums}
-code,.m{font-family:var(--mono);font-size:.88em;background:var(--wash);color:var(--ink);
-        padding:1px 4px;border-radius:2px}
-a{color:var(--accent)}
+.m{font-family:var(--mono);font-size:.86em;background:var(--wash);padding:.5px 4px;border-radius:2px}
 
-/* Section head: a numbered serif line over a full-width hairline. The number is
-   information: these sections are meant to be walked in order. */
-section{display:flex;flex-direction:column;gap:16px}
-.sh{display:flex;align-items:baseline;gap:12px;padding-bottom:9px;border-bottom:1px solid var(--rule)}
-.sh .num{font-family:var(--mono);font-size:12px;color:var(--accent);font-weight:500}
+.mast{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;
+      padding-bottom:14px;border-bottom:2px solid var(--ink)}
+.mast .id{display:flex;flex-direction:column;gap:6px;min-width:min(100%,34ch)}
+.eyebrow{font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:var(--accent)}
+.lede{font-size:13px;line-height:1.5;color:var(--muted);max-width:60ch}
+.mast .meta{display:flex;flex-direction:column;gap:2px;text-align:left;font-size:10px;
+            color:var(--faint);font-family:var(--mono)}
+@media (min-width:700px){.mast .meta{text-align:right}}
 
-header.mast{display:flex;flex-direction:column;gap:14px;padding-bottom:22px;border-bottom:2px solid var(--ink)}
-.eyebrow{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:var(--accent)}
-.lede{font-size:16.5px;line-height:1.55;color:var(--muted);max-width:70ch}
-.mastmeta{display:flex;flex-wrap:wrap;gap:6px 26px;font-size:12px;color:var(--faint);
-          font-family:var(--mono);padding-top:4px}
+.intro{font-size:13px;line-height:1.55;max-width:88ch}
 
-/* Numbered list where order is the content. */
-ol.walk{margin:0;padding:0;list-style:none;counter-reset:w;display:flex;flex-direction:column;gap:13px}
-/* Not display:grid on the li: a grid container turns every child element (the bold
-   run-in, each <span class="m">) into its own grid item and scatters the sentence. */
-ol.walk > li{counter-increment:w;position:relative;padding-left:32px;
-             max-width:76ch;font-size:14px;line-height:1.55}
-ol.walk > li::before{content:counter(w,decimal-leading-zero);position:absolute;left:0;top:.2em;
-                     font-family:var(--mono);font-size:11px;font-weight:500;color:var(--accent)}
-ol.walk b{font-weight:600}
-
-ul.pts{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:11px}
-ul.pts > li{padding-left:15px;position:relative;max-width:76ch;font-size:14px;line-height:1.55;color:var(--muted)}
-ul.pts > li::before{content:"";position:absolute;left:0;top:.62em;width:5px;height:5px;border-radius:50%;background:var(--accent)}
-ul.pts b{color:var(--ink);font-weight:600}
-
-/* Stacked prose blocks with a bold run-in, for the three loops. */
-.loops{display:flex;flex-direction:column;gap:18px}
-.loop{display:flex;flex-direction:column;gap:5px;padding-left:15px;border-left:2px solid var(--rule)}
-.loop.key{border-left-color:var(--accent)}
-.loop p{font-size:14px;line-height:1.55;color:var(--muted)}
-.loop h3 .where{font-weight:400;color:var(--faint);font-family:var(--mono);font-size:11px;margin-left:8px}
-
-.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
-table{border-collapse:collapse;width:100%;min-width:620px;font-size:13px}
-th{text-align:left;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.1em;
-   color:var(--faint);padding:0 14px 7px 0;border-bottom:1px solid var(--rule);white-space:nowrap}
-td{padding:9px 14px 9px 0;border-bottom:1px solid var(--rule2);vertical-align:top;color:var(--muted);line-height:1.45}
-td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
-td .m{white-space:nowrap}
-
-/* Figures. Strokes and text take currentColor so both themes work; the accent is
-   spent only on the one mark that carries the claim. */
-figure{margin:0;display:flex;flex-direction:column;gap:10px}
-.fig{border:1px solid var(--rule);border-radius:3px;padding:16px 14px;background:var(--paper);
+figure{margin:0;display:flex;flex-direction:column;gap:8px}
+.fig{border:1px solid var(--rule);border-radius:3px;padding:12px 12px;background:var(--paper);
      color:var(--ink);overflow-x:auto}
-.fig svg{display:block;width:100%;min-width:560px;height:auto}
+.fig svg{display:block;width:100%;min-width:540px;height:auto}
 .fig .bx{fill:none;stroke:currentColor;stroke-width:1.2;opacity:.55}
 .fig .bx-acc{fill:none;stroke:var(--accent);stroke-width:1.7}
 .fig .fillw{fill:var(--wash);stroke:var(--accent);stroke-width:1.7}
@@ -100,409 +67,170 @@ figure{margin:0;display:flex;flex-direction:column;gap:10px}
 .fig .ln-acc{stroke:var(--accent);stroke-width:1.6;fill:none}
 .fig .mk{fill:currentColor;opacity:.5}
 .fig .mk-acc{fill:var(--accent)}
-.fig .dash{stroke-dasharray:5 4}
-figcaption{font-size:12.5px;line-height:1.5;color:var(--muted);max-width:74ch}
+figcaption{font-size:11.5px;line-height:1.45;color:var(--muted);max-width:80ch}
 figcaption b{color:var(--ink);font-weight:600}
 
-.note{background:var(--wash);border-left:2px solid var(--accent);padding:14px 16px;
-      font-size:13.5px;line-height:1.55;max-width:78ch}
-.note p + p{margin-top:9px}
-footer{padding-top:18px;border-top:1px solid var(--rule);font-size:11.5px;color:var(--faint);
-       display:flex;flex-wrap:wrap;gap:4px 20px;justify-content:space-between}
+.cols{display:grid;grid-template-columns:1fr;gap:20px}
+@media (min-width:760px){.cols{grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);gap:28px}}
+.col{display:flex;flex-direction:column;gap:9px}
+.col > h2{padding-bottom:6px;border-bottom:1px solid var(--rule)}
 
-@page{size:letter portrait;margin:0.5in}
+ol.steps{margin:0;padding:0;list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:7px}
+ol.steps > li{counter-increment:s;position:relative;padding-left:26px;font-size:11.8px;line-height:1.45;color:var(--muted)}
+ol.steps > li::before{content:counter(s,decimal-leading-zero);position:absolute;left:0;top:.16em;
+                      font-family:var(--mono);font-size:9.5px;font-weight:500;color:var(--accent)}
+ol.steps b{color:var(--ink);font-weight:600}
+
+.spec{display:flex;flex-direction:column;gap:7px}
+.spec .row{display:grid;grid-template-columns:1fr;gap:1px}
+.spec .lbl{font-size:11.5px;font-weight:600;line-height:1.3}
+.spec .val{font-size:11.5px;line-height:1.42;color:var(--muted)}
+
+ul.flat{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:5px}
+ul.flat > li{padding-left:12px;position:relative;font-size:11.5px;line-height:1.42;color:var(--muted)}
+ul.flat > li::before{content:"";position:absolute;left:0;top:.52em;width:4px;height:4px;
+                     border-radius:50%;background:var(--accent)}
+ul.flat b{color:var(--ink);font-weight:600}
+
+.close{background:var(--wash);border-left:2px solid var(--accent);padding:9px 12px;
+       font-size:11.3px;line-height:1.45;color:var(--ink)}
+footer{display:flex;flex-wrap:wrap;gap:4px 16px;justify-content:space-between;padding-top:10px;
+       border-top:1px solid var(--rule);font-size:9.5px;color:var(--faint)}
+
+@page{size:letter portrait;margin:0.42in}
 @media print{
-  :root{--paper:#fff;--sheet:#fff;--ink:#000;--muted:#333b44;--faint:#5c646e;
-        --rule:#c4c9ce;--rule2:#e2e5e8;--accent:#0f4438;--wash:#eef3f1}
+  :root{--paper:#fff;--sheet:#fff;--ink:#000;--muted:#3a424b;--faint:#5c646e;--rule:#c4c9ce;
+        --rule2:#e2e5e8;--accent:#0f4438;--wash:#eef3f1;--shadow:none}
   body{background:#fff;font-size:10pt}
-  .doc{max-width:none;margin:0;padding:0;gap:22pt}
-  h1{font-size:22pt} h2{font-size:14pt} .lede{font-size:11pt}
-  section,figure,.loop,tr,.note{break-inside:avoid}
-  .fig svg{min-width:0} table{min-width:0;font-size:8.5pt}
-  ol.walk > li,ul.pts > li,.loop p,figcaption{font-size:9.5pt}
+  .sheet{max-width:none;margin:0;padding:0;box-shadow:none;gap:12pt}
+  h1{font-size:20pt} h2{font-size:7.2pt} .lede{font-size:9.6pt} .mast .meta{font-size:7.4pt}
+  .mast{padding-bottom:8pt} .intro{font-size:9.6pt;line-height:1.45}
+  .fig{padding:8pt 8pt} .fig svg{min-width:0} figcaption{font-size:8.2pt}
+  .cols{grid-template-columns:1.08fr .92fr;gap:18pt} .col{gap:6.5pt} .col > h2{padding-bottom:3.5pt}
+  ol.steps{gap:6pt} ol.steps > li{font-size:9pt;line-height:1.4;padding-left:21pt}
+  ol.steps > li::before{font-size:7.6pt}
+  .spec{gap:5.5pt} .spec .lbl,.spec .val{font-size:9pt;line-height:1.4}
+  ul.flat{gap:5pt} ul.flat > li{font-size:9pt;line-height:1.4}
+  .close{font-size:8.6pt;padding:6pt 9pt} footer{font-size:7pt;padding-top:7pt}
+  figure,.col,.close,footer{break-inside:avoid}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
+
 </head>
 <body>
-<main class="doc">
+<main class="sheet">
 
-<header class="mast">
-  <div class="eyebrow">Robin &middot; companion document</div>
-  <h1>Asking Robin a question without calling her</h1>
-  <p class="lede">Type questions the way a member would, get the answers back, compare them to a
-    written answer key. It is the fastest way to check her knowledge, and today it is reading from
-    the wrong set of documents. That is the most important thing on this page.</p>
-  <div class="mastmeta">
-    <span>the question tester</span>
-    <span>25 questions with a written answer key</span>
-    <span>checked against the running system, 21 Sep 2026</span>
-  </div>
-</header>
+  <header class="mast">
+    <div class="id">
+      <div class="eyebrow">Robin &middot; Vertex Manufacturing 401(k)</div>
+      <h1>The Question Tester</h1>
+      <p class="lede">Check her knowledge in a browser instead of on the phone.</p>
+    </div>
+    <div class="meta">
+      <div>25 questions with a key</div>
+      <div>no call required</div>
+      <div class="tnum">21 Sep 2026</div>
+    </div>
+  </header>
 
-<section>
-  <div class="sh"><span class="num">01</span><h2>The short version</h2></div>
-  <p>Placing a phone call to check one wording is slow, and it ties up a tester. This does the same
-    check in a few seconds, in a browser.</p>
-  <ul class="pts">
-    <li><b>Paste questions, one per line.</b> Each is answered the way Robin would answer it, using
-      the same model she runs on and the same answering rules, at a setting that produces the same
-      natural variation. Send the same question again and the wording will differ slightly, exactly
-      as it would on two real calls.</li>
-    <li><b>Twenty-five of them have a written answer key.</b> When a question matches one of those,
-      the ideal answer appears beside what came back, so a reviewer can compare rather than
-      remember.</li>
-    <li><b>You can flag anything that looks wrong</b> and collect it for review, and you can see how
-      long each answer took.</li>
-    <li><b>It is reading from our published articles, not from Robin's binder.</b> These are supposed
-      to be the same thing. Today they are not, and the gap is total rather than partial.</li>
-  </ul>
-  <div class="note">
-    <p><b>The thing to know before trusting it.</b> Robin answers from six documents that were
-      uploaded straight into ElevenLabs by hand. This tool answers from the 29 articles we have
-      published through the Knowledge Factory. Not one of those 29 is one of her six. They belong to
-      the earlier INTRUST plan and the newest was last changed on 27 July 2026, while Robin now
-      answers for the Vertex Manufacturing plan. <b>So today this tool tells you what a differently
-      informed Robin would say.</b> It is a working test of the pipeline, not a test of the live
-      agent, and it becomes both the moment her documents are published through the factory.</p>
-  </div>
-</section>
+  <p class="intro">Placing a call to check one wording is slow and ties up a tester. Paste questions
+    the way a member would ask them and each is answered by the model Robin runs on, under her
+    answering rules. Thirty wordings take about as long as one phone call.</p>
 
-<section>
-  <div class="sh"><span class="num">02</span><h2>What it is made of</h2></div>
   <figure>
     <div class="fig">
-      <svg viewBox="0 0 780 322" role="img" aria-label="A typed question goes to the same model Robin runs on, grounded in our published articles, and comes back as an answer with its round-trip time. It reads the published articles and the same answering rules. A reviewer can load the twenty-five curated questions, see the ideal answer beside the reply, send again to see variation, and flag an answer for review.">
+      <svg viewBox="0 0 820 168" role="img" aria-label="A typed question goes to our service, which grounds the answer in the articles published through the Knowledge Factory, asks the model Robin runs on, and returns an answer with its round-trip time.">
         <defs>
-          <marker id="q-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path class="mk" d="M0 0 L10 5 L0 10 z"/>
-          </marker>
+          <marker id="t-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path class="mk" d="M0 0 L10 5 L0 10 z"/></marker>
+          <marker id="t-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path class="mk-acc" d="M0 0 L10 5 L0 10 z"/></marker>
         </defs>
-        <text class="lb" x="4" y="26">you type a question</text>
-        <text class="lb" x="776" y="26" text-anchor="end">an answer, in seconds</text>
+        <rect class="bx" x="298" y="14" width="168" height="34" rx="3"/>
+        <text class="t2" x="382" y="36" text-anchor="middle">The written ideal answer</text>
+        <line class="ln" x1="382" y1="80" x2="382" y2="52" marker-end="url(#t-a)"/>
+        <text class="lb" x="392" y="70">shown for the 25 test questions</text>
 
-        <rect class="bx" x="36" y="34" width="126" height="46" rx="3"/>
-        <text class="t1" x="99" y="55" text-anchor="middle">Your question</text>
-        <text class="t2" x="99" y="70" text-anchor="middle">one per line</text>
+        <rect class="bx" x="14" y="80" width="112" height="50" rx="3"/>
+        <text class="t1" x="70" y="103" text-anchor="middle">Your question</text>
+        <text class="t2" x="70" y="118" text-anchor="middle">typed, one per line</text>
 
-        <rect class="bx" x="192" y="34" width="126" height="46" rx="3"/>
-        <text class="t1" x="255" y="55" text-anchor="middle">The same model</text>
-        <text class="t2" x="255" y="70" text-anchor="middle">and the same rules</text>
+        <rect class="bx" x="156" y="80" width="112" height="50" rx="3"/>
+        <text class="t1" x="212" y="103" text-anchor="middle">Our service</text>
+        <text class="t2" x="212" y="118" text-anchor="middle">one at a time</text>
 
-        <rect class="bx-acc" x="348" y="34" width="166" height="46" rx="3"/>
-        <text class="t1" x="431" y="55" text-anchor="middle">Our published articles</text>
-        <text class="t2" x="431" y="70" text-anchor="middle">not Robin's own binder</text>
+        <rect class="bx-acc" x="298" y="80" width="168" height="50" rx="3"/>
+        <text class="t1" x="382" y="103" text-anchor="middle">Published articles</text>
+        <text class="t2" x="382" y="118" text-anchor="middle">not Robin's own binder</text>
 
-        <rect class="bx" x="544" y="34" width="126" height="46" rx="3"/>
-        <text class="t1" x="607" y="55" text-anchor="middle">The answer</text>
-        <text class="t2" x="607" y="70" text-anchor="middle">with how long it took</text>
+        <rect class="bx" x="496" y="80" width="136" height="50" rx="3"/>
+        <text class="t1" x="564" y="103" text-anchor="middle">The model</text>
+        <text class="t2" x="564" y="118" text-anchor="middle">the one she runs on</text>
 
-        <line class="ln" x1="4" y1="57" x2="32" y2="57" marker-end="url(#q-a)"/>
-        <line class="ln" x1="162" y1="57" x2="188" y2="57" marker-end="url(#q-a)"/>
-        <line class="ln" x1="318" y1="57" x2="344" y2="57" marker-end="url(#q-a)"/>
-        <line class="ln" x1="514" y1="57" x2="540" y2="57" marker-end="url(#q-a)"/>
-        <line class="ln" x1="670" y1="57" x2="762" y2="57" marker-end="url(#q-a)"/>
+        <rect class="bx" x="662" y="80" width="144" height="50" rx="3"/>
+        <text class="t1" x="734" y="103" text-anchor="middle">An answer</text>
+        <text class="t2" x="734" y="118" text-anchor="middle">and how long it took</text>
 
-        <path class="ln" d="M431 80 L431 104 M235 104 L605 104"/>
-        <line class="ln" x1="235" y1="104" x2="235" y2="142" marker-end="url(#q-a)"/>
-        <line class="ln" x1="605" y1="104" x2="605" y2="142" marker-end="url(#q-a)"/>
-        <text class="lb" x="227" y="126" text-anchor="end">what it reads</text>
-        <text class="lb" x="613" y="126">what you can do</text>
+        <line class="ln" x1="126" y1="105" x2="152" y2="105" marker-end="url(#t-a)"/>
+        <line class="ln-acc" x1="268" y1="105" x2="294" y2="105" marker-end="url(#t-b)"/>
+        <line class="ln" x1="466" y1="105" x2="492" y2="105" marker-end="url(#t-a)"/>
+        <line class="ln" x1="632" y1="105" x2="658" y2="105" marker-end="url(#t-a)"/>
 
-        <rect class="bx" x="130" y="146" width="210" height="34" rx="3"/>
-        <text class="t2" x="235" y="167" text-anchor="middle">29 published articles</text>
-        <rect class="bx" x="130" y="186" width="210" height="34" rx="3"/>
-        <text class="t2" x="235" y="207" text-anchor="middle">A built-in copy, as a fallback</text>
-        <rect class="bx" x="130" y="226" width="210" height="34" rx="3"/>
-        <text class="t2" x="235" y="247" text-anchor="middle">Robin's own answering rules</text>
-
-        <rect class="bx" x="500" y="146" width="210" height="34" rx="3"/>
-        <text class="t2" x="605" y="167" text-anchor="middle">Load the 25 test questions</text>
-        <rect class="bx" x="500" y="186" width="210" height="34" rx="3"/>
-        <text class="t2" x="605" y="207" text-anchor="middle">See the ideal answer beside it</text>
-        <rect class="bx" x="500" y="226" width="210" height="34" rx="3"/>
-        <text class="t2" x="605" y="247" text-anchor="middle">Send again, see it vary</text>
-        <rect class="bx" x="500" y="266" width="210" height="34" rx="3"/>
-        <text class="t2" x="605" y="287" text-anchor="middle">Flag an answer for review</text>
+        <text class="lb" x="139" y="152" text-anchor="middle">sent</text>
+        <text class="lb-acc" x="281" y="152" text-anchor="middle">the one substitution</text>
+        <text class="lb" x="479" y="152" text-anchor="middle">grounded in them</text>
+        <text class="lb" x="645" y="152" text-anchor="middle">returned</text>
       </svg>
     </div>
-    <figcaption><b>Figure 1.</b> The accented box is the one to keep an eye on. Everything else about
-      this tool faithfully mirrors Robin. That box is where it currently diverges from her, and the
-      divergence is invisible unless you know to look.</figcaption>
+    <figcaption><b>Figure.</b> Compare this with a real call and one box differs. On a call the
+      knowledge comes from Robin's binder at ElevenLabs. Here it comes from the articles we have
+      published, which is what makes the tool instant.</figcaption>
   </figure>
 
-  <ul class="pts">
-    <li><b>Same model, same setting.</b> It runs the model Robin runs, at a comparable setting, so
-      the answers vary between sends the way hers vary between calls. That variation is the point
-      rather than a nuisance: an answer that is right once and wrong the second time is a finding,
-      and a tool that gave identical output every time would hide it.</li>
-    <li><b>Same answering rules.</b> The instructions about leading with one sentence, declining to
-      give investment advice, and saying she is not certain rather than filling a gap are shared with
-      the live agent, so the shape and tone of the answers are representative.</li>
-    <li><b>The answer key is twenty-five questions, written by hand.</b> It is a fixed list covering
-      enrollment, contributions, the match, vesting, loans, withdrawals, rollovers, beneficiaries,
-      account access and investments, plus one question she is supposed to refuse. Anything outside
-      the list simply comes back without a comparison.</li>
-    <li><b>It falls back to a built-in copy</b> of the knowledge when nothing at all has been
-      published. That fallback is the reason the tool always answers something, and part of the
-      reason it is easy not to notice what it is reading.</li>
-  </ul>
-</section>
-
-<section>
-  <div class="sh"><span class="num">03</span><h2>What happens to one question</h2></div>
-  <figure>
-    <div class="fig">
-      <svg viewBox="0 0 820 178" role="img" aria-label="A typed question goes to our service, which loads the published articles, asks the same model Robin uses, and returns an answer to the page along with the ideal answer when the question is one of the twenty-five.">
-        <defs>
-          <marker id="q-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path class="mk" d="M0 0 L10 5 L0 10 z"/>
-          </marker>
-          <marker id="q-b2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path class="mk-acc" d="M0 0 L10 5 L0 10 z"/>
-          </marker>
-        </defs>
-
-        <rect class="bx" x="298" y="14" width="168" height="38" rx="3"/>
-        <text class="t2" x="382" y="38" text-anchor="middle">The written ideal answer</text>
-        <line class="ln" x1="382" y1="86" x2="382" y2="56" marker-end="url(#q-b)"/>
-        <text class="lb" x="392" y="74">shown when it is one of the 25</text>
-
-        <rect class="bx" x="14" y="86" width="92" height="52" rx="3"/>
-        <text class="t1" x="60" y="110" text-anchor="middle">The page</text>
-        <text class="t2" x="60" y="125" text-anchor="middle">you type, it sends</text>
-
-        <rect class="bx" x="136" y="86" width="132" height="52" rx="3"/>
-        <text class="t1" x="202" y="110" text-anchor="middle">Our service</text>
-        <text class="t2" x="202" y="125" text-anchor="middle">one question at a time</text>
-
-        <rect class="bx-acc" x="298" y="86" width="168" height="52" rx="3"/>
-        <text class="t1" x="382" y="110" text-anchor="middle">Published articles</text>
-        <text class="t2" x="382" y="125" text-anchor="middle">loaded, then held a minute</text>
-
-        <rect class="bx" x="496" y="86" width="136" height="52" rx="3"/>
-        <text class="t1" x="564" y="110" text-anchor="middle">The model</text>
-        <text class="t2" x="564" y="125" text-anchor="middle">the one Robin runs on</text>
-
-        <rect class="bx" x="662" y="86" width="144" height="52" rx="3"/>
-        <text class="t1" x="734" y="110" text-anchor="middle">An answer</text>
-        <text class="t2" x="734" y="125" text-anchor="middle">and its round-trip time</text>
-
-        <line class="ln" x1="106" y1="112" x2="132" y2="112" marker-end="url(#q-b)"/>
-        <line class="ln-acc" x1="268" y1="112" x2="294" y2="112" marker-end="url(#q-b2)"/>
-        <line class="ln" x1="466" y1="112" x2="492" y2="112" marker-end="url(#q-b)"/>
-        <line class="ln" x1="632" y1="112" x2="658" y2="112" marker-end="url(#q-b)"/>
-
-        <text class="lb" x="119" y="160" text-anchor="middle">sends</text>
-        <text class="lb-acc" x="281" y="160" text-anchor="middle">this is the substitution</text>
-        <text class="lb" x="479" y="160" text-anchor="middle">grounded in them</text>
-        <text class="lb" x="645" y="160" text-anchor="middle">returns</text>
-      </svg>
+  <div class="cols">
+    <div class="col">
+      <h2>How it works</h2>
+      <ol class="steps">
+        <li><b>One question per line.</b> Each is sent on its own with no memory between them, so one
+          answer cannot lean on the last.</li>
+        <li><b>Answers are grounded in the published articles</b>, held for a minute so a run of
+          twenty questions does not fetch them twenty times. Publish something new and it appears
+          here within the minute.</li>
+        <li><b>The model and the answering rules are Robin's.</b> Send the same question twice and
+          the wording differs, the way it would on two real calls. A single sample hides that
+          spread.</li>
+        <li><b>Twenty-five questions have a written ideal answer.</b> When yours matches one, the
+          ideal appears beside the reply so a reviewer compares rather than judging from memory.</li>
+        <li><b>Each answer shows its round-trip time</b>, and anything that looks wrong can be
+          flagged and collected for review.</li>
+      </ol>
     </div>
-    <figcaption><b>Figure 2.</b> Compare this with a real call and one box is different. On a call the
-      knowledge comes from Robin's binder at ElevenLabs. Here it comes from our published articles.
-      When the two hold the same content that substitution is harmless, and it is what makes the tool
-      instant.</figcaption>
-  </figure>
 
-  <ol class="walk">
-    <li><b>You type questions the way a member would ask them.</b> Not keywords. The whole point is to
-      see how a real phrasing lands.</li>
-    <li><b>Each is sent on its own.</b> No conversation, no memory between questions, so one answer
-      cannot lean on the last.</li>
-    <li><b>The published articles are loaded</b> and held for a minute so a run of twenty questions
-      does not fetch them twenty times. Publish something new and it appears here within the
-      minute.</li>
-    <li><b>The model answers under Robin's own rules</b>, and returns the text and how long it
-      took.</li>
-    <li><b>If the question is one of the twenty-five,</b> the written ideal answer is shown beside
-      it, so a reviewer compares rather than judging from memory.</li>
-    <li><b>Send it again to see the variation.</b> Two runs of the same question show the spread a
-      real caller would hear, which is the thing a single sample hides.</li>
-    <li><b>Flag anything wrong</b> and it collects into a list for review.</li>
-  </ol>
-</section>
-
-<section>
-  <div class="sh"><span class="num">04</span><h2>What it proves, and what it does not</h2></div>
-  <figure>
-    <div class="fig">
-      <svg viewBox="0 0 906 306" role="img" aria-label="Three rows. What a typed question does exercise: the wording, the tone, and whether the knowledge covers it. What it never touches: hearing, turn-taking, the identity check and the account lookup. And what it is reading today: published articles from a different plan, last changed in July, with no overlap with the six documents Robin serves.">
-        <defs>
-          <marker id="q-c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path class="mk" d="M0 0 L10 5 L0 10 z"/>
-          </marker>
-          <marker id="q-c2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path class="mk-acc" d="M0 0 L10 5 L0 10 z"/>
-          </marker>
-        </defs>
-
-        <text class="lb" x="4" y="16">WHAT IT DOES TEST</text>
-        <rect class="bx" x="14" y="26" width="204" height="50" rx="3"/>
-        <text class="t1" x="116" y="48" text-anchor="middle">Is it covered at all?</text>
-        <text class="t2" x="116" y="63" text-anchor="middle">or is this a content gap</text>
-        <rect class="bx" x="278" y="26" width="176" height="50" rx="3"/>
-        <text class="t1" x="366" y="48" text-anchor="middle">Is the wording right?</text>
-        <text class="t2" x="366" y="63" text-anchor="middle">said out loud, to a member</text>
-        <rect class="bx" x="514" y="26" width="204" height="50" rx="3"/>
-        <text class="t1" x="616" y="48" text-anchor="middle">Is it steady?</text>
-        <text class="t2" x="616" y="63" text-anchor="middle">send it twice and compare</text>
-        <line class="ln" x1="218" y1="51" x2="274" y2="51" marker-end="url(#q-c)"/>
-        <line class="ln" x1="454" y1="51" x2="510" y2="51" marker-end="url(#q-c)"/>
-        <text class="lb" x="246" y="44" text-anchor="middle">then</text>
-        <text class="lb" x="482" y="44" text-anchor="middle">then</text>
-
-        <text class="lb" x="4" y="116">WHAT IT NEVER TOUCHES</text>
-        <rect class="bx" x="14" y="126" width="204" height="50" rx="3"/>
-        <text class="t1" x="116" y="148" text-anchor="middle">No phone</text>
-        <text class="t2" x="116" y="163" text-anchor="middle">no voice, no turn-taking</text>
-        <rect class="bx" x="278" y="126" width="176" height="50" rx="3"/>
-        <text class="t1" x="366" y="148" text-anchor="middle">No identity check</text>
-        <text class="t2" x="366" y="163" text-anchor="middle">it answers straight away</text>
-        <rect class="bx" x="514" y="126" width="204" height="50" rx="3"/>
-        <text class="t1" x="616" y="148" text-anchor="middle">No account lookup</text>
-        <text class="t2" x="616" y="163" text-anchor="middle">no balances, no loans</text>
-        <line class="ln" x1="218" y1="151" x2="274" y2="151" marker-end="url(#q-c)"/>
-        <line class="ln" x1="454" y1="151" x2="510" y2="151" marker-end="url(#q-c)"/>
-        <text class="lb" x="246" y="144" text-anchor="middle">and</text>
-        <text class="lb" x="482" y="144" text-anchor="middle">and</text>
-
-        <text class="lb-acc" x="4" y="216">WHAT IT IS READING TODAY</text>
-        <rect class="bx-acc" x="14" y="226" width="204" height="50" rx="3"/>
-        <text class="t1" x="116" y="248" text-anchor="middle">29 published articles</text>
-        <text class="t2" x="116" y="263" text-anchor="middle">a different plan entirely</text>
-        <rect class="bx-acc" x="278" y="226" width="176" height="50" rx="3"/>
-        <text class="t1" x="366" y="248" text-anchor="middle">Last changed in July</text>
-        <text class="t2" x="366" y="263" text-anchor="middle">before Robin moved plans</text>
-        <rect class="fillw" x="514" y="226" width="204" height="50" rx="3"/>
-        <text class="t1" x="616" y="248" text-anchor="middle">Nothing in common</text>
-        <text class="t2" x="616" y="263" text-anchor="middle">with her six live documents</text>
-        <line class="ln-acc" x1="218" y1="251" x2="274" y2="251" marker-end="url(#q-c2)"/>
-        <line class="ln-acc" x1="454" y1="251" x2="510" y2="251" marker-end="url(#q-c2)"/>
-        <text class="lb-acc" x="246" y="244" text-anchor="middle">and</text>
-        <text class="lb-acc" x="482" y="244" text-anchor="middle">so</text>
-
-        <line class="ln dash" x1="740" y1="26" x2="740" y2="276"/>
-        <text class="lb" x="750" y="150">the bottom row is fixable</text>
-      </svg>
-    </div>
-    <figcaption><b>Figure 3.</b> The middle row is by design and is fine: this is a knowledge test,
-      not a call test. The bottom row is not by design, and publishing Robin's six live documents
-      through the Knowledge Factory closes it.</figcaption>
-  </figure>
-
-  <div class="loops">
-    <div class="loop">
-      <h3>What it does test<span class="where">and tests well</span></h3>
-      <p>Whether the knowledge covers a question at all, which is the most common real failure.
-        Whether the answer is phrased in a way that works spoken aloud to a member rather than read
-        off a page. And whether it is steady: sending the same question twice shows the spread a real
-        caller would hear, which a single sample hides completely.</p>
-    </div>
-    <div class="loop">
-      <h3>What it never touches<span class="where">by design</span></h3>
-      <p>There is no phone call here. It does not exercise her voice, her turn-taking, or her handling
-        of an interruption. It does not check identity first, because there is no caller to check, so
-        it will happily answer a question Robin would have refused to answer until she had verified
-        somebody. And it never looks up an account, so nothing involving a caller's own balance or
-        loan can be tested this way. None of that is a defect. It is a knowledge test.</p>
-    </div>
-    <div class="loop key">
-      <h3>What it is reading today<span class="where">the part to fix</span></h3>
-      <p>It grounds its answers in the articles we have published, which is correct in design and
-        wrong in fact right now. Robin's six live documents were uploaded straight into ElevenLabs
-        and never went through the Knowledge Factory, so our published set and her live set have
-        nothing in common. Until that is fixed, a reviewer who finds a wrong answer here cannot
-        conclude Robin would say the same thing, and a reviewer who finds a right answer cannot
-        conclude she would either.</p>
+    <div class="col">
+      <h2>What it tests</h2>
+      <ul class="flat">
+        <li>Whether the knowledge <b>covers a question at all</b>, which is the most common real failure.</li>
+        <li>Whether the answer works <b>spoken aloud</b> to a member, rather than read off a page.</li>
+        <li>Whether it is <b>steady</b> across repeat runs.</li>
+      </ul>
+      <h2 style="margin-top:4px">What it does not test</h2>
+      <ul class="flat">
+        <li>Her voice, her turn-taking, or how she handles an interruption. There is no call here.</li>
+        <li>The identity check. It answers straight away, where Robin would refuse until the caller was verified.</li>
+        <li>Anything involving a caller's own balance or loan, which needs an account lookup.</li>
+      </ul>
     </div>
   </div>
-</section>
 
-<section>
-  <div class="sh"><span class="num">05</span><h2>The parts, and who runs them</h2></div>
-  <div class="tw">
-    <table>
-      <thead><tr><th>The part</th><th>Who runs it</th><th>What it does</th><th>Same as a real call?</th></tr></thead>
-      <tbody>
-        <tr><td>The page</td><td>Our own code, in the portal</td><td>Where you paste questions and read answers</td><td>No, there is no page on a call</td></tr>
-        <tr><td>The answering service</td><td>Our own code, on Vercel</td><td>Takes one question, returns one answer</td><td>No, Robin answers inside ElevenLabs</td></tr>
-        <tr><td>The model</td><td>Anthropic, Claude Haiku 4.5</td><td>Writes the answer</td><td>Yes, the same model</td></tr>
-        <tr><td>The answering rules</td><td>Shared with the live agent</td><td>Tone, brevity, when to decline</td><td>Yes</td></tr>
-        <tr><td>The knowledge</td><td>Supabase, published articles</td><td>What the answer is grounded in</td><td><b>No, and this is the gap</b></td></tr>
-        <tr><td>The answer key</td><td>Supabase, 25 rows</td><td>The ideal answer for each test question</td><td>Not used on a call at all</td></tr>
-      </tbody>
-    </table>
-  </div>
-</section>
+  <p class="close"><b>Read this before trusting a result.</b> It answers from the articles published
+    through the Knowledge Factory. Those are currently the earlier INTRUST plan's and share no
+    documents with the six Robin serves today, and nothing on the page says so. Until her documents
+    are published through the factory, an answer here is not evidence of what she would say on a
+    call.</p>
 
-<section>
-  <div class="sh"><span class="num">06</span><h2>The handoffs, and what goes wrong at each</h2></div>
-  <div class="tw">
-    <table>
-      <thead><tr><th>The handoff</th><th>What is passed</th><th>What protects it</th><th>If it goes wrong</th></tr></thead>
-      <tbody>
-        <tr><td>Page into the service</td><td>One question at a time, as typed</td><td>No conversation state, so answers cannot lean on each other</td><td>An empty question is refused rather than guessed at</td></tr>
-        <tr><td>Service into the knowledge</td><td>A request for the published articles</td><td>Held for a minute so a run does not refetch per question</td><td>It quietly falls back to a built-in copy, which is the failure worth knowing about</td></tr>
-        <tr><td>Knowledge into the model</td><td>The articles, plus Robin's answering rules</td><td>The same rules as the live agent</td><td>An answer grounded in the wrong plan looks completely normal</td></tr>
-        <tr><td>Model into the page</td><td>The answer and its round-trip time</td><td>Failures return a readable error, not a blank</td><td>You see the error rather than an empty box</td></tr>
-        <tr><td>Answer against the key</td><td>The question's identifier</td><td>Only exact matches to the 25 show a comparison</td><td>No key is shown, and the answer still appears</td></tr>
-      </tbody>
-    </table>
-  </div>
-</section>
-
-<section>
-  <div class="sh"><span class="num">07</span><h2>The choices behind this, and what each one cost</h2></div>
-  <ul class="pts">
-    <li><b>The same model, at the same setting.</b> Answers vary between sends, which makes the tool
-      honest about what a caller would actually hear. The cost is that it cannot be used as a
-      pass-or-fail regression check, because two identical runs are supposed to differ.</li>
-    <li><b>It reads what we published, not what she serves.</b> In the intended design these are the
-      same thing, and reading our own copy is instant and free. The cost is exactly the situation we
-      are in: when the two sets drift apart, the tool keeps working and keeps being wrong, with
-      nothing on screen to say so.</li>
-    <li><b>It falls back rather than failing.</b> With nothing published it answers from a built-in
-      copy instead of returning an error. That was the right call for a demo and it is the wrong one
-      now, because "it answered" and "it answered from the right thing" look identical.</li>
-    <li><b>An answer key for twenty-five questions only.</b> Enough to cover the common ground without
-      committing anybody to maintaining a key for everything. The cost is that the key is per-plan,
-      and the current one belongs to the old plan.</li>
-    <li><b>No phone call, deliberately.</b> A tester can check thirty wordings in the time one call
-      takes. The cost is that everything about the call itself, the voice, the interruptions, the
-      identity gate, is untested here and needs a real call.</li>
-  </ul>
-</section>
-
-<section>
-  <div class="sh"><span class="num">08</span><h2>What is true today, and what is not</h2></div>
-  <div class="note">
-    <p><b>It is answering from the wrong plan.</b> We hold 29 published articles. Robin serves six
-      documents. Checked by identifier, the overlap is zero. The published set belongs to the earlier
-      INTRUST plan and the newest was last changed on 27 July 2026. This is not a subtle drift, it is
-      two different bodies of knowledge.</p>
-    <p><b>Nothing on the page says so.</b> The tool answers confidently either way, which is what
-      makes this worth writing down. A reviewer using it this week would have no signal that the
-      answers do not represent the live agent.</p>
-    <p><b>The page still names the old plan in its own text.</b> It invites you to ask questions about
-      the INTRUST plan, which is at least consistent with what it is reading, and is not what anyone
-      opening it today expects.</p>
-    <p><b>The twenty-five test questions are the old plan's too.</b> So the answer key beside each
-      reply is a key for a plan Robin no longer serves.</p>
-    <p><b>The fix is one piece of work, not a rebuild.</b> Publishing Robin's six live documents
-      through the Knowledge Factory makes this tool accurate, gives her knowledge a dated audit trail
-      for the first time, and fixes the reviewer's dependence on fetching her documents from
-      ElevenLabs. One job, three modules improved.</p>
-    <p><b>The service behind it has no sign-in of its own.</b> It is protected by being reached
-      through the portal. It also spends money per question, so an open address would be worth
-      closing before this is shared more widely.</p>
-  </div>
-</section>
-
-<footer>
-  <span>Robin &middot; the question tester &middot; internal</span>
-  <span>Companion to "What Robin is, and how she works"</span>
-</footer>
+  <footer>
+    <span>Robin &middot; the question tester &middot; internal</span>
+    <span>Companion to "What Robin is, and how she works"</span>
+  </footer>
 
 </main>
 
