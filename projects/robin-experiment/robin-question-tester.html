@@ -102,17 +102,16 @@ footer{display:flex;flex-wrap:wrap;gap:4px 16px;justify-content:space-between;pa
   :root{--paper:#fff;--sheet:#fff;--ink:#000;--muted:#3a424b;--faint:#5c646e;--rule:#c4c9ce;
         --rule2:#e2e5e8;--accent:#0f4438;--wash:#eef3f1;--shadow:none}
   body{background:#fff;font-size:10pt}
-  .sheet{max-width:none;margin:0;padding:0;box-shadow:none;gap:12pt}
-  h1{font-size:20pt} h2{font-size:7.2pt} .lede{font-size:9.6pt} .mast .meta{font-size:7.4pt}
-  .mast{padding-bottom:8pt} .intro{font-size:9.6pt;line-height:1.45}
-  .fig{padding:8pt 8pt} .fig svg{min-width:0} figcaption{font-size:8.2pt}
-  .cols{grid-template-columns:1.08fr .92fr;gap:18pt} .col{gap:6.5pt} .col > h2{padding-bottom:3.5pt}
-  ol.steps{gap:6pt} ol.steps > li{font-size:9pt;line-height:1.4;padding-left:21pt}
-  ol.steps > li::before{font-size:7.6pt}
-  .spec{gap:5.5pt} .spec .lbl,.spec .val{font-size:9pt;line-height:1.4}
-  ul.flat{gap:5pt} ul.flat > li{font-size:9pt;line-height:1.4}
-  .close{font-size:8.6pt;padding:6pt 9pt} footer{font-size:7pt;padding-top:7pt}
-  figure,.col,.close,footer{break-inside:avoid}
+  .sheet{max-width:none;margin:0;padding:0;box-shadow:none;gap:13pt}
+  h1{font-size:22pt} h2{font-size:7.6pt} .lede{font-size:10.4pt}
+  .mast{padding-bottom:9pt} .intro{font-size:10.4pt;line-height:1.45}
+  .fig{padding:9pt 9pt} .fig svg{min-width:0} figcaption{font-size:8.8pt}
+  .cols{grid-template-columns:1.08fr .92fr;gap:19pt} .col{gap:7pt} .col > h2{padding-bottom:4pt}
+  ol.steps{gap:6.5pt} ol.steps > li{font-size:9.8pt;line-height:1.4;padding-left:22pt}
+  ol.steps > li::before{font-size:8pt}
+  .spec{gap:6pt} .spec .lbl,.spec .val{font-size:9.8pt;line-height:1.4}
+  ul.flat{gap:5.5pt} ul.flat > li{font-size:9.8pt;line-height:1.4}
+  figure,.col{break-inside:avoid}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -123,16 +122,10 @@ footer{display:flex;flex-wrap:wrap;gap:4px 16px;justify-content:space-between;pa
 
   <header class="mast">
     <div class="id">
-      <div class="eyebrow">Robin &middot; Vertex Manufacturing 401(k)</div>
       <h1>The Question Tester</h1>
       <p class="lede">Check her knowledge in a browser instead of on the phone.</p>
     </div>
-    <div class="meta">
-      <div>25 questions with a key</div>
-      <div>no call required</div>
-      <div class="tnum">21 Sep 2026</div>
-    </div>
-  </header>
+    </header>
 
   <p class="intro">Placing a call to check one wording is slow and ties up a tester. Paste questions
     the way a member would ask them and each is answered by the model Robin runs on, under her
@@ -148,7 +141,7 @@ footer{display:flex;flex-wrap:wrap;gap:4px 16px;justify-content:space-between;pa
         <rect class="bx" x="298" y="14" width="168" height="34" rx="3"/>
         <text class="t2" x="382" y="36" text-anchor="middle">The written ideal answer</text>
         <line class="ln" x1="382" y1="80" x2="382" y2="52" marker-end="url(#t-a)"/>
-        <text class="lb" x="392" y="70">shown for the 25 test questions</text>
+        <text class="lb" x="392" y="70">shown for the curated test questions</text>
 
         <rect class="bx" x="14" y="80" width="112" height="50" rx="3"/>
         <text class="t1" x="70" y="103" text-anchor="middle">Your question</text>
@@ -198,7 +191,7 @@ footer{display:flex;flex-wrap:wrap;gap:4px 16px;justify-content:space-between;pa
         <li><b>The model and the answering rules are Robin's.</b> Send the same question twice and
           the wording differs, the way it would on two real calls. A single sample hides that
           spread.</li>
-        <li><b>Twenty-five questions have a written ideal answer.</b> When yours matches one, the
+        <li><b>A curated set of questions has a written ideal answer.</b> When yours matches one, the
           ideal appears beside the reply so a reviewer compares rather than judging from memory.</li>
         <li><b>Each answer shows its round-trip time</b>, and anything that looks wrong can be
           flagged and collected for review.</li>
@@ -217,16 +210,12 @@ footer{display:flex;flex-wrap:wrap;gap:4px 16px;justify-content:space-between;pa
         <li>Her voice, her turn-taking, or how she handles an interruption. There is no call here.</li>
         <li>The identity check. It answers straight away, where Robin would refuse until the caller was verified.</li>
         <li>Anything involving a caller's own balance or loan, which needs an account lookup.</li>
-        <li>Whether <b>Robin</b> would answer the same way. It reads the articles published through the Knowledge Factory, which today are the earlier INTRUST plan's and share no documents with the six she serves.</li>
+        <li>Whether <b>Robin</b> would answer the same way. It reads the articles published through the Knowledge Factory, so it speaks for her only where everything in her binder was published through it.</li>
       </ul>
     </div>
   </div>
 
 
-  <footer>
-    <span>Robin &middot; the question tester &middot; internal</span>
-    <span>Companion to "What Robin is, and how she works"</span>
-  </footer>
 
 </main>
 
