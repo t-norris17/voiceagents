@@ -58,6 +58,60 @@ Rules that matter more than they look:
 - **Depict the mechanism, not the name.** A box labelled "cache" says less than the prose. The two
   stores it sits between, and the arrow that disappears when you remove it, say what words cannot.
 
+## Two registers, one structure
+
+The same eight sections and the same three figures serve a technical audience and a non-technical
+one. Only the register changes. Robin has both, and they are the worked pair:
+
+- [`robin-architecture.html`](../../../projects/robin-experiment/robin-architecture.html) for people
+  who will read the code.
+- [`robin-how-it-works.html`](../../../projects/robin-experiment/robin-how-it-works.html) for an
+  executive who has never opened a settings screen.
+
+**Do not write the non-technical one by deleting things.** A document that keeps only the
+comfortable parts is a reassurance document, and a reader who has been reassured rather than
+informed will discover the rest from somebody else. Translate instead: every fact survives, in
+words that carry it.
+
+**Set the mental model once, then drop the metaphor.** Robin's plain version opens by framing her as
+a new person on the phone team with four things: memorised rules, a binder she may only answer from,
+a phone line to records, and a supervisor who reads every call. It then writes plainly and only
+calls the frame back where it genuinely helps. An extended metaphor maintained across eight sections
+starts to strain, and strained metaphors read as condescension.
+
+**The three hardest sentences to translate are the ones that matter most.** In Robin's case: the
+identity rule is a handbook procedure rather than a lock, the numbers start at zero, and recordings
+are kept indefinitely. If those come out vaguer in the plain version than in the technical one, the
+translation has failed.
+
+**Keep the vendor names.** An executive signing off needs to know which outside companies are
+involved and what would stop working if one of them did. Name them; subordinate the jargon, not the
+accountability.
+
+### Translation table
+
+The substitutions used across Robin's pair. The pattern generalises: name the function, not the
+product.
+
+| Technical version | Plain version |
+|---|---|
+| Speech-to-text, turn model, language model, text-to-speech | Hearing, taking turns, deciding, speaking |
+| System prompt | Her rules, which apply on every call |
+| Procedures, trigger-matched | Playbooks that switch on from what the caller says |
+| Knowledge base, retrieved in-runtime | Her binder, which sits with her so lookups cost no time |
+| Webhook tool | A question she is allowed to ask our systems |
+| Opaque `subject_ref` | A meaningless reference code instead of the person's details |
+| Post-call analysis, data collection fields | The write-up: it reads the conversation back and fills in a form |
+| HMAC signature, idempotent upsert | Proof it came from the platform; sending it twice cannot file it twice |
+| The grader, per-claim scoring against retrieved documents | The review: it fetches the binder pages she used and checks each thing she said |
+| Human-gated publish to the knowledge base | Nobody can change what she says without a person approving it |
+| Route map, server-side enforcement, 404 on unlisted paths | It can read everything and change nothing |
+| The seams | The handoffs, and what a caller would notice |
+| "When it fails" | "What a caller would experience" |
+
+The last row is the important one. A technical reader wants the failure mode; a business reader
+wants the consequence. Same fact, different end of the sentence.
+
 ## Where a one-pager fits
 
 `../one-pager/` is a strict single-page format for a different job: a summary someone reads standing
