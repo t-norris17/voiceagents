@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Knowledge Factory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+<style>
+:root{
+  --paper:#FCFCFD; --sheet:#FFFFFF; --ink:#1B1F24; --muted:#5D6671; --faint:#8B939E;
+  --rule:#DDE1E5; --rule2:#EDEFF2; --accent:#15594C; --wash:#E8F0ED; --warn:#8A4B1F;
+  --serif:"Newsreader",Georgia,"Times New Roman",serif;
+  --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#0F1216; --sheet:#141820; --ink:#E7EAED; --muted:#9AA3AE; --faint:#767F8B;
+  --rule:#2A3038; --rule2:#1E242B; --accent:#5FB49B; --wash:#17302B; --warn:#C08A57;
+}}
+:root[data-theme="dark"]{
+  --paper:#0F1216; --sheet:#141820; --ink:#E7EAED; --muted:#9AA3AE; --faint:#767F8B;
+  --rule:#2A3038; --rule2:#1E242B; --accent:#5FB49B; --wash:#17302B; --warn:#C08A57;
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+     font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.doc{background:var(--sheet);max-width:940px;margin:0 auto;padding-block:40px;padding-inline:16px;
+     display:flex;flex-direction:column;gap:38px}
+@media (min-width:720px){.doc{padding-block:56px;padding-inline:56px}}
+
+h1{font-family:var(--serif);font-weight:600;font-size:34px;line-height:1.08;margin:0;letter-spacing:-.012em;text-wrap:balance}
+h2{font-family:var(--serif);font-weight:600;font-size:22px;line-height:1.2;margin:0;text-wrap:balance}
+h3{font-family:var(--sans);font-weight:600;font-size:14px;line-height:1.3;margin:0}
+p{margin:0;max-width:74ch}
+.tnum{font-variant-numeric:tabular-nums}
+code,.m{font-family:var(--mono);font-size:.88em;background:var(--wash);color:var(--ink);
+        padding:1px 4px;border-radius:2px}
+a{color:var(--accent)}
+
+/* Section head: a numbered serif line over a full-width hairline. The number is
+   information: these sections are meant to be walked in order. */
+section{display:flex;flex-direction:column;gap:16px}
+.sh{display:flex;align-items:baseline;gap:12px;padding-bottom:9px;border-bottom:1px solid var(--rule)}
+.sh .num{font-family:var(--mono);font-size:12px;color:var(--accent);font-weight:500}
+
+header.mast{display:flex;flex-direction:column;gap:14px;padding-bottom:22px;border-bottom:2px solid var(--ink)}
+.eyebrow{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:var(--accent)}
+.lede{font-size:16.5px;line-height:1.55;color:var(--muted);max-width:70ch}
+.mastmeta{display:flex;flex-wrap:wrap;gap:6px 26px;font-size:12px;color:var(--faint);
+          font-family:var(--mono);padding-top:4px}
+
+/* Numbered list where order is the content. */
+ol.walk{margin:0;padding:0;list-style:none;counter-reset:w;display:flex;flex-direction:column;gap:13px}
+/* Not display:grid on the li: a grid container turns every child element (the bold
+   run-in, each <span class="m">) into its own grid item and scatters the sentence. */
+ol.walk > li{counter-increment:w;position:relative;padding-left:32px;
+             max-width:76ch;font-size:14px;line-height:1.55}
+ol.walk > li::before{content:counter(w,decimal-leading-zero);position:absolute;left:0;top:.2em;
+                     font-family:var(--mono);font-size:11px;font-weight:500;color:var(--accent)}
+ol.walk b{font-weight:600}
+
+ul.pts{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:11px}
+ul.pts > li{padding-left:15px;position:relative;max-width:76ch;font-size:14px;line-height:1.55;color:var(--muted)}
+ul.pts > li::before{content:"";position:absolute;left:0;top:.62em;width:5px;height:5px;border-radius:50%;background:var(--accent)}
+ul.pts b{color:var(--ink);font-weight:600}
+
+/* Stacked prose blocks with a bold run-in, for the three loops. */
+.loops{display:flex;flex-direction:column;gap:18px}
+.loop{display:flex;flex-direction:column;gap:5px;padding-left:15px;border-left:2px solid var(--rule)}
+.loop.key{border-left-color:var(--accent)}
+.loop p{font-size:14px;line-height:1.55;color:var(--muted)}
+.loop h3 .where{font-weight:400;color:var(--faint);font-family:var(--mono);font-size:11px;margin-left:8px}
+
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:13px}
+th{text-align:left;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.1em;
+   color:var(--faint);padding:0 14px 7px 0;border-bottom:1px solid var(--rule);white-space:nowrap}
+td{padding:9px 14px 9px 0;border-bottom:1px solid var(--rule2);vertical-align:top;color:var(--muted);line-height:1.45}
+td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
+td .m{white-space:nowrap}
+
+/* Figures. Strokes and text take currentColor so both themes work; the accent is
+   spent only on the one mark that carries the claim. */
+figure{margin:0;display:flex;flex-direction:column;gap:10px}
+.fig{border:1px solid var(--rule);border-radius:3px;padding:16px 14px;background:var(--paper);
+     color:var(--ink);overflow-x:auto}
+.fig svg{display:block;width:100%;min-width:560px;height:auto}
+.fig .bx{fill:none;stroke:currentColor;stroke-width:1.2;opacity:.55}
+.fig .bx-acc{fill:none;stroke:var(--accent);stroke-width:1.7}
+.fig .fillw{fill:var(--wash);stroke:var(--accent);stroke-width:1.7}
+.fig text{fill:currentColor;font-family:var(--sans)}
+.fig .t1{font-size:12.5px;font-weight:600}
+.fig .t2{font-size:10.5px;opacity:.68}
+.fig .lb{font-size:10px;opacity:.68}
+.fig .lb-acc{font-size:10px;fill:var(--accent);font-weight:600}
+.fig .ln{stroke:currentColor;stroke-width:1.2;fill:none;opacity:.5}
+.fig .ln-acc{stroke:var(--accent);stroke-width:1.6;fill:none}
+.fig .mk{fill:currentColor;opacity:.5}
+.fig .mk-acc{fill:var(--accent)}
+.fig .dash{stroke-dasharray:5 4}
+figcaption{font-size:12.5px;line-height:1.5;color:var(--muted);max-width:74ch}
+figcaption b{color:var(--ink);font-weight:600}
+
+.note{background:var(--wash);border-left:2px solid var(--accent);padding:14px 16px;
+      font-size:13.5px;line-height:1.55;max-width:78ch}
+.note p + p{margin-top:9px}
+footer{padding-top:18px;border-top:1px solid var(--rule);font-size:11.5px;color:var(--faint);
+       display:flex;flex-wrap:wrap;gap:4px 20px;justify-content:space-between}
+
+@page{size:letter portrait;margin:0.5in}
+@media print{
+  :root{--paper:#fff;--sheet:#fff;--ink:#000;--muted:#333b44;--faint:#5c646e;
+        --rule:#c4c9ce;--rule2:#e2e5e8;--accent:#0f4438;--wash:#eef3f1}
+  body{background:#fff;font-size:10pt}
+  .doc{max-width:none;margin:0;padding:0;gap:22pt}
+  h1{font-size:22pt} h2{font-size:14pt} .lede{font-size:11pt}
+  section,figure,.loop,tr,.note{break-inside:avoid}
+  .fig svg{min-width:0} table{min-width:0;font-size:8.5pt}
+  ol.walk > li,ul.pts > li,.loop p,figcaption{font-size:9.5pt}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main class="doc">
+
+<header class="mast">
+  <div class="eyebrow">Robin &middot; companion document</div>
+  <h1>How Robin learns something new</h1>
+  <p class="lede">The Knowledge Factory is the only way anything Robin says ever changes. This is what
+    it does to a plan document, what it refuses outright, who has to approve, and what happens when a
+    publish goes half wrong.</p>
+  <div class="mastmeta">
+    <span>the Knowledge Factory</span>
+    <span>77 documents handled so far</span>
+    <span>checked against the running system, 21 Sep 2026</span>
+  </div>
+</header>
+
+<section>
+  <div class="sh"><span class="num">01</span><h2>The short version</h2></div>
+  <p>Think of it as an editorial desk sitting between a plan document and Robin's binder. Four
+    stages, and a person in the middle of them.</p>
+  <ul class="pts">
+    <li><b>It triages before it does any real work.</b> A long plan document is mostly things a
+      caller never asks about: fund tables, legal boilerplate, glossaries. A cheap first pass reads
+      only each section's heading and a short sample, and recommends which sections are worth
+      processing. A person unticks the rest. This is a cost decision, and it is deliberate: spend a
+      little to avoid paying to rewrite three hundred pages nobody will ask about.</li>
+    <li><b>It rewrites what is left into answer cards.</b> Each card is one question a member would
+      actually ask, and the answer Robin would say out loud to them.</li>
+    <li><b>It checks its own work twice, in two different ways.</b> First by code, for things that
+      must never get through whatever anyone thinks. Then by a second AI, which reads every claim on
+      every card back against the original document.</li>
+    <li><b>Then it stops and waits.</b> Nothing reaches Robin until a person presses publish.</li>
+  </ul>
+  <div class="note">
+    <p><b>Where it runs.</b> On its own website, separate from Robin, reached through the internal
+      portal. When something is published it writes to our own records and then into Robin's
+      knowledge base at ElevenLabs. It is not part of a phone call and cannot disturb one that is
+      happening.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sh"><span class="num">02</span><h2>What it is made of</h2></div>
+  <figure>
+    <div class="fig">
+      <svg viewBox="0 0 780 322" role="img" aria-label="Four stages in a row: triage, rewrite, check, and approve. The checking stage has two kinds of check. Code refuses a Social Security number outright and flags wording that will not read aloud. A second reader traces every claim to a quote and reports anything material left out.">
+        <defs>
+          <marker id="f-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path class="mk" d="M0 0 L10 5 L0 10 z"/>
+          </marker>
+        </defs>
+        <text class="lb" x="4" y="26">a plan document</text>
+        <text class="lb" x="776" y="26" text-anchor="end">Robin's binder</text>
+
+        <rect class="bx" x="36" y="34" width="126" height="46" rx="3"/>
+        <text class="t1" x="99" y="55" text-anchor="middle">Triage</text>
+        <text class="t2" x="99" y="70" text-anchor="middle">what is worth keeping</text>
+
+        <rect class="bx" x="192" y="34" width="126" height="46" rx="3"/>
+        <text class="t1" x="255" y="55" text-anchor="middle">Rewrite</text>
+        <text class="t2" x="255" y="70" text-anchor="middle">into answer cards</text>
+
+        <rect class="bx-acc" x="348" y="34" width="166" height="46" rx="3"/>
+        <text class="t1" x="431" y="55" text-anchor="middle">Check</text>
+        <text class="t2" x="431" y="70" text-anchor="middle">twice, two different ways</text>
+
+        <rect class="bx" x="544" y="34" width="126" height="46" rx="3"/>
+        <text class="t1" x="607" y="55" text-anchor="middle">Approve</text>
+        <text class="t2" x="607" y="70" text-anchor="middle">a person decides</text>
+
+        <line class="ln" x1="4" y1="57" x2="32" y2="57" marker-end="url(#f-a)"/>
+        <line class="ln" x1="162" y1="57" x2="188" y2="57" marker-end="url(#f-a)"/>
+        <line class="ln" x1="318" y1="57" x2="344" y2="57" marker-end="url(#f-a)"/>
+        <line class="ln" x1="514" y1="57" x2="540" y2="57" marker-end="url(#f-a)"/>
+        <line class="ln" x1="670" y1="57" x2="762" y2="57" marker-end="url(#f-a)"/>
+
+        <path class="ln" d="M431 80 L431 104 M235 104 L605 104"/>
+        <line class="ln" x1="235" y1="104" x2="235" y2="142" marker-end="url(#f-a)"/>
+        <line class="ln" x1="605" y1="104" x2="605" y2="142" marker-end="url(#f-a)"/>
+        <text class="lb" x="227" y="126" text-anchor="end">code checks</text>
+        <text class="lb" x="613" y="126">a second reader checks</text>
+
+        <rect class="bx" x="130" y="146" width="210" height="34" rx="3"/>
+        <text class="t2" x="235" y="167" text-anchor="middle">A Social Security number</text>
+        <rect class="bx" x="130" y="186" width="210" height="34" rx="3"/>
+        <text class="t2" x="235" y="207" text-anchor="middle">Wording that will not speak</text>
+        <rect class="bx" x="130" y="226" width="210" height="34" rx="3"/>
+        <text class="t2" x="235" y="247" text-anchor="middle">An answer that has run long</text>
+
+        <rect class="bx" x="500" y="146" width="210" height="34" rx="3"/>
+        <text class="t2" x="605" y="167" text-anchor="middle">Every claim, and its quote</text>
+        <rect class="bx" x="500" y="186" width="210" height="34" rx="3"/>
+        <text class="t2" x="605" y="207" text-anchor="middle">Anything material left out</text>
+        <rect class="bx" x="500" y="226" width="210" height="34" rx="3"/>
+        <text class="t2" x="605" y="247" text-anchor="middle">Whether the topic is covered</text>
+      </svg>
+    </div>
+    <figcaption><b>Figure 1.</b> The two kinds of checking are not interchangeable. Code is absolute
+      and cannot be argued with, so it holds the line nothing may cross. The second reader has
+      judgment, so it handles the things judgment is actually needed for.</figcaption>
+  </figure>
+
+  <ul class="pts">
+    <li><b>Why code checks first.</b> Anything shaped like a Social Security number stops the card
+      from being saved at all. Not a warning, not a flag on a list somebody might work through. It
+      cannot be saved. Putting that in code rather than in a model's instructions means no amount of
+      clever wording in a source document can talk it into passing.</li>
+    <li><b>What code merely flags.</b> Things that are fine on a page and useless on a phone call:
+      "see the table above", "click the gear icon", a table, a ten-digit phone number run together
+      with no gaps, and an answer that has grown too long to say out loud. A person decides on
+      those.</li>
+    <li><b>What the second reader does.</b> It pulls every checkable claim out of a card and finds
+      the exact sentence in the original document that establishes it, or reports that there is no
+      such sentence. It also reports facts in the source that belong on this card and were left
+      out.</li>
+    <li><b>What the second reader is not allowed to do.</b> Give a score. It reports evidence only,
+      and the number you see is arithmetic on what it found. This is the whole mechanism: a model
+      can be generous with a score, and it cannot be generous with a quote that is not in the
+      document.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="sh"><span class="num">03</span><h2>What happens to a document</h2></div>
+  <figure>
+    <div class="fig">
+      <svg viewBox="0 0 820 178" role="img" aria-label="A source document goes into the factory, then to a person who approves it, then into our dated record, and only then into Robin's binder. Anything the person rejects goes back rather than forward.">
+        <defs>
+          <marker id="f-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path class="mk" d="M0 0 L10 5 L0 10 z"/>
+          </marker>
+          <marker id="f-b2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path class="mk-acc" d="M0 0 L10 5 L0 10 z"/>
+          </marker>
+        </defs>
+
+        <rect class="bx" x="298" y="14" width="168" height="38" rx="3"/>
+        <text class="t2" x="382" y="38" text-anchor="middle">Sent back, or dropped</text>
+        <line class="ln" x1="382" y1="86" x2="382" y2="56" marker-end="url(#f-b)"/>
+        <text class="lb" x="392" y="74">whatever the person rejects</text>
+
+        <rect class="bx" x="14" y="86" width="92" height="52" rx="3"/>
+        <text class="t1" x="60" y="110" text-anchor="middle">Source</text>
+        <text class="t2" x="60" y="125" text-anchor="middle">a plan document</text>
+
+        <rect class="bx" x="136" y="86" width="132" height="52" rx="3"/>
+        <text class="t1" x="202" y="110" text-anchor="middle">The factory</text>
+        <text class="t2" x="202" y="125" text-anchor="middle">cards, and two checks</text>
+
+        <rect class="bx-acc" x="298" y="86" width="168" height="52" rx="3"/>
+        <text class="t1" x="382" y="110" text-anchor="middle">A person</text>
+        <text class="t2" x="382" y="125" text-anchor="middle">reads them, presses publish</text>
+
+        <rect class="bx" x="496" y="86" width="136" height="52" rx="3"/>
+        <text class="t1" x="564" y="110" text-anchor="middle">Our record</text>
+        <text class="t2" x="564" y="125" text-anchor="middle">dated, kept, reversible</text>
+
+        <rect class="bx" x="662" y="86" width="144" height="52" rx="3"/>
+        <text class="t1" x="734" y="110" text-anchor="middle">Robin's binder</text>
+        <text class="t2" x="734" y="125" text-anchor="middle">live on the next call</text>
+
+        <line class="ln" x1="106" y1="112" x2="132" y2="112" marker-end="url(#f-b)"/>
+        <line class="ln-acc" x1="268" y1="112" x2="294" y2="112" marker-end="url(#f-b2)"/>
+        <line class="ln-acc" x1="466" y1="112" x2="492" y2="112" marker-end="url(#f-b2)"/>
+        <line class="ln" x1="632" y1="112" x2="658" y2="112" marker-end="url(#f-b)"/>
+
+        <text class="lb" x="119" y="160" text-anchor="middle">pasted in</text>
+        <text class="lb-acc" x="281" y="160" text-anchor="middle">proposed, never applied</text>
+        <text class="lb-acc" x="479" y="160" text-anchor="middle">recorded first</text>
+        <text class="lb" x="645" y="160" text-anchor="middle">then sent</text>
+      </svg>
+    </div>
+    <figcaption><b>Figure 2.</b> The record is written before Robin's binder, deliberately. If the
+      second half fails we still hold the approved text and can send it again. If it were the other
+      way round, Robin could be answering from something we had no record of approving.</figcaption>
+  </figure>
+
+  <ol class="walk">
+    <li><b>The document goes in.</b> Up to about two hundred thousand characters at a time, which is
+      a long document but not an entire plan library. If what is uploaded is a scan, a picture of
+      words rather than words, it says so, because there is nothing there to read.</li>
+    <li><b>Triage.</b> The document is split into sections, and only each section's heading and a
+      short sample are sent for assessment, never the whole thing. It comes back with a
+      recommendation per section and a few words of reasoning, such as "fund tables, not spoken
+      answers". <b>It only recommends.</b> A person unticks what they do not want, and nothing is
+      processed until they continue.</li>
+    <li><b>Rewriting.</b> What survives triage becomes answer cards: a question in a member's words,
+      and the answer Robin would speak. This is the expensive step, which is why triage exists.</li>
+    <li><b>The code checks.</b> A Social Security number, or the words themselves sitting next to
+      digits, is a hard failure and the card cannot be saved. Everything else that code can catch
+      becomes a warning for the person to judge.</li>
+    <li><b>The second reader checks.</b> Every claim, traced to a quote from the original, or
+      reported as having no support. It cannot invent support from its own general knowledge of
+      retirement plans, and a claim that is true in the world but absent from this document is
+      marked unsupported anyway. Drift is caught at this stage: "about five percent" where the
+      document says six percent is marked as contradicting it.</li>
+    <li><b>A person reads and approves.</b> They can open any card and read the quotes behind it.
+      Nothing goes further without this step, and there is no way to schedule around it.</li>
+    <li><b>Publishing.</b> A new dated version is written to our records first. Then the document is
+      created at ElevenLabs, its index is built, and it is attached to Robin. Publishing identical
+      text again does nothing at all. A new version supersedes the previous one and removes the old
+      copy from Robin, so she cannot end up answering from two versions of the same article.</li>
+  </ol>
+</section>
+
+<section>
+  <div class="sh"><span class="num">04</span><h2>What it refuses, what it flags, and what it keeps</h2></div>
+  <figure>
+    <div class="fig">
+      <svg viewBox="0 0 906 306" role="img" aria-label="Three things happen to a card. Personal information is refused outright and cannot be saved. Wording that will not read aloud is flagged for a person to judge. And every approved version is kept, dated and reversible.">
+        <defs>
+          <marker id="f-c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path class="mk" d="M0 0 L10 5 L0 10 z"/>
+          </marker>
+          <marker id="f-c2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path class="mk-acc" d="M0 0 L10 5 L0 10 z"/>
+          </marker>
+        </defs>
+
+        <text class="lb-acc" x="4" y="16">REFUSED &middot; no judgment involved</text>
+        <rect class="bx-acc" x="14" y="26" width="204" height="50" rx="3"/>
+        <text class="t1" x="116" y="48" text-anchor="middle">Personal information</text>
+        <text class="t2" x="116" y="63" text-anchor="middle">an SSN, or its name beside digits</text>
+        <rect class="bx-acc" x="278" y="26" width="176" height="50" rx="3"/>
+        <text class="t1" x="366" y="48" text-anchor="middle">Hard failure</text>
+        <text class="t2" x="366" y="63" text-anchor="middle">found by code, not a model</text>
+        <rect class="fillw" x="514" y="26" width="204" height="50" rx="3"/>
+        <text class="t1" x="616" y="48" text-anchor="middle">Cannot be saved</text>
+        <text class="t2" x="616" y="63" text-anchor="middle">not flagged, blocked</text>
+        <line class="ln-acc" x1="218" y1="51" x2="274" y2="51" marker-end="url(#f-c2)"/>
+        <line class="ln-acc" x1="454" y1="51" x2="510" y2="51" marker-end="url(#f-c2)"/>
+        <text class="lb-acc" x="246" y="44" text-anchor="middle">caught</text>
+        <text class="lb-acc" x="482" y="44" text-anchor="middle">stopped</text>
+
+        <text class="lb" x="4" y="116">FLAGGED &middot; a person judges</text>
+        <rect class="bx" x="14" y="126" width="204" height="50" rx="3"/>
+        <text class="t1" x="116" y="148" text-anchor="middle">Unspoken wording</text>
+        <text class="t2" x="116" y="163" text-anchor="middle">"see above", "click the icon"</text>
+        <rect class="bx" x="278" y="126" width="176" height="50" rx="3"/>
+        <text class="t1" x="366" y="148" text-anchor="middle">A warning</text>
+        <text class="t2" x="366" y="163" text-anchor="middle">on the card, with the reason</text>
+        <rect class="bx" x="514" y="126" width="204" height="50" rx="3"/>
+        <text class="t1" x="616" y="148" text-anchor="middle">Fixed or accepted</text>
+        <text class="t2" x="616" y="163" text-anchor="middle">the person decides</text>
+        <line class="ln" x1="218" y1="151" x2="274" y2="151" marker-end="url(#f-c)"/>
+        <line class="ln" x1="454" y1="151" x2="510" y2="151" marker-end="url(#f-c)"/>
+        <text class="lb" x="246" y="144" text-anchor="middle">raised</text>
+        <text class="lb" x="482" y="144" text-anchor="middle">judged</text>
+
+        <text class="lb" x="4" y="216">KEPT &middot; every version, forever</text>
+        <rect class="bx" x="14" y="226" width="204" height="50" rx="3"/>
+        <text class="t1" x="116" y="248" text-anchor="middle">Each publish</text>
+        <text class="t2" x="116" y="263" text-anchor="middle">a new dated version</text>
+        <rect class="bx" x="278" y="226" width="176" height="50" rx="3"/>
+        <text class="t1" x="366" y="248" text-anchor="middle">The old one</text>
+        <text class="t2" x="366" y="263" text-anchor="middle">marked superseded, kept</text>
+        <rect class="bx" x="514" y="226" width="204" height="50" rx="3"/>
+        <text class="t1" x="616" y="248" text-anchor="middle">Reversible</text>
+        <text class="t2" x="616" y="263" text-anchor="middle">and removed from Robin</text>
+        <line class="ln" x1="218" y1="251" x2="274" y2="251" marker-end="url(#f-c)"/>
+        <line class="ln" x1="454" y1="251" x2="510" y2="251" marker-end="url(#f-c)"/>
+        <text class="lb" x="246" y="244" text-anchor="middle">supersedes</text>
+        <text class="lb" x="482" y="244" text-anchor="middle">retained</text>
+
+        <line class="ln dash" x1="740" y1="26" x2="740" y2="276"/>
+        <text class="lb" x="750" y="150">every step is on the record</text>
+      </svg>
+    </div>
+    <figcaption><b>Figure 3.</b> Only the top row is absolute. The middle row is where a person's
+      judgment is actually wanted, and the bottom row is what makes a mistake recoverable rather
+      than permanent.</figcaption>
+  </figure>
+
+  <div class="loops">
+    <div class="loop key">
+      <h3>Refused<span class="where">no judgment involved</span></h3>
+      <p>A card containing something shaped like a Social Security number, or naming one alongside
+        digits, cannot be saved. This is checked by ordinary code before any model is consulted,
+        which is the point: a model can be persuaded, and a pattern match cannot. It is a hard
+        failure, not an item on a list for somebody to work through later.</p>
+    </div>
+    <div class="loop">
+      <h3>Flagged<span class="where">a person judges</span></h3>
+      <p>Cross-references to things a listener cannot see, instructions to click or tap something,
+        tables, a run of ten digits with no separators that a synthetic voice reads badly, and an
+        answer that has grown too long to say out loud. None of these are wrong on a page. All of
+        them are wrong when the only way a member receives them is through a phone.</p>
+    </div>
+    <div class="loop">
+      <h3>Kept<span class="where">every version</span></h3>
+      <p>Publishing never edits anything in place. Each publish writes a new dated version and marks
+        the previous one superseded, and the stale copy is detached from Robin so she cannot answer
+        from both. Anything published can be corrected or switched off afterwards, and the version
+        that was live on any past date can still be read.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sh"><span class="num">05</span><h2>The parts, and who runs them</h2></div>
+  <div class="tw">
+    <table>
+      <thead><tr><th>The part</th><th>Who runs it</th><th>What it does</th><th>Can it reach Robin?</th></tr></thead>
+      <tbody>
+        <tr><td>The console</td><td>Our own code, on Vercel</td><td>The three tabs a reviewer works in: clean, check, publish</td><td>Only through publish</td></tr>
+        <tr><td>Triage</td><td>A cheaper AI model</td><td>Recommends which sections are worth processing</td><td>No</td></tr>
+        <tr><td>The rewriter</td><td>A larger AI model</td><td>Turns the kept sections into answer cards</td><td>No</td></tr>
+        <tr><td>The code checks</td><td>Our own code</td><td>Refuses personal information; flags what will not speak</td><td>No</td></tr>
+        <tr><td>The second reader</td><td>A separate AI model</td><td>Traces every claim to a quote; reports what is missing</td><td>No</td></tr>
+        <tr><td>The approval step</td><td>A person</td><td>The only thing that lets anything through</td><td>Yes, by choosing to</td></tr>
+        <tr><td>Our record</td><td>Supabase</td><td>Every version of every article, dated and kept</td><td>No</td></tr>
+        <tr><td>Robin's binder</td><td>ElevenLabs</td><td>The serving copy she actually reads on a call</td><td>It is Robin</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="sh"><span class="num">06</span><h2>The handoffs, and what goes wrong at each</h2></div>
+  <div class="tw">
+    <table>
+      <thead><tr><th>The handoff</th><th>What is passed</th><th>What protects it</th><th>If it goes wrong</th></tr></thead>
+      <tbody>
+        <tr><td>Document into triage</td><td>Only each section's heading and a short sample</td><td>The full document never leaves the browser at this stage</td><td>A section is wrongly recommended, and the person unticks it</td></tr>
+        <tr><td>Triage into rewriting</td><td>Only the sections the person kept</td><td>Nothing proceeds without them pressing continue</td><td>Nothing. This step cannot start on its own</td></tr>
+        <tr><td>Cards into checking</td><td>The card, and the original text to check it against</td><td>Code runs before the model, so personal information cannot be reasoned past</td><td>The card is blocked and the reviewer sees why</td></tr>
+        <tr><td>Checking into approval</td><td>Evidence only: claims, quotes, gaps. No score</td><td>The reader is structurally unable to return a number</td><td>A reviewer sees a weak card honestly, rather than a flattering number</td></tr>
+        <tr><td>Approval into our record</td><td>The approved text, as a new dated version</td><td>Identical text republished changes nothing</td><td>Nothing reaches Robin, and the approval is still recorded</td></tr>
+        <tr><td>Our record into Robin</td><td>The article, its index, and the attachment to her</td><td>Written to our record first, so this half can be retried</td><td>We hold an approved article Robin does not have yet, which is visible and fixable</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="sh"><span class="num">07</span><h2>The choices behind this, and what each one cost</h2></div>
+  <ul class="pts">
+    <li><b>Triage before rewriting.</b> Reading headings and samples with a cheap model, so a person
+      can throw away the fund tables before anyone pays to rewrite them. The cost is an extra step
+      and an extra decision for the reviewer on every long document.</li>
+    <li><b>The checker is not allowed to give a score.</b> It returns claims and quotes, and the
+      rating is arithmetic on those. This is the anti-flattery mechanism, and it is the same design
+      the call reviewer uses. The cost is that the rating cannot capture anything the arithmetic does
+      not model.</li>
+    <li><b>Personal information is refused, not flagged.</b> The safest version of this rule is the
+      one nobody can wave through at four in the afternoon. The cost is the occasional false alarm on
+      a legitimate nine-digit number, which a reviewer then has to reword around.</li>
+    <li><b>Versions are added, never edited.</b> Every publish is a new version and the old one is
+      kept. The cost is a growing table, currently 77 rows for what a reader might think of as a
+      couple of dozen articles.</li>
+    <li><b>Our record is written before Robin's binder.</b> A publish that fails halfway leaves us
+      holding an approved article that Robin does not have, which is visible and retryable. The
+      reverse order would leave Robin answering from something we had no approved record of.</li>
+    <li><b>Nothing publishes on a schedule.</b> There is no automatic path from a source document to
+      a live answer. The cost is that keeping Robin current is somebody's job, and if nobody does it,
+      nothing happens.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="sh"><span class="num">08</span><h2>What is true today, and what is not</h2></div>
+  <div class="note">
+    <p><b>Nothing Robin is currently serving came through this factory.</b> This is the single most
+      important fact on the page. The factory holds 77 articles, 29 of them published. Not one of
+      those 29 is one of the six documents Robin actually reads on a call today. Her six were
+      uploaded into ElevenLabs by hand, going around this pipeline entirely. So the factory works,
+      and the material it has produced is not what she is using.</p>
+    <p><b>The published articles belong to a different plan.</b> They are the earlier INTRUST plan's
+      content, and the newest of them was last changed on 27 July 2026. Robin now answers for the
+      Vertex Manufacturing plan. The two sets do not overlap at all.</p>
+    <p><b>What that means in practice.</b> Publishing Robin's six live documents through this factory
+      would give us the thing we currently lack: a dated, approved, checkable record of what she is
+      allowed to say. Until that happens, her knowledge has no audit trail on our side, and two other
+      tools that depend on that record are working from the wrong material.</p>
+    <p><b>One article is approved and was never published.</b> It has been sitting in that state
+      since 30 July 2026. Either it was abandoned or it was forgotten, and nothing in the system will
+      tell you which.</p>
+    <p><b>The console has no sign-in of its own.</b> It is protected only by being reached through
+      the portal. If somebody found its direct address, there is currently nothing else stopping
+      them. This was a deliberate ordering decision, not an oversight, but it is still true today.</p>
+  </div>
+</section>
+
+<footer>
+  <span>Robin &middot; the Knowledge Factory &middot; internal</span>
+  <span>Companion to "What Robin is, and how she works"</span>
+</footer>
+
+</main>
+
+</body>
+</html>

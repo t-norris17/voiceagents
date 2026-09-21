@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Grader</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+<style>
+:root{
+  --paper:#FCFCFD; --sheet:#FFFFFF; --ink:#1B1F24; --muted:#5D6671; --faint:#8B939E;
+  --rule:#DDE1E5; --rule2:#EDEFF2; --accent:#15594C; --wash:#E8F0ED; --warn:#8A4B1F;
+  --serif:"Newsreader",Georgia,"Times New Roman",serif;
+  --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#0F1216; --sheet:#141820; --ink:#E7EAED; --muted:#9AA3AE; --faint:#767F8B;
+  --rule:#2A3038; --rule2:#1E242B; --accent:#5FB49B; --wash:#17302B; --warn:#C08A57;
+}}
+:root[data-theme="dark"]{
+  --paper:#0F1216; --sheet:#141820; --ink:#E7EAED; --muted:#9AA3AE; --faint:#767F8B;
+  --rule:#2A3038; --rule2:#1E242B; --accent:#5FB49B; --wash:#17302B; --warn:#C08A57;
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+     font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.doc{background:var(--sheet);max-width:940px;margin:0 auto;padding-block:40px;padding-inline:16px;
+     display:flex;flex-direction:column;gap:38px}
+@media (min-width:720px){.doc{padding-block:56px;padding-inline:56px}}
+
+h1{font-family:var(--serif);font-weight:600;font-size:34px;line-height:1.08;margin:0;letter-spacing:-.012em;text-wrap:balance}
+h2{font-family:var(--serif);font-weight:600;font-size:22px;line-height:1.2;margin:0;text-wrap:balance}
+h3{font-family:var(--sans);font-weight:600;font-size:14px;line-height:1.3;margin:0}
+p{margin:0;max-width:74ch}
+.tnum{font-variant-numeric:tabular-nums}
+code,.m{font-family:var(--mono);font-size:.88em;background:var(--wash);color:var(--ink);
+        padding:1px 4px;border-radius:2px}
+a{color:var(--accent)}
+
+/* Section head: a numbered serif line over a full-width hairline. The number is
+   information: these sections are meant to be walked in order. */
+section{display:flex;flex-direction:column;gap:16px}
+.sh{display:flex;align-items:baseline;gap:12px;padding-bottom:9px;border-bottom:1px solid var(--rule)}
+.sh .num{font-family:var(--mono);font-size:12px;color:var(--accent);font-weight:500}
+
+header.mast{display:flex;flex-direction:column;gap:14px;padding-bottom:22px;border-bottom:2px solid var(--ink)}
+.eyebrow{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:var(--accent)}
+.lede{font-size:16.5px;line-height:1.55;color:var(--muted);max-width:70ch}
+.mastmeta{display:flex;flex-wrap:wrap;gap:6px 26px;font-size:12px;color:var(--faint);
+          font-family:var(--mono);padding-top:4px}
+
+/* Numbered list where order is the content. */
+ol.walk{margin:0;padding:0;list-style:none;counter-reset:w;display:flex;flex-direction:column;gap:13px}
+/* Not display:grid on the li: a grid container turns every child element (the bold
+   run-in, each <span class="m">) into its own grid item and scatters the sentence. */
+ol.walk > li{counter-increment:w;position:relative;padding-left:32px;
+             max-width:76ch;font-size:14px;line-height:1.55}
+ol.walk > li::before{content:counter(w,decimal-leading-zero);position:absolute;left:0;top:.2em;
+                     font-family:var(--mono);font-size:11px;font-weight:500;color:var(--accent)}
+ol.walk b{font-weight:600}
+
+ul.pts{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:11px}
+ul.pts > li{padding-left:15px;position:relative;max-width:76ch;font-size:14px;line-height:1.55;color:var(--muted)}
+ul.pts > li::before{content:"";position:absolute;left:0;top:.62em;width:5px;height:5px;border-radius:50%;background:var(--accent)}
+ul.pts b{color:var(--ink);font-weight:600}
+
+/* Stacked prose blocks with a bold run-in, for the three loops. */
+.loops{display:flex;flex-direction:column;gap:18px}
+.loop{display:flex;flex-direction:column;gap:5px;padding-left:15px;border-left:2px solid var(--rule)}
+.loop.key{border-left-color:var(--accent)}
+.loop p{font-size:14px;line-height:1.55;color:var(--muted)}
+.loop h3 .where{font-weight:400;color:var(--faint);font-family:var(--mono);font-size:11px;margin-left:8px}
+
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:13px}
+th{text-align:left;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.1em;
+   color:var(--faint);padding:0 14px 7px 0;border-bottom:1px solid var(--rule);white-space:nowrap}
+td{padding:9px 14px 9px 0;border-bottom:1px solid var(--rule2);vertical-align:top;color:var(--muted);line-height:1.45}
+td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
+td .m{white-space:nowrap}
+
+/* Figures. Strokes and text take currentColor so both themes work; the accent is
+   spent only on the one mark that carries the claim. */
+figure{margin:0;display:flex;flex-direction:column;gap:10px}
+.fig{border:1px solid var(--rule);border-radius:3px;padding:16px 14px;background:var(--paper);
+     color:var(--ink);overflow-x:auto}
+.fig svg{display:block;width:100%;min-width:560px;height:auto}
+.fig .bx{fill:none;stroke:currentColor;stroke-width:1.2;opacity:.55}
+.fig .bx-acc{fill:none;stroke:var(--accent);stroke-width:1.7}
+.fig .fillw{fill:var(--wash);stroke:var(--accent);stroke-width:1.7}
+.fig text{fill:currentColor;font-family:var(--sans)}
+.fig .t1{font-size:12.5px;font-weight:600}
+.fig .t2{font-size:10.5px;opacity:.68}
+.fig .lb{font-size:10px;opacity:.68}
+.fig .lb-acc{font-size:10px;fill:var(--accent);font-weight:600}
+.fig .ln{stroke:currentColor;stroke-width:1.2;fill:none;opacity:.5}
+.fig .ln-acc{stroke:var(--accent);stroke-width:1.6;fill:none}
+.fig .mk{fill:currentColor;opacity:.5}
+.fig .mk-acc{fill:var(--accent)}
+.fig .dash{stroke-dasharray:5 4}
+figcaption{font-size:12.5px;line-height:1.5;color:var(--muted);max-width:74ch}
+figcaption b{color:var(--ink);font-weight:600}
+
+.note{background:var(--wash);border-left:2px solid var(--accent);padding:14px 16px;
+      font-size:13.5px;line-height:1.55;max-width:78ch}
+.note p + p{margin-top:9px}
+footer{padding-top:18px;border-top:1px solid var(--rule);font-size:11.5px;color:var(--faint);
+       display:flex;flex-wrap:wrap;gap:4px 20px;justify-content:space-between}
+
+@page{size:letter portrait;margin:0.5in}
+@media print{
+  :root{--paper:#fff;--sheet:#fff;--ink:#000;--muted:#333b44;--faint:#5c646e;
+        --rule:#c4c9ce;--rule2:#e2e5e8;--accent:#0f4438;--wash:#eef3f1}
+  body{background:#fff;font-size:10pt}
+  .doc{max-width:none;margin:0;padding:0;gap:22pt}
+  h1{font-size:22pt} h2{font-size:14pt} .lede{font-size:11pt}
+  section,figure,.loop,tr,.note{break-inside:avoid}
+  .fig svg{min-width:0} table{min-width:0;font-size:8.5pt}
+  ol.walk > li,ul.pts > li,.loop p,figcaption{font-size:9.5pt}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main class="doc">
+
+<header class="mast">
+  <div class="eyebrow">Robin &middot; companion document</div>
+  <h1>How we check whether Robin was right</h1>
+  <p class="lede">A second piece of software reads every call and marks her work. It has no answer
+    key, and it is not allowed to have an opinion. This is how it reaches a verdict, what the verdict
+    costs her, and the three things it records that nobody expected to need.</p>
+  <div class="mastmeta">
+    <span>the reviewer</span>
+    <span>57 calls marked &middot; 226 answers &middot; 306 questions logged</span>
+    <span>checked against the running system, 21 Sep 2026</span>
+  </div>
+</header>
+
+<section>
+  <div class="sh"><span class="num">01</span><h2>The short version</h2></div>
+  <p>Marking an exam is easy when you have the answer key. This does not have one, on purpose, and
+    the reason is worth a minute because it is the whole design.</p>
+  <ul class="pts">
+    <li><b>The first version did have an answer key.</b> Twenty-five questions with ideal answers
+      written by hand. It worked until Robin moved to a different plan, at which point it carried on
+      confidently marking her against the old plan's answers and producing quality numbers that were
+      wrong in a way nobody could see.</li>
+    <li><b>So it stopped using a key and started using her own sources.</b> The platform records
+      which documents were put in front of Robin on each turn of each call. The reviewer fetches
+      exactly those pages and asks a narrower, better question: <b>is what she said supported by what
+      she was actually shown?</b></li>
+    <li><b>It produces evidence, not a judgment.</b> For every factual claim in her answer it finds
+      the exact sentence that establishes it, or reports that there is no such sentence. It is
+      structurally unable to return a score.</li>
+    <li><b>The score is arithmetic on that evidence.</b> Fixed deductions, applied by ordinary code.
+      A model can be generous with a number. It cannot be generous with a quote that is not in the
+      document.</li>
+  </ul>
+  <div class="note">
+    <p><b>Where it runs.</b> Inside our own small service, alongside the endpoints Robin calls. It
+      reads the record of finished calls, fetches document text from ElevenLabs, and writes its
+      verdicts back to our records. It never touches a call in progress and cannot change anything
+      Robin says.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sh"><span class="num">02</span><h2>What it is made of</h2></div>
+  <figure>
+    <div class="fig">
+      <svg viewBox="0 0 780 322" role="img" aria-label="Four stages: find a call not yet marked, find the pages Robin was shown on it, check each claim against those pages, then do the arithmetic. It reads the transcript, the documents retrieved, and which passages she actually used. It produces a verdict per claim, three judgments about the answer, and a security flag.">
+        <defs>
+          <marker id="g-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path class="mk" d="M0 0 L10 5 L0 10 z"/>
+          </marker>
+        </defs>
+        <text class="lb" x="4" y="26">a finished call</text>
+        <text class="lb" x="776" y="26" text-anchor="end">a verdict</text>
+
+        <rect class="bx" x="36" y="34" width="126" height="46" rx="3"/>
+        <text class="t1" x="99" y="55" text-anchor="middle">Find a call</text>
+        <text class="t2" x="99" y="70" text-anchor="middle">not yet marked</text>
+
+        <rect class="bx" x="192" y="34" width="126" height="46" rx="3"/>
+        <text class="t1" x="255" y="55" text-anchor="middle">Find her pages</text>
+        <text class="t2" x="255" y="70" text-anchor="middle">what she was shown</text>
+
+        <rect class="bx-acc" x="348" y="34" width="166" height="46" rx="3"/>
+        <text class="t1" x="431" y="55" text-anchor="middle">Check every claim</text>
+        <text class="t2" x="431" y="70" text-anchor="middle">against those pages only</text>
+
+        <rect class="bx" x="544" y="34" width="126" height="46" rx="3"/>
+        <text class="t1" x="607" y="55" text-anchor="middle">Arithmetic</text>
+        <text class="t2" x="607" y="70" text-anchor="middle">done by plain code</text>
+
+        <line class="ln" x1="4" y1="57" x2="32" y2="57" marker-end="url(#g-a)"/>
+        <line class="ln" x1="162" y1="57" x2="188" y2="57" marker-end="url(#g-a)"/>
+        <line class="ln" x1="318" y1="57" x2="344" y2="57" marker-end="url(#g-a)"/>
+        <line class="ln" x1="514" y1="57" x2="540" y2="57" marker-end="url(#g-a)"/>
+        <line class="ln" x1="670" y1="57" x2="762" y2="57" marker-end="url(#g-a)"/>
+
+        <path class="ln" d="M431 80 L431 104 M235 104 L605 104"/>
+        <line class="ln" x1="235" y1="104" x2="235" y2="142" marker-end="url(#g-a)"/>
+        <line class="ln" x1="605" y1="104" x2="605" y2="142" marker-end="url(#g-a)"/>
+        <text class="lb" x="227" y="126" text-anchor="end">what it reads</text>
+        <text class="lb" x="613" y="126">what it writes down</text>
+
+        <rect class="bx" x="130" y="146" width="210" height="34" rx="3"/>
+        <text class="t2" x="235" y="167" text-anchor="middle">The whole conversation</text>
+        <rect class="bx" x="130" y="186" width="210" height="34" rx="3"/>
+        <text class="t2" x="235" y="207" text-anchor="middle">The pages she was given</text>
+        <rect class="bx" x="130" y="226" width="210" height="34" rx="3"/>
+        <text class="t2" x="235" y="247" text-anchor="middle">Which ones she actually used</text>
+
+        <rect class="bx" x="500" y="146" width="210" height="34" rx="3"/>
+        <text class="t2" x="605" y="167" text-anchor="middle">Each claim, and its quote</text>
+        <rect class="bx" x="500" y="186" width="210" height="34" rx="3"/>
+        <text class="t2" x="605" y="207" text-anchor="middle">Every question the caller asked</text>
+        <rect class="bx" x="500" y="226" width="210" height="34" rx="3"/>
+        <text class="t2" x="605" y="247" text-anchor="middle">A security concern, if any</text>
+      </svg>
+    </div>
+    <figcaption><b>Figure 1.</b> The second stage is the one that makes this work at all. Because the
+      platform records which pages were put in front of her on each turn, the reviewer can mark her
+      against her own sources rather than against a key somebody has to maintain.</figcaption>
+  </figure>
+
+  <ul class="pts">
+    <li><b>It can tell "we had nothing" from "she did not use it".</b> The record shows not only which
+      documents came back, but which passages she actually drew on. An answer given with no passage
+      used is a different failure from an answer where nothing in the binder covered the question,
+      and they need different fixes: one is a retrieval problem, the other is a content gap.</li>
+    <li><b>The caller's own figures are excluded.</b> A balance or a loan amount comes from an account
+      lookup, not from a document, so the reviewer is told to leave those out of the claim check
+      rather than mark them unsupported. Otherwise every accurate balance would score as an invented
+      fact.</li>
+    <li><b>Its own general knowledge does not count as support.</b> If Robin says something that is
+      perfectly true of retirement plans in general, and these particular documents do not say it,
+      it is marked unsupported. That is the rule most likely to produce a result that feels harsh and
+      is right.</li>
+    <li><b>It is exacting about drift.</b> "Up to five years" where the source says "up to sixty
+      months" is fine. "About five percent" where the source says six percent is marked as
+      contradicting it. Softening a hard rule with "generally" or "typically" is marked too.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="sh"><span class="num">03</span><h2>How one answer is marked</h2></div>
+  <figure>
+    <div class="fig">
+      <svg viewBox="0 0 820 178" role="img" aria-label="The reviewer reads a finished call, fetches the documents Robin was shown, checks each claim against them, and the arithmetic turns that evidence into a rating stored in our records.">
+        <defs>
+          <marker id="g-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path class="mk" d="M0 0 L10 5 L0 10 z"/>
+          </marker>
+          <marker id="g-b2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path class="mk-acc" d="M0 0 L10 5 L0 10 z"/>
+          </marker>
+        </defs>
+
+        <rect class="bx" x="298" y="14" width="168" height="38" rx="3"/>
+        <text class="t2" x="382" y="38" text-anchor="middle">Marked "no source"</text>
+        <line class="ln" x1="382" y1="86" x2="382" y2="56" marker-end="url(#g-b)"/>
+        <text class="lb" x="392" y="74">when her pages cannot be read</text>
+
+        <rect class="bx" x="14" y="86" width="92" height="52" rx="3"/>
+        <text class="t1" x="60" y="110" text-anchor="middle">A call</text>
+        <text class="t2" x="60" y="125" text-anchor="middle">already finished</text>
+
+        <rect class="bx" x="136" y="86" width="132" height="52" rx="3"/>
+        <text class="t1" x="202" y="110" text-anchor="middle">Her pages</text>
+        <text class="t2" x="202" y="125" text-anchor="middle">fetched, then cached</text>
+
+        <rect class="bx-acc" x="298" y="86" width="168" height="52" rx="3"/>
+        <text class="t1" x="382" y="110" text-anchor="middle">Claim by claim</text>
+        <text class="t2" x="382" y="125" text-anchor="middle">each with its quote</text>
+
+        <rect class="bx" x="496" y="86" width="136" height="52" rx="3"/>
+        <text class="t1" x="564" y="110" text-anchor="middle">Arithmetic</text>
+        <text class="t2" x="564" y="125" text-anchor="middle">fixed deductions</text>
+
+        <rect class="bx" x="662" y="86" width="144" height="52" rx="3"/>
+        <text class="t1" x="734" y="110" text-anchor="middle">Our records</text>
+        <text class="t2" x="734" y="125" text-anchor="middle">a verdict per answer</text>
+
+        <line class="ln" x1="106" y1="112" x2="132" y2="112" marker-end="url(#g-b)"/>
+        <line class="ln" x1="268" y1="112" x2="294" y2="112" marker-end="url(#g-b)"/>
+        <line class="ln-acc" x1="466" y1="112" x2="492" y2="112" marker-end="url(#g-b2)"/>
+        <line class="ln" x1="632" y1="112" x2="658" y2="112" marker-end="url(#g-b)"/>
+
+        <text class="lb" x="119" y="160" text-anchor="middle">reads</text>
+        <text class="lb" x="281" y="160" text-anchor="middle">fetches</text>
+        <text class="lb-acc" x="479" y="160" text-anchor="middle">evidence, never a score</text>
+        <text class="lb" x="645" y="160" text-anchor="middle">files</text>
+      </svg>
+    </div>
+    <figcaption><b>Figure 2.</b> The break between the third and fourth box is the important one. The
+      part with judgment produces evidence and stops. The part that produces a number has no
+      judgment at all.</figcaption>
+  </figure>
+
+  <p>Every answer starts at five out of five, and loses points for specific, named things. The
+    deductions are weighted by what actually harms a caller: being told something false is worse than
+    being told something incomplete, which is worse than being told it awkwardly.</p>
+  <ol class="walk">
+    <li><b>A claim that contradicts her own documents costs three.</b> The most expensive thing she
+      can do, because a caller has no way to know.</li>
+    <li><b>A claim her documents do not establish costs two.</b> This covers the answer that sounds
+      complete and correct and simply is not in the source.</li>
+    <li><b>Not answering what was asked costs two.</b> A fluent reply to a different question.</li>
+    <li><b>Leaving out something material costs one.</b> The condition or exception that changes what
+      a caller would do.</li>
+    <li><b>A thin answer where the source had more costs one.</b> This is the one that catches
+      bluffing past a gap rather than saying she is not certain.</li>
+    <li><b>The result is floored at one and capped at five.</b> Four and a half or above reads as
+      correct, three or above as incomplete, below that as wrong. The page shows those words rather
+      than the number, because a number invites arguing about the number instead of reading the
+      evidence underneath it.</li>
+    <li><b>Separately, the answer is labelled by how well grounded it was:</b> grounded, unsupported,
+      contradicted, or no source, where the last one means we could not read the pages she used and
+      so are declining to score it rather than guessing.</li>
+  </ol>
+</section>
+
+<section>
+  <div class="sh"><span class="num">04</span><h2>The three things it records</h2></div>
+  <figure>
+    <div class="fig">
+      <svg viewBox="0 0 906 306" role="img" aria-label="Three records come out of each call. The verdicts, claim by claim with quotes. The demand record, every question a caller asked including the ones she could not answer and why. And a security check for personal information disclosed or account details given before verification.">
+        <defs>
+          <marker id="g-c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path class="mk" d="M0 0 L10 5 L0 10 z"/>
+          </marker>
+          <marker id="g-c2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path class="mk-acc" d="M0 0 L10 5 L0 10 z"/>
+          </marker>
+        </defs>
+
+        <text class="lb" x="4" y="16">THE VERDICTS &middot; was she right</text>
+        <rect class="bx" x="14" y="26" width="204" height="50" rx="3"/>
+        <text class="t1" x="116" y="48" text-anchor="middle">Each claim she made</text>
+        <text class="t2" x="116" y="63" text-anchor="middle">figures, rules, deadlines</text>
+        <rect class="bx" x="278" y="26" width="176" height="50" rx="3"/>
+        <text class="t1" x="366" y="48" text-anchor="middle">Its quote</text>
+        <text class="t2" x="366" y="63" text-anchor="middle">or a note that there is none</text>
+        <rect class="bx" x="514" y="26" width="204" height="50" rx="3"/>
+        <text class="t1" x="616" y="48" text-anchor="middle">Correct, incomplete, wrong</text>
+        <text class="t2" x="616" y="63" text-anchor="middle">with the reasons listed</text>
+        <line class="ln" x1="218" y1="51" x2="274" y2="51" marker-end="url(#g-c)"/>
+        <line class="ln" x1="454" y1="51" x2="510" y2="51" marker-end="url(#g-c)"/>
+        <text class="lb" x="246" y="44" text-anchor="middle">traced</text>
+        <text class="lb" x="482" y="44" text-anchor="middle">totalled</text>
+
+        <text class="lb-acc" x="4" y="116">THE DEMAND RECORD &middot; what people keep asking for</text>
+        <rect class="bx-acc" x="14" y="126" width="204" height="50" rx="3"/>
+        <text class="t1" x="116" y="148" text-anchor="middle">Every question asked</text>
+        <text class="t2" x="116" y="163" text-anchor="middle">answered or not</text>
+        <rect class="bx-acc" x="278" y="126" width="176" height="50" rx="3"/>
+        <text class="t1" x="366" y="148" text-anchor="middle">Why not, if not</text>
+        <text class="t2" x="366" y="163" text-anchor="middle">four specific reasons</text>
+        <rect class="fillw" x="514" y="126" width="204" height="50" rx="3"/>
+        <text class="t1" x="616" y="148" text-anchor="middle">A ranked list of gaps</text>
+        <text class="t2" x="616" y="163" text-anchor="middle">what to write next</text>
+        <line class="ln-acc" x1="218" y1="151" x2="274" y2="151" marker-end="url(#g-c2)"/>
+        <line class="ln-acc" x1="454" y1="151" x2="510" y2="151" marker-end="url(#g-c2)"/>
+        <text class="lb-acc" x="246" y="144" text-anchor="middle">grouped</text>
+        <text class="lb-acc" x="482" y="144" text-anchor="middle">counted</text>
+
+        <text class="lb" x="4" y="216">THE SECURITY CHECK &middot; one question, asked every time</text>
+        <rect class="bx" x="14" y="226" width="204" height="50" rx="3"/>
+        <text class="t1" x="116" y="248" text-anchor="middle">Did she disclose anything</text>
+        <text class="t2" x="116" y="263" text-anchor="middle">personal details, credentials</text>
+        <rect class="bx" x="278" y="226" width="176" height="50" rx="3"/>
+        <text class="t1" x="366" y="248" text-anchor="middle">Before verifying?</text>
+        <text class="t2" x="366" y="263" text-anchor="middle">account detail too early</text>
+        <rect class="bx" x="514" y="226" width="204" height="50" rx="3"/>
+        <text class="t1" x="616" y="248" text-anchor="middle">Flagged on the call</text>
+        <text class="t2" x="616" y="263" text-anchor="middle">visible in the list</text>
+        <line class="ln" x1="218" y1="251" x2="274" y2="251" marker-end="url(#g-c)"/>
+        <line class="ln" x1="454" y1="251" x2="510" y2="251" marker-end="url(#g-c)"/>
+        <text class="lb" x="246" y="244" text-anchor="middle">and</text>
+        <text class="lb" x="482" y="244" text-anchor="middle">raised</text>
+
+        <line class="ln dash" x1="740" y1="26" x2="740" y2="276"/>
+        <text class="lb" x="750" y="150">all three open from one call</text>
+      </svg>
+    </div>
+    <figcaption><b>Figure 3.</b> The middle row was not the point of building this and has turned out
+      to be the most useful thing it produces: a ranked list of what callers ask that Robin cannot yet
+      answer, generated as a by-product of marking her.</figcaption>
+  </figure>
+
+  <div class="loops">
+    <div class="loop">
+      <h3>The verdicts<span class="where">was she right</span></h3>
+      <p>Claim by claim, with the sentence behind each one, and a short line per answer explaining
+        its rating in words: contradicts the source, not in the source, did not answer what was
+        asked. A reviewer can open any call and read the quotes rather than take the rating on
+        trust.</p>
+    </div>
+    <div class="loop key">
+      <h3>The demand record<span class="where">what people keep asking for</span></h3>
+      <p>Every distinct question a caller asked, including the ones she did not answer, with one of
+        four reasons when she did not: nothing in her binder covers it, her binder probably covers it
+        but she did not use it, it was not a plan question at all, or she correctly declined, such as
+        refusing to recommend an investment. Counted across calls, this is a ranked list of what to
+        write next, produced without anybody having to guess.</p>
+    </div>
+    <div class="loop">
+      <h3>The security check<span class="where">every call, every time</span></h3>
+      <p>One question asked of every call: did she disclose personal information or credentials, or
+        give account-specific detail before the caller was verified. A call that trips it is flagged
+        in the list. This is the measurement that backs up the fact that her identity rule is an
+        instruction rather than a lock.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sh"><span class="num">05</span><h2>The parts, and who runs them</h2></div>
+  <div class="tw">
+    <table>
+      <thead><tr><th>The part</th><th>Who runs it</th><th>What it does</th><th>Has judgment?</th></tr></thead>
+      <tbody>
+        <tr><td>The call record</td><td>Supabase</td><td>One row per finished call, with the full conversation</td><td>No</td></tr>
+        <tr><td>The page lookup</td><td>Our own code</td><td>Works out which documents she was shown, and fetches their text</td><td>No</td></tr>
+        <tr><td>The page cache</td><td>Supabase</td><td>Keeps fetched text so a run costs one fetch per document</td><td>No</td></tr>
+        <tr><td>The reader</td><td>An AI model</td><td>Traces claims to quotes; cannot return a score</td><td>Yes, and only here</td></tr>
+        <tr><td>The arithmetic</td><td>Our own code</td><td>Applies the fixed deductions and the bands</td><td>No, deliberately</td></tr>
+        <tr><td>The verdict store</td><td>Supabase</td><td>226 marked answers across 57 calls so far</td><td>No</td></tr>
+        <tr><td>The Accuracy page</td><td>Our own code, in the portal</td><td>Lists calls, runs a batch, opens the evidence</td><td>No</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="sh"><span class="num">06</span><h2>The handoffs, and what goes wrong at each</h2></div>
+  <div class="tw">
+    <table>
+      <thead><tr><th>The handoff</th><th>What is passed</th><th>What protects it</th><th>If it goes wrong</th></tr></thead>
+      <tbody>
+        <tr><td>Call record into the reviewer</td><td>The conversation, and the list of documents used</td><td>Only calls not already marked are picked up</td><td>Nothing is marked twice; a re-run resumes where it stopped</td></tr>
+        <tr><td>Finding her pages</td><td>The identifiers of the documents she was shown</td><td>Our own copy first, then ElevenLabs if we do not hold it</td><td>The answer is marked "no source" and is visibly unscored, not quietly scored</td></tr>
+        <tr><td>Pages into the reader</td><td>The document text, as the only ground truth</td><td>It is instructed that its own knowledge is not support</td><td>A true-but-unsourced claim is marked unsupported, which can feel harsh and is correct</td></tr>
+        <tr><td>Reader into the arithmetic</td><td>Claims, quotes and three judgments. No number</td><td>The reader has no way to return a score</td><td>A weak answer reads as weak rather than as a flattering number</td></tr>
+        <tr><td>Arithmetic into our records</td><td>A rating, the reasons, and the quotes</td><td>Re-marking the same answer overwrites rather than duplicates</td><td>If one recently added column is missing, it writes everything else rather than losing the run</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="sh"><span class="num">07</span><h2>The choices behind this, and what each one cost</h2></div>
+  <ul class="pts">
+    <li><b>No answer key.</b> It marks her against her own sources, so it keeps working when the plan
+      changes, and it would keep working for a second plan with no new key to write. The cost is that
+      it can only tell you whether she was faithful to her documents. If a document itself is wrong,
+      this will call a wrong answer correct. That gap is the Knowledge Factory's job, not this
+      one's.</li>
+    <li><b>The reader cannot return a score.</b> Evidence in, arithmetic out. The cost is that the
+      rating only knows about the things the arithmetic models, and a genuinely novel failure will
+      show up in the written note rather than in the number.</li>
+    <li><b>The number is hidden from the page.</b> Ratings are shown as words. A number invites a
+      conversation about the number; words send people to the evidence.</li>
+    <li><b>Ten calls per run.</b> A deliberate ceiling so one click cannot become an enormous bill or
+      a very long wait. The cost is that catching up on a backlog takes several runs.</li>
+    <li><b>It marks what she was shown, not what exists.</b> If her binder holds the answer and she
+      never pulled it up, that is recorded as a retrieval miss rather than as a wrong answer. Those
+      are different problems with different fixes, and merging them would have hidden both.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="sh"><span class="num">08</span><h2>What is true today, and what is not</h2></div>
+  <div class="note">
+    <p><b>It only runs when somebody opens the page.</b> There is no schedule. If nobody looks for a
+      week, nothing is marked for a week, and the backlog simply waits. This is the clearest gap in
+      the module and it is a small piece of work to close.</p>
+    <p><b>57 of 123 calls have been marked</b>, producing 226 marked answers and 306 logged questions.
+      The rest are older calls from before this version of the reviewer existed.</p>
+    <p><b>39 older calls carry a different format.</b> They were marked by an earlier, richer version
+      of the reviewer whose code is no longer in the project, and it recorded things the current one
+      does not. The page shows the current format, so that older detail exists in the database and is
+      invisible in the interface.</p>
+    <p><b>It nearly did not work at all.</b> Because Robin's six live documents were uploaded straight
+      into ElevenLabs, we had no copy of their text, so every recent call was marked "no source" and
+      the whole module looked broken. It was taught to fetch the text from ElevenLabs directly, which
+      fixed it. If that key is ever removed, it degrades to "no source" again rather than silently
+      guessing, which is the right failure.</p>
+    <p><b>It cannot tell you whether a document is correct.</b> It checks faithfulness to the source,
+      and nothing more. A confidently wrong plan document would produce confidently correct-looking
+      marks. That is worth saying plainly, because "the reviewer says she is accurate" means something
+      narrower than it sounds.</p>
+  </div>
+</section>
+
+<footer>
+  <span>Robin &middot; the reviewer &middot; internal</span>
+  <span>Companion to "What Robin is, and how she works"</span>
+</footer>
+
+</main>
+
+</body>
+</html>

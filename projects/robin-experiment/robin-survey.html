@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Quality Survey</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+<style>
+:root{
+  --paper:#FCFCFD; --sheet:#FFFFFF; --ink:#1B1F24; --muted:#5D6671; --faint:#8B939E;
+  --rule:#DDE1E5; --rule2:#EDEFF2; --accent:#15594C; --wash:#E8F0ED; --warn:#8A4B1F;
+  --serif:"Newsreader",Georgia,"Times New Roman",serif;
+  --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#0F1216; --sheet:#141820; --ink:#E7EAED; --muted:#9AA3AE; --faint:#767F8B;
+  --rule:#2A3038; --rule2:#1E242B; --accent:#5FB49B; --wash:#17302B; --warn:#C08A57;
+}}
+:root[data-theme="dark"]{
+  --paper:#0F1216; --sheet:#141820; --ink:#E7EAED; --muted:#9AA3AE; --faint:#767F8B;
+  --rule:#2A3038; --rule2:#1E242B; --accent:#5FB49B; --wash:#17302B; --warn:#C08A57;
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+     font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.doc{background:var(--sheet);max-width:940px;margin:0 auto;padding-block:40px;padding-inline:16px;
+     display:flex;flex-direction:column;gap:38px}
+@media (min-width:720px){.doc{padding-block:56px;padding-inline:56px}}
+
+h1{font-family:var(--serif);font-weight:600;font-size:34px;line-height:1.08;margin:0;letter-spacing:-.012em;text-wrap:balance}
+h2{font-family:var(--serif);font-weight:600;font-size:22px;line-height:1.2;margin:0;text-wrap:balance}
+h3{font-family:var(--sans);font-weight:600;font-size:14px;line-height:1.3;margin:0}
+p{margin:0;max-width:74ch}
+.tnum{font-variant-numeric:tabular-nums}
+code,.m{font-family:var(--mono);font-size:.88em;background:var(--wash);color:var(--ink);
+        padding:1px 4px;border-radius:2px}
+a{color:var(--accent)}
+
+/* Section head: a numbered serif line over a full-width hairline. The number is
+   information: these sections are meant to be walked in order. */
+section{display:flex;flex-direction:column;gap:16px}
+.sh{display:flex;align-items:baseline;gap:12px;padding-bottom:9px;border-bottom:1px solid var(--rule)}
+.sh .num{font-family:var(--mono);font-size:12px;color:var(--accent);font-weight:500}
+
+header.mast{display:flex;flex-direction:column;gap:14px;padding-bottom:22px;border-bottom:2px solid var(--ink)}
+.eyebrow{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:var(--accent)}
+.lede{font-size:16.5px;line-height:1.55;color:var(--muted);max-width:70ch}
+.mastmeta{display:flex;flex-wrap:wrap;gap:6px 26px;font-size:12px;color:var(--faint);
+          font-family:var(--mono);padding-top:4px}
+
+/* Numbered list where order is the content. */
+ol.walk{margin:0;padding:0;list-style:none;counter-reset:w;display:flex;flex-direction:column;gap:13px}
+/* Not display:grid on the li: a grid container turns every child element (the bold
+   run-in, each <span class="m">) into its own grid item and scatters the sentence. */
+ol.walk > li{counter-increment:w;position:relative;padding-left:32px;
+             max-width:76ch;font-size:14px;line-height:1.55}
+ol.walk > li::before{content:counter(w,decimal-leading-zero);position:absolute;left:0;top:.2em;
+                     font-family:var(--mono);font-size:11px;font-weight:500;color:var(--accent)}
+ol.walk b{font-weight:600}
+
+ul.pts{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:11px}
+ul.pts > li{padding-left:15px;position:relative;max-width:76ch;font-size:14px;line-height:1.55;color:var(--muted)}
+ul.pts > li::before{content:"";position:absolute;left:0;top:.62em;width:5px;height:5px;border-radius:50%;background:var(--accent)}
+ul.pts b{color:var(--ink);font-weight:600}
+
+/* Stacked prose blocks with a bold run-in, for the three loops. */
+.loops{display:flex;flex-direction:column;gap:18px}
+.loop{display:flex;flex-direction:column;gap:5px;padding-left:15px;border-left:2px solid var(--rule)}
+.loop.key{border-left-color:var(--accent)}
+.loop p{font-size:14px;line-height:1.55;color:var(--muted)}
+.loop h3 .where{font-weight:400;color:var(--faint);font-family:var(--mono);font-size:11px;margin-left:8px}
+
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:13px}
+th{text-align:left;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.1em;
+   color:var(--faint);padding:0 14px 7px 0;border-bottom:1px solid var(--rule);white-space:nowrap}
+td{padding:9px 14px 9px 0;border-bottom:1px solid var(--rule2);vertical-align:top;color:var(--muted);line-height:1.45}
+td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
+td .m{white-space:nowrap}
+
+/* Figures. Strokes and text take currentColor so both themes work; the accent is
+   spent only on the one mark that carries the claim. */
+figure{margin:0;display:flex;flex-direction:column;gap:10px}
+.fig{border:1px solid var(--rule);border-radius:3px;padding:16px 14px;background:var(--paper);
+     color:var(--ink);overflow-x:auto}
+.fig svg{display:block;width:100%;min-width:560px;height:auto}
+.fig .bx{fill:none;stroke:currentColor;stroke-width:1.2;opacity:.55}
+.fig .bx-acc{fill:none;stroke:var(--accent);stroke-width:1.7}
+.fig .fillw{fill:var(--wash);stroke:var(--accent);stroke-width:1.7}
+.fig text{fill:currentColor;font-family:var(--sans)}
+.fig .t1{font-size:12.5px;font-weight:600}
+.fig .t2{font-size:10.5px;opacity:.68}
+.fig .lb{font-size:10px;opacity:.68}
+.fig .lb-acc{font-size:10px;fill:var(--accent);font-weight:600}
+.fig .ln{stroke:currentColor;stroke-width:1.2;fill:none;opacity:.5}
+.fig .ln-acc{stroke:var(--accent);stroke-width:1.6;fill:none}
+.fig .mk{fill:currentColor;opacity:.5}
+.fig .mk-acc{fill:var(--accent)}
+.fig .dash{stroke-dasharray:5 4}
+figcaption{font-size:12.5px;line-height:1.5;color:var(--muted);max-width:74ch}
+figcaption b{color:var(--ink);font-weight:600}
+
+.note{background:var(--wash);border-left:2px solid var(--accent);padding:14px 16px;
+      font-size:13.5px;line-height:1.55;max-width:78ch}
+.note p + p{margin-top:9px}
+footer{padding-top:18px;border-top:1px solid var(--rule);font-size:11.5px;color:var(--faint);
+       display:flex;flex-wrap:wrap;gap:4px 20px;justify-content:space-between}
+
+@page{size:letter portrait;margin:0.5in}
+@media print{
+  :root{--paper:#fff;--sheet:#fff;--ink:#000;--muted:#333b44;--faint:#5c646e;
+        --rule:#c4c9ce;--rule2:#e2e5e8;--accent:#0f4438;--wash:#eef3f1}
+  body{background:#fff;font-size:10pt}
+  .doc{max-width:none;margin:0;padding:0;gap:22pt}
+  h1{font-size:22pt} h2{font-size:14pt} .lede{font-size:11pt}
+  section,figure,.loop,tr,.note{break-inside:avoid}
+  .fig svg{min-width:0} table{min-width:0;font-size:8.5pt}
+  ol.walk > li,ul.pts > li,.loop p,figcaption{font-size:9.5pt}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main class="doc">
+
+<header class="mast">
+  <div class="eyebrow">Robin &middot; companion document</div>
+  <h1>Would they rather use Robin?</h1>
+  <p class="lede">Four questions at the end of a call, and five situations where she must not ask them
+    at all. This is the instrument, the rules that keep it honest, how an answer becomes a number,
+    and why it is designed to be taken back off.</p>
+  <div class="mastmeta">
+    <span>the quality survey</span>
+    <span>wave opened 21 Sep 2026</span>
+    <span>checked against the running system, 21 Sep 2026</span>
+  </div>
+</header>
+
+<section>
+  <div class="sh"><span class="num">01</span><h2>The short version</h2></div>
+  <p>This exists to settle one argument, and then to come off. It is not a feature and it is not
+    meant to become one.</p>
+  <ul class="pts">
+    <li><b>One question is the experiment.</b> Would you rather handle a question like this with
+      Robin, or hold for a person, even if it took longer? The clause about it taking longer is doing
+      all the work. Without it people compare Robin to an imaginary human who picks up instantly, and
+      the answer means nothing.</li>
+    <li><b>Three more questions ride along.</b> How likely you would be to recommend handling a
+      question this way, zero to ten. How natural her voice sounded, zero to ten. And an open
+      invitation to say anything else.</li>
+    <li><b>She states it, she does not ask permission.</b> "Before I go, please answer the following
+      questions." Asking "do you have a moment?" invites a no that nobody needs, and these callers
+      were told the questions were coming.</li>
+    <li><b>There are five situations where she says nothing at all.</b> They are not soft guidance.
+      They are the difference between a survey and an irritation.</li>
+  </ul>
+  <div class="note">
+    <p><b>Where it lives.</b> There is no survey software. The questions are a paragraph in Robin's
+      rules, the answers are pulled out of the transcript after the call by her own platform, and the
+      results are read through the Quality page in the portal. Nothing was built that would be hard
+      to remove, which was the point.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sh"><span class="num">02</span><h2>The four questions, and when she must not ask</h2></div>
+  <figure>
+    <div class="fig">
+      <svg viewBox="0 0 780 322" role="img" aria-label="Four questions asked in a fixed order: which they would rather use, how likely they are to recommend it from zero to ten, how natural the voice sounded from zero to ten, and anything else. She says nothing at all when the call ends in a transfer, when verification failed, when the caller never asked anything, when she already asked, or when they said they were in a hurry.">
+        <defs>
+          <marker id="s-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path class="mk" d="M0 0 L10 5 L0 10 z"/>
+          </marker>
+        </defs>
+        <text class="lb" x="4" y="26">their question is handled</text>
+        <text class="lb" x="776" y="26" text-anchor="end">goodbye</text>
+
+        <rect class="bx-acc" x="36" y="34" width="166" height="46" rx="3"/>
+        <text class="t1" x="119" y="55" text-anchor="middle">1 &middot; Robin, or a person?</text>
+        <text class="t2" x="119" y="70" text-anchor="middle">even if it took longer</text>
+
+        <rect class="bx" x="232" y="34" width="146" height="46" rx="3"/>
+        <text class="t1" x="305" y="55" text-anchor="middle">2 &middot; Recommend?</text>
+        <text class="t2" x="305" y="70" text-anchor="middle">zero to ten</text>
+
+        <rect class="bx" x="408" y="34" width="146" height="46" rx="3"/>
+        <text class="t1" x="481" y="55" text-anchor="middle">3 &middot; The voice?</text>
+        <text class="t2" x="481" y="70" text-anchor="middle">zero to ten</text>
+
+        <rect class="bx" x="584" y="34" width="146" height="46" rx="3"/>
+        <text class="t1" x="657" y="55" text-anchor="middle">4 &middot; Anything else?</text>
+        <text class="t2" x="657" y="70" text-anchor="middle">optional, easy to decline</text>
+
+        <line class="ln" x1="4" y1="57" x2="32" y2="57" marker-end="url(#s-a)"/>
+        <line class="ln" x1="202" y1="57" x2="228" y2="57" marker-end="url(#s-a)"/>
+        <line class="ln" x1="378" y1="57" x2="404" y2="57" marker-end="url(#s-a)"/>
+        <line class="ln" x1="554" y1="57" x2="580" y2="57" marker-end="url(#s-a)"/>
+        <line class="ln" x1="730" y1="57" x2="762" y2="57" marker-end="url(#s-a)"/>
+
+        <path class="ln" d="M119 80 L119 104 M119 104 L605 104"/>
+        <line class="ln" x1="235" y1="104" x2="235" y2="142" marker-end="url(#s-a)"/>
+        <line class="ln" x1="605" y1="104" x2="605" y2="142" marker-end="url(#s-a)"/>
+        <text class="lb" x="227" y="126" text-anchor="end">never asked when</text>
+        <text class="lb" x="613" y="126">what each answer becomes</text>
+
+        <rect class="bx" x="130" y="146" width="210" height="30" rx="3"/>
+        <text class="t2" x="235" y="165" text-anchor="middle">The call ends in a transfer</text>
+        <rect class="bx" x="130" y="182" width="210" height="30" rx="3"/>
+        <text class="t2" x="235" y="201" text-anchor="middle">Verification failed</text>
+        <rect class="bx" x="130" y="218" width="210" height="30" rx="3"/>
+        <text class="t2" x="235" y="237" text-anchor="middle">They never asked anything</text>
+        <rect class="bx" x="130" y="254" width="210" height="30" rx="3"/>
+        <text class="t2" x="235" y="273" text-anchor="middle">She already asked</text>
+        <rect class="bx" x="130" y="290" width="210" height="30" rx="3"/>
+        <text class="t2" x="235" y="309" text-anchor="middle">They said they are in a hurry</text>
+
+        <rect class="bx" x="500" y="146" width="210" height="30" rx="3"/>
+        <text class="t2" x="605" y="165" text-anchor="middle">The headline share</text>
+        <rect class="bx" x="500" y="182" width="210" height="30" rx="3"/>
+        <text class="t2" x="605" y="201" text-anchor="middle">A recommendation score</text>
+        <rect class="bx" x="500" y="218" width="210" height="30" rx="3"/>
+        <text class="t2" x="605" y="237" text-anchor="middle">A voice score</text>
+        <rect class="bx" x="500" y="254" width="210" height="30" rx="3"/>
+        <text class="t2" x="605" y="273" text-anchor="middle">A comment, in their words</text>
+      </svg>
+    </div>
+    <figcaption><b>Figure 1.</b> Question one is first on purpose, so that it survives a caller who
+      stops part way and so that nothing asked before it colours the answer. Getting only question
+      one is still a good outcome.</figcaption>
+  </figure>
+
+  <ul class="pts">
+    <li><b>A transfer she offered and they declined is not a transfer.</b> The gate is about a call
+      she is actually handing over. If she offered a person, they said no, and she finished the call
+      herself, that is an ordinary completed call and it counts. Getting this wrong in either
+      direction would bias the result: skipping those calls loses the people who considered a human
+      and stayed, and asking on a real transfer irritates someone already being handed over.</li>
+    <li><b>Frustration is not a reason to skip.</b> A caller unhappy with how it went, whose question
+      she still answered, is exactly whose answer we need. She is instructed to ask them the same way
+      she would ask anyone. This is the rule most likely to be quietly broken by a system trying to
+      look good.</li>
+    <li><b>If they stop, she stops.</b> Answers already given are kept. She never re-words a question
+      and tries again, never asks why, and never pushes for more. Pushing is how a nine becomes a
+      six.</li>
+    <li><b>She never reads the answers back.</b> No summarising, no confirming what was recorded. And
+      if somebody says something sensitive in the open question, she does not repeat it or ask them to
+      expand.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="sh"><span class="num">03</span><h2>What happens to an answer</h2></div>
+  <figure>
+    <div class="fig">
+      <svg viewBox="0 0 820 178" role="img" aria-label="A spoken answer is pulled out of the transcript by Robin's platform after the call, filed by our service, filtered by the wave so only calls inside it count, and then read on the Quality page.">
+        <defs>
+          <marker id="s-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path class="mk" d="M0 0 L10 5 L0 10 z"/>
+          </marker>
+          <marker id="s-b2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path class="mk-acc" d="M0 0 L10 5 L0 10 z"/>
+          </marker>
+        </defs>
+
+        <rect class="bx" x="298" y="14" width="168" height="38" rx="3"/>
+        <text class="t2" x="382" y="38" text-anchor="middle">Flagged for a human</text>
+        <line class="ln" x1="382" y1="86" x2="382" y2="56" marker-end="url(#s-b)"/>
+        <text class="lb" x="392" y="74">a low score, or an unhappy call</text>
+
+        <rect class="bx" x="14" y="86" width="92" height="52" rx="3"/>
+        <text class="t1" x="60" y="110" text-anchor="middle">Spoken</text>
+        <text class="t2" x="60" y="125" text-anchor="middle">out loud, once</text>
+
+        <rect class="bx" x="136" y="86" width="132" height="52" rx="3"/>
+        <text class="t1" x="202" y="110" text-anchor="middle">Pulled out</text>
+        <text class="t2" x="202" y="125" text-anchor="middle">from the transcript</text>
+
+        <rect class="bx" x="298" y="86" width="168" height="52" rx="3"/>
+        <text class="t1" x="382" y="110" text-anchor="middle">Filed</text>
+        <text class="t2" x="382" y="125" text-anchor="middle">one row for the call</text>
+
+        <rect class="bx-acc" x="496" y="86" width="136" height="52" rx="3"/>
+        <text class="t1" x="564" y="110" text-anchor="middle">The wave</text>
+        <text class="t2" x="564" y="125" text-anchor="middle">does this one count?</text>
+
+        <rect class="bx" x="662" y="86" width="144" height="52" rx="3"/>
+        <text class="t1" x="734" y="110" text-anchor="middle">The Quality page</text>
+        <text class="t2" x="734" y="125" text-anchor="middle">what the numbers say</text>
+
+        <line class="ln" x1="106" y1="112" x2="132" y2="112" marker-end="url(#s-b)"/>
+        <line class="ln" x1="268" y1="112" x2="294" y2="112" marker-end="url(#s-b)"/>
+        <line class="ln" x1="466" y1="112" x2="492" y2="112" marker-end="url(#s-b)"/>
+        <line class="ln-acc" x1="632" y1="112" x2="658" y2="112" marker-end="url(#s-b2)"/>
+
+        <text class="lb" x="119" y="160" text-anchor="middle">no form, no keypad</text>
+        <text class="lb" x="281" y="160" text-anchor="middle">after the call</text>
+        <text class="lb" x="479" y="160" text-anchor="middle">with the call</text>
+        <text class="lb-acc" x="645" y="160" text-anchor="middle">only if inside the wave</text>
+      </svg>
+    </div>
+    <figcaption><b>Figure 2.</b> Nobody types anything. The answers are spoken, and the platform reads
+      them back out of the transcript afterwards, which is why a one-word "nine" works and why the
+      instrument could be removed tomorrow by deleting a paragraph.</figcaption>
+  </figure>
+
+  <ol class="walk">
+    <li><b>She states it and goes straight in.</b> One question at a time, in the fixed order, waiting
+      for each answer. A one-word reply is a complete answer, so she responds rather than waiting for
+      more of it.</li>
+    <li><b>Nothing is captured during the call.</b> There is no form, no keypad entry, no extra step
+      that could break mid-survey. The conversation is the record.</li>
+    <li><b>Afterwards, the platform reads the transcript</b> and fills in the answers alongside
+      everything else it extracts about the call. It also judges separately whether she ran the survey
+      on a call where she should have, which is how we measure her adherence rather than assume
+      it.</li>
+    <li><b>Our service files it</b> with the rest of the call record. One row per call.</li>
+    <li><b>The wave decides whether it counts.</b> A single dated cutoff. Calls before it are kept and
+      not counted, so a clean start does not mean deleting anything.</li>
+    <li><b>Proportions are counted per person, words are counted per call.</b> One tester who calls
+      three times is one opinion in the headline, but all three of their comments are shown. This
+      split was learned the hard way, described below.</li>
+    <li><b>Calls needing a human look are surfaced under the headline</b>, chosen by negative
+      sentiment or a low score, rather than left for somebody to find.</li>
+  </ol>
+</section>
+
+<section>
+  <div class="sh"><span class="num">04</span><h2>Three counting rules that were learned the hard way</h2></div>
+  <figure>
+    <div class="fig">
+      <svg viewBox="0 0 906 306" role="img" aria-label="Three counting rules. A respondent is the handset plus the member they verified as, not just the phone. Proportions are counted per person while comments are counted per call. And calls needing review are found by sentiment as well as by score.">
+        <defs>
+          <marker id="s-c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path class="mk" d="M0 0 L10 5 L0 10 z"/>
+          </marker>
+          <marker id="s-c2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path class="mk-acc" d="M0 0 L10 5 L0 10 z"/>
+          </marker>
+        </defs>
+
+        <text class="lb-acc" x="4" y="16">WHO COUNTS AS ONE PERSON</text>
+        <rect class="bx-acc" x="14" y="26" width="204" height="50" rx="3"/>
+        <text class="t1" x="116" y="48" text-anchor="middle">One handset</text>
+        <text class="t2" x="116" y="63" text-anchor="middle">a tester calling repeatedly</text>
+        <rect class="bx-acc" x="278" y="26" width="176" height="50" rx="3"/>
+        <text class="t1" x="366" y="48" text-anchor="middle">Plus who they were</text>
+        <text class="t2" x="366" y="63" text-anchor="middle">the member they verified as</text>
+        <rect class="fillw" x="514" y="26" width="204" height="50" rx="3"/>
+        <text class="t1" x="616" y="48" text-anchor="middle">Several respondents</text>
+        <text class="t2" x="616" y="63" text-anchor="middle">on purpose, not by accident</text>
+        <line class="ln-acc" x1="218" y1="51" x2="274" y2="51" marker-end="url(#s-c2)"/>
+        <line class="ln-acc" x1="454" y1="51" x2="510" y2="51" marker-end="url(#s-c2)"/>
+        <text class="lb-acc" x="246" y="44" text-anchor="middle">plus</text>
+        <text class="lb-acc" x="482" y="44" text-anchor="middle">equals</text>
+
+        <text class="lb" x="4" y="116">COUNTS VERSUS WORDS</text>
+        <rect class="bx" x="14" y="126" width="204" height="50" rx="3"/>
+        <text class="t1" x="116" y="148" text-anchor="middle">Proportions</text>
+        <text class="t2" x="116" y="163" text-anchor="middle">counted per person</text>
+        <rect class="bx" x="278" y="126" width="176" height="50" rx="3"/>
+        <text class="t1" x="366" y="148" text-anchor="middle">Comments</text>
+        <text class="t2" x="366" y="163" text-anchor="middle">counted per call</text>
+        <rect class="bx" x="514" y="126" width="204" height="50" rx="3"/>
+        <text class="t1" x="616" y="148" text-anchor="middle">Nothing vanishes</text>
+        <text class="t2" x="616" y="163" text-anchor="middle">and nothing is double-counted</text>
+        <line class="ln" x1="218" y1="151" x2="274" y2="151" marker-end="url(#s-c)"/>
+        <line class="ln" x1="454" y1="151" x2="510" y2="151" marker-end="url(#s-c)"/>
+        <text class="lb" x="246" y="144" text-anchor="middle">but</text>
+        <text class="lb" x="482" y="144" text-anchor="middle">so</text>
+
+        <text class="lb" x="4" y="216">WHAT GETS A HUMAN LOOK</text>
+        <rect class="bx" x="14" y="226" width="204" height="50" rx="3"/>
+        <text class="t1" x="116" y="248" text-anchor="middle">A low score</text>
+        <text class="t2" x="116" y="263" text-anchor="middle">the obvious signal</text>
+        <rect class="bx" x="278" y="226" width="176" height="50" rx="3"/>
+        <text class="t1" x="366" y="248" text-anchor="middle">Or an unhappy call</text>
+        <text class="t2" x="366" y="263" text-anchor="middle">tone, not just numbers</text>
+        <rect class="bx" x="514" y="226" width="204" height="50" rx="3"/>
+        <text class="t1" x="616" y="248" text-anchor="middle">Surfaced at the top</text>
+        <text class="t2" x="616" y="263" text-anchor="middle">not left to be found</text>
+        <line class="ln" x1="218" y1="251" x2="274" y2="251" marker-end="url(#s-c)"/>
+        <line class="ln" x1="454" y1="251" x2="510" y2="251" marker-end="url(#s-c)"/>
+        <text class="lb" x="246" y="244" text-anchor="middle">or</text>
+        <text class="lb" x="482" y="244" text-anchor="middle">then</text>
+
+        <line class="ln dash" x1="740" y1="26" x2="740" y2="276"/>
+        <text class="lb" x="750" y="150">each rule fixed a real miss</text>
+      </svg>
+    </div>
+    <figcaption><b>Figure 3.</b> None of these three rules was designed in advance. Each one replaced
+      a simpler rule that was quietly losing a real finding.</figcaption>
+  </figure>
+
+  <div class="loops">
+    <div class="loop key">
+      <h3>A respondent is a handset plus a persona<span class="where">not just a phone number</span></h3>
+      <p>A small group of testers calls many times from the same phone, as different members. Counting
+        by phone number alone collapsed all of that into one respondent and only ever read their first
+        answer. It cost a real finding: a tester called as one member, hit a question Robin could not
+        answer, and said they would rather do it with Robin but would wait for a person since she
+        could not help. The headline never saw it. The same tester preferred Robin for a balance check
+        and a person for a different topic, and those are two findings, not one opinion to average.</p>
+    </div>
+    <div class="loop">
+      <h3>Counts per person, words per call<span class="where">two different rules on purpose</span></h3>
+      <p>Proportions come from respondents, so one tester's three calls are one opinion. Comments come
+        from calls, because the per-person view keeps only a first call and a comment left on a later
+        one would simply disappear. That was live: the only real comment we had was on a second call,
+        and the page showed zero comments while one existed.</p>
+    </div>
+    <div class="loop">
+      <h3>A score is not the only unhappy signal<span class="where">tone matters too</span></h3>
+      <p>A call is flagged for review on negative sentiment or on a low score, not on the score alone.
+        One call rated three out of five, which is an unremarkable number, while the caller was
+        objecting to Robin remarking that they were "well past" a certain age. Tone problems do not
+        reliably show up as low numbers.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sh"><span class="num">05</span><h2>The parts, and who runs them</h2></div>
+  <div class="tw">
+    <table>
+      <thead><tr><th>The part</th><th>Who runs it</th><th>What it does</th><th>New, or already there?</th></tr></thead>
+      <tbody>
+        <tr><td>The questions</td><td>A paragraph in Robin's rules</td><td>When to ask, when not to, in what order</td><td>New, and it is only text</td></tr>
+        <tr><td>The capture</td><td>ElevenLabs, after the call</td><td>Reads the answers out of the transcript</td><td>New, and it is only settings</td></tr>
+        <tr><td>The adherence judge</td><td>ElevenLabs, after the call</td><td>Did she ask when she should have?</td><td>New</td></tr>
+        <tr><td>Filing</td><td>Our service, on Vercel</td><td>One row per call, alongside everything else</td><td>Already existed</td></tr>
+        <tr><td>The wave</td><td>Supabase, one row</td><td>The dated cutoff for what counts</td><td>New</td></tr>
+        <tr><td>The shaping</td><td>Supabase views</td><td>Per call and per respondent, side by side</td><td>New</td></tr>
+        <tr><td>The Quality page</td><td>Our own code, in the portal</td><td>Plain and detailed views, export, every call</td><td>New</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="sh"><span class="num">06</span><h2>The handoffs, and what goes wrong at each</h2></div>
+  <div class="tw">
+    <table>
+      <thead><tr><th>The handoff</th><th>What is passed</th><th>What protects it</th><th>If it goes wrong</th></tr></thead>
+      <tbody>
+        <tr><td>Asking, during the call</td><td>Nothing. The conversation is the record</td><td>No extra step exists that could fail mid-survey</td><td>She skips it, and the adherence judge records that she did</td></tr>
+        <tr><td>Transcript into answers</td><td>The spoken replies, read back afterwards</td><td>A separate judge scores whether she asked at all</td><td>A misheard number lands wrong, and the call transcript is one click away</td></tr>
+        <tr><td>Answers into the record</td><td>The filled-in fields with the call</td><td>Signed, and filing the same call twice cannot duplicate it</td><td>The call is there with the survey fields empty</td></tr>
+        <tr><td>The record into the wave</td><td>A date comparison, nothing else</td><td>Moving the cutoff is one value; deleting the row shows everything</td><td>A miscounted cutoff changes the denominator, and is reversible in seconds</td></tr>
+        <tr><td>The wave into the page</td><td>Per-call rows and per-respondent rows</td><td>Proportions and comments deliberately read different views</td><td>Reading the wrong one loses comments, which has happened</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="sh"><span class="num">07</span><h2>The choices behind this, and what each one cost</h2></div>
+  <ul class="pts">
+    <li><b>It is a paragraph, not a product.</b> No workflow to build, no extra step in the call, no
+      new place for the conversation to break. It comes off by deleting the paragraph. The cost is
+      that its accuracy depends on Robin following written instructions, which is exactly why a
+      separate judge scores whether she asked.</li>
+    <li><b>"Even if it took longer" never changes.</b> The two groups of testers must get an identical
+      instrument or the comparison between them is worthless. The cost is that we are stuck with the
+      wording now, including anything we would phrase better.</li>
+    <li><b>She states it rather than asking permission.</b> More answers, and a slightly more abrupt
+      ending for anyone who was not expecting it. Testers were briefed; a real member would not
+      be.</li>
+    <li><b>Never on a transfer.</b> Somebody who wants a person gets a person, with nothing asked on
+      the way. The cost is a blind spot exactly where dissatisfaction is most likely, which is why
+      the declined-transfer rule matters so much.</li>
+    <li><b>A clean start by cutoff, not by deletion.</b> Earlier calls are kept and simply not
+      counted. The cost is that two different numbers exist for the same question depending on the
+      window, which is a real source of confusion when somebody quotes an old figure.</li>
+    <li><b>The chart stays hidden until there are twenty respondents.</b> A percentage from four
+      people looks like a finding and is not one. The cost is a page that looks unfinished early on,
+      which is the honest state.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="sh"><span class="num">08</span><h2>What is true today, and what is not</h2></div>
+  <div class="note">
+    <p><b>The wave opened today, 21 September 2026.</b> Inside it there are 15 calls so far, 7 where
+      she ran the survey, 4 distinct respondents, and 4 written comments. Nothing is flagged for
+      review yet. Those are the real numbers as of this writing, and they are far too small to
+      conclude anything from.</p>
+    <p><b>The earlier answers are kept and do not count.</b> Across all 123 calls ever recorded there
+      are 29 stated preferences and 22 recommendation scores. They were given before the wave, under
+      a mix of instrument versions, and the page deliberately ignores them. If somebody quotes a
+      percentage from before today, that is where it came from.</p>
+    <p><b>The project's own written notes about this survey are out of date.</b> They describe two
+      questions with a one-to-five rating. The live instrument is four questions with two zero-to-ten
+      scales. Where a document and the running agent disagree, the agent is what callers actually
+      experienced.</p>
+    <p><b>One table built for this is empty and that is fine.</b> A dedicated survey table exists with
+      no rows in it. The answers arrive attached to the call record instead, and are read through a
+      view. The separate path was designed and never finished, and nothing depends on it.</p>
+    <p><b>It is designed to be removed.</b> Every part of it is a paragraph, a setting or a view. When
+      the question is answered, this comes off, and the permanent way we watch quality is the
+      reviewer, not this.</p>
+  </div>
+</section>
+
+<footer>
+  <span>Robin &middot; the quality survey &middot; internal</span>
+  <span>Companion to "What Robin is, and how she works"</span>
+</footer>
+
+</main>
+
+</body>
+</html>
