@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- TITLE: "<System> System Architecture". A name, not a sentence. -->
+<title>System Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+<style>
+:root{
+  --paper:#FCFCFD; --sheet:#FFFFFF; --ink:#1B1F24; --muted:#5D6671; --faint:#8B939E;
+  --rule:#DDE1E5; --rule2:#EDEFF2; --accent:#15594C; --wash:#E8F0ED; --warn:#8A4B1F;
+  --serif:"Newsreader",Georgia,"Times New Roman",serif;
+  --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#0F1216; --sheet:#141820; --ink:#E7EAED; --muted:#9AA3AE; --faint:#767F8B;
+  --rule:#2A3038; --rule2:#1E242B; --accent:#5FB49B; --wash:#17302B; --warn:#C08A57;
+}}
+:root[data-theme="dark"]{
+  --paper:#0F1216; --sheet:#141820; --ink:#E7EAED; --muted:#9AA3AE; --faint:#767F8B;
+  --rule:#2A3038; --rule2:#1E242B; --accent:#5FB49B; --wash:#17302B; --warn:#C08A57;
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+     font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.doc{background:var(--sheet);max-width:940px;margin:0 auto;padding-block:40px;padding-inline:16px;
+     display:flex;flex-direction:column;gap:38px}
+@media (min-width:720px){.doc{padding-block:56px;padding-inline:56px}}
+
+h1{font-family:var(--serif);font-weight:600;font-size:34px;line-height:1.08;margin:0;letter-spacing:-.012em;text-wrap:balance}
+h2{font-family:var(--serif);font-weight:600;font-size:22px;line-height:1.2;margin:0;text-wrap:balance}
+h3{font-family:var(--sans);font-weight:600;font-size:14px;line-height:1.3;margin:0}
+p{margin:0;max-width:74ch}
+.tnum{font-variant-numeric:tabular-nums}
+code,.m{font-family:var(--mono);font-size:.88em;background:var(--wash);color:var(--ink);
+        padding:1px 4px;border-radius:2px}
+a{color:var(--accent)}
+
+/* Section head: a numbered serif line over a full-width hairline. The number is
+   information: these sections are meant to be walked in order. */
+section{display:flex;flex-direction:column;gap:16px}
+.sh{display:flex;align-items:baseline;gap:12px;padding-bottom:9px;border-bottom:1px solid var(--rule)}
+.sh .num{font-family:var(--mono);font-size:12px;color:var(--accent);font-weight:500}
+
+header.mast{display:flex;flex-direction:column;gap:14px;padding-bottom:22px;border-bottom:2px solid var(--ink)}
+.eyebrow{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:var(--accent)}
+.lede{font-size:16.5px;line-height:1.55;color:var(--muted);max-width:70ch}
+.mastmeta{display:flex;flex-wrap:wrap;gap:6px 26px;font-size:12px;color:var(--faint);
+          font-family:var(--mono);padding-top:4px}
+
+/* Numbered list where order is the content. */
+ol.walk{margin:0;padding:0;list-style:none;counter-reset:w;display:flex;flex-direction:column;gap:13px}
+/* Not display:grid on the li: a grid container turns every child element (the bold
+   run-in, each <span class="m">) into its own grid item and scatters the sentence. */
+ol.walk > li{counter-increment:w;position:relative;padding-left:32px;
+             max-width:76ch;font-size:14px;line-height:1.55}
+ol.walk > li::before{content:counter(w,decimal-leading-zero);position:absolute;left:0;top:.2em;
+                     font-family:var(--mono);font-size:11px;font-weight:500;color:var(--accent)}
+ol.walk b{font-weight:600}
+
+ul.pts{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:11px}
+ul.pts > li{padding-left:15px;position:relative;max-width:76ch;font-size:14px;line-height:1.55;color:var(--muted)}
+ul.pts > li::before{content:"";position:absolute;left:0;top:.62em;width:5px;height:5px;border-radius:50%;background:var(--accent)}
+ul.pts b{color:var(--ink);font-weight:600}
+
+/* Stacked prose blocks with a bold run-in, for the three loops. */
+.loops{display:flex;flex-direction:column;gap:18px}
+.loop{display:flex;flex-direction:column;gap:5px;padding-left:15px;border-left:2px solid var(--rule)}
+.loop.key{border-left-color:var(--accent)}
+.loop p{font-size:14px;line-height:1.55;color:var(--muted)}
+.loop h3 .where{font-weight:400;color:var(--faint);font-family:var(--mono);font-size:11px;margin-left:8px}
+
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:13px}
+th{text-align:left;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.1em;
+   color:var(--faint);padding:0 14px 7px 0;border-bottom:1px solid var(--rule);white-space:nowrap}
+td{padding:9px 14px 9px 0;border-bottom:1px solid var(--rule2);vertical-align:top;color:var(--muted);line-height:1.45}
+td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
+td .m{white-space:nowrap}
+
+/* Figures. Strokes and text take currentColor so both themes work; the accent is
+   spent only on the one mark that carries the claim. */
+figure{margin:0;display:flex;flex-direction:column;gap:10px}
+.fig{border:1px solid var(--rule);border-radius:3px;padding:16px 14px;background:var(--paper);
+     color:var(--ink);overflow-x:auto}
+.fig svg{display:block;width:100%;min-width:560px;height:auto}
+.fig .bx{fill:none;stroke:currentColor;stroke-width:1.2;opacity:.55}
+.fig .bx-acc{fill:none;stroke:var(--accent);stroke-width:1.7}
+.fig .fillw{fill:var(--wash);stroke:var(--accent);stroke-width:1.7}
+.fig text{fill:currentColor;font-family:var(--sans)}
+.fig .t1{font-size:12.5px;font-weight:600}
+.fig .t2{font-size:10.5px;opacity:.68}
+.fig .lb{font-size:10px;opacity:.68}
+.fig .lb-acc{font-size:10px;fill:var(--accent);font-weight:600}
+.fig .ln{stroke:currentColor;stroke-width:1.2;fill:none;opacity:.5}
+.fig .ln-acc{stroke:var(--accent);stroke-width:1.6;fill:none}
+.fig .mk{fill:currentColor;opacity:.5}
+.fig .mk-acc{fill:var(--accent)}
+.fig .dash{stroke-dasharray:5 4}
+figcaption{font-size:12.5px;line-height:1.5;color:var(--muted);max-width:74ch}
+figcaption b{color:var(--ink);font-weight:600}
+
+.note{background:var(--wash);border-left:2px solid var(--accent);padding:14px 16px;
+      font-size:13.5px;line-height:1.55;max-width:78ch}
+.note p + p{margin-top:9px}
+footer{padding-top:18px;border-top:1px solid var(--rule);font-size:11.5px;color:var(--faint);
+       display:flex;flex-wrap:wrap;gap:4px 20px;justify-content:space-between}
+
+@page{size:letter portrait;margin:0.5in}
+@media print{
+  :root{--paper:#fff;--sheet:#fff;--ink:#000;--muted:#333b44;--faint:#5c646e;
+        --rule:#c4c9ce;--rule2:#e2e5e8;--accent:#0f4438;--wash:#eef3f1}
+  body{background:#fff;font-size:10pt}
+  .doc{max-width:none;margin:0;padding:0;gap:22pt}
+  h1{font-size:22pt} h2{font-size:14pt} .lede{font-size:11pt}
+  section,figure,.loop,tr,.note{break-inside:avoid}
+  .fig svg{min-width:0} table{min-width:0;font-size:8.5pt}
+  ol.walk > li,ul.pts > li,.loop p,figcaption{font-size:9.5pt}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<!--
+  ARCHITECTURE DOCUMENT TEMPLATE
+  ==============================
+  For walking a non-engineering audience through a system they will never open: what the
+  parts are, which of them are on the hot path, and what crosses the line between one part
+  and the next. This is NOT a capability summary. If you find yourself writing a benefits
+  section, you are writing the other kind of document.
+
+  THE EIGHT SECTIONS, in this order. The order is the walkthrough.
+    01  The short version      the system named as N things, one sentence each
+    02  What the core is       the hot component, decomposed          + FIGURE 1
+    03  One request, end to end the main path, hop by hop             + FIGURE 2
+    04  Everything else        the loops that run outside that path   + FIGURE 3
+    05  The modules            a table: module, runs on, owns, hot path?
+    06  The seams              a table: boundary, what crosses, held shut by, when it fails
+    07  Decisions              why the lines are where they are, and what each one cost
+    08  What is true today     including what is broken, unused, or unmeasured
+
+  THE THREE RULES THAT MAKE IT AN ARCHITECTURE DOCUMENT
+
+  1. VERIFY ACROSS THE SEAM. Every configuration fact comes from the running system, read
+     through its API or its database, never from a file in the repository. Say so in the
+     header. The Robin document caught a version number that was wrong by twelve releases
+     this way, and three tools that the repository did not know were still attached.
+
+  2. NAME WHAT CROSSES, NOT WHAT CONNECTS. "The agent calls the broker" is a line on a
+     diagram. "Member ID and date of birth go out, an opaque handle comes back, and the
+     agent never holds an identifier again" is architecture. Section 06 is where a reader
+     decides whether they trust the system, so it gets the most precise writing on the page.
+
+  3. SECTION 08 IS NOT OPTIONAL. The empty table, the half-finished migration, the retention
+     setting nobody revisited, the vendor feature still in Alpha. A document that omits these
+     gets corrected in the room, and everything else on it is doubted afterwards.
+
+  FIGURES. Three skeletons are below, drawn on an explicit coordinate grid. Keep the grid:
+  shared baselines and even gaps are most of what makes a hand-drawn diagram read as
+  deliberate. Spend the accent colour on ONE thing per figure, the mark that carries the
+  claim; everything else is currentColor so both themes work. Label every arrow. Put the
+  sentence in the figcaption, never in the drawing.
+-->
+<main class="doc">
+
+<header class="mast">
+  <div class="eyebrow">Owning team &middot; internal architecture</div>
+  <h1>How &lt;system&gt; is put together</h1>
+  <p class="lede">What the parts are, which of them run on the hot path, and what crosses the line
+    between one part and the next. State here that the facts were read from the live system rather
+    than from the repository, and mean it.</p>
+  <div class="mastmeta">
+    <span>version &middot; identifier</span>
+    <span>the one address that matters</span>
+    <span>read DD Mon YYYY</span>
+  </div>
+</header>
+
+<section>
+  <div class="sh"><span class="num">01</span><h2>The short version</h2></div>
+  <p>Open by refusing the singular. "&lt;System&gt; is not one system. It is N things that share
+    &lt;the thing they share&gt;." Then one bullet per thing, each naming where it runs and what it
+    owns. A reader who stops here should still be able to draw the boxes.</p>
+  <ul class="pts">
+    <li><b>The first thing.</b> Where it runs, what it owns, and the one fact about it that a reader
+      would otherwise assume wrongly.</li>
+    <li><b>The second thing.</b> Three to five bullets is the range. More than five means the
+      decomposition is at the wrong altitude.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="sh"><span class="num">02</span><h2>What the core is made of</h2></div>
+  <figure>
+    <div class="fig">
+      <!-- FIGURE 1 SKELETON: a pipeline with a branch group hanging off one stage.
+           Grid: stages on y=34 h=46. Box n at x = 36 + n*156, w=126, gap 30.
+           The accent box is the stage the document is about.
+           Branch bus at y=104; drop arrows at the centre of each group. -->
+      <svg viewBox="0 0 780 262" role="img" aria-label="Describe the mechanism in one sentence, the same claim as the caption.">
+        <defs>
+          <marker id="t-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path class="mk" d="M0 0 L10 5 L0 10 z"/>
+          </marker>
+        </defs>
+        <text class="lb" x="4" y="26">input</text>
+        <text class="lb" x="776" y="26" text-anchor="end">output</text>
+
+        <rect class="bx" x="36" y="34" width="126" height="46" rx="3"/>
+        <text class="t1" x="99" y="55" text-anchor="middle">Stage one</text>
+        <text class="t2" x="99" y="70" text-anchor="middle">what it does</text>
+
+        <rect class="bx-acc" x="192" y="34" width="166" height="46" rx="3"/>
+        <text class="t1" x="275" y="55" text-anchor="middle">The stage in question</text>
+        <text class="t2" x="275" y="70" text-anchor="middle">what it decides</text>
+
+        <rect class="bx" x="388" y="34" width="126" height="46" rx="3"/>
+        <text class="t1" x="451" y="55" text-anchor="middle">Stage three</text>
+        <text class="t2" x="451" y="70" text-anchor="middle">what it does</text>
+
+        <line class="ln" x1="4" y1="57" x2="32" y2="57" marker-end="url(#t-a)"/>
+        <line class="ln" x1="162" y1="57" x2="188" y2="57" marker-end="url(#t-a)"/>
+        <line class="ln" x1="358" y1="57" x2="384" y2="57" marker-end="url(#t-a)"/>
+        <line class="ln" x1="514" y1="57" x2="762" y2="57" marker-end="url(#t-a)"/>
+
+        <path class="ln" d="M275 80 L275 104 M175 104 L545 104"/>
+        <line class="ln" x1="175" y1="104" x2="175" y2="142" marker-end="url(#t-a)"/>
+        <line class="ln" x1="545" y1="104" x2="545" y2="142" marker-end="url(#t-a)"/>
+        <text class="lb" x="167" y="126" text-anchor="end">reads</text>
+        <text class="lb" x="553" y="126">can call</text>
+
+        <rect class="bx" x="70" y="146" width="210" height="34" rx="3"/>
+        <text class="t2" x="175" y="167" text-anchor="middle">What it reads &middot; one</text>
+        <rect class="bx" x="70" y="186" width="210" height="34" rx="3"/>
+        <text class="t2" x="175" y="207" text-anchor="middle">What it reads &middot; two</text>
+
+        <rect class="bx" x="440" y="146" width="210" height="34" rx="3"/>
+        <text class="t2" x="545" y="167" text-anchor="middle">What it can call &middot; one</text>
+        <rect class="bx" x="440" y="186" width="210" height="34" rx="3"/>
+        <text class="t2" x="545" y="207" text-anchor="middle">What it can call &middot; two</text>
+      </svg>
+    </div>
+    <figcaption><b>Figure 1.</b> One sentence stating what the picture shows. The caption carries the
+      claim; the drawing carries the mechanism. If the caption is the only thing a reader takes, it
+      should still be worth having read.</figcaption>
+  </figure>
+  <ul class="pts">
+    <li><b>One bullet per stage.</b> Name the real component and its settings in
+      <span class="m">monospace</span>, then say in plain words what the setting buys.</li>
+    <li><b>Where a setting exists because something went wrong once, say so.</b> That clause is
+      usually the most credible sentence in the section.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="sh"><span class="num">03</span><h2>One request, end to end</h2></div>
+  <figure>
+    <div class="fig">
+      <!-- FIGURE 2 SKELETON: a linear chain, one accent hop, one branch above.
+           Grid: chain on y=86 h=52. Arrow labels sit BELOW at y=160, centred on the gap;
+           they may be wider than the gap. An annotation inside the band collides with its
+           own line, so put annotations in the caption instead. -->
+      <svg viewBox="0 0 820 178" role="img" aria-label="Describe the path in one sentence, the same claim as the caption.">
+        <defs>
+          <marker id="t-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path class="mk" d="M0 0 L10 5 L0 10 z"/>
+          </marker>
+          <marker id="t-b2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path class="mk-acc" d="M0 0 L10 5 L0 10 z"/>
+          </marker>
+        </defs>
+        <rect class="bx" x="298" y="14" width="168" height="38" rx="3"/>
+        <text class="t2" x="382" y="38" text-anchor="middle">The branch destination</text>
+        <line class="ln" x1="382" y1="86" x2="382" y2="56" marker-end="url(#t-b)"/>
+        <text class="lb" x="392" y="74">when it branches</text>
+
+        <rect class="bx" x="14" y="86" width="92" height="52" rx="3"/>
+        <text class="t1" x="60" y="110" text-anchor="middle">Origin</text>
+        <text class="t2" x="60" y="125" text-anchor="middle">who starts it</text>
+
+        <rect class="bx" x="136" y="86" width="132" height="52" rx="3"/>
+        <text class="t1" x="202" y="110" text-anchor="middle">Edge</text>
+        <text class="t2" x="202" y="125" text-anchor="middle">the address</text>
+
+        <rect class="bx" x="298" y="86" width="168" height="52" rx="3"/>
+        <text class="t1" x="382" y="110" text-anchor="middle">The core</text>
+        <text class="t2" x="382" y="125" text-anchor="middle">what it holds</text>
+
+        <rect class="bx-acc" x="496" y="86" width="136" height="52" rx="3"/>
+        <text class="t1" x="564" y="110" text-anchor="middle">Our service</text>
+        <text class="t2" x="564" y="125" text-anchor="middle">where it runs</text>
+
+        <rect class="bx" x="662" y="86" width="144" height="52" rx="3"/>
+        <text class="t1" x="734" y="110" text-anchor="middle">Store</text>
+        <text class="t2" x="734" y="125" text-anchor="middle">the tables it reads</text>
+
+        <line class="ln" x1="106" y1="112" x2="132" y2="112" marker-end="url(#t-b)"/>
+        <line class="ln" x1="268" y1="112" x2="294" y2="112" marker-end="url(#t-b)"/>
+        <line class="ln-acc" x1="466" y1="112" x2="492" y2="112" marker-end="url(#t-b2)"/>
+        <line class="ln" x1="632" y1="112" x2="658" y2="112" marker-end="url(#t-b)"/>
+
+        <text class="lb" x="119" y="160" text-anchor="middle">verb</text>
+        <text class="lb" x="281" y="160" text-anchor="middle">verb</text>
+        <text class="lb-acc" x="479" y="160" text-anchor="middle">the call, named</text>
+        <text class="lb" x="645" y="160" text-anchor="middle">how it authenticates</text>
+      </svg>
+    </div>
+    <figcaption><b>Figure 2.</b> State what the reader should conclude from the shape, for example
+      how few hops are actually yours, or where the one expensive hop is.</figcaption>
+  </figure>
+  <ol class="walk">
+    <li><b>The first hop.</b> Name what goes out and what comes back, in the real field names. This
+      list is the place for payload detail; the diagram stays coarse.</li>
+    <li><b>The second hop.</b> Where a value is deliberately narrowed, opaque, or withheld, say so
+      and say why. That is a design decision, not an implementation detail.</li>
+    <li><b>The end.</b> Limits and ceilings belong here: timeouts, maximum durations, retry
+      behaviour.</li>
+  </ol>
+</section>
+
+<section>
+  <div class="sh"><span class="num">04</span><h2>Everything that is not that path</h2></div>
+  <figure>
+    <div class="fig">
+      <!-- FIGURE 3 SKELETON: parallel chains, identical shape, one of them in accent.
+           Grid: chain n at y = 26 + n*100. Boxes x=14 w=204, x=278 w=176, x=514 w=204.
+           Identical geometry per row is the whole point: it makes the odd one out visible. -->
+      <svg viewBox="0 0 862 206" role="img" aria-label="Describe the parallel loops in one sentence, the same claim as the caption.">
+        <defs>
+          <marker id="t-c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path class="mk" d="M0 0 L10 5 L0 10 z"/>
+          </marker>
+          <marker id="t-c2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path class="mk-acc" d="M0 0 L10 5 L0 10 z"/>
+          </marker>
+        </defs>
+        <text class="lb" x="4" y="16">FIRST LOOP &middot; when it runs</text>
+        <rect class="bx" x="14" y="26" width="204" height="50" rx="3"/>
+        <text class="t1" x="116" y="48" text-anchor="middle">Producer</text>
+        <text class="t2" x="116" y="63" text-anchor="middle">what makes the data</text>
+        <rect class="bx" x="278" y="26" width="176" height="50" rx="3"/>
+        <text class="t1" x="366" y="48" text-anchor="middle">Handler</text>
+        <text class="t2" x="366" y="63" text-anchor="middle">the endpoint</text>
+        <rect class="bx" x="514" y="26" width="204" height="50" rx="3"/>
+        <text class="t1" x="616" y="48" text-anchor="middle">Store</text>
+        <text class="t2" x="616" y="63" text-anchor="middle">the table</text>
+        <line class="ln" x1="218" y1="51" x2="274" y2="51" marker-end="url(#t-c)"/>
+        <line class="ln" x1="454" y1="51" x2="510" y2="51" marker-end="url(#t-c)"/>
+        <text class="lb" x="246" y="44" text-anchor="middle">verb</text>
+        <text class="lb" x="482" y="44" text-anchor="middle">verb</text>
+
+        <text class="lb-acc" x="4" y="116">SECOND LOOP &middot; the one that matters</text>
+        <rect class="bx-acc" x="14" y="126" width="204" height="50" rx="3"/>
+        <text class="t1" x="116" y="148" text-anchor="middle">Producer</text>
+        <text class="t2" x="116" y="163" text-anchor="middle">who gates it</text>
+        <rect class="bx-acc" x="278" y="126" width="176" height="50" rx="3"/>
+        <text class="t1" x="366" y="148" text-anchor="middle">Record</text>
+        <text class="t2" x="366" y="163" text-anchor="middle">the durable copy</text>
+        <rect class="fillw" x="514" y="126" width="204" height="50" rx="3"/>
+        <text class="t1" x="616" y="148" text-anchor="middle">The serving copy</text>
+        <text class="t2" x="616" y="163" text-anchor="middle">what actually gets used</text>
+        <line class="ln-acc" x1="218" y1="151" x2="274" y2="151" marker-end="url(#t-c2)"/>
+        <line class="ln-acc" x1="454" y1="151" x2="510" y2="151" marker-end="url(#t-c2)"/>
+        <text class="lb-acc" x="246" y="144" text-anchor="middle">verb</text>
+        <text class="lb-acc" x="482" y="144" text-anchor="middle">verb</text>
+
+        <line class="ln dash" x1="740" y1="26" x2="740" y2="176"/>
+        <text class="lb" x="750" y="100">what watches them all</text>
+      </svg>
+    </div>
+    <figcaption><b>Figure 3.</b> Identical geometry per row is what makes the one different row
+      readable. Say in the caption which loop can change behaviour and who stands in it.</figcaption>
+  </figure>
+  <div class="loops">
+    <div class="loop">
+      <h3>The first loop<span class="where">A &rarr; B &rarr; C</span></h3>
+      <p>A short paragraph per loop. Name the mechanism, the guarantee (signed, idempotent,
+        versioned, gated) and the thing that makes it observable when it fails.</p>
+    </div>
+    <div class="loop key">
+      <h3>The loop that matters<span class="where">A &rarr; B &rarr; C</span></h3>
+      <p>Give the accent border to the loop that can change what the system does. Say plainly what
+        stands between a change and production.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sh"><span class="num">05</span><h2>The modules</h2></div>
+  <div class="tw">
+    <table>
+      <thead><tr><th>Module</th><th>Runs on</th><th>Owns</th><th>On the hot path?</th></tr></thead>
+      <tbody>
+        <tr><td>Name</td><td>Where it is deployed</td><td>The one responsibility it holds</td><td>Yes / No / partly</td></tr>
+        <tr><td>Name</td><td>Vendor or <span class="m">project-name</span></td><td>Keep this to one clause</td><td>No, after</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="sh"><span class="num">06</span><h2>The seams</h2></div>
+  <p>The sentence to open with: defects come from boundaries, not from the middle of components.
+    Then the table. This is the most valuable section in the document, so write it last, when you
+    know the system well enough to be precise about failure.</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th>Boundary</th><th>What crosses</th><th>Held shut by</th><th>When it fails</th></tr></thead>
+      <tbody>
+        <tr><td>A &rarr; B</td><td>The actual payload, in field names</td><td>The mechanism, not the intention</td><td>What the user or the operator sees</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="sh"><span class="num">07</span><h2>Decisions that put the lines where they are</h2></div>
+  <ul class="pts">
+    <li><b>State the decision, then its cost.</b> A decision listed without its cost reads as a
+      justification. "We chose X. The price is Y, and we have paid it N times" reads as engineering
+      and is far more persuasive.</li>
+    <li><b>Include the uncomfortable one.</b> Every system has a control that is weaker than a reader
+      would assume. Naming it here, with its compensating control, is what makes the rest credible.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="sh"><span class="num">08</span><h2>What is true today, and what is not</h2></div>
+  <div class="note">
+    <p><b>The stage it is at.</b> Live, piloted, synthetic data, real data. Be exact.</p>
+    <p><b>What has not been measured.</b> If the numbers start from zero, say they start from zero.
+      Never round an unmeasured thing up to a claim.</p>
+    <p><b>What is half-finished.</b> The unused component, the empty table, the migration applied on
+      one side of a seam. A reader who finds one of these later discounts everything else.</p>
+    <p><b>What the vendor could change.</b> Alpha features, deprecations, anything with a one-way
+      door in it.</p>
+  </div>
+</section>
+
+<footer>
+  <span>&lt;System&gt; &middot; internal architecture</span>
+  <span>Read live from &lt;the systems you read&gt;, DD Mon YYYY</span>
+</footer>
+
+</main>
+</body>
+</html>
