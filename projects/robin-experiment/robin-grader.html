@@ -44,7 +44,7 @@ p{margin:0}
       padding-bottom:14px;border-bottom:2px solid var(--ink)}
 .mast .id{display:flex;flex-direction:column;gap:6px;min-width:min(100%,34ch)}
 .eyebrow{font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:var(--accent)}
-.lede{font-size:13px;line-height:1.5;color:var(--muted);max-width:60ch}
+.lede{font-size:13px;line-height:1.5;color:var(--muted);max-width:80ch}
 .mast .meta{display:flex;flex-direction:column;gap:2px;text-align:left;font-size:10px;
             color:var(--faint);font-family:var(--mono)}
 @media (min-width:700px){.mast .meta{text-align:right}}
@@ -99,9 +99,13 @@ footer{display:flex;flex-wrap:wrap;gap:4px 16px;justify-content:space-between;pa
 
 @page{size:letter portrait;margin:0.42in}
 @media print{
-  :root{--paper:#fff;--sheet:#fff;--ink:#000;--muted:#3a424b;--faint:#5c646e;--rule:#c4c9ce;
-        --rule2:#e2e5e8;--accent:#0f4438;--wash:#eef3f1;--shadow:none}
+  /* Print goes to black text throughout. Grey survives a screen and does not survive a
+     laser printer, so hierarchy carries on weight and size instead of colour. */
+  :root{--paper:#fff;--sheet:#fff;--ink:#000;--muted:#000;--faint:#000;--rule:#9aa1a8;
+        --rule2:#c4c9ce;--accent:#0f4438;--wash:#eef3f1;--shadow:none}
   body{background:#fff;font-size:10pt}
+  /* the figure dims its own marks with opacity, which colour alone cannot undo */
+  .fig .t2,.fig .lb{opacity:1} .fig .bx{opacity:.85} .fig .ln,.fig .mk{opacity:.7}
   .sheet{max-width:none;margin:0;padding:0;box-shadow:none;gap:13pt}
   h1{font-size:22pt} h2{font-size:7.6pt} .lede{font-size:10.4pt}
   .mast{padding-bottom:9pt} .intro{font-size:10.4pt;line-height:1.45}
