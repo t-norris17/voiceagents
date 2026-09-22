@@ -8,6 +8,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
 <style>
+/* Light only, on purpose: these are sheets of paper. A page that goes to a printer has no
+   dark mode, so the screen shows what the print will be. Every colour is painted explicitly
+   below, including body's background, so the page holds on any host ground. */
 :root{
   --paper:#FCFCFD; --sheet:#FFFFFF; --ink:#1B1F24; --muted:#5D6671; --faint:#8B939E;
   --rule:#DDE1E5; --rule2:#EDEFF2; --accent:#15594C; --wash:#E8F0ED;
@@ -15,14 +18,6 @@
   --serif:"Newsreader",Georgia,"Times New Roman",serif;
   --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --paper:#101317; --sheet:#171B20; --ink:#E7EAED; --muted:#99A2AD; --faint:#767F8B;
-  --rule:#2B3138; --rule2:#1E242B; --accent:#5FB49B; --wash:#18302B; --shadow:none;
-}}
-:root[data-theme="dark"]{
-  --paper:#101317; --sheet:#171B20; --ink:#E7EAED; --muted:#99A2AD; --faint:#767F8B;
-  --rule:#2B3138; --rule2:#1E242B; --accent:#5FB49B; --wash:#18302B; --shadow:none;
 }
 
 *{box-sizing:border-box}
