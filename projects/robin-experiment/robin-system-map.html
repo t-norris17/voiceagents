@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Robin System Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+<style>
+/* Light only, on purpose: these are sheets of paper. A page that goes to a printer has no
+   dark mode, so the screen shows what the print will be. Every colour is painted explicitly
+   below, including body's background, so the page holds on any host ground. */
+:root{
+  --paper:#FCFCFD; --sheet:#FFFFFF; --ink:#1B1F24; --muted:#5D6671; --faint:#8B939E;
+  --rule:#DDE1E5; --rule2:#EDEFF2; --accent:#15594C; --wash:#E8F0ED;
+  --shadow:0 1px 2px rgba(27,31,36,.06),0 12px 40px rgba(27,31,36,.08);
+  --serif:"Newsreader",Georgia,"Times New Roman",serif;
+  --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+     font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.sheet{background:var(--sheet);color:var(--ink);box-shadow:var(--shadow);max-width:8.5in;
+       margin:0 auto;padding:0.5in 16px;display:flex;flex-direction:column;gap:20px}
+@media (min-width:700px){.sheet{padding:0.55in 0.6in}}
+
+h1{font-family:var(--serif);font-weight:600;font-size:29px;line-height:1.08;margin:0;
+   letter-spacing:-.012em;text-wrap:balance}
+h2{font-family:var(--sans);font-weight:600;font-size:10px;line-height:1.2;margin:0;
+   text-transform:uppercase;letter-spacing:.11em;color:var(--faint)}
+p{margin:0}
+.tnum{font-variant-numeric:tabular-nums}
+.m{font-family:var(--mono);font-size:.86em;background:var(--wash);padding:.5px 4px;border-radius:2px}
+
+.mast{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;
+      padding-bottom:14px;border-bottom:2px solid var(--ink)}
+.mast .id{display:flex;flex-direction:column;gap:6px;min-width:min(100%,34ch)}
+.eyebrow{font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:var(--accent)}
+.lede{font-size:13px;line-height:1.5;color:var(--muted);max-width:80ch}
+.mast .meta{display:flex;flex-direction:column;gap:2px;text-align:left;font-size:10px;
+            color:var(--faint);font-family:var(--mono)}
+@media (min-width:700px){.mast .meta{text-align:right}}
+
+.intro{font-size:13px;line-height:1.55;max-width:88ch}
+
+figure{margin:0;display:flex;flex-direction:column;gap:8px}
+.fig{border:1px solid var(--rule);border-radius:3px;padding:12px 12px;background:var(--paper);
+     color:var(--ink);overflow-x:auto}
+.fig svg{display:block;width:100%;min-width:540px;height:auto}
+.fig .bx{fill:none;stroke:currentColor;stroke-width:1.2;opacity:.55}
+.fig .bx-acc{fill:none;stroke:var(--accent);stroke-width:1.7}
+.fig .fillw{fill:var(--wash);stroke:var(--accent);stroke-width:1.7}
+.fig text{fill:currentColor;font-family:var(--sans)}
+.fig .t1{font-size:12.5px;font-weight:600}
+.fig .t2{font-size:10.5px;opacity:.68}
+.fig .lb{font-size:10px;opacity:.68}
+.fig .lb-acc{font-size:10px;fill:var(--accent);font-weight:600}
+.fig .ln{stroke:currentColor;stroke-width:1.2;fill:none;opacity:.5}
+.fig .ln-acc{stroke:var(--accent);stroke-width:1.6;fill:none}
+.fig .mk{fill:currentColor;opacity:.5}
+.fig .mk-acc{fill:var(--accent)}
+figcaption{font-size:11.5px;line-height:1.45;color:var(--muted);max-width:80ch}
+figcaption b{color:var(--ink);font-weight:600}
+
+.cols{display:grid;grid-template-columns:1fr;gap:20px}
+@media (min-width:760px){.cols{grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);gap:28px}}
+.col{display:flex;flex-direction:column;gap:9px}
+.col > h2{padding-bottom:6px;border-bottom:1px solid var(--rule)}
+
+ol.steps{margin:0;padding:0;list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:7px}
+ol.steps > li{counter-increment:s;position:relative;padding-left:26px;font-size:11.8px;line-height:1.45;color:var(--muted)}
+ol.steps > li::before{content:counter(s,decimal-leading-zero);position:absolute;left:0;top:.16em;
+                      font-family:var(--mono);font-size:9.5px;font-weight:500;color:var(--accent)}
+ol.steps b{color:var(--ink);font-weight:600}
+
+.spec{display:flex;flex-direction:column;gap:7px}
+.spec .row{display:grid;grid-template-columns:1fr;gap:1px}
+.spec .lbl{font-size:11.5px;font-weight:600;line-height:1.3}
+.spec .val{font-size:11.5px;line-height:1.42;color:var(--muted)}
+
+ul.flat{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:5px}
+ul.flat > li{padding-left:12px;position:relative;font-size:11.5px;line-height:1.42;color:var(--muted)}
+ul.flat > li::before{content:"";position:absolute;left:0;top:.52em;width:4px;height:4px;
+                     border-radius:50%;background:var(--accent)}
+ul.flat b{color:var(--ink);font-weight:600}
+
+.close{background:var(--wash);border-left:2px solid var(--accent);padding:9px 12px;
+       font-size:11.3px;line-height:1.45;color:var(--ink)}
+footer{display:flex;flex-wrap:wrap;gap:4px 16px;justify-content:space-between;padding-top:10px;
+       border-top:1px solid var(--rule);font-size:9.5px;color:var(--faint)}
+
+@page{size:letter portrait;margin:0.42in}
+@media print{
+  /* Print goes to black text throughout. Grey survives a screen and does not survive a
+     laser printer, so hierarchy carries on weight and size instead of colour. */
+  :root{--paper:#fff;--sheet:#fff;--ink:#000;--muted:#000;--faint:#000;--rule:#9aa1a8;
+        --rule2:#c4c9ce;--accent:#0f4438;--wash:#eef3f1;--shadow:none}
+  body{background:#fff;font-size:10pt}
+  /* the figure dims its own marks with opacity, which colour alone cannot undo */
+  .fig .t2,.fig .lb{opacity:1} .fig .bx{opacity:.85} .fig .ln,.fig .mk{opacity:.7}
+  .sheet{max-width:none;margin:0;padding:0;box-shadow:none;gap:13pt}
+  h1{font-size:22pt} h2{font-size:7.6pt} .lede{font-size:10.4pt}
+  .mast{padding-bottom:9pt} .intro{font-size:10.4pt;line-height:1.45}
+  .fig{padding:9pt 9pt} .fig svg{min-width:0} figcaption{font-size:8.8pt}
+  .cols{grid-template-columns:1.08fr .92fr;gap:19pt} .col{gap:7pt} .col > h2{padding-bottom:4pt}
+  ol.steps{gap:6.5pt} ol.steps > li{font-size:9.8pt;line-height:1.4;padding-left:22pt}
+  ol.steps > li::before{font-size:8pt}
+  .spec{gap:6pt} .spec .lbl,.spec .val{font-size:9.8pt;line-height:1.4}
+  ul.flat{gap:5.5pt} ul.flat > li{font-size:9.8pt;line-height:1.4}
+  figure,.col{break-inside:avoid}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+</head>
+<body>
+<main class="sheet">
+
+  <header class="mast">
+    <div class="id">
+      <h1>How it fits together</h1>
+      <p class="lede">Robin takes the calls. Four other pieces sit around her.</p>
+    </div>
+    </header>
+
+  <p class="intro">The four are not parts of Robin. One decides what she knows, one checks that
+    knowledge without placing a call, and two watch what happens on every call she takes. Each has
+    its own page.</p>
+
+  <figure>
+    <div class="fig">
+      <svg viewBox="0 0 820 390" role="img" aria-label="The Knowledge Factory publishes what Robin knows, and the Question Tester checks that same knowledge without a call. Robin answers the call. Every call is recorded, and two checks read that record: Accuracy asks whether she was right, Quality asks whether callers would use her again.">
+        <defs>
+          <marker id="m-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path class="mk" d="M0 0 L10 5 L0 10 z"/></marker>
+          <marker id="m-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path class="mk-acc" d="M0 0 L10 5 L0 10 z"/></marker>
+        </defs>
+
+        <rect class="bx" x="14" y="160" width="170" height="100" rx="3"/>
+        <text class="t1" x="99" y="205" text-anchor="middle">Knowledge Factory</text>
+        <text class="t2" x="99" y="221" text-anchor="middle">publishes what she knows</text>
+
+        <rect class="bx" x="14" y="300" width="170" height="70" rx="3"/>
+        <text class="t1" x="99" y="330" text-anchor="middle">Question Tester</text>
+        <text class="t2" x="99" y="346" text-anchor="middle">checks it without a call</text>
+
+        <rect class="fillw" x="232" y="160" width="180" height="100" rx="3"/>
+        <text class="t1" x="322" y="205" text-anchor="middle">Robin</text>
+        <text class="t2" x="322" y="221" text-anchor="middle">answers the call</text>
+
+        <rect class="bx" x="470" y="175" width="150" height="70" rx="3"/>
+        <text class="t1" x="545" y="205" text-anchor="middle">Call record</text>
+        <text class="t2" x="545" y="221" text-anchor="middle">written automatically</text>
+
+        <rect class="bx" x="650" y="48" width="156" height="70" rx="3"/>
+        <text class="t1" x="728" y="78" text-anchor="middle">Accuracy</text>
+        <text class="t2" x="728" y="94" text-anchor="middle">was she right?</text>
+
+        <rect class="bx" x="650" y="300" width="156" height="70" rx="3"/>
+        <text class="t1" x="728" y="330" text-anchor="middle">Quality</text>
+        <text class="t2" x="728" y="346" text-anchor="middle">would they use her again?</text>
+
+        <line class="ln-acc" x1="184" y1="210" x2="228" y2="210" marker-end="url(#m-b)"/>
+        <path class="ln" d="M99 260 L99 296" marker-end="url(#m-a)"/>
+        <line class="ln-acc" x1="412" y1="210" x2="466" y2="210" marker-end="url(#m-b)"/>
+        <path class="ln" d="M620 210 L635 210 L635 83 L646 83" marker-end="url(#m-a)"/>
+        <path class="ln" d="M635 210 L635 335 L646 335" marker-end="url(#m-a)"/>
+      </svg>
+    </div>
+    <figcaption><b>Figure.</b> Only the Knowledge Factory can change what Robin says, and a person
+      approves every change. The other three read; none of them can alter a call.</figcaption>
+  </figure>
+
+  <div class="cols">
+    <div class="col">
+      <h2>What goes in</h2>
+      <div class="spec">
+        <div class="row"><div class="lbl">Knowledge Factory</div><div class="val">Turns a plan document into answers Robin can give out loud, checks every claim against the original, and waits for a person to approve it.</div></div>
+        <div class="row"><div class="lbl">Question Tester</div><div class="val">Ask a question in a browser and see what her published knowledge answers, without placing a call or tying up a tester.</div></div>
+      </div>
+    </div>
+
+    <div class="col">
+      <h2>What comes out</h2>
+      <div class="spec">
+        <div class="row"><div class="lbl">Accuracy</div><div class="val">Checks each answer against the documents she was actually shown on that call, claim by claim, with the sentence behind each one.</div></div>
+        <div class="row"><div class="lbl">Quality</div><div class="val">Four questions at the end of a call, asking whether the caller would rather handle it this way again or hold for a person.</div></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+</body>
+</html>
