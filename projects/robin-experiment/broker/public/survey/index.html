@@ -73,6 +73,7 @@
   .tip-box b{ color:var(--sub); font-weight:600; }
   .tip:hover + .tip-box,.tip:focus-visible + .tip-box,.tipw.open .tip-box{ opacity:1; visibility:visible; }
   .shead .tip-box,.svy-head .tip-box{ left:auto; right:0; }
+  .tip-box.tip-story{ width:min(44ch,84vw); }
   @media (prefers-reduced-motion:reduce){ .tip-box{ transition:none; } }
   .tabset{ display:flex; gap:18px; }
   .tabset button{ font:inherit; font-size:.66rem; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); background:none; border:0; padding:0 0 4px; cursor:pointer; border-bottom:2px solid transparent; }
@@ -561,7 +562,7 @@
   <section id="cumsec" hidden>
     <hr class="rule">
     <div class="shead"><h2 class="sect-h">Is the sample big enough?<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-cum">?</button><span class="tip-box" role="tooltip" id="tip-cum"><b>What it shows.</b> How often Robin actually asked the survey, and the headline share redrawn one respondent at a time with its 95% range. The chart appears at 20 respondents.<br><br><b>How to read it.</b> The result is callable once the shaded band stops crossing 50%. At n=30 a 60/40 is noise. If Robin asked on fewer than 70% of eligible calls, every figure above rests on a biased slice.</span></span></h2></div>
-    <p class="svy-lede">Whether the headline can be trusted yet.</p>
+    <p class="svy-lede">Whether the headline can be trusted yet.<span class="tipw"><button type="button" class="tip" aria-label="How to read the chart" aria-describedby="tip-cum-story">?</button><span class="tip-box tip-story" role="tooltip" id="tip-cum-story"><b>Think of it as counting votes.</b> Ballots arrive one at a time, Robin against A Person. After one ballot you would never call it. After ten you are tempted but know the next ten could go either way. After fifty you feel it settle.<br><br>The chart is that feeling, drawn. The line is Robin's share after each ballot. The shaded band is your honest doubt: given what has been counted, the final result could land anywhere in it. It is wide at the start and narrows as ballots pile up. The rule at 50% is a majority.<br><br><b>Calling it</b> means the whole band is above 50, not just the line. If the bottom edge still dips under half, A Person could still win and you would be guessing. The page refuses to guess.<br><br>Nothing here is a new number. It is the headline share and its range from the top of the page, shown as they evolved instead of only as they stand today.</span></span></p>
     <div class="cum" id="cum"></div>
   </section>
 
