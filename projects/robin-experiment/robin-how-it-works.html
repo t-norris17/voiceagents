@@ -181,34 +181,27 @@ footer{display:flex;flex-wrap:wrap;gap:4px 16px;justify-content:space-between;pa
     <div class="col">
       <h2>How a call works</h2>
       <ol class="steps">
-        <li><b>She asks what you need.</b> Robin answers and asks what the caller needs before asking
-          who they are. A name spoken aloud is a greeting, not an identity.</li>
-        <li><b>She proves who is calling.</b> Member ID and date of birth, checked against our records.
-          From then she carries a meaningless reference code, not the person's details, and never
-          asks for a Social Security number, user ID, password or PIN.</li>
-        <li><b>She confirms the plan.</b> She reads the plan name back and waits for a yes. If it is
-          wrong she stops and offers to connect them rather than answering from the wrong rules.</li>
-        <li><b>She answers from her binder.</b> The plan documents sit with her rather than with us, so
-          a plan answer costs no time on the call. Where they are silent she says she is not certain
-          and offers a person.</li>
-        <li><b>She looks up their own numbers</b>, but only when the question needs them. She cannot
-          be interrupted during a lookup, after a caller's "okay" once cancelled one and left her
-          answering with no account data.</li>
-        <li><b>She connects, then records.</b> Past what she can do she offers to put them through.
-          When the call ends, its transcript, topic, outcome and verification result write themselves
-          to the record.</li>
+        <li><b>She greets the caller</b> and gathers their name and their reason for calling.</li>
+        <li><b>She asks for verification information</b> and confirms it against an identity
+          database.</li>
+        <li><b>Once verified, she begins answering</b> their question.</li>
+        <li><b>The conversation continues back and forth</b>, with Robin answering questions and
+          providing information, until the caller is satisfied or needs to be transferred to a
+          person.</li>
+        <li><b>Once the call has ended</b>, she records the results and the data she collected to a
+          database for quality assurance review.</li>
       </ol>
     </div>
 
     <div class="col">
       <h2>What she is made of</h2>
       <div class="spec">
-        <div class="row"><div class="lbl">Her rules</div><div class="val">What must be true on every call: check who is calling first, never say a Social Security number, offer a transfer rather than a number to dial. These are instructions she follows, not locks in the software, which is why every call's identity result is recorded and separately reviewed.</div></div>
-        <div class="row"><div class="lbl">Her playbooks</div><div class="val">Topic guides, one per subject area, switched on by what the caller says.</div></div>
-        <div class="row"><div class="lbl">Her binder</div><div class="val">The plan documents she is allowed to answer from. She answers from those only, and may not fill a gap herself.</div></div>
-        <div class="row"><div class="lbl">Two lookups</div><div class="val">Is this really them, and what are their own figures. The only questions she can ask our systems.</div></div>
-        <div class="row"><div class="lbl">Voice and turn-taking</div><div class="val">A generated voice that adjusts how a line lands, in English or Spanish. She starts replying while the caller is still talking, and makes a short sound past three seconds rather than leaving silence.</div></div>
-        <div class="row"><div class="lbl">Guardrails</div><div class="val">Topic-focus and prompt-injection protection on. Every call recorded, transcribed and classified.</div></div>
+        <div class="row"><div class="lbl">Her rules</div><div class="val">Her rules require her to verify each caller, transfer when she cannot provide an answer or perform an action, and avoid any topic outside of her approved list.</div></div>
+        <div class="row"><div class="lbl">Her playbooks</div><div class="val">Each subject Robin handles has its own playbook. What the caller asks decides which one she uses.</div></div>
+        <div class="row"><div class="lbl">Her binder</div><div class="val">Robin answers only from an approved set of documents. Where they do not cover a question, she says so rather than guessing.</div></div>
+        <div class="row"><div class="lbl">Her toolbox</div><div class="val">Robin possesses a toolbox that allows her to query databases when providing information such as loan status and balances.</div></div>
+        <div class="row"><div class="lbl">Context-aware speech</div><div class="val">Robin is built to be context-aware. She will adjust her tone, pace, and conversation based on the caller to best serve them.</div></div>
+        <div class="row"><div class="lbl">Guardrails</div><div class="val">Robin is equipped with guardrails that protect her both from bad actors and from drifting into non-compliant territory. These either end the conversation immediately or redirect her with a kind message.</div></div>
       </div>
     </div>
   </div>
