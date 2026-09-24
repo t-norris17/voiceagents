@@ -4,21 +4,25 @@
 // version number as proof the key returned real data. No secrets, no call data, nothing a member
 // said. Cached for 30 seconds so an unauthenticated loop cannot spend upstream calls.
 import { getRobinStatus } from "../../../lib/elevenlabs.js";
+import { brokerBase } from "../../../lib/upstreams.js";
 
 export const dynamic = "force-dynamic";
 
 const TTL_MS = 30_000;
 let cache = { at: 0, value: null };
 
+// Probes the broker this deployment actually proxies to: the branch's broker preview on a preview
+// build, production otherwise (lib/upstreams.js). Probing production from a preview reported a
+// refused secret that the page never saw.
 async function probeBroker() {
-  const base = process.env.BROKER_URL;
+  const base = brokerBase();
   if (!base) return { configured: false };
   try {
-    const res = await fetch(`${base.replace(/\/$/, "")}/api/calls?limit=1`, {
+    const res = await fetch(`${base}/api/calls?limit=1`, {
       headers: { "x-robin-internal": process.env.ROBIN_INTERNAL_SECRET || "" },
       cache: "no-store",
     });
-    return { configured: true, reachable: true, secret_accepted: res.status === 200, status: res.status };
+    return { configured: true, base, reachable: true, secret_accepted: res.status === 200, status: res.status };
   } catch (e) {
     return { configured: true, reachable: false, error: String(e?.message || e) };
   }
