@@ -1,9 +1,10 @@
 // What get_balance may and may not tell Robin about a loan.
 //
-// The distinction this file protects: the caller's OWN loan figures are a system-of-record read and
-// Robin may say them; plan loan RULES (how much can I borrow, over how long) are unpublished and she
-// may not. A bug here doesn't crash — it makes a compliance-gated agent quote a number it shouldn't,
-// or drop cents off a payment amount, which is the kind of defect that reads as fine in a transcript.
+// Two things this file protects. The caller's OWN loan figures are a system-of-record read and Robin
+// says them exactly. And her borrowing LIMIT is computed here, so she quotes it instead of working it
+// out: left to the arithmetic she said $107,453 for a $50,000 limit on six customer-wave calls. A bug
+// here doesn't crash; it makes a compliance-gated agent quote a wrong dollar figure that reads as
+// fine in a transcript.
 //
 // Run: npm test
 import { test } from "node:test";
@@ -11,7 +12,7 @@ import assert from "node:assert/strict";
 
 process.env.SUPABASE_URL = process.env.SUPABASE_URL || "http://example.invalid";
 process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "test";
-const { shapeBalance } = await import("../api/get_balance.js");
+const { shapeBalance, loanLimit } = await import("../api/get_balance.js");
 
 // Marcus, member 90002 — the figures actually seeded in member_loans.
 const marcus = {
@@ -70,13 +71,73 @@ test("flagged but no detail row degrades to the old behaviour, it does not inven
   }
 });
 
-test("no loan limit is ever returned, under any input", () => {
-  // The enrollment packet publishes no limits. If a limit field ever appears in this payload, Robin
-  // will quote it, and the routing behaviour the KBA depends on is gone.
-  const blob = JSON.stringify(shapeBalance(marcus, marcusLoan));
-  for (const banned of ["max_loan", "limit", "available_to_borrow", "borrowable"]) {
-    assert.doesNotMatch(blob, new RegExp(banned, "i"), `payload must not carry ${banned}`);
-  }
+// ---- The borrowing limit -------------------------------------------------------------------------
+// Fixed "today" so the 12-month window cannot drift with the calendar.
+const TODAY = new Date("2026-09-24T15:00:00Z");
+const member = (vestedCents, extra = {}) => ({ ...marcus, outstanding_loan: false, vested_balance_cents: vestedCents, ...extra });
+const paidOff = (principalCents, paidOffOn) => ({ status: "paid_off", principal_cents: principalCents, paid_off_on: paidOffOn });
+
+test("Priya: the $50,000 cap binds, not half her balance", () => {
+  // The exact case Robin got wrong: 50% of $214,905.62 is $107,452.81, and the limit is $50,000.
+  const lim = loanLimit(member(21490562), [], TODAY);
+  assert.deepEqual(lim, { loan_eligible: true, max_loan: "$50,000", loan_limit_reason: null });
+  assert.doesNotMatch(JSON.stringify(shapeBalance(member(21490562), null, lim)), /107/);
+});
+
+test("half the balance binds below $100,000 vested", () => {
+  assert.equal(loanLimit(member(6000000), [], TODAY).max_loan, "$30,000");
+});
+
+test("an active loan means no new loan, whatever the balance", () => {
+  // members.outstanding_loan alone is enough, even with no detail row and a failed lookup.
+  assert.deepEqual(loanLimit(marcus, [], TODAY), { loan_eligible: false, max_loan: null, loan_limit_reason: "existing_loan" });
+  assert.equal(loanLimit(marcus, null, TODAY).loan_limit_reason, "existing_loan");
+  // An active row counts even if the member flag disagrees: never offer a second loan.
+  assert.equal(loanLimit(member(21490562), [{ status: "active", principal_cents: 800000 }], TODAY).loan_limit_reason, "existing_loan");
+});
+
+test("under the $1,000 minimum is not eligible", () => {
+  assert.deepEqual(loanLimit(member(90000), [], TODAY), { loan_eligible: false, max_loan: null, loan_limit_reason: "below_minimum" });
+});
+
+test("exactly at the minimum is eligible, rounded down to the dollar", () => {
+  // $2,001 vested: half is $1,000.50, which rounds DOWN to $1,000, never up.
+  assert.equal(loanLimit(member(200100), [], TODAY).max_loan, "$1,000");
+  // $1,999.99 vested: half is $999.99, under the minimum.
+  assert.equal(loanLimit(member(199999), [], TODAY).loan_limit_reason, "below_minimum");
+});
+
+test("a loan paid off in the past 12 months lowers the cap", () => {
+  // Elena, 90004: $150,000 vested, $20,000 loan paid off 2026-03-20. $50,000 - $20,000 = $30,000.
+  assert.equal(loanLimit(member(15000000), [paidOff(2000000, "2026-03-20")], TODAY).max_loan, "$30,000");
+  // Same history on Priya's balance: still $30,000, the reduced cap binds.
+  assert.equal(loanLimit(member(21490562), [paidOff(2000000, "2026-03-20")], TODAY).max_loan, "$30,000");
+});
+
+test("a loan paid off more than 12 months ago does not", () => {
+  assert.equal(loanLimit(member(21490562), [paidOff(2000000, "2025-07-24")], TODAY).max_loan, "$50,000");
+  // Boundary: paid off exactly 12 months ago is still inside the window.
+  assert.equal(loanLimit(member(21490562), [paidOff(2000000, "2025-09-24")], TODAY).max_loan, "$30,000");
+});
+
+test("a defaulted loan goes to a specialist, not a figure", () => {
+  const lim = loanLimit(member(21490562), [{ status: "defaulted", principal_cents: 500000 }], TODAY);
+  assert.deepEqual(lim, { loan_eligible: null, max_loan: null, loan_limit_reason: "needs_specialist" });
+});
+
+test("a failed loan lookup never produces a figure", () => {
+  // Unknown history could hide a recent payoff, so an unknown is never read as "no loans".
+  assert.deepEqual(loanLimit(member(21490562), null, TODAY), { loan_eligible: null, max_loan: null, loan_limit_reason: "needs_specialist" });
+  // And shapeBalance without a limit defaults to the same, not to a computed number.
+  assert.equal(shapeBalance(member(21490562), null).max_loan, null);
+});
+
+test("the payload carries the limit fields and the minimum", () => {
+  const r = shapeBalance(member(21490562), null, loanLimit(member(21490562), [], TODAY));
+  assert.equal(r.loan_eligible, true);
+  assert.equal(r.max_loan, "$50,000");
+  assert.equal(r.min_loan, "$1,000");
+  assert.equal(r.loan_limit_reason, null);
 });
 
 test("the plan-level figures are untouched by the loan change", () => {
