@@ -244,18 +244,30 @@ test("respondent numbering is stable regardless of row order", async () => {
   assert.equal(respondentLabels([...rows].reverse()).get("P-aaa"), "Respondent 1", "order-independent");
 });
 
-test("a respondent's label is the name they gave, most recent call wins, numbered otherwise", async () => {
+test("a respondent's label is the fullest name they gave, alias-resolved, numbered otherwise", async () => {
   const { respondentLabels } = await import("../lib/survey-data.js");
   const rows = [
-    { person_key: "P-aaa", started_at: "2026-09-21T14:00", caller_name: "Dana Whitfield" },
-    { person_key: "P-aaa", started_at: "2026-09-21T16:00", caller_name: "Dana Whitfield-Ortiz" },
+    { person_key: "P-aaa", started_at: "2026-09-21T14:00", caller_name: "Dana Whitfield-Ortiz", respondent_name: "Dana Whitfield-Ortiz" },
+    { person_key: "P-aaa", started_at: "2026-09-21T16:00", caller_name: "Dana", respondent_name: "Dana" },
     { person_key: "P-bbb", started_at: "2026-09-21T15:00", caller_name: "  " },
     { person_key: "P-ccc", started_at: "2026-09-21T17:00", caller_name: null },
+    // The alias-resolved name wins over what was heard (migration 016).
+    { person_key: "P-ddd", started_at: "2026-09-23T14:18", caller_name: "Katie Rubless", respondent_name: "Adie Robles" },
+    { person_key: "P-ddd", started_at: "2026-09-23T14:29", caller_name: "Ady Robles", respondent_name: "Adie Robles" },
+    // Equal length: the earlier spelling, so the label does not flip when a later call lands.
+    { person_key: "P-eee", started_at: "2026-09-21T20:49", caller_name: "Robin Path", respondent_name: "Robin Path" },
+    { person_key: "P-eee", started_at: "2026-09-21T21:00", caller_name: "Robin Paff", respondent_name: "Robin Paff" },
+    // A row that predates respondent_name still gets a name.
+    { person_key: "P-fff", started_at: "2026-09-22T09:00", caller_name: "Old Row" },
   ];
   const m = respondentLabels(rows);
-  assert.equal(m.get("P-aaa"), "Dana Whitfield-Ortiz", "the name most recently given");
+  assert.equal(m.get("P-aaa"), "Dana Whitfield-Ortiz", "the fullest name given, not the latest");
   assert.equal(m.get("P-bbb"), "Respondent 2", "blank name falls back to the number");
   assert.equal(m.get("P-ccc"), "Respondent 3", "no name falls back to the number");
+  assert.equal(m.get("P-ddd"), "Adie Robles", "respondent_name (alias applied) beats caller_name");
+  assert.equal(m.get("P-eee"), "Robin Path", "equal length: the earliest spelling");
+  assert.equal(m.get("P-fff"), "Old Row", "caller_name is the fallback without respondent_name");
+  assert.equal(respondentLabels([...rows].reverse()).get("P-eee"), "Robin Path", "order-independent");
 });
 
 // I have twice broken a SYSTEM prompt by typing a backtick inside its template literal while
