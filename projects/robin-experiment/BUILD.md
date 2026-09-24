@@ -12,6 +12,34 @@
 
 ---
 
+### 2026-09-24 — A respondent is the name they gave (migrations 015 and 016, applied live mid-wave)
+
+- **Why.** Three testers dialled in from one office line. Migration 014 keyed a respondent on
+  phone + persona, so Colin Stevens, Kelsey Simonson and Stacy Oliver were one respondent with six
+  responses, labelled by the latest name heard, and the review list credited Stacy with Colin's
+  words (`conv_7001m378zqa0f8s8v938vbq7sqmg`, NPS 3). Tanner: identity is the `caller_name` the
+  tester gave, and the phone number must not merge people.
+- **Rule (015).** `person_key` is a hash of the normalised name. Phone is used for one thing: two
+  spellings heard on the same phone whose first or last name are within Levenshtein 2 are one
+  person (`fuzzystrmatch`), because the transcriber hears "Maziaski", "Mazioski" and "Nick" for
+  one caller. Different names on one phone are different people; the same name on two phones is
+  one person. `respondent_aliases` is the hand-correction table, first row "Katie Rubless" →
+  Adie Robles (Tanner's call, to be confirmed at work). Calls without a name keep the old key.
+- **Label (016).** `survey_answers.respondent_name` is the alias-resolved, fullest spelling for
+  the person on that call; `survey_people.caller_name` and the broker's `respondentLabels` both
+  use it, fullest name first, earliest on a tie. 015 alone labelled Adie "Katie Rubless".
+- **Verified live, before → after:** respondents 29 → 30, surveyed wave calls 61 → 61, no call
+  left unkeyed. The shared line is now Colin (3 calls, all flagged), Kelsey (2), Stacy (1). Adie's
+  three calls are one person under one name. Kristen Johnson, previously two persona keys on one
+  phone, is one person with three calls, which is what the rule says.
+- **Unverified: the spelling of nine labels.** The fullest-name rule is a guess where the
+  transcriber disagreed with itself: Cherie Ann/Anne Holbrook, Nick Maziaski/Mazioski, Robin
+  Paff/Path, Steve Castro/Castrol/Kestrel/Cattrall Miller, Maddie Bolton/Walton, Ian Massey vs
+  Ian Matthew McCall Burrows, Jennifer Berdamati/Bertamani, Colin Stevens vs Colin James Stephens,
+  Adie/Ady Robles. Each is fixed with one `respondent_aliases` row per misheard spelling; the view
+  picks it up on the next read.
+- Broker: `respondent_name` added to `CALL_COLS`; labeller test rewritten; 56/56.
+
 ### 2026-09-20 — Customer wave cutover (applied live, day before the wave)
 
 - **Migration 014 applied to the live project.** `experiment_waves` holds one row, `customer`,

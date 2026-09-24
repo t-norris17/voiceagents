@@ -23,7 +23,7 @@ export const CALL_COLS =
   "conversation_id,started_at,duration_seconds,caller_key,person_key,response_seq,survey_offered," +
   "survey_consent,offer_context,survey_verdict,overall_sentiment,needs_review,in_nps_era," +
   "topic,plan_topic,prefer_agent_raw,preference,nps_raw,nps_score,nps_band," +
-  "voice_raw,voice_score,open_comments,comments_redacted,caller_name," +
+  "voice_raw,voice_score,open_comments,comments_redacted,caller_name,respondent_name," +
   "satisfaction_raw,satisfaction_score,would_recommend_raw,would_recommend";
 
 export async function surveyPeople() {
@@ -89,24 +89,32 @@ export function wilson(hits, n) {
 //
 // Derived from the calls, so the numbering is identical everywhere without a second query: a
 // person's ordinal is fixed by their earliest surveyed call, independent of row order.
-// A respondent's label is the full name they gave Robin (caller_name, the name most recently given
-// across their calls, so a first-call mishearing is corrected by a later one), and "Respondent N"
-// in order of first call when no name was captured. Names started being captured with the customer
-// wave; every testing-wave call stays a numbered respondent.
+// A respondent's label is the name they gave Robin, and "Respondent N" in order of first call when
+// no name was captured. Names started being captured with the customer wave; every testing-wave
+// call stays a numbered respondent.
+//
+// Which name: respondent_name from the view (migration 016: respondent_aliases applied, so "Katie
+// Rubless" reads "Adie Robles"), and among a person's calls the FULLEST one, earliest on a tie.
+// The same rule survey_people uses, so the page, the CSV and the Ask box agree on a person's name.
+// Fullest rather than latest because the transcriber mishears differently call to call ("Nick",
+// "Nick Maziaski", "Nick Mazioski") and the fuller spelling is the better guess; a wrong guess is
+// corrected with a respondent_aliases row, not here. caller_name is the fallback for a call row
+// that predates the column.
 export function respondentLabels(calls) {
-  const earliest = new Map(), latestName = new Map();
+  const earliest = new Map(), fullest = new Map();
   for (const c of calls) {
     if (!c.person_key || !c.started_at) continue;
     const seen = earliest.get(c.person_key);
     if (!seen || c.started_at < seen) earliest.set(c.person_key, c.started_at);
-    const name = String(c.caller_name || "").trim();
+    const name = String(c.respondent_name || c.caller_name || "").trim();
     if (name) {
-      const prev = latestName.get(c.person_key);
-      if (!prev || c.started_at > prev.at) latestName.set(c.person_key, { at: c.started_at, name });
+      const prev = fullest.get(c.person_key);
+      if (!prev || name.length > prev.name.length || (name.length === prev.name.length && c.started_at < prev.at))
+        fullest.set(c.person_key, { at: c.started_at, name });
     }
   }
   const ordered = [...earliest.entries()].sort((a, b) => (a[1] < b[1] ? -1 : a[1] > b[1] ? 1 : 0));
-  return new Map(ordered.map(([key], i) => [key, latestName.get(key)?.name || `Respondent ${i + 1}`]));
+  return new Map(ordered.map(([key], i) => [key, fullest.get(key)?.name || `Respondent ${i + 1}`]));
 }
 
 // Any person_key that slipped into prose becomes its label; any raw conversation id becomes plain
