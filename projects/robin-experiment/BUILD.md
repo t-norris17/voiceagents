@@ -12,6 +12,52 @@
 
 ---
 
+### 2026-09-24, later — The Quality page becomes a sliceable board (branch `claude/quality-rail`, NOT merged)
+
+**Status:** the page rework is on the branch for Tanner and his bosses to test on a preview before
+anything reaches `main`. Two things did reach the live database, on purpose, because the views are
+shared: migrations 017 and 018. Both were verified to leave the live page reading exactly as before.
+
+- **Design.** Tanner reviewed five mocks (https://claude.ai/artifact/Fjo95V9uyVGR6CoqvjcNVE) and
+  chose B: a left rail (wave, range presets, custom dates, staff switch), four tiles, cross-tab as a
+  heat grid, a funnel of what the slice excludes, comments and the listen list, with **every tile,
+  cell and row opening a drawer** that shows the formula, the distribution, the by-day cut and every
+  underlying row. Timeline-as-slicer (D) and the respondent wall (E) were liked and not chosen.
+  Staff hidden by default. Viewers are on desktop monitors, so hover and density are fine.
+- **Migration 017 (live).** `experiment_waves` gains `label` and `internal`; the first wave is keyed
+  `first`, labelled, and closed at midnight Central after Sep 23; `internal` (Sep 8 to 21) is a wave
+  of its own. `survey_wave_start()` is now the earliest non-internal wave start with no "active"
+  clause, so closing a wave never widens the live survey era. `experiment_staff` (Tanner Norris,
+  Scott Farber, Steve Castro-Miller). `survey_answers` appends `wave` and `is_staff`; `survey_people`
+  appends `is_staff` and `wave`. Verified: wave start still 2026-09-21 05:00Z, 30 people / 61 calls
+  unchanged with staff shown; by wave: internal 26 surveyed / 8 people, first 61 / 30 (57 / 28
+  without staff), one stray call on Sep 24 in no wave. One bug caught before applying: an
+  unqualified `started_at` inside the wave subquery would have bound to `experiment_waves.started_at`
+  and put every call in every wave.
+- **Migration 018 (live).** Roster spellings from Tanner as alias rows: Sheree Holbrook, Nick
+  Museousky, Robert Pfaff, Maddie Bolton, Jennifer Bertematti, Ian Burroughs, Derek Parris, Colin
+  Stephens, Adie Robles (plus Steve Castro-Miller's four spellings in 017). Still 30 / 61.
+- **Broker (branch).** `lib/survey-slice.js`: `?range=wave:first | week | month | year | all |
+  YYYY-MM-DD..YYYY-MM-DD`, `?staff=show`; boundaries at Central midnight, weeks start Monday, custom
+  ranges inclusive; default is the newest non-internal wave. `surveySlice()` in `survey-data.js`
+  fetches every call that carries the instrument (`in_survey_era or wave not null`) once and
+  filters in memory; returns `everyone` (all callers) and `calls` (staff rule applied).
+  `summariseSurvey(opinions, calls, everyone)`: opinions exclude staff, adherence and the new
+  `funnel` count everyone; `adherence.misses` and `funnel.excluded` list the calls. Threaded
+  through metrics, themes (cache keyed by slice, up to 8 entries), ask (slice named in the prompt,
+  people derived per slice by `peopleFromCalls`), export (filename carries the slice). The slide
+  forwards its query string. Tests 67/67.
+- **Page (branch).** `broker/public/survey/index.html` rewritten. URL carries `range`, `staff`,
+  `open` (a drawer), `view`. Rendered against a fixture built from the real per-person sequences
+  (no Supabase credentials here): 28 people, 57 surveyed, NPS +44, 81% (69 to 89), voice 8.4,
+  asked 91%. Checked at 1600, 1280, 400 wide, with the NPS drawer and a cross-tab cell open. No
+  script errors. Portal copy step injects the masthead as before.
+- **Unverified from here:** the live endpoints with a real slice (egress to vercel.app is blocked
+  in this environment), the themes model call on a sliced input, and the Vercel builds of the
+  branch. The preview is where those get checked.
+- **Open, for Tanner:** turn off Vercel's login wall on the portal's preview deployments so his
+  bosses can open the branch; second-wave dates when known (one row in `experiment_waves`).
+
 ### 2026-09-24 — A respondent is the name they gave (migrations 015 and 016, applied live mid-wave)
 
 - **Why.** Three testers dialled in from one office line. Migration 014 keyed a respondent on

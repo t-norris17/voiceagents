@@ -14,16 +14,18 @@
 // Behind the password gate (see middleware.js).
 // TEMPORARY: delete with the instrument after the customer wave.
 import Anthropic from "@anthropic-ai/sdk";
-import { surveyCalls } from "../lib/survey-data.js";
+import { surveySlice } from "../lib/survey-data.js";
 
 const client = new Anthropic(); // ANTHROPIC_API_KEY
 const MIN_COMMENTS = 8;
 
-// Warm-instance cache keyed by the shape of the data. Themes cost a model call and change only
-// when new answers land, so re-running per page load would burn money to redraw the same panel.
-// Deliberately in-memory rather than a table: this instrument is temporary and does not deserve
-// schema. A cold start just recomputes.
-let cache = { key: null, at: 0, value: null };
+// Warm-instance cache keyed by the shape of the data AND the slice. Themes cost a model call and
+// change only when new answers land, so re-running per page load would burn money to redraw the
+// same panel. A handful of entries, because a viewer flipping between two waves would otherwise
+// evict each one with the other. Deliberately in-memory rather than a table: this instrument is
+// temporary and does not deserve schema. A cold start just recomputes.
+const cache = new Map(); // key -> { at, value }
+const CACHE_MAX = 8;
 const TTL_MS = 10 * 60 * 1000;
 
 const THEME_TOOL = {
@@ -82,7 +84,9 @@ export default async function handler(req, res) {
     // CALL-level, not person-level. survey_people holds only a person's first surveyed call, so
     // reading themes from it discards every comment left on a second or third call — which on the
     // data as it stands is 100% of them. Proportions are counted per person; words are not.
-    const calls = (await surveyCalls()).filter((c) => c.survey_offered);
+    // The same slice as the page (?range=, ?staff=), so the themes are about the calls on screen.
+    const s = await surveySlice(req.query || {});
+    const calls = s.calls.filter((c) => c.survey_offered);
     const withText = calls.filter((c) => c.open_comments || c.prefer_agent_raw || c.nps_raw || c.would_recommend_raw);
 
     const commented = calls.filter((c) => c.open_comments).length;
@@ -91,6 +95,7 @@ export default async function handler(req, res) {
         ready: false,
         have: commented,
         need: MIN_COMMENTS,
+        slice: s.info.param,
         reason: `Themes need at least ${MIN_COMMENTS} written comments. Below that a theme is one person's sentence with a label on it.`,
       });
     }
@@ -103,8 +108,9 @@ export default async function handler(req, res) {
     // The cache would then serve themes that predate the new comment for its whole TTL. Keyed on the
     // newest call instead, which is monotonic by construction.
     const newest = calls.reduce((m, c) => (c.started_at > m ? c.started_at : m), "");
-    const key = `${withText.length}:${commented}:${newest}`;
-    if (cache.key === key && Date.now() - cache.at < TTL_MS) return res.status(200).json(cache.value);
+    const key = `${s.info.param}|${s.info.staff}|${withText.length}:${commented}:${newest}`;
+    const hit = cache.get(key);
+    if (hit && Date.now() - hit.at < TTL_MS) return res.status(200).json(hit.value);
 
     const rows = withText.map((p) => ({
       conversation_id: p.conversation_id,
@@ -133,7 +139,8 @@ export default async function handler(req, res) {
           role: "user",
           content:
             `${rows.length} calls carried free text, from ` +
-            `${new Set(rows.map((r) => r.respondent).filter(Boolean)).size} distinct respondents. ` +
+            `${new Set(rows.map((r) => r.respondent).filter(Boolean)).size} distinct respondents, ` +
+            `in the slice "${s.info.label}" (${s.info.when}, Central time${s.info.staff === "hidden" ? ", the build team's own calls excluded" : ""}). ` +
             `Comments with detectable personal data were dropped upstream and are absent here.` +
             `\n\n${JSON.stringify(rows, null, 1)}`,
         },
@@ -158,12 +165,14 @@ export default async function handler(req, res) {
 
     const value = {
       ready: true, themes, narrative: call.input.narrative,
+      slice: s.info.param,
       based_on: {
         comments: commented,
         people_who_commented: new Set(calls.filter((c) => c.open_comments).map((c) => c.person_key).filter(Boolean)).size,
       },
     };
-    cache = { key, at: Date.now(), value };
+    cache.set(key, { at: Date.now(), value });
+    while (cache.size > CACHE_MAX) cache.delete(cache.keys().next().value);
     res.setHeader("cache-control", "no-store");
     return res.status(200).json(value);
   } catch (e) {

@@ -7,7 +7,7 @@
 // (grader hasn't run), the per-question grid degrades gracefully to "not graded yet" rather
 // than inventing numbers.
 import { sb } from "../lib/supabase.js";
-import { surveyResponses, surveyCalls, score, wilson, respondentLabels } from "../lib/survey-data.js";
+import { surveySlice, score, wilson, respondentLabels } from "../lib/survey-data.js";
 
 const q = (s) => encodeURIComponent(s);
 const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : null);
@@ -58,21 +58,49 @@ const sentBucket = (s) => {
 // verification, no substantive exchange — so it is excluded from the denominator rather than
 // counted as a miss. A transferred call is not a failure; the survey is built to stay silent there.
 // ---------------------------------------------------------------------------------------------
-export function summariseSurvey(opinions, calls) {
+// opinions: answered calls, oldest first (the response-level rows). calls: every call in the slice
+// with the staff rule applied, newest first. everyone: every call in the slice, staff included,
+// for the operational numbers: Robin's behaviour on a staff call is as real as on any other, so
+// "did she ask when she should" and the funnel count all callers while opinions can exclude the
+// build team. Defaults to `calls` for callers that make no distinction.
+export function summariseSurvey(opinions, calls, everyone = calls) {
   // "P-1ea00145" is the right thing to store and the wrong thing to show a reader. Everything the
   // page renders carries "Respondent 3" instead; the hash never leaves the server.
   const names = respondentLabels(calls);
   const who = (r) => names.get(r.person_key) || null;
-  if (!Array.isArray(calls) || calls.length === 0) return { calls: 0, people: 0, responses: 0, awaiting_first_call: true };
+  if (!Array.isArray(everyone) || everyone.length === 0) return { calls: 0, people: 0, responses: 0, awaiting_first_call: true };
 
   // ---- Operational: did she ASK when she should have? Correctly a CALL-level question. ----
-  const judged = calls.filter((r) => r.survey_verdict === "success" || r.survey_verdict === "failure");
-  const offered = calls.filter((r) => r.survey_offered === true);
+  const judged = everyone.filter((r) => r.survey_verdict === "success" || r.survey_verdict === "failure");
+  const offered = everyone.filter((r) => r.survey_offered === true);
   // Any answer to any question, under either instrument. prefer_agent_raw is listed first
   // because under v2 it is question one and the only one guaranteed to survive a short call.
-  const answeredCalls = calls.filter(
-    (r) => r.prefer_agent_raw || r.nps_raw || r.voice_raw || r.satisfaction_raw
-  );
+  const answered = (r) => r.prefer_agent_raw || r.nps_raw || r.voice_raw || r.satisfaction_raw;
+  const answeredCalls = everyone.filter(answered);
+
+  // What the slice excludes, in five numbers. Every opinion on the page comes from `surveyed`; the
+  // rest is listed by why the survey never ran. Counts all callers, staff included, and says so.
+  const notSurveyed = everyone.filter((r) => r.survey_offered !== true);
+  const funnel = {
+    in_range: everyone.length,
+    surveyed: offered.length,
+    answered: offered.filter(answered).length,
+    not_surveyed: notSurveyed.length,
+    transferred: notSurveyed.filter((r) => r.outcome === "transferred").length,
+    abandoned: notSurveyed.filter((r) => r.outcome === "abandoned").length,
+    staff_included: true,
+  };
+  funnel.other = funnel.not_surveyed - funnel.transferred - funnel.abandoned;
+  // The calls behind the funnel's "not surveyed" number, so the drawer can list them rather than
+  // send a reader to another page. Staff calls carry no respondent label here; they are marked.
+  const brief = (r) => ({
+    conversation_id: r.conversation_id, started_at: r.started_at, outcome: r.outcome || null,
+    // The name they gave, if any. Not the numbered label: numbering is for respondents, and a
+    // transferred caller who never reached the survey is not one.
+    topic: r.topic || r.plan_topic || null, respondent: r.respondent_name || r.caller_name || (r.is_staff ? "staff" : null),
+    verdict: r.survey_verdict || null,
+  });
+  funnel.excluded = notSurveyed.slice(0, 120).map(brief);
 
   // ---- Everything below is RESPONSE-level: one row per answered call. ----
   //
@@ -187,8 +215,11 @@ export function summariseSurvey(opinions, calls) {
 
   return {
     calls: calls.length,
+    // Surveyed calls under the staff rule: the number the caption quotes beside "people".
+    surveyed: calls.filter((r) => r.survey_offered === true).length,
     people: personCount,
     responses: opinions.length,
+    funnel,
     // Distinct handsets behind those respondents. A respondent is one caller AS ONE MEMBER, so a
     // tester exercising several personas is several respondents on purpose (migration 011). Both
     // figures ship together so neither has to stand in for the other.
@@ -202,8 +233,10 @@ export function summariseSurvey(opinions, calls) {
       eligible: judged.length,
       asked_when_eligible: judged.filter((r) => r.survey_verdict === "success").length,
       pct: judged.length ? Math.round((judged.filter((r) => r.survey_verdict === "success").length / judged.length) * 100) : null,
-      ineligible: calls.length - judged.length,
+      ineligible: everyone.length - judged.length,
       note: "ineligible = transferred, failed verification, or no substantive exchange",
+      // The misses themselves: eligible calls where Robin did not ask. Each one is a call to listen to.
+      misses: judged.filter((r) => r.survey_verdict === "failure").slice(0, 60).map(brief),
     },
     response: {
       offered: offered.length,
@@ -321,13 +354,15 @@ export function summariseSurvey(opinions, calls) {
     // Every answered CALL, newest first — repeats included on purpose. The page's call browser
     // reads this, and a person's later calls are exactly what makes changed_mind auditable.
     verbatims: calls
-      .filter((r) => r.prefer_agent_raw || r.nps_raw || r.voice_raw || r.satisfaction_raw)
+      .filter(answered)
       .slice(0, 300)
       .map((r) => ({
         conversation_id: r.conversation_id,
         started_at: r.started_at,
         respondent: who(r),
         response_seq: r.response_seq,
+        wave: r.wave || null,
+        is_staff: r.is_staff === true,
         duration_seconds: r.duration_seconds,
         topic: r.topic || r.plan_topic,
         satisfaction: r.satisfaction_raw,
@@ -369,8 +404,9 @@ export default async function handler(req, res) {
     // Failing soft: a survey outage must never take the rest of the dashboard down with it.
     let survey = null;
     try {
-      const [responseRows, callRows] = await Promise.all([surveyResponses(), surveyCalls()]);
-      survey = summariseSurvey(responseRows, callRows);
+      // The slice (?range=, ?staff=) decides which calls this is about; see lib/survey-slice.js.
+      const s = await surveySlice(req.query || {});
+      survey = { ...summariseSurvey(s.responses, s.calls, s.everyone), slice: s.info };
     } catch (e) {
       console.error("survey block failed (dashboard continues without it):", String(e.message || e));
     }

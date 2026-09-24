@@ -162,7 +162,8 @@
     document.documentElement.setAttribute("data-theme",dark?"light":"dark");
   });
 
-  fetch("/api/metrics",{cache:"no-store"}).then(r=>r.json()).then(d=>render(d.survey))
+  // The slice rides on the query string (?range=wave:first&staff=show), the same as the Quality page.
+  fetch("/api/metrics"+location.search,{cache:"no-store"}).then(r=>r.json()).then(d=>render(d.survey))
     .catch(e=>{ document.getElementById("board").innerHTML=
       `<div class="b-top"><h1>Robin · viability survey</h1><div class="n">unavailable</div></div>
        <p class="b-q">Couldn't load the numbers: ${esc(e.message)}</p>`; });
