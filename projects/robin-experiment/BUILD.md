@@ -55,8 +55,17 @@ shared: migrations 017 and 018. Both were verified to leave the live page readin
 - **Unverified from here:** the live endpoints with a real slice (egress to vercel.app is blocked
   in this environment), the themes model call on a sliced input, and the Vercel builds of the
   branch. The preview is where those get checked.
-- **Open, for Tanner:** turn off Vercel's login wall on the portal's preview deployments so his
-  bosses can open the branch; second-wave dates when known (one row in `experiment_waves`).
+- **Portal previews follow the branch.** `robin-portal/app/lib/upstreams.js`: a preview build
+  (`VERCEL_ENV=preview`, branch not `main`) proxies to the broker preview of the same branch
+  (`voiceagents-git-<slug>-…vercel.app`, or `BROKER_PREVIEW_URL`), so a branch that changes both
+  can be tested end to end. Production and local dev still read `BROKER_URL`. Portal tests 5/5.
+  Caveat: both projects have Vercel SSO protection on previews (`all_except_custom_domains`), so
+  the portal's server-side fetch to the broker preview will hit the login wall until protection is
+  off on the broker project. The portal's own gate password still applies either way.
+- **Open, for Tanner:** turn off Vercel's deployment protection on previews for BOTH projects
+  (Settings → Deployment Protection) so the branch can be tested by people without Vercel logins
+  and so the portal preview can reach the broker preview; second-wave dates when known (one row in
+  `experiment_waves`).
 
 ### 2026-09-24 — A respondent is the name they gave (migrations 015 and 016, applied live mid-wave)
 
