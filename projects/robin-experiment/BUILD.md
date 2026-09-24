@@ -31,7 +31,20 @@
 - **`get_plan_details` removal approved.** No procedure references it any more; only Robin's
   `tool_ids` does. Drop it on the agent branch, delete the tool after the merge, without `force`.
 - **Unverified from here:** the live `/api/verify_caller` for 90004; this environment's proxy
-  returns 403 for `vercel.app`.
+  returns 403 for `vercel.app`. (Closed below: verified through ElevenLabs.)
+- **PR #74 merged** (`537466a`) and deployed to production (`dpl_4APGo6kFjU81BToK4PJt2AcVMgzb`,
+  Ready per Tanner). **Verified from the far side** with three ElevenLabs simulation tests on Main
+  (`agtvrsn_9101…`, agent config unchanged), which call the real production webhooks:
+  `suite_7801m3akhrpbe67sv53tn7dbag8w` and `suite_6701m3akmdj1ehza3kjwc2jd7van`.
+  `get_balance` returned Priya `max_loan "$50,000"`, Marcus `loan_eligible false,
+  loan_limit_reason "existing_loan"`, Elena `max_loan "$30,000"`; `verify_caller` verified 90004.
+  The first Elena run failed only because the simulated caller hung up after the greeting; the
+  rerun passed. Simulations wrote nothing to `ai_call_events`.
+- **Robin already reads `max_loan` on the old prompt**: Elena was told $30,000, a figure she could
+  not have computed. But Priya still heard "50% of that is $107,453. However… $50,000": correct,
+  and exactly the phrasing that produced the wave errors. The agent-side changes are still needed.
+- Tests saved for reuse: `test_6801m3akhdg5eqq90b5973vt7fvb` (Priya),
+  `test_1901m3akhfwwe649v2qybjps0ke0` (Marcus), `test_5701m3akhj9vec8th4p18ye2sqah` (Elena).
 
 ---
 
