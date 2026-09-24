@@ -12,6 +12,60 @@
 
 ---
 
+### 2026-09-24 — Customer wave judged against the judgement guide (read-only session)
+
+Wave window 2026-09-21 12:16 → 09-23 21:23 UTC. 87 calls, 61 surveyed, 30 respondents. Nothing
+live was changed. All figures below are from the live views, queried today.
+
+**Verdict: the survey half passes, the accuracy half fails the guide's own standard.** Do not
+present it as "people preferred her and she was accurate" until the loan-limit fix ships and the
+wave is regraded.
+
+- **Trust checks.** Asked when eligible 58 of 64 decided calls (91%, standard 70%). 30 respondents
+  (chart threshold 20). One shared office line (Colin, Kelsey, Stacy), resolved by 015/016.
+- **Preference.** 24 of 30 chose Robin, 80%, Wilson range about 63 to 90%. Whole range above 50%:
+  **holds**. Two `unclassified` answers: María Retana Aguilera said "sí, preferiría hacerlo
+  contigo" (Robin; the parser has no Spanish) and Paul White said "I'd rather do it myself".
+- **NPS.** 13 promoters, 15 passives, 1 detractor of 29: **+41** ("strong" band). Minus the
+  guide's 10 to 20 point employee discount, +21 to +31: good. Passives are the majority (mostly
+  8s). Response level: +47 on 58.
+- **Voice.** 8.85 mean on 26 people (good). Low scores with reasons: Ian Burrows 6 ×3 ("robot",
+  "too fast"), Maddie Bolton 5 ×3 (no reason), Colin Stephens 3. Robin Path's `voice_score = 1` on
+  `conv_8601m32vz43rearbt6mh15f4k72n` is a **parser defect**: `voice_raw` contains no number.
+- **Fans who still want a person:** 0.
+- **Grader did not run on the wave.** `scored_at` is null on all 87 wave calls; last grade
+  2026-09-16 19:19 UTC. `api/grade.js` has no cron, so it is manual. `security_flag` defaults to
+  `false` (NOT NULL), so the "0 security flags" the dashboard shows for the wave is the column
+  default, **not a verdict. Security is unmeasured.**
+- **Contradicted the source: at least 6 calls** (transcript text search, not the grader). The KB
+  says the max is the lesser of $50,000 or 50% of vested. For Priya ($214,906 vested) that is
+  $50,000. Robin gave **$107,453** as the maximum on `conv_8701m327kzadf79syy0nh6q2jkn4` (David
+  Sutton), `conv_2201m3592zckee0byks4dk072kqk` (Maddie Bolton), `conv_4001m35re1mcfd9a0ft7rn0yy53f`
+  (Carla Lechliter, "which is less than the plan's $50,000 cap"), `conv_3401m359q90xfqy80c8jzcz2e4x0`
+  (Jacob Horse), `conv_7501m376gv5zf8hrrg17vmqzt8b4` (Matthew Fritz, NPS 10, "best one so far"),
+  `conv_1701m37e02g3e7h98tbx5bd5egeb` (Kristen Johnson). Only Jacob and Carla caught it. Another 3
+  calls state 50% = $107,453 then leave the cap implicit. The 2026-09-11 note that "derived loan
+  figures were correct" held for Marcus, where the 50% prong binds; Priya is where the $50k prong
+  binds, and she fails there about as often as she passes.
+- **Not Robin defects:** Colin's "it's a flat fee": Robin matched the live Loans doc
+  (`omgR8I0aJlWd7BAUptbJ`, "$75 origination fee and a $25/year maintenance fee") every time; he is
+  answering from a real plan he knows. Kristen's "Helen": the transcript text says "Kristen";
+  audio unverified (egress blocks elevenlabs.io).
+- **Pronunciation, reported by 3 testers:** `nesteggu.com` written as one token is heard as
+  "nesticu"; she writes "nest egg you dot com" on some calls and "nesteggu.com" on others. Nick
+  Mazioski: "401AKs" for 401(k)s.
+
+**Next session:**
+> (1) Design checkpoint: compute the loan maximum deterministically in `get_balance`
+> (lesser of $50,000 minus the highest loan balance in the past 12 months, or 50% of vested) and
+> retire the `no loan limit is ever returned` test, whose premise (limits unpublished) is false.
+> (2) Run the grader on all 87 wave calls; report security and contradiction counts from it.
+> (3) Pronunciation: normalise the portal URL and "401(k)s" in the prompt, the KB and the dictionary.
+> (4) Fix the voice parser returning 1 on a comment with no number.
+> (5) Get the call center's NPS for loan calls. That is the comparator the guide says matters.
+
+---
+
 ### 2026-09-24 — A respondent is the name they gave (migrations 015 and 016, applied live mid-wave)
 
 - **Why.** Three testers dialled in from one office line. Migration 014 keyed a respondent on
