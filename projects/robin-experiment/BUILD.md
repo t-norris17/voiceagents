@@ -12,7 +12,7 @@
 
 ---
 
-### 2026-09-24 (later) — Loan limit fix, in progress
+### 2026-09-24 (later) — Loan limit fix, merged to Main
 
 - **Root cause, from the live agent.** The 401(k) Loan Inquiries procedure
   (`agtprcv_7001m2tvy0ccfc0s52j3cv09pxn8`) taught the limit with a worked example in which 50% of
@@ -80,7 +80,24 @@
   wave messages, 0/196 calls leaked). Probably the backup-LLM cascade (`cascade_timeout_seconds: 8`,
   backup `default`) firing in the test harness. **Unverified.**
 - Tests saved for reuse: `test_6801m3akhdg5eqq90b5973vt7fvb` (Priya),
-  `test_1901m3akhfwwe649v2qybjps0ke0` (Marcus), `test_5701m3akhj9vec8th4p18ye2sqah` (Elena).
+  `test_1901m3akhfwwe649v2qybjps0ke0` (Marcus), `test_5701m3akhj9vec8th4p18ye2sqah` (Elena),
+  `test_2901m3amx3mkee9bg0dsfx5h9aae` (Marcus after-payoff).
+- **MERGED TO MAIN at 2026-09-24 21:32:45 UTC (unix 1790285565).** Main was still
+  `agtvrsn_9101…` (seq 133) right before the merge; the preview showed no conflicts and matched
+  branch v2 field for field. New Main head `agtvrsn_0201m3anbj3dffys55vfszrxbk5p`. Read back
+  afterwards: identical to branch v2 except branch_id, version and `phone_numbers`, and
+  +18335739530 (`phnum_6401…`) is still assigned to Main. Prompt has the new paragraph, no
+  virtual-assistant line. Tools: verify_caller, send_reset_email, document_resolution,
+  get_balance, language_detection, transfer_to_number, skip_turn. Source branch kept, not
+  archived.
+- **`get_balance` description** appended with the approved text right after the merge (read back).
+- **`get_plan_details` deleted** (`tool_1201kwwewchgef7tcp1kbn77jjtf`): no agent or branch
+  depended on it; deleted without `force` (204).
+- **Rollback:** set Main back to `agtvrsn_9101m2zv730xe9ss1h2yapgk7ga5`. That version still
+  lists `get_plan_details`, which is now deleted, so a rollback also needs that entry removed
+  from `tool_ids` (or the tool recreated).
+- **Next:** Tanner's real calls to +1 833 573 9530. Any call counts as evidence only if its
+  `start_time_unix_secs` is after 1790285565 and `tool_results` show `max_loan`.
 
 ---
 
