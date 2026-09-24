@@ -43,6 +43,23 @@
 - **Robin already reads `max_loan` on the old prompt**: Elena was told $30,000, a figure she could
   not have computed. But Priya still heard "50% of that is $107,453. However… $50,000": correct,
   and exactly the phrasing that produced the wave errors. The agent-side changes are still needed.
+- **Agent branch `loan-limit-fix`** (`agtbrch_9001m3akw1wnf5nrsfkdbzyj73ax`, head
+  `agtvrsn_8201m3akz3ehfjtt894wfgywd8az`, parent Main `agtvrsn_9101…`). Procedure published on the
+  branch as `agtprcv_5501m3akz3ened092v54wzmxe0bz`; prompt paragraph added (byte-exact against
+  `scratchpad/robin-prompt-branch.txt`); `get_plan_details` dropped from `tool_ids`. Field diff vs
+  Main: prompt, tool_ids/tools (only `get_plan_details` gone), procedure version, and
+  `phone_numbers: []` (the number stays on Main). Nothing else changed. Tool description NOT edited
+  yet: tools are workspace objects, so that edit would reach Main immediately; it goes with the merge.
+- **Branch simulations** (`suite_4501m3akzsxvf7yvax39dz5sc1mw`, `suite_6701m3am3bazfgfav4n13szye7pj`):
+  every run that reached the question quoted the tool figure. Priya $50,000 (3/3, "107" never
+  said), Elena $30,000 (2/2). Three runs died at the greeting (simulated caller hung up). One Marcus
+  "failure" is test strictness: he asked a hypothetical and Robin stated the rule in words.
+- **Reasoning leak on the branch.** Marcus runs 2/4 appended internal reasoning to a spoken reply
+  ("The `get_balance` tool returned … `loan_limit_reason: \"existing_loan\"`. According to the
+  instructions…"). Main baseline Marcus 0/4 (`suite_3401m3am5728f83rb64qxx4wbtak`); wave calls 0/196.
+  Every leak was produced by `gemini-2.5-flash`; the simulations run most turns on it (Main too),
+  while live Robin is `claude-haiku-4-5` (1,219/1,219 wave messages). **Whether live haiku leaks is
+  unverified.**
 - Tests saved for reuse: `test_6801m3akhdg5eqq90b5973vt7fvb` (Priya),
   `test_1901m3akhfwwe649v2qybjps0ke0` (Marcus), `test_5701m3akhj9vec8th4p18ye2sqah` (Elena).
 
