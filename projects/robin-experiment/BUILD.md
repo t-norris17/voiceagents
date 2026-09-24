@@ -12,6 +12,29 @@
 
 ---
 
+### 2026-09-24 (later) — Loan limit fix, in progress
+
+- **Root cause, from the live agent.** The 401(k) Loan Inquiries procedure
+  (`agtprcv_7001m2tvy0ccfc0s52j3cv09pxn8`) taught the limit with a worked example in which 50% of
+  vested is always the smaller number, and step 1 hard-coded "$17,500". The prompt said to "answer
+  from the plan rule AND their figures together". `get_balance` returned no limit.
+- **Migration 017 applied live** (`20260924205338 loan_limit`): `member_loans.paid_off_on`, a
+  check that paid-off loans are dated, synthetic persona **90004 Elena** (DOB 1968-02-14, $150,000
+  vested, $20,000 loan paid off 2026-03-20, expected limit $30,000). Verified: members 53 → 54,
+  member_loans 1 → 2, Marcus's row unchanged.
+- **Code, not yet deployed:** `get_balance` returns `loan_eligible`, `max_loan`, `min_loan`,
+  `loan_limit_reason` (`loanLimit()`); 65/65 tests. **017 must stay applied while this code is
+  live**: without `paid_off_on` every caller gets `needs_specialist`.
+- **Live-agent text** for the procedure, prompt and tool description is in
+  [`loan-limit-rollout.md`](./loan-limit-rollout.md). Nothing on the agent has changed yet.
+  Rollback point `agtvrsn_9101m2zv730xe9ss1h2yapgk7ga5` (the 9/11 note naming v115 is stale).
+- **`get_plan_details` removal approved.** No procedure references it any more; only Robin's
+  `tool_ids` does. Drop it on the agent branch, delete the tool after the merge, without `force`.
+- **Unverified from here:** the live `/api/verify_caller` for 90004; this environment's proxy
+  returns 403 for `vercel.app`.
+
+---
+
 ### 2026-09-24 — Customer wave judged against the judgement guide (read-only session)
 
 Wave window 2026-09-21 12:16 → 09-23 21:23 UTC. 87 calls, 61 surveyed (60 excluding Tanner). Nothing
