@@ -60,6 +60,25 @@
   Every leak was produced by `gemini-2.5-flash`; the simulations run most turns on it (Main too),
   while live Robin is `claude-haiku-4-5` (1,219/1,219 wave messages). **Whether live haiku leaks is
   unverified.**
+- **Marcus 6x on the branch** (`suite_8001m3ammaa6fq4ahqaz6p0rtnzn`): 0 leaks, but a new defect.
+  Asked "how much after I pay it off?", Robin said the rule "…50% of your vested account balance,
+  which is currently $19,123", Marcus repeated "$19,123?" as his limit, and she did not correct
+  him (true figure about $9,561).
+- **Branch v2** (`agtvrsn_9801m3amwgrefw2rf5aatdrcjgm5`, procedure `agtprcv_6701m3amwgrmej5sp9h7eq066d6j`):
+  after-payoff questions get "worked out from your balance when you apply", no figure; a repeated
+  wrong figure is corrected; step 2 in plain words; a "never say tool or field names or your
+  reasoning" line. Diff vs Main unchanged in shape (same five fields). Repo prompt copies and
+  `loan-limit-rollout.md` synced to v2.
+- **v2 results.** New test `test_2901m3amx3mkee9bg0dsfx5h9aae` (Marcus after-payoff, repeats back a
+  figure), 6x (`suite_0801m3amx9kse5vt1kzr49xan7y0`): 5 real runs, no future figure given, the wrong
+  "nineteen thousand" corrected ("No, that is not your limit"); 1 run lost to a harness timeout.
+  Priya/Elena 2x (`suite_9901m3amz5fmf7y9psmdnvtwrpvw`): $50,000 and $30,000; 1 hang-up, 1 pending.
+- **The leak is a simulation-model artefact, most likely.** One v2 Marcus run leaked 3 times, about
+  the plan confirmation, the survey and document_resolution, not the loan text; the grader still
+  marked it passed. All leaks are `gemini-2.5-flash`. The simulations run Robin mostly on Gemini
+  (51 of 57 agent messages in the v2 Marcus suite; Haiku 6), while live Robin is Haiku (1,219/1,219
+  wave messages, 0/196 calls leaked). Probably the backup-LLM cascade (`cascade_timeout_seconds: 8`,
+  backup `default`) firing in the test harness. **Unverified.**
 - Tests saved for reuse: `test_6801m3akhdg5eqq90b5973vt7fvb` (Priya),
   `test_1901m3akhfwwe649v2qybjps0ke0` (Marcus), `test_5701m3akhj9vec8th4p18ye2sqah` (Elena).
 

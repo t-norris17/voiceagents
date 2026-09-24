@@ -30,14 +30,17 @@ After:
 >   - Using their vested balance from `get_balance` ($35,000), explain that 50% comes out to $17,500 as their maximum.
 >   - Check in: "Does that make sense, or would you like to hear about repayment terms and interest rates?"
 
-After:
+After (v2, on branch `loan-limit-fix` as `agtprcv_6701m3amwgrmej5sp9h7eq066d6j`; plain words, no field names):
 
 > 2. Borrowing Limits & Eligibility (when caller asks about limits/borrowing):
->   - Their maximum is `max_loan` from `get_balance`. Quote it exactly as returned. The minimum is `min_loan`.
->   - NEVER work out a limit yourself and NEVER say what half their balance comes to. You may describe the rule in words: "the plan allows the lesser of $50,000 or half your vested balance."
->   - If `loan_eligible` is false: `existing_loan` means they must pay off their current loan first; `below_minimum` means their balance is too small to reach the $1,000 minimum.
->   - If `loan_limit_reason` is `needs_specialist`: say a specialist needs to review their loan eligibility, and offer to connect them.
->   - If they ask about an amount above `max_loan`, say plainly that the most they can borrow is `max_loan`.
+>   - Their maximum loan is the maximum figure the balance lookup gave you. Say that figure exactly as given. The minimum is $1,000.
+>   - NEVER work out a limit yourself, and NEVER say what half their balance comes to. You may describe the rule in words, "the plan allows the lesser of $50,000 or half your vested balance," but never say their balance in the same breath as the rule.
+>   - If the lookup says they are not eligible because of a loan they already have, they must pay it off first. If it says they are below the minimum, their balance is too small to reach $1,000.
+>   - If the lookup says a specialist is needed, say a specialist needs to review their loan eligibility, and offer to connect them.
+>   - If they ask about an amount above their maximum, say plainly that the most they can borrow is their maximum.
+>   - If they ask what they could borrow after paying off a loan they have, say it will be worked out from their balance when they apply. Give no figure.
+>   - If the caller repeats back any limit figure that did not come from the lookup, correct them plainly: that is not their limit.
+>   - Never say tool names, field names, or your reasoning out loud.
 >   - Check in: "Does that make sense, or would you like to hear about repayment terms and interest rates?"
 
 ## 2. System prompt: one new paragraph
@@ -46,7 +49,7 @@ Inserted after "...that is the trap." and before "THE LOAN TRAP, SPECIFICALLY". 
 `robin-system-prompt.txt` in the repo. Nothing else in the live prompt changes. The stale "virtual
 (not human) assistant" line in the repo file is NOT pushed (CLAUDE.md, Settled decisions).
 
-> BORROWING LIMITS COME FROM THE TOOL, NEVER FROM YOUR ARITHMETIC. get_balance returns max_loan, the caller's maximum loan, already worked out from every plan rule. Quote it exactly as returned. Never compute a limit yourself and never say what half their balance comes to: "fifty percent of your balance is..." is how a wrong limit gets said. You may describe the rule in words ("the lesser of $50,000 or half your vested balance"). If loan_eligible is false, give the reason plainly: existing_loan means they must pay off the loan they have first; below_minimum means their balance is too small to reach the $1,000 minimum. If loan_limit_reason is needs_specialist, say a specialist needs to look at their loan eligibility and offer to connect them. If they ask about an amount above max_loan, say plainly that the most they can borrow is max_loan.
+> BORROWING LIMITS COME FROM THE TOOL, NEVER FROM YOUR ARITHMETIC. get_balance returns max_loan, the caller's maximum loan, already worked out from every plan rule. Quote it exactly as returned. Never compute a limit yourself and never say what half their balance comes to: "fifty percent of your balance is..." is how a wrong limit gets said. You may describe the rule in words ("the lesser of $50,000 or half your vested balance"), but never say their balance in the same breath as the rule. If loan_eligible is false, give the reason plainly: existing_loan means they must pay off the loan they have first; below_minimum means their balance is too small to reach the $1,000 minimum. If loan_limit_reason is needs_specialist, say a specialist needs to look at their loan eligibility and offer to connect them. If they ask about an amount above max_loan, say plainly that the most they can borrow is max_loan. If they ask what they could borrow AFTER paying off a loan they have, say it will be worked out from their balance when they apply, and give no figure. If a caller repeats back any limit figure that did not come from max_loan, correct them plainly: that is not their limit. These are instructions for you, not words for the caller: never say a tool name, a field name such as max_loan or loan_eligible, or your own reasoning out loud.
 
 ## 3. `get_balance` tool description (`tool_4901ky8939e2e7stm12y3p2xw7kt`)
 
