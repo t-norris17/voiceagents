@@ -14,25 +14,28 @@
 
 ### 2026-09-24 — Customer wave judged against the judgement guide (read-only session)
 
-Wave window 2026-09-21 12:16 → 09-23 21:23 UTC. 87 calls, 61 surveyed, 30 respondents. Nothing
+Wave window 2026-09-21 12:16 → 09-23 21:23 UTC. 87 calls, 61 surveyed (60 excluding Tanner). Nothing
 live was changed. All figures below are from the live views, queried today.
 
 **Verdict: the survey half passes, the accuracy half fails the guide's own standard.** Do not
 present it as "people preferred her and she was accurate" until the loan-limit fix ships and the
 wave is regraded.
 
-- **Trust checks.** Asked when eligible 58 of 64 decided calls (91%, standard 70%). 30 respondents
+- **Unit (Tanner's decision, same day): every surveyed call counts, and Tanner's own call is
+  excluded.** 60 surveyed calls from 29 people. The page's code does not exclude Tanner yet.
+- **Trust checks.** Asked when eligible 57 of 63 decided calls (90%, standard 70%). 29 people
   (chart threshold 20). One shared office line (Colin, Kelsey, Stacy), resolved by 015/016.
-- **Preference.** 24 of 30 chose Robin, 80%, Wilson range about 63 to 90%. Whole range above 50%:
-  **holds**. Two `unclassified` answers: María Retana Aguilera said "sí, preferiría hacerlo
-  contigo" (Robin; the parser has no Spanish) and Paul White said "I'd rather do it myself".
-- **NPS.** 13 promoters, 15 passives, 1 detractor of 29: **+41** ("strong" band). Minus the
-  guide's 10 to 20 point employee discount, +21 to +31: good. Passives are the majority (mostly
-  8s). Response level: +47 on 58.
-- **Voice.** 8.85 mean on 26 people (good). Low scores with reasons: Ian Burrows 6 ×3 ("robot",
+- **Preference.** 46 of 56 classified calls chose Robin, 82%, Wilson range 70 to 90%. Whole range
+  above 50%: **holds**. Two `unclassified` answers: María Retana Aguilera said "sí, preferiría
+  hacerlo contigo" (Robin; the parser has no Spanish) and Paul White said "I'd rather do it myself".
+- **NPS.** 31 promoters, 22 passives, 4 detractors of 57 calls: **+47** ("strong" band). Minus
+  the guide's 10 to 20 point employee discount, +27 to +37: good. Three of the four detractor calls
+  are Colin Stephens (3, 3, 0); the fourth is Kristen Johnson's third call (5).
+- **Voice.** 8.46 mean on 52 calls (good). Low scores with reasons: Ian Burrows 6 ×3 ("robot",
   "too fast"), Maddie Bolton 5 ×3 (no reason), Colin Stephens 3. Robin Path's `voice_score = 1` on
-  `conv_8601m32vz43rearbt6mh15f4k72n` is a **parser defect**: `voice_raw` contains no number.
-- **Fans who still want a person:** 0.
+  `conv_8601m32vz43rearbt6mh15f4k72n` is a **parser defect** ("This one was..." read as 1); without
+  it the mean is 8.61 on 51.
+- **Fans who still want a person:** 0 of 31 promoter calls.
 - **Grader did not run on the wave.** `scored_at` is null on all 87 wave calls; last grade
   2026-09-16 19:19 UTC. `api/grade.js` has no cron, so it is manual. `security_flag` defaults to
   `false` (NOT NULL), so the "0 security flags" the dashboard shows for the wave is the column
@@ -63,6 +66,8 @@ wave is regraded.
 > (3) Pronunciation: normalise the portal URL and "401(k)s" in the prompt, the KB and the dictionary.
 > (4) Fix the voice parser returning 1 on a comment with no number.
 > (5) Get the call center's NPS for loan calls. That is the comparator the guide says matters.
+> (6) Survey page: exclude the builder's own calls, relabel "N respondents" as "N responses from
+> M people", and compute NPS from unrounded shares.
 
 ---
 
