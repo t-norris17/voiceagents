@@ -96,6 +96,15 @@
 - **Rollback:** set Main back to `agtvrsn_9101m2zv730xe9ss1h2yapgk7ga5`. That version still
   lists `get_plan_details`, which is now deleted, so a rollback also needs that entry removed
   from `tool_ids` (or the tool recreated).
+- **First real call, Priya** (`conv_2201m3apaecbet6a657cteq6d2zw`, start 1790286576, 16.8 min
+  after the merge, version `agtvrsn_0201…`, every agent turn `claude-haiku-4-5`).
+  `[49s] get_balance is_error=False max_loan "$50,000"`; `[50s]` Robin: "The maximum you can
+  borrow is $50,000 … the $50,000 cap is what applies." No tool name, field name or reasoning
+  spoken. **One rule broken on request:** caller asked "what's half of that?" and `[74s]` she said
+  "Half of that would be $107,453 — so you can see the $50,000 plan maximum is the limit that
+  applies to you". Correct and framed as not-the-limit, but it breaks the written "never say what
+  half their balance comes to". `survey_asked_when_eligible` = failure only because the caller hung
+  up at 100s before the survey point.
 - **Next:** Tanner's real calls to +1 833 573 9530. Any call counts as evidence only if its
   `start_time_unix_secs` is after 1790285565 and `tool_results` show `max_loan`.
 
