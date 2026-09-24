@@ -12,6 +12,30 @@
 
 ---
 
+### 2026-09-24 — Wave 1 read-out (analysis only, nothing changed live)
+
+- **Data:** 87 wave calls, Sep 21 07:16 to Sep 23 16:23 Central, 35 people, 61 surveyed, 58 NPS
+  answers. Read from `survey_answers` where `in_survey_era`.
+- **Headline:** first-call NPS per person +43 (13 promoters, 14 passives, 1 detractor of 28, Tanner's
+  own call excluded); about 85% would rather use Robin than hold. Colin James Stephens is 3 of the 4
+  detractor responses. 20 of 58 scores are exactly 8.
+- **Call-killers that never reached the survey:** `conv_1701m37e02g3e7h98tbx5bd5egeb` ended by the
+  Self-harm guardrail mid-loan explanation (termination_reason, verified). David Sutton hung up twice
+  after asking to update a beneficiary and getting silence (`conv_9901m325e9jwevav572gbmdfh9my`,
+  `conv_6401m32688zxezb8wtxd1yrke0t9`); cause **unverified**, tool_results not yet read.
+- **Themes:** pace too fast (5 people), "NestEgg U" heard as "Nest U"/"nesticu" (3 people, audio
+  unverified), 19 of 87 calls transferred and only 1 of those surveyed.
+- **Instrument defects:** `parse_survey_0_10` scored Robin Path's voice answer as 1 from "this one
+  was" (he gave no number); María Retana Aguilera's Spanish answers do not parse (NPS "ocho");
+  "I'd rather do it myself" lands in `unclassified`.
+
+**Next session:**
+> Before wave 2: diagnose the beneficiary dead air from `tool_results`, review the Self-harm
+> guardrail false positive, add "NestEgg U" to the pronunciation dictionary, slow the pace, and fix
+> the parser's number-word matching. Decide how to measure transferred calls.
+
+---
+
 ### 2026-09-24 — A respondent is the name they gave (migrations 015 and 016, applied live mid-wave)
 
 - **Why.** Three testers dialled in from one office line. Migration 014 keyed a respondent on
