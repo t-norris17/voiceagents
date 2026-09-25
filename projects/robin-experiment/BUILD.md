@@ -12,6 +12,39 @@
 
 ---
 
+### 2026-09-25 — Quality on flyrobin.app, and the first round of notes (branch `claude/quality-polish`, NOT merged)
+
+**Status:** PR #75 merged and both projects built production from it; Tanner confirmed the rail on
+flyrobin.app. His first pass of notes is built on `claude/quality-polish` for the preview.
+
+- **Why the numbers moved.** Tanner asked why NPS read +44 where the old page said +47 (82% → 81%,
+  30 → 28 people). Re-run on the live views: the four hidden staff calls (Tanner ×1, Steve
+  Castro-Miller ×3) were three promoters and a passive, all four chose Robin, voice 9.75. Everyone:
+  61 / 30 / +47 / 82% / 8.47. Testers only: 57 / 28 / +44 / 81% / 8.37. The Staff switch restores
+  the old set and the caption says so. Nothing was lost.
+- **Migration 020 (live).** `respondent_aliases`: Carla Lechliter → Karla Leckliter (roster). One
+  call; her `person_key` changed with the canonical name (P-2a7c9ec7 → P-a146d5b5), which is how
+  015 keys people. Verified on the view.
+- **Notes built.** (1) The call drawer's summary showed `[object Object]`: `survey-call` returns
+  `{title, text}` and the page printed the object; now title · text. (2) Tile titles say what they
+  are: Net Promoter Score, **Prefer Robin to a person**, **Voice naturalness score**, **Survey
+  offer rate**; drawer titles and the tour match. (3) "The two outlined cells decide the rollout"
+  is gone: the cells are "the exceptions"; leadership decides. (4) The "context, not silence"
+  sentence under the funnel is gone; it says how many were never asked and to click a row.
+  (5) **Survey themes** and **Calls for review** replace "What people said" and "Needs a listen";
+  tooltips, tour and the reading guide follow. (6) The unformatted link row above Confidence is
+  removed (it duplicated the downloads at the bottom). (7) The dot strip under Confidence is now
+  **Calls per person**: one row per person, one dot per answered call in order, coloured by choice;
+  repeat callers show as rows of dots, a person who chose differently on a later call is marked
+  "changed", and each dot opens its call. This is the join between the tiles (calls) and the
+  caption (people) that the old strip did not carry. (8) The caption sits in its own bordered box
+  with an ink rule on the left. Verified on the fixture: all titles, no `#foot`, 28 rows / 55 dots,
+  two "changed" rows, a dot opens its call with the summary as text, no script errors.
+- **Open, for Tanner:** review the preview, then merge; second-wave dates; the retired-instrument
+  note on the NPS tile, if wanted.
+
+---
+
 ### 2026-09-24, later — The Quality page becomes a sliceable board (branch `claude/quality-rail`, merged 2026-09-25)
 
 **Status:** the page rework is on the branch for Tanner and his bosses to test on a preview before
