@@ -83,6 +83,8 @@
   .b-m .v .u{ font-size:.45em; color:var(--sub); font-weight:700; }
   .b-m .c{ font-size:clamp(.62rem,1.05cqi,.84rem); color:var(--sub); margin-top:7px; line-height:1.4; }
   .b-m.flag .v{ color:var(--accent); }
+  .b-m .v.txt{ font-size:clamp(1rem,2.2cqi,1.6rem); line-height:1.15; letter-spacing:-.01em; }
+  .b-m .v.soft{ color:var(--faint); }
   .b-foot{ margin-top:clamp(10px,1.5cqi,18px); font-size:clamp(.58rem,.95cqi,.76rem);
     color:var(--faint); display:flex; justify-content:space-between; gap:16px; }
   .tools{ display:flex; gap:16px; align-items:center; margin:16px auto 0; max-width:1280px;
@@ -145,15 +147,34 @@
       <div class="b-grid">
         <div class="b-m"><div class="v">${nps.score!=null?(nps.score>0?"+":"")+nps.score:"—"}</div>
           <div class="c">NPS${nps.n?`, ${nps.n} ${nps.n===1?"respondent":"respondents"}`:""}</div></div>
-        <div class="b-m"><div class="v">${voice.mean??"—"}<span class="u">/10</span></div>
+        <div class="b-m"><div class="v">${voice.mean!=null?Number(voice.mean).toFixed(1):"—"}<span class="u">/10</span></div>
           <div class="c">how natural Robin's voice sounded</div></div>
-        <div class="b-m${s.promoter_but_prefers_person?" flag":""}"><div class="v">${s.promoter_but_prefers_person??0}</div>
-          <div class="c">would recommend it warmly and still want a person</div></div>
+        <div class="b-m" id="b-theme"><div class="v txt soft">—</div><div class="c">finding the top theme…</div></div>
       </div>
       <div class="b-foot">
         <span>One response per person. ${a.pct!=null?`Asked on ${a.pct}% of eligible calls.`:""}</span>
         <span>Internal test cohort — not customers.</span>
       </div>`;
+  }
+
+  // The third cell is the theme said by the most people, in its own few words, the same cell the
+  // Quality page's Simple view shows. Themes come from a separate, slower endpoint (a model call
+  // over every comment in the slice), so the cell says what it is waiting on rather than sitting
+  // blank, and says plainly when there are not yet enough comments for a theme.
+  function renderTheme(t){
+    const el=document.getElementById("b-theme"); if(!el) return;
+    if(t&&t.ready&&(t.themes||[]).length){
+      const th=t.themes.slice().sort((a,b)=>(b.people-a.people)||(b.mentions-a.mentions))[0];
+      el.className=`b-m${th.sentiment==="negative"?" flag":""}`;
+      el.innerHTML=`<div class="v txt">${esc(th.label)}</div><div class="c">top theme, <b>${th.people} ${th.people===1?"person":"people"}</b> said it · ${esc(th.sentiment)}</div>`;
+      return;
+    }
+    const why=t&&t.have!=null?`themes appear at ${t.need} comments, ${t.have} so far`:t&&t.error?esc(t.error):"no theme yet";
+    el.innerHTML=`<div class="v txt soft">—</div><div class="c">${why}</div>`;
+  }
+  function loadTheme(){
+    fetch("/api/survey-themes"+location.search,{cache:"no-store"}).then(r=>r.json()).then(renderTheme)
+      .catch(()=>renderTheme({ready:false,error:"Theme analysis is unavailable right now."}));
   }
 
   document.getElementById("themebtn").addEventListener("click",()=>{
@@ -163,7 +184,7 @@
   });
 
   // The slice rides on the query string (?range=wave:first&staff=show), the same as the Quality page.
-  fetch("/api/metrics"+location.search,{cache:"no-store"}).then(r=>r.json()).then(d=>render(d.survey))
+  fetch("/api/metrics"+location.search,{cache:"no-store"}).then(r=>r.json()).then(d=>{ render(d.survey); loadTheme(); })
     .catch(e=>{ document.getElementById("board").innerHTML=
       `<div class="b-top"><h1>Robin · viability survey</h1><div class="n">unavailable</div></div>
        <p class="b-q">Couldn't load the numbers: ${esc(e.message)}</p>`; });
