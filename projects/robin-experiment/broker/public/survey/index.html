@@ -410,8 +410,8 @@
 
       <section class="adv" id="cumsec" hidden>
         <hr class="rule">
-        <div class="shead"><h2 class="sect-h">Is the sample big enough?<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-cum">?</button><span class="tip-box" role="tooltip" id="tip-cum"><b>What it shows.</b> How often Robin actually asked the survey, and the headline share redrawn one response at a time with its 95% range. The chart appears at 20 responses.<br><br><b>How to read it.</b> The result is callable once the shaded band stops crossing 50%. At n=30 a 60/40 is noise. If Robin asked on fewer than 70% of eligible calls, every figure above rests on a biased slice.</span></span></h2></div>
-        <p class="svy-lede">Whether the headline can be trusted yet.<span class="tipw"><button type="button" class="tip" aria-label="How to read the chart" aria-describedby="tip-cum-story">?</button><span class="tip-box tip-story" role="tooltip" id="tip-cum-story"><b>Think of it as counting votes.</b> Ballots arrive one at a time, Robin against A Person. After one ballot you would never call it. After ten you are tempted but know the next ten could go either way. After fifty you feel it settle.<br><br>The chart is that feeling, drawn. The line is Robin's share after each ballot. The shaded band is your honest doubt: given what has been counted, the final result could land anywhere in it. It is wide at the start and narrows as ballots pile up. The rule at 50% is a majority.<br><br><b>Calling it</b> means the whole band is above 50, not just the line. If the bottom edge still dips under half, A Person could still win and you would be guessing. The page refuses to guess.<br><br>Nothing here is a new number. It is the headline share and its range from the top of the page, shown as they evolved instead of only as they stand today.</span></span></p>
+        <div class="shead"><h2 class="sect-h">Confidence<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-cum">?</button><span class="tip-box" role="tooltip" id="tip-cum"><b>What it shows.</b> How often Robin actually asked the survey, and the headline share redrawn one response at a time with its 95% range. The chart appears at 20 responses.<br><br><b>How to read it.</b> The result is callable once the shaded band stops crossing 50%. At n=30 a 60/40 is noise. If Robin asked on fewer than 70% of eligible calls, every figure above rests on a biased slice.</span></span></h2></div>
+        <p class="svy-lede">How sure the headline is, as answers came in.<span class="tipw"><button type="button" class="tip" aria-label="How to read the chart" aria-describedby="tip-cum-story">?</button><span class="tip-box tip-story" role="tooltip" id="tip-cum-story"><b>Think of it as counting votes.</b> Ballots arrive one at a time, Robin against A Person. After one ballot you would never call it. After ten you are tempted but know the next ten could go either way. After fifty you feel it settle.<br><br>The chart is that feeling, drawn. The line is Robin's share after each ballot. The shaded band is your honest doubt: given what has been counted, the final result could land anywhere in it. It is wide at the start and narrows as ballots pile up. The rule at 50% is a majority.<br><br><b>Calling it</b> means the whole band is above 50, not just the line. If the bottom edge still dips under half, A Person could still win and you would be guessing. The page refuses to guess.<br><br>Nothing here is a new number. It is the headline share and its range from the top of the page, shown as they evolved instead of only as they stand today.</span></span></p>
         <div class="cum" id="cum"></div>
         <div id="dots"></div>
       </section>
@@ -530,7 +530,7 @@
     for(const id of ["gen","gen2"]){ const el=document.getElementById(id); if(el) el.textContent=t; }
   }
 
-  // ---- View modes: Simple is the board; Advanced adds the sample-size chart and the call browser. ----
+  // ---- View modes: Simple is the slide; Advanced is the board plus the confidence chart and the call browser. ----
   const MODE_KEY="robin-quality-view";
   function setMode(m, persist){
     m = m==="advanced" ? "advanced" : "simple";
@@ -782,7 +782,7 @@
 
   function renderFoot(){
     const s=DATA.survey||{};
-    document.getElementById("foot").innerHTML=`<span><a href="#clsec" data-goto="clsec">Every call (${s.responses??0})</a><a href="/api/survey-export${qs({level:"people"})}">Download responses</a><a href="/api/survey-export${qs({level:"calls"})}">Every call CSV</a><a href="/survey/slide/${qs()}">Slide</a></span><span>Sample size and the call browser below</span>`;
+    document.getElementById("foot").innerHTML=`<span><a href="#clsec" data-goto="clsec">Every call (${s.responses??0})</a><a href="/api/survey-export${qs({level:"people"})}">Download responses</a><a href="/api/survey-export${qs({level:"calls"})}">Every call CSV</a><a href="/survey/slide/${qs()}">Slide</a></span><span>Confidence and the call browser below</span>`;
   }
   function renderDownloads(){
     const s=DATA.survey||{}; document.getElementById("dlsec").hidden=!(s.funnel&&s.funnel.in_range);
@@ -902,7 +902,7 @@
   document.getElementById("ddx").addEventListener("click",closeDrill);
   document.addEventListener("click",(e)=>{ const b=e.target.closest("[data-drill]"); if(b&&!e.target.closest(".tipw")){ e.preventDefault(); openDrill(b.dataset.drill); } });
 
-  // ---- Advanced: the sample-size chart, the dot grid, the call browser --------------------------
+  // ---- Advanced: the confidence chart, the dot grid, the call browser ---------------------------
   const ordinal=(n)=>{const t=n%100; if(t>=11&&t<=13) return n+"th"; return n+({1:"st",2:"nd",3:"rd"}[n%10]||"th");};
   function renderCumulative(){
     const sec=document.getElementById("cumsec"), s=DATA.survey||{}, pts=s.cumulative||[];
@@ -1103,7 +1103,7 @@
         { target:"#askfab", placement:"left", title:"Ask the data", body:[
           "Plain questions, answered only from the rows in the current slice, with the calls cited. If the rows cannot answer, it says so." ] },
         { target:"#cumsec", placement:"top", title:"The deeper sections", body:[
-          "Under the board: the sample-size chart, one dot per call, the full call browser and the downloads. The chart tells you whether the headline can be trusted yet." ] },
+          "Under the board: the <b>Confidence</b> chart, one dot per call, the full call browser and the downloads. The chart shows the headline share with its 95% band as answers arrived; the result is settled once the band clears 50%." ] },
         { target:".rt-help", placement:"top", title:"Help lives here", body:[
           "Click <b>Help</b> at the bottom of the page to run this tour again. The <b>judgement guide</b>, linked at the top, is the one-page version for your notes." ] },
       ],
