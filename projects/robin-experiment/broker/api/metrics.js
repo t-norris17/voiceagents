@@ -322,8 +322,9 @@ export function summariseSurvey(opinions, calls, everyone = calls) {
         given: withText.length,
         people_who_commented: new Set(withText.map((r) => r.person_key).filter(Boolean)).size,
         redacted: withText.filter((r) => r.comments_redacted).length,
-        // `calls` arrives newest-first, so this is already in the right order.
-        recent: said.slice(0, 40).map((r) => ({
+        // `calls` arrives newest-first, so this is already in the right order. Every comment ships:
+        // the page shows five and keeps the rest behind "See all", in a drawer.
+        recent: said.slice(0, 300).map((r) => ({
           conversation_id: r.conversation_id, started_at: r.started_at,
           respondent: who(r), response_seq: r.response_seq, text: r.open_comments,
         })),

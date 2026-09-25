@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+<script>(function(){try{var t=localStorage.getItem("robin-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Robin — Quality: would they rather use her?</title>
@@ -12,14 +13,24 @@
     --accent:#b8501e;
     --sans:"Helvetica Neue",Helvetica,Arial,system-ui,sans-serif;
   }
+  /* The viewer's setting unless they chose Light or Dark (data-theme on <html>, stored as
+     "robin-theme"; the same control lives in the portal's masthead). */
   @media (prefers-color-scheme: dark){
-    :root{ --paper:#15161a; --ink:#ecebe6; --sub:#9a9ea4; --faint:#6a6e74;
-      --line:#2b2d33; --hair:#212329; --wash:#1c1e23; --card:#191b20; --accent:#e08a4a; }
+    :root:not([data-theme="light"]){ --paper:#15161a; --ink:#ecebe6; --sub:#9a9ea4; --faint:#6a6e74;
+      --line:#2b2d33; --hair:#212329; --wash:#1c1e23; --card:#191b20; --accent:#e08a4a; color-scheme:dark; }
   }
   :root[data-theme="light"]{ --paper:#f2f0ea; --ink:#17181c; --sub:#6c7075; --faint:#a29e95; --line:#d7d3c9; --hair:#e4e1d8; --wash:#e9e6de; --card:#f7f5f0; --accent:#b8501e; }
-  :root[data-theme="dark"]{ --paper:#15161a; --ink:#ecebe6; --sub:#9a9ea4; --faint:#6a6e74; --line:#2b2d33; --hair:#212329; --wash:#1c1e23; --card:#191b20; --accent:#e08a4a; }
+  :root[data-theme="dark"]{ --paper:#15161a; --ink:#ecebe6; --sub:#9a9ea4; --faint:#6a6e74; --line:#2b2d33; --hair:#212329; --wash:#1c1e23; --card:#191b20; --accent:#e08a4a; color-scheme:dark; }
 
   *{ box-sizing:border-box; }
+  /* the Light / Dark control, the portal's pill; hidden when the portal masthead carries its own */
+  .rp-theme{ display:inline-flex; border:1px solid var(--line); border-radius:999px; overflow:hidden; align-self:center; }
+  .rp-theme button{ font:inherit; font-size:.6rem; letter-spacing:.14em; text-transform:uppercase; font-weight:700; padding:5px 11px; background:none; color:var(--sub); border:0; cursor:pointer; }
+  .rp-theme button[aria-pressed="true"]{ background:var(--ink); color:var(--paper); }
+  .rp-theme button:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .mast .right{ display:flex; align-items:center; gap:14px; }
+  .mast .guide{ font-size:.72rem; color:var(--ink); font-weight:600; text-decoration:none; border-bottom:1px solid var(--line); }
+  .mast .guide:hover{ border-bottom-color:var(--ink); }
   body{ margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans);
     line-height:1.5; -webkit-font-smoothing:antialiased; }
   .sheet{ max-width:1400px; margin:0 auto; padding:clamp(22px,3vw,40px) clamp(16px,3vw,36px) 60px; }
@@ -30,10 +41,6 @@
 
   .mast{ display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding-bottom:12px; border-bottom:2px solid var(--ink); flex-wrap:wrap; }
   .mast .wm{ font-size:1.4rem; font-weight:800; letter-spacing:.02em; text-transform:uppercase; margin:0; }
-  .mast .meta{ font-size:.72rem; color:var(--sub); text-align:right; line-height:1.7; letter-spacing:.02em; }
-  .mast .meta b{ color:var(--ink); font-weight:600; }
-  .mast .meta .guide{ color:var(--ink); font-weight:600; text-decoration:none; border-bottom:1px solid var(--line); }
-  .mast .meta .guide:hover{ border-bottom-color:var(--ink); }
   .modes{ display:inline-flex; border:1px solid var(--ink); border-radius:999px; overflow:hidden; align-self:center; }
   .modes button{ font:inherit; font-size:.64rem; letter-spacing:.14em; text-transform:uppercase; font-weight:700; padding:7px 14px; background:none; color:var(--ink); border:0; cursor:pointer; }
   .modes button[aria-selected="true"]{ background:var(--ink); color:var(--paper); }
@@ -86,9 +93,8 @@
   .sw[aria-checked="true"] i{ background:var(--ink); } .sw[aria-checked="true"] i::after{ left:14px; }
   .sw small{ color:var(--faint); font-size:.66rem; margin-left:auto; white-space:nowrap; }
   .sw.soon{ color:var(--faint); cursor:default; } .sw.soon:hover{ background:none; color:var(--faint); }
-  .railcap{ font-size:.74rem; color:var(--sub); line-height:1.6; border-top:1px solid var(--hair); padding-top:12px; }
-  .railcap b{ color:var(--ink); font-weight:700; }
-  .railcap .copy{ font:inherit; font-size:.66rem; letter-spacing:.1em; text-transform:uppercase; color:var(--sub); background:none; border:0; padding:0; cursor:pointer; border-bottom:1px solid var(--line); margin-top:6px; }
+  .railcap{ border-top:1px solid var(--hair); padding-top:12px; }
+  .railcap .copy{ font:inherit; font-size:.66rem; letter-spacing:.1em; text-transform:uppercase; color:var(--sub); background:none; border:0; padding:0; cursor:pointer; border-bottom:1px solid var(--line); }
   .railcap .copy:hover{ color:var(--ink); border-bottom-color:var(--ink); }
 
   /* ---- the board ---- */
@@ -353,7 +359,10 @@
       <button type="button" role="tab" data-mode="simple">Simple</button>
       <button type="button" role="tab" data-mode="advanced">Advanced</button>
     </div>
-    <div class="meta" id="mastmeta"></div>
+    <div class="right">
+      <a class="guide" href="/survey/guide/">How to judge these numbers &rarr;</a>
+      <div class="rp-theme pg-theme" role="group" aria-label="Theme"><button type="button" data-theme-set="light" aria-pressed="false">Light</button><button type="button" data-theme-set="dark" aria-pressed="false">Dark</button></div>
+    </div>
   </div>
 
   <div id="banner"></div>
@@ -474,10 +483,7 @@
       document.getElementById("banner").innerHTML="";
       const s=DATA.survey||{}, sl=s.slice||{};
       if(sl.valid===false) document.getElementById("banner").innerHTML=`<div class="banner bad">That range was not understood (${esc(sl.error||"")}), so this is everything.</div>`;
-      document.getElementById("mastmeta").innerHTML=
-        `<b>${sl.label?esc(sl.label):"All calls"}</b> · ${plural(s.people??0,"person","people")} · ${plural(s.surveyed??0,"surveyed call")}<br>`+
-        `<span class="soft">last updated <span id="gen2"></span></span><br>`+
-        `<a class="guide" href="/survey/guide/">How to judge these numbers &rarr;</a>`;
+      document.title=`Robin — Quality: ${sl.label||"all calls"}`;
       renderRail(); renderCap(); renderBoard(); renderFoot(); renderCumulative(); renderDots(); renderCalls(); renderDownloads();
       stamp();
       loadThemes();   // separate endpoint: costs a model call, so it is not on the 60s refresh
@@ -535,12 +541,7 @@
         <button type="button" class="sw" id="staffsw" role="switch" aria-checked="${staffOn}"><i></i>Staff calls<small>${sl.staff_calls?`${sl.staff_calls} ${staffOn?"shown":"hidden"}`:"none here"}</small></button>
         <button type="button" class="sw soon" role="switch" aria-checked="false" disabled><i></i>Compare to a wave<small>after wave 2</small></button>
       </div>
-      <div class="railcap">
-        <b>${esc(sl.label||"All calls")}</b><br>${sl.when&&sl.when!==sl.label?`${esc(sl.when)} · Central<br>`:""}
-        <b>${s.people??0}</b> ${s.people===1?"person":"people"} · <b>${s.surveyed??0}</b> surveyed ${s.surveyed===1?"call":"calls"}<br>
-        staff ${staffOn?"shown":"hidden"}<br>
-        <button type="button" class="copy" id="copylink">Copy link to this view</button>
-      </div>`;
+      <div class="railcap"><button type="button" class="copy" id="copylink">Copy link to this view</button></div>`;
     document.querySelectorAll("#rail .opt[data-range]").forEach(b=>b.addEventListener("click",()=>navigate({range:b.dataset.range})));
     document.getElementById("customopt").addEventListener("click",()=>document.getElementById("dfrom").focus());
     document.getElementById("dates").addEventListener("submit",(e)=>{
@@ -571,7 +572,8 @@
     const when=sl.when&&sl.when!==sl.label?sl.when:"";
     document.getElementById("cap").innerHTML=`<b>${esc(sl.label||"All calls")}</b><span>${esc(when)}${when?" · Central":""}</span>`+
       `<span><b>${s.people??0}</b> ${s.people===1?"person":"people"}</span><span><b>${s.surveyed??0}</b> surveyed ${s.surveyed===1?"call":"calls"}</span>`+
-      `<span><b>${f.in_range??0}</b> calls in range</span><span>staff ${S.staff==="show"?"shown":"hidden"}${sl.staff_calls&&S.staff!=="show"?` (${sl.staff_calls})`:""}</span>`;
+      `<span><b>${f.in_range??0}</b> calls in range</span><span>staff ${S.staff==="show"?"shown":"hidden"}${sl.staff_calls&&S.staff!=="show"?` (${sl.staff_calls})`:""}</span>`+
+      `<span class="soft">updated <span id="gen2"></span></span>`;
   }
 
   // ---- The board -----------------------------------------------------------------------------
@@ -679,20 +681,24 @@
     const meta=`<div class="said-meta">${com.redacted?`<span class="accent">${com.redacted} withheld for personal details</span> · `:""}${
       THEMES&&THEMES.ready?`${plural(THEMES.themes.length,"theme")}`:
       THEMES&&THEMES.have!=null?`themes appear at ${THEMES.need} comments (${THEMES.have} so far)`:THEMES&&THEMES.error?esc(THEMES.error):"finding themes…"}</div>`;
+    // Five rows, then one link. With themes: the five said by the most people, each expanding to
+    // the comments behind it. Without: the five most recent comments. Everything else, including
+    // the themes that did not make the five and every unplaced comment, lives in the drawer.
+    const TOP=5;
     let body="";
     if(THEMES&&THEMES.ready){
-      const placed=new Set();
-      body=`<div class="thm">${(THEMES.themes||[]).map(th=>{
+      const ranked=(THEMES.themes||[]).slice().sort((a,b)=>(b.people-a.people)||(b.mentions-a.mentions));
+      body=`<div class="thm">${ranked.slice(0,TOP).map(th=>{
         const ids=new Set(th.conversation_ids||[]);
-        const mine=rows.filter(c=>ids.has(c.conversation_id)); mine.forEach(c=>placed.add(c.conversation_id));
+        const mine=rows.filter(c=>ids.has(c.conversation_id));
         return `<details class="thm-i"><summary><div class="thm-top"><span class="thm-lab">${esc(th.label)}</span>
             <span class="thm-n">${plural(th.people,"person","people")}${th.mentions>th.people?` · ${th.mentions} mentions`:""} · ${esc(th.sentiment)}</span></div>
             <div class="thm-sum">${esc(th.summary)}</div><div class="thm-q ${esc(th.sentiment)}">“${esc(th.quote)}”</div></summary>
           <div class="thm-body">${mine.length?mine.map(cmt).join(""):`<div class="svy-cmt redacted">No stored comment text for this theme.</div>`}</div></details>`;}).join("")}</div>`;
-      const rest=rows.filter(c=>!placed.has(c.conversation_id));
-      if(rest.length) body+=`<div class="said-rest"><div class="lbl">Other comments</div>${rest.slice(0,6).map(cmt).join("")}${rest.length>6?`<button type="button" class="more" data-drill="comments">Show all ${rest.length}</button>`:""}</div>`;
+      const more=ranked.length-TOP;
+      body+=`<button type="button" class="more" data-drill="comments">See all ${plural(com.given,"comment")}${more>0?` and ${plural(more,"more theme")}`:""}</button>`;
     }else{
-      body=rows.slice(0,6).map(cmt).join("")+(rows.length>6?`<button type="button" class="more" data-drill="comments">Show all ${rows.length}</button>`:"");
+      body=rows.slice(0,TOP).map(cmt).join("")+(rows.length>TOP?`<button type="button" class="more" data-drill="comments">See all ${plural(rows.length,"comment")}</button>`:"");
     }
     el.innerHTML=meta+body;
   }
@@ -794,9 +800,22 @@
       html=`<div class="formula">${a1==="transferred"?"Robin handed these calls to a person, and the prompt forbids surveying on the way into a transfer. They are excluded by design, not lost.":a1==="abandoned"?"The caller hung up before there was an exchange to ask about.":"Calls the survey never reached for another reason, such as a failed verification or a call the agent judged too short."}</div>
         <h4>The calls</h4><div class="list">${rows.map(m=>`<button type="button" class="li" data-id="${esc(m.conversation_id)}" data-who="${esc(m.respondent||"")}"><span class="nm">${esc(m.respondent||"Caller")}</span><span class="m">${esc(m.outcome||"")}${m.verdict?` · ${esc(m.verdict)}`:""}</span><span class="m">${esc(whenC(m.started_at))}</span><span class="sc">–</span>${m.topic?`<span class="said">${esc(m.topic)}</span>`:""}</button>`).join("")||`<div class="empty">None in this slice.</div>`}</div>`;
     }else if(kind==="comments"){
+      // Every comment, grouped under every theme (not just the five on the board), then the rest.
       const com=s.comments||{}, rows=com.recent||[];
       t=`Every comment · ${rows.length}`;
-      html=`<div class="list">${rows.map(c=>`<button type="button" class="li" data-id="${esc(c.conversation_id)}" data-who="${esc(c.respondent||"")}"><span class="nm">${esc(c.respondent||"Respondent")}</span><span class="m">call ${c.response_seq||1}</span><span class="m">${esc(whenC(c.started_at))}</span><span class="sc"></span><span class="said">“${esc(c.text)}”</span></button>`).join("")}</div>`;
+      const row=(c)=>`<button type="button" class="li" data-id="${esc(c.conversation_id)}" data-who="${esc(c.respondent||"")}"><span class="nm">${esc(c.respondent||"Respondent")}</span><span class="m">call ${c.response_seq||1}</span><span class="m">${esc(whenC(c.started_at))}</span><span class="sc"></span><span class="said">“${esc(c.text)}”</span></button>`;
+      if(THEMES&&THEMES.ready&&(THEMES.themes||[]).length){
+        const placed=new Set();
+        const ranked=THEMES.themes.slice().sort((a,b)=>(b.people-a.people)||(b.mentions-a.mentions));
+        html=ranked.map(th=>{ const ids=new Set(th.conversation_ids||[]); const mine=rows.filter(c=>ids.has(c.conversation_id)); mine.forEach(c=>placed.add(c.conversation_id));
+          return `<h4>${esc(th.label)} · ${plural(th.people,"person","people")} · ${esc(th.sentiment)}</h4><div class="finding" style="margin:0 0 6px">${esc(th.summary)}</div><div class="list">${mine.map(row).join("")||`<div class="empty">No stored comment text.</div>`}</div>`; }).join("");
+        const rest=rows.filter(c=>!placed.has(c.conversation_id));
+        if(rest.length) html+=`<h4>Other comments · ${rest.length}</h4><div class="list">${rest.map(row).join("")}</div>`;
+        if(THEMES.narrative) html=`<div class="formula">${esc(THEMES.narrative)}</div>`+html;
+      }else{
+        html=`<div class="list">${rows.map(row).join("")}</div>`;
+      }
+      if(com.redacted) html+=`<div class="finding">${plural(com.redacted,"comment")} withheld for containing something personal.</div>`;
     }else{ return; }
     title.textContent=t; body.innerHTML=`<div class="drw-meta"><b>${esc(sl.label||"")}</b> · ${esc(sl.when||"")} · staff ${S.staff==="show"?"shown":"hidden"}</div>`+html;
     dd.hidden=false; dd.dataset.what=what;
@@ -967,6 +986,21 @@
   setInterval(load, 60000);
 </script>
 <script>
+  // Light / Dark. The same snippet the portal injects into every page (robin-portal/lib/theme.js);
+  // guarded so it binds once when both are present. Stored as "robin-theme"; absent = system.
+  (function(){
+    if(window.__robinTheme) return; window.__robinTheme=1;
+    var KEY="robin-theme", mq=matchMedia("(prefers-color-scheme: dark)");
+    function effective(){ var t=document.documentElement.getAttribute("data-theme"); return (t==="light"||t==="dark")?t:(mq.matches?"dark":"light"); }
+    function paint(){ var e=effective(); document.querySelectorAll("[data-theme-set]").forEach(function(b){ b.setAttribute("aria-pressed", String(b.getAttribute("data-theme-set")===e)); }); }
+    document.addEventListener("click",function(ev){
+      var b=ev.target&&ev.target.closest?ev.target.closest("[data-theme-set]"):null; if(!b) return;
+      var t=b.getAttribute("data-theme-set"); document.documentElement.setAttribute("data-theme",t);
+      try{ localStorage.setItem(KEY,t); }catch(e){}
+      paint();
+    });
+    paint(); mq.addEventListener("change",paint);
+  })();
   // Tap-to-toggle for the section tooltips (hover and focus are pure CSS). One open at a time;
   // Escape or a tap anywhere else closes it.
   (function(){

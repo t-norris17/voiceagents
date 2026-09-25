@@ -62,10 +62,25 @@ shared: migrations 017 and 018. Both were verified to leave the live page readin
   Caveat: both projects have Vercel SSO protection on previews (`all_except_custom_domains`), so
   the portal's server-side fetch to the broker preview will hit the login wall until protection is
   off on the broker project. The portal's own gate password still applies either way.
-- **Open, for Tanner:** turn off Vercel's deployment protection on previews for BOTH projects
-  (Settings → Deployment Protection) so the branch can be tested by people without Vercel logins
-  and so the portal preview can reach the broker preview; second-wave dates when known (one row in
-  `experiment_waves`).
+- **Preview plumbing, done 2026-09-24 evening.** Tanner turned Vercel Authentication off on both
+  projects' previews and gave the previews their own `ROBIN_INTERNAL_SECRET` (Preview-only rows on
+  both projects; the Production values are Sensitive and unreadable, so a fresh shared value was the
+  only way). Broker `SURVEY_PASSWORD` has separate Production and Preview rows. Health and the home
+  tiles now read the same broker the proxy uses (`brokerBase()`), so a preview's health check
+  reports on the preview broker. Verified from outside: portal preview health `ok`, broker preview
+  reachable, secret accepted. Tanner: "works perfectly."
+- **Round two, 2026-09-25, on the branch.** (1) What people said: the five themes said by the most
+  people, each expandable to its comments, then one "See all N comments" link into a drawer that
+  groups every comment under every theme, then the rest; without themes, the five most recent.
+  `comments.recent` now ships up to 300. (2) Light / Dark for the whole portal: `data-theme` on
+  `<html>`, stored as `robin-theme`, applied before paint by a head snippet; the pill sits in the
+  Next.js masthead (`layout.js`, `lib/theme.js`) and in the masthead `copy-modules.mjs` injects
+  into the module pages; Question Tester and Knowledge Factory gained `data-theme` overrides; the
+  survey page carries its own pill, hidden under the portal's. (3) The Quality title row is the
+  name, Simple / Advanced, the guide link and the pill; the facts live once, in the caption above
+  the tiles, with the "updated" time; the rail keeps only the copy-link. Verified on the fixture:
+  theme survives reload, five rows and the link, drawer grouped by theme; `next build` clean.
+- **Open, for Tanner:** second-wave dates when known (one row in `experiment_waves`).
 
 ### 2026-09-24 — A respondent is the name they gave (migrations 015 and 016, applied live mid-wave)
 
