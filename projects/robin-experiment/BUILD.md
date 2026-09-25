@@ -48,8 +48,18 @@ flyrobin.app. His first pass of notes is built on `claude/quality-polish` for th
   caption (people) that the old strip did not carry. (8) The caption sits in its own bordered box
   with an ink rule on the left. Verified on the fixture: all titles, no `#foot`, 28 rows / 55 dots,
   two "changed" rows, a dot opens its call with the summary as text, no script errors.
-- **Open, for Tanner:** review the preview, then merge; second-wave dates; the retired-instrument
-  note on the NPS tile, if wanted.
+- **Merged as PR #76**, both projects built production from it, verified from outside.
+- **Tour is Help-only (branch `claude/tour-opt-in`).** Tanner: run it once, then only when someone
+  forces it from Help. The portal has one shared password and no accounts, so "seen" could only
+  ever live per browser (localStorage), and a new browser or a private window re-opened the welcome
+  card. The engine now opens nothing on its own unless a page passes `autoStart: true`; Quality does
+  not. Help at the foot of the page is the one way in.
+- **Themes timing, asked and unmeasured.** The function logs no duration and Vercel's runtime logs
+  carry none. Estimate 15 to 45 s per cold compute; the in-memory cache is per instance, so cold
+  instances recompute. Proposed, not built: log the duration; move the cache to a Supabase table
+  keyed by slice + comment fingerprint so it computes once per new comment.
+- **Open, for Tanner:** merge the tour branch; second-wave dates; the retired-instrument note on
+  the NPS tile, if wanted; the themes cache table.
 
 ---
 

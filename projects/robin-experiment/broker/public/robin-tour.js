@@ -1,7 +1,8 @@
 // The guided tour. One engine for every page of the portal; each page registers its own steps.
 //
 //   RobinTour.register({
-//     id: "quality",                       // remembered per browser as robin-tour-seen:<id>
+//     id: "quality",                       // names the page; with autoStart, remembered per browser as robin-tour-seen:<id>
+//     autoStart?: false,                   // true opens the welcome card once per browser; default is Help only
 //     welcome: { title, body },            // the first card, centred, with Start and Skip
 //     steps: [{ target, title, body, placement?, before?, after? }, ...],
 //     done: { title, body },               // the last card
@@ -14,9 +15,10 @@
 // scrolls it into view and floats a card beside it: Back, Next, a step count and Skip. Escape
 // closes; the arrow keys move. On a narrow screen the card docks to the bottom.
 //
-// The welcome card opens on its own the first time a browser sees a page, and never again unless
-// the viewer clicks Help, which the engine adds to the page's footer. Every colour comes from the
-// page's own tokens, so the tour follows Light / Dark.
+// The tour opens only when the viewer clicks Help, which the engine adds to the page's footer.
+// (A page can pass autoStart: true to open the welcome card the first time a browser sees it; the
+// portal has no user accounts, so that memory is per browser, and Quality does not use it.) Every
+// colour comes from the page's own tokens, so the tour follows Light / Dark.
 (function () {
   if (window.RobinTour) return;
 
@@ -193,12 +195,17 @@
     else { b.style.cssText = "position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:70;background:var(--paper,#f2f0ea);padding:6px 10px"; document.body.appendChild(b); }
   }
 
+  // The tour never opens on its own unless a page asks for it (autoStart: true), and even then
+  // only the first time a browser sees the page. Tanner, 2026-09-25: the portal has one shared
+  // password and no user accounts, so "seen" can only ever be per browser; a new browser or a
+  // private window would have re-opened it. Help is the one way in.
   function register(config) {
     cfg = config;
     addHelp();
+    if (!config.autoStart) return;
     let seen = true;
     try { seen = !!localStorage.getItem(KEY(cfg.id)); } catch {}
-    if (!seen && !config.noAutoStart) setTimeout(start, config.delay ?? 600);
+    if (!seen) setTimeout(start, config.delay ?? 600);
   }
 
   window.RobinTour = { register, start, stop, next, back };
