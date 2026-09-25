@@ -15,6 +15,7 @@
 // TEMPORARY: delete with the instrument after the customer wave.
 import Anthropic from "@anthropic-ai/sdk";
 import { surveySlice } from "../lib/survey-data.js";
+import { saidSomething } from "../lib/survey-comments.js";
 
 const client = new Anthropic(); // ANTHROPIC_API_KEY
 const MIN_COMMENTS = 8;
@@ -73,6 +74,10 @@ Rules:
   appear several times under the same "respondent" id — three comments from one respondent is one
   person's view, not a theme. Count respondents, never rows.
 - Quote verbatim. Do not clean up grammar or fillers.
+- "No", "nope, that's it" and the like in anything_else are a caller declining the last question,
+  not feedback. Never report a theme about people having nothing to add, and never cite such a row
+  as evidence for a theme. A theme is about what callers SAID: a stumble they noticed, a reason for
+  their choice, a thing they want Robin to do. The preference and rating fields carry reasons too.
 - The narrative must state the sample size honestly and name what the data cannot yet support.
   If the answers are overwhelmingly positive, say so plainly AND note that a small self-selected
   internal cohort is the weakest evidence for a customer-facing decision.
@@ -89,7 +94,9 @@ export default async function handler(req, res) {
     const calls = s.calls.filter((c) => c.survey_offered);
     const withText = calls.filter((c) => c.open_comments || c.prefer_agent_raw || c.nps_raw || c.would_recommend_raw);
 
-    const commented = calls.filter((c) => c.open_comments).length;
+    // Comments with words in them. "No." to "anything else?" is stored as a comment and is not one
+    // (lib/survey-comments.js); eight of those would open the gate on nothing.
+    const commented = calls.filter((c) => saidSomething(c.open_comments)).length;
     if (commented < MIN_COMMENTS) {
       return res.status(200).json({
         ready: false,
@@ -168,7 +175,7 @@ export default async function handler(req, res) {
       slice: s.info.param,
       based_on: {
         comments: commented,
-        people_who_commented: new Set(calls.filter((c) => c.open_comments).map((c) => c.person_key).filter(Boolean)).size,
+        people_who_commented: new Set(calls.filter((c) => saidSomething(c.open_comments)).map((c) => c.person_key).filter(Boolean)).size,
       },
     };
     cache.set(key, { at: Date.now(), value });

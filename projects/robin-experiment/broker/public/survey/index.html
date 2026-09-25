@@ -201,6 +201,11 @@
   .thm-q.negative{ border-left-color:var(--accent); }
   .thm-body{ padding:0 0 14px 16px; }
   .said-rest{ margin-top:14px; } .said-rest .lbl{ margin-bottom:6px; }
+  details.declines{ margin-top:16px; border-top:1px solid var(--hair); padding-top:8px; }
+  details.declines > summary{ cursor:pointer; font-size:.74rem; color:var(--sub); list-style:none; }
+  details.declines > summary::-webkit-details-marker{ display:none; }
+  details.declines > summary::before{ content:"▸ "; color:var(--faint); } details.declines[open] > summary::before{ content:"▾ "; }
+  details.declines .list{ margin-top:6px; }
   .svy-cmt{ font-size:.84rem; line-height:1.5; padding:8px 0; border-bottom:1px solid var(--hair); }
   .svy-cmt:last-child{ border-bottom:0; }
   .svy-cmt.redacted{ color:var(--faint); font-style:italic; font-size:.76rem; }
@@ -709,19 +714,19 @@
     const fbar=(n,cls)=>`<div class="bar"><span class="${cls||""}" style="width:${f.in_range?Math.round(n/f.in_range*100):0}%"></span></div>`;
     const funnel=`
       <div class="card c5" id="funcard">
-        <div class="chead"><h2>What the slice excludes<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-fun">?</button><span class="tip-box" role="tooltip" id="tip-fun"><b>What it shows.</b> Every call in the range, and why some never reached the survey. Transferred calls are not surveyed by design. Counts all callers, staff included.<br><br><b>How to read it.</b> Every opinion on this board comes from the surveyed row. The rest is context, not silence.</span></span></h2><span class="q">all callers</span></div>
+        <div class="chead"><h2>What the slice excludes<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-fun">?</button><span class="tip-box" role="tooltip" id="tip-fun"><b>What it shows.</b> Every call Robin took in this range, and how many of them reached the survey. Robin only asks at the end of a call that ends with her, so a call she handed to a person, or one the caller hung up on, was never asked. Those calls are not lost and not failures; they are just not opinions.<br><br><b>How to read it.</b> The top bar is every call. <b>Surveyed</b> is the calls Robin asked, and every number on this board comes from those. <b>Answered</b> gave at least one rating. The bars below are why the rest were never asked; click one to see its calls. All callers count here, staff included, because this measures Robin's reach rather than anyone's opinion.</span></span></h2><span class="q">all callers</span></div>
         <div class="fun">
-          <div class="row static"><span class="k"><b>Calls in range</b></span>${fbar(f.in_range)}<span class="v">${f.in_range}</span></div>
-          <div class="row static"><span class="k"><b>Surveyed</b>Robin asked</span>${fbar(f.surveyed)}<span class="v">${f.surveyed}</span></div>
-          <div class="row static"><span class="k"><b>Answered</b>any rating</span>${fbar(f.answered)}<span class="v">${f.answered}</span></div>
-          <button type="button" class="row" data-drill="excluded:transferred"><span class="k"><b>Transferred</b>no survey by design</span>${fbar(f.transferred,"acc")}<span class="v">${f.transferred}</span></button>
-          <button type="button" class="row" data-drill="excluded:abandoned"><span class="k"><b>Ended early</b>hung up, no exchange</span>${fbar(f.abandoned,"mid")}<span class="v">${f.abandoned}</span></button>
-          ${f.other?`<button type="button" class="row" data-drill="excluded:other"><span class="k"><b>Other</b>not surveyed</span>${fbar(f.other,"mid")}<span class="v">${f.other}</span></button>`:""}
+          <div class="row static"><span class="k"><b>Calls in range</b>everything Robin took</span>${fbar(f.in_range)}<span class="v">${f.in_range}</span></div>
+          <div class="row static"><span class="k"><b>Surveyed</b>Robin asked at the end</span>${fbar(f.surveyed)}<span class="v">${f.surveyed}</span></div>
+          <div class="row static"><span class="k"><b>Answered</b>gave at least one rating</span>${fbar(f.answered)}<span class="v">${f.answered}</span></div>
+          <button type="button" class="row" data-drill="excluded:transferred"><span class="k"><b>Transferred</b>handed to a person, never asked</span>${fbar(f.transferred,"acc")}<span class="v">${f.transferred}</span></button>
+          <button type="button" class="row" data-drill="excluded:abandoned"><span class="k"><b>Ended early</b>hung up before there was anything to rate</span>${fbar(f.abandoned,"mid")}<span class="v">${f.abandoned}</span></button>
+          ${f.other?`<button type="button" class="row" data-drill="excluded:other"><span class="k"><b>Other</b>not asked: failed verification, too short</span>${fbar(f.other,"mid")}<span class="v">${f.other}</span></button>`:""}
         </div>
-        <p class="finding">Every number on this board comes from the <b>${s.surveyed}</b> surveyed calls${S.staff!=="show"&&(s.slice||{}).staff_calls?` (${(s.slice||{}).staff_calls} staff ${(s.slice||{}).staff_calls===1?"call":"calls"} hidden)`:""}. Click a row to see the calls it excludes.</p>
+        <p class="finding">Every number on this board comes from the <b>${s.surveyed}</b> surveyed calls${S.staff!=="show"&&(s.slice||{}).staff_calls?` (${(s.slice||{}).staff_calls} staff ${(s.slice||{}).staff_calls===1?"call":"calls"} hidden)`:""}.${(f.in_range-f.surveyed)>0?` The <b>${f.in_range-f.surveyed}</b> never asked are context, not silence: Robin does not survey a call she hands off or one that ended before it began.`:" Every call in the range was asked."}</p>
       </div>`;
 
-    const said=`<div class="card c6" id="saidcard"><div class="chead"><h2>What people said<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-said">?</button><span class="tip-box" role="tooltip" id="tip-said"><b>What it shows.</b> Every written comment, verbatim, one per call, grouped under themes a model found once there are enough comments. Personal details are scrubbed.<br><br><b>How to read it.</b> Two comments is two people. The themes are an index, not a finding; the comments are the evidence.</span></span></h2><span class="q" id="saidq"></span></div><div id="said"></div></div>`;
+    const said=`<div class="card c6" id="saidcard"><div class="chead"><h2>What people said<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-said">?</button><span class="tip-box" role="tooltip" id="tip-said"><b>What it shows.</b> What callers said in their own words, verbatim, one line per call. The survey ends with “anything else?”, and a plain “no” is counted but never listed as a comment. Once there are enough real comments a model groups everything callers said, their reasons on the choice question included, into themes: a label, one sentence, one quote, and the calls behind it. Personal details are scrubbed before any of this.<br><br><b>How to read it.</b> The five themes said by the most people are on the card; <b>See all</b> has every theme, every comment and the “no” pile. A theme is an index, not a finding: open it and read the comments, which are the evidence. Two comments is two people.</span></span></h2><span class="q" id="saidq"></span></div><div id="said"></div></div>`;
     const listen=`<div class="card c6" id="revcard"><div class="chead"><h2>Needs a listen<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-rev">?</button><span class="tip-box" role="tooltip" id="tip-rev"><b>What it shows.</b> Calls with negative sentiment or a score of 6 or below, each opening to its transcript.<br><br><b>How to read it.</b> Read these first. An empty list on a small sample means nothing.</span></span></h2><span class="q">${rev.n?plural(rev.n,"call"):"none"}</span></div><div id="rev"></div></div>`;
 
     el.innerHTML=tiles+xt+funnel+said+listen;
@@ -743,22 +748,34 @@
   }
 
   // ---- What people said: comments, grouped by theme once themes are ready --------------------
+  // "No." is not a comment. The survey's last question is "anything else?" and most people say no;
+  // that answer is stored with the real comments and used to be listed with them. The API flags
+  // each one (`more`), so the card lists only the ones that said something and reports the declines
+  // as a count. The declines are still in the drawer, folded, so the count can be checked.
   function renderSaid(){
     const el=document.getElementById("said"), q=document.getElementById("saidq"); if(!el) return;
-    const com=(DATA.survey&&DATA.survey.comments)||{}, rows=com.recent||[];
-    if(!rows.length && !com.redacted){ el.innerHTML=`<div class="empty">No written comments in this slice.</div>`; q.textContent=""; return; }
-    q.textContent=`${plural(com.given,"comment")} from ${plural(com.people_who_commented,"person","people")}`;
+    const com=(DATA.survey&&DATA.survey.comments)||{}, all=com.recent||[];
+    const rows=all.filter(c=>c.more!==false), nothing=com.nothing_more||0;
+    const saidN=com.said_more!=null?com.said_more:rows.length+(com.redacted||0);
+    const peopleN=com.people_said_more!=null?com.people_said_more:com.people_who_commented;
+    if(!rows.length && !com.redacted){
+      el.innerHTML=`<div class="empty">${nothing?`${plural(nothing,"caller")} ${nothing===1?"was":"were"} asked if there was anything else, and said no. Nothing more was said in this slice.`:"No written comments in this slice."}</div>`;
+      q.textContent=""; return; }
+    q.textContent=`${plural(saidN,"comment")} from ${plural(peopleN,"person","people")}`;
     const cmt=(c)=>`<div class="svy-cmt">“${esc(c.text)}”
       <button class="cid" data-id="${esc(c.conversation_id)}" style="margin-left:8px">${esc(c.respondent||"open call")}${c.response_seq>1?`, call ${c.response_seq}`:""}</button></div>`;
-    const meta=`<div class="said-meta">${com.redacted?`<span class="accent">${com.redacted} withheld for personal details</span> · `:""}${
-      THEMES&&THEMES.ready?`${plural(THEMES.themes.length,"theme")}`:
-      THEMES&&THEMES.have!=null?`themes appear at ${THEMES.need} comments (${THEMES.have} so far)`:THEMES&&THEMES.error?esc(THEMES.error):"finding themes…"}</div>`;
+    const bits=[];
+    if(nothing) bits.push(`${nothing} more said “no” to anything else`);
+    if(com.redacted) bits.push(`<span class="accent">${com.redacted} withheld for personal details</span>`);
+    bits.push(THEMES&&THEMES.ready?`${plural(THEMES.themes.length,"theme")} across everything callers said`:
+      THEMES&&THEMES.have!=null?`themes appear at ${THEMES.need} comments (${THEMES.have} so far)`:THEMES&&THEMES.error?esc(THEMES.error):"finding themes…");
+    const meta=`<div class="said-meta">${bits.join(" · ")}</div>`;
     // Five rows, then one link. With themes: the five said by the most people, each expanding to
-    // the comments behind it. Without: the five most recent comments. Everything else, including
-    // the themes that did not make the five and every unplaced comment, lives in the drawer.
+    // the comments behind it. Without: the five most recent real comments. Everything else, the
+    // themes that did not make the five, every unplaced comment and the declines, lives in the drawer.
     const TOP=5;
     let body="";
-    if(THEMES&&THEMES.ready){
+    if(THEMES&&THEMES.ready&&(THEMES.themes||[]).length){
       const ranked=(THEMES.themes||[]).slice().sort((a,b)=>(b.people-a.people)||(b.mentions-a.mentions));
       body=`<div class="thm">${ranked.slice(0,TOP).map(th=>{
         const ids=new Set(th.conversation_ids||[]);
@@ -766,17 +783,32 @@
         return `<details class="thm-i"><summary><div class="thm-top"><span class="thm-lab">${esc(th.label)}</span>
             <span class="thm-n">${plural(th.people,"person","people")}${th.mentions>th.people?` · ${th.mentions} mentions`:""} · ${esc(th.sentiment)}</span></div>
             <div class="thm-sum">${esc(th.summary)}</div><div class="thm-q ${esc(th.sentiment)}">“${esc(th.quote)}”</div></summary>
-          <div class="thm-body">${mine.length?mine.map(cmt).join(""):`<div class="svy-cmt redacted">No stored comment text for this theme.</div>`}</div></details>`;}).join("")}</div>`;
+          <div class="thm-body">${mine.length?mine.map(cmt).join(""):`<div class="svy-cmt redacted">Said on the choice or rating question rather than as a comment. Open the theme in See all for the calls.</div>`}</div></details>`;}).join("")}</div>`;
       const more=ranked.length-TOP;
-      body+=`<button type="button" class="more" data-drill="comments">See all ${plural(com.given,"comment")}${more>0?` and ${plural(more,"more theme")}`:""}</button>`;
+      body+=`<button type="button" class="more" data-drill="comments">See all ${plural(saidN,"comment")}${more>0?` and ${plural(more,"more theme")}`:""}</button>`;
     }else{
-      body=rows.slice(0,TOP).map(cmt).join("")+(rows.length>TOP?`<button type="button" class="more" data-drill="comments">See all ${plural(rows.length,"comment")}</button>`:"");
+      body=rows.slice(0,TOP).map(cmt).join("")+(rows.length>TOP?`<button type="button" class="more" data-drill="comments">See all ${plural(saidN,"comment")}</button>`:"");
     }
     el.innerHTML=meta+body;
   }
+  // Themes cost a model call and take a while. They are fetched when the slice or its comments
+  // change, not on every 60-second refresh: the first version refetched every minute and cleared
+  // the panel while it waited, so viewers saw "finding themes…" and the raw list most of the time.
+  // Old themes for the SAME slice stay on screen while newer ones load; a slice change clears them,
+  // because wave one's themes on wave two's board would be a lie.
+  let THEMES_KEY="";
   async function loadThemes(){
-    THEMES=null; renderSaid();
-    try{ const r=await fetch("/api/survey-themes"+qs(),{cache:"no-store"}); THEMES=await r.json(); }catch(e){ THEMES={ready:false,error:"Theme analysis is unavailable right now."}; }
+    const com=(DATA&&DATA.survey&&DATA.survey.comments)||{};
+    const key=qs()+"|"+(com.said_more??com.given??0)+"|"+(((com.recent||[])[0]||{}).conversation_id||"");
+    if(key===THEMES_KEY) return;
+    const sliceChanged=THEMES_KEY.split("|")[0]!==qs();
+    THEMES_KEY=key;
+    if(sliceChanged||!(THEMES&&THEMES.ready)){ THEMES=null; renderSaid(); if(DATA) renderSimple(); }
+    let next;
+    try{ const r=await fetch("/api/survey-themes"+qs(),{cache:"no-store"}); next=await r.json(); }
+    catch(e){ next={ready:false,error:"Theme analysis is unavailable right now."}; }
+    if(THEMES_KEY!==key) return;   // a newer request owns the panel now
+    THEMES=next;
     renderSaid(); if(DATA) renderSimple();   // the slide's top-theme cell waits on this
   }
 
@@ -868,25 +900,36 @@
       const f=s.funnel||{}, all=f.excluded||[];
       const rows=a1==="transferred"?all.filter(x=>x.outcome==="transferred"):a1==="abandoned"?all.filter(x=>x.outcome==="abandoned"):all.filter(x=>x.outcome!=="transferred"&&x.outcome!=="abandoned");
       t=`${a1==="transferred"?"Transferred":a1==="abandoned"?"Ended early":"Not surveyed, other"} · ${rows.length}`;
-      html=`<div class="formula">${a1==="transferred"?"Robin handed these calls to a person, and the prompt forbids surveying on the way into a transfer. They are excluded by design, not lost.":a1==="abandoned"?"The caller hung up before there was an exchange to ask about.":"Calls the survey never reached for another reason, such as a failed verification or a call the agent judged too short."}</div>
+      html=`<div class="formula">${a1==="transferred"
+          ?"Robin handed these calls to a person before the end, and she is told never to run the survey on the way into a transfer, so nobody here was asked. That is by design: someone waiting to be connected is not in a fair place to rate anything. How the handoff felt still matters; it is just not in the opinions above. For it, open the call."
+          :a1==="abandoned"
+          ?"These callers hung up before there was an exchange to rate: a wrong number, a dropped line, a change of mind in the first seconds. Nothing was asked because nothing happened. A handful is normal on any phone line; a share that grows against the calls in range is worth a look."
+          :"Calls the survey never reached for another reason: the caller could not be verified, the call was too short to rate, or Robin judged it was not the moment. Each row says which. Worth a skim, because a failed verification is Robin's problem, not the caller's."}</div>
         <h4>The calls</h4><div class="list">${rows.map(m=>`<button type="button" class="li" data-id="${esc(m.conversation_id)}" data-who="${esc(m.respondent||"")}"><span class="nm">${esc(m.respondent||"Caller")}</span><span class="m">${esc(m.outcome||"")}${m.verdict?` · ${esc(m.verdict)}`:""}</span><span class="m">${esc(whenC(m.started_at))}</span><span class="sc">–</span>${m.topic?`<span class="said">${esc(m.topic)}</span>`:""}</button>`).join("")||`<div class="empty">None in this slice.</div>`}</div>`;
     }else if(kind==="comments"){
-      // Every comment, grouped under every theme (not just the five on the board), then the rest.
-      const com=s.comments||{}, rows=com.recent||[];
+      // Every comment, grouped under every theme (not just the five on the board), then the rest,
+      // then the declines folded away at the bottom so "24 said no" can be checked.
+      const com=s.comments||{}, all=com.recent||[], rows=all.filter(c=>c.more!==false), declines=all.filter(c=>c.more===false);
       t=`Every comment · ${rows.length}`;
-      const row=(c)=>`<button type="button" class="li" data-id="${esc(c.conversation_id)}" data-who="${esc(c.respondent||"")}"><span class="nm">${esc(c.respondent||"Respondent")}</span><span class="m">call ${c.response_seq||1}</span><span class="m">${esc(whenC(c.started_at))}</span><span class="sc"></span><span class="said">“${esc(c.text)}”</span></button>`;
+      const row=(c)=>`<button type="button" class="li" data-id="${esc(c.conversation_id)}" data-who="${esc(c.respondent||"")}"><span class="nm">${esc(c.respondent||"Respondent")}</span><span class="m">call ${c.response_seq||1}${c.via?` · ${esc(c.via)}`:""}</span><span class="m">${esc(whenC(c.started_at))}</span><span class="sc"></span><span class="said">“${esc(c.text)}”</span></button>`;
       if(THEMES&&THEMES.ready&&(THEMES.themes||[]).length){
         const placed=new Set();
         const ranked=THEMES.themes.slice().sort((a,b)=>(b.people-a.people)||(b.mentions-a.mentions));
+        const V=(s.verbatims||[]);
         html=ranked.map(th=>{ const ids=new Set(th.conversation_ids||[]); const mine=rows.filter(c=>ids.has(c.conversation_id)); mine.forEach(c=>placed.add(c.conversation_id));
-          return `<h4>${esc(th.label)} · ${plural(th.people,"person","people")} · ${esc(th.sentiment)}</h4><div class="finding" style="margin:0 0 6px">${esc(th.summary)}</div><div class="list">${mine.map(row).join("")||`<div class="empty">No stored comment text.</div>`}</div>`; }).join("");
+          // A theme can rest on what someone said on the choice question ("I'd rather use you, it was fast")
+          // rather than on a comment. Those calls are listed too, with those words, so no theme is empty.
+          const seen=new Set(mine.map(c=>c.conversation_id));
+          const also=V.filter(r=>ids.has(r.conversation_id)&&!seen.has(r.conversation_id)&&(r.prefer_agent||r.nps||r.voice)).map(r=>({conversation_id:r.conversation_id,respondent:r.respondent,response_seq:r.response_seq,started_at:r.started_at,text:r.prefer_agent||r.nps||r.voice,via:r.prefer_agent?"on the choice question":r.nps?"on the score question":"on the voice question"}));
+          return `<h4>${esc(th.label)} · ${plural(th.people,"person","people")} · ${esc(th.sentiment)}</h4><div class="finding" style="margin:0 0 6px">${esc(th.summary)}</div><div class="list">${mine.concat(also).map(row).join("")||`<div class="empty">No stored words for this theme.</div>`}</div>`; }).join("");
         const rest=rows.filter(c=>!placed.has(c.conversation_id));
         if(rest.length) html+=`<h4>Other comments · ${rest.length}</h4><div class="list">${rest.map(row).join("")}</div>`;
         if(THEMES.narrative) html=`<div class="formula">${esc(THEMES.narrative)}</div>`+html;
       }else{
-        html=`<div class="list">${rows.map(row).join("")}</div>`;
+        html=`<div class="list">${rows.map(row).join("")||`<div class="empty">Nothing beyond “no” in this slice.</div>`}</div>`;
       }
       if(com.redacted) html+=`<div class="finding">${plural(com.redacted,"comment")} withheld for containing something personal.</div>`;
+      if(declines.length) html+=`<details class="declines"><summary>${plural(declines.length,"caller")} said “no” to “anything else?” · show them</summary><div class="list">${declines.map(row).join("")}</div></details>`;
     }else{ return; }
     title.textContent=t; body.innerHTML=`<div class="drw-meta"><b>${esc(sl.label||"")}</b> · ${esc(sl.when||"")} · staff ${S.staff==="show"?"shown":"hidden"}</div>`+html;
     dd.hidden=false; dd.dataset.what=what;
@@ -1101,9 +1144,11 @@
           "The score someone gave against what they said they would choose next time. The two <b>outlined cells</b> decide the rollout: promoters who still want a person, and detractors who would still pick Robin.",
           "Click any cell for its calls." ] },
         { target:"#funcard", placement:"left", title:"What the slice excludes", body:[
-          "Every call in the range, and why some never reached the survey. Transferred calls are not surveyed by design. Every opinion on this board comes from the <b>surveyed</b> row; click the others to see who was left out." ] },
+          "Every call in the range, and how many reached the survey. Robin only asks at the end of a call that ends with her, so a transferred call or a hang-up was never asked: not lost, just not an opinion.",
+          "Every number on this board comes from the <b>surveyed</b> row. Click a lower row to see the calls it holds and why." ] },
         { target:"#saidcard", placement:"top", title:"What people said", body:[
-          "The five themes said by the most people, each opening to the comments behind it. <b>See all</b> lists every comment under every theme. Two comments is two people, so the themes are an index; the comments are the evidence." ] },
+          "Callers' own words. The five themes said by the most people, each opening to the comments behind it; <b>See all</b> lists every theme and every comment. A plain “no” to “anything else?” is counted, not listed.",
+          "Two comments is two people, so a theme is an index; the comments are the evidence." ] },
         { target:"#revcard", placement:"left", title:"Needs a listen", body:[
           "Calls that scored 6 or below or sounded unhappy, each one click from its transcript. Read these before the averages. An empty list on a small sample means nothing." ] },
         { target:"#askfab", placement:"left", title:"Ask the data", body:[

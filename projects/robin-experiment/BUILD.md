@@ -97,6 +97,37 @@ shared: migrations 017 and 018. Both were verified to leave the live page readin
   "warm but wants a person" cell), with links into the board. The rail and caption show in both
   modes. The tour switches to Advanced for its run and puts the viewer's mode back (engine gained
   `onStart` / `onStop`); it opens with a step on the Simple / Advanced pill. Fourteen steps.
+- **"No." is not a comment (2026-09-25).** Tanner, on the What people said card showing "Uh,
+  nope." / "No." / "Nope, that's it." as its five rows: "these are not themes." Two defects behind
+  it. (1) The survey ends with "anything else?", most people say no, and that answer was stored and
+  listed with the real comments; on live data 24 of 70 comments were declines. `lib/survey-comments.js`
+  (`saidSomething`): strip fillers and the stock closers ("that's it", "I don't think so", "you've
+  got everything", "sería todo"…), and three content words left means a comment. Checked against
+  every distinct live comment; "Went smooth as silk." and "Everything was smooth." count, "No, I
+  don't think so. Thank you." does not. `comments` now carries `said_more`, `people_said_more`,
+  `nothing_more`, and every `recent` row a `more` flag; `given` is unchanged for old readers. The
+  card leads with "N comments from M people · K more said no", lists real comments only, and the
+  drawer folds the declines under "K callers said no · show them" so the count can be checked. The
+  themes gate counts real comments, the model is told a decline is not a theme, and a theme resting
+  on choice-question words lists those calls tagged "on the choice question". (2) The 60-second
+  refresh cleared the themes and refetched them every minute (five hits a minute in the logs), so
+  the card sat on "finding themes…" with the raw list most of the time. Themes now fetch when the
+  slice or its comments change and stay on screen while a newer set loads. `survey-themes` gets
+  `maxDuration: 60` in `vercel.json` (the function's actual duration is unmeasured; 200s in the
+  logs, no timeouts seen). Also this pass: the excluded-calls card explains itself (Robin only asks
+  at the end of a call that ends with her; the lower bars are why the rest were never asked), with
+  per-row sublabels, a fuller drawer paragraph per reason, and the tour step to match. Tests 71/71;
+  fixture render: one themes fetch across a load and a refresh, drawer grouped with the declines
+  folded, no script errors.
+- **Portal production got the branch (2026-09-25, ~9:24 AM Central).** Two `robin-portal`
+  deployments with target **production** were made from `claude/quality-rail` (commits 26a7abe and
+  b14d5ab) from Tanner's Vercel account, from the dashboard. Production portal then served the
+  branch page against the **production broker** (main, no slice support), which reads as "0 calls
+  in range", no waves in the rail, and the caption's "30 people" beside "0 surveyed". The live
+  database was checked at the same time and is intact: 141 rows, both waves. The last main
+  production deployment is `dpl_DbVeXREJ8g2vcaQSys86MMpK4e2G` (537466a). The branch alias also
+  pointed at the production-targeted build until the next push made a new preview. Not rolled back
+  from here: production is Tanner's call.
 - **Open, for Tanner:** second-wave dates when known (one row in `experiment_waves`); the
   retired-instrument note on the NPS tile and drawer, if wanted.
 

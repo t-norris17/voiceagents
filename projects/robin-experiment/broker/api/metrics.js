@@ -8,6 +8,7 @@
 // than inventing numbers.
 import { sb } from "../lib/supabase.js";
 import { surveySlice, score, wilson, respondentLabels } from "../lib/survey-data.js";
+import { saidSomething } from "../lib/survey-comments.js";
 
 const q = (s) => encodeURIComponent(s);
 const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : null);
@@ -315,18 +316,33 @@ export function summariseSurvey(opinions, calls, everyone = calls) {
     //
     // `given` counts comments, not opinions, because that is what the number means. `people_who_commented`
     // is reported alongside it so a handful of chatty repeat callers cannot look like broad feedback.
+    //
+    // "No." IS NOT A COMMENT. The last question is "anything else?", and the honest answer for most
+    // people is no, which lands in open_comments like any other answer. On the live data a third of
+    // "comments" were "No.", "Nope.", "Nope, that's it." — and the page listed them as feedback and
+    // counted them in the headline. `said_more` counts the ones with words in them (lib/survey-comments.js);
+    // `nothing_more` counts the declines, kept so the number is auditable rather than vanished.
+    // `given` still counts every comment carrying text, redacted included, for the older readers.
     comments: (() => {
       const withText = calls.filter((r) => r.survey_offered && (r.open_comments || r.comments_redacted));
       const said = calls.filter((r) => r.survey_offered && r.open_comments);
+      const more = said.filter((r) => saidSomething(r.open_comments));
+      const redacted = withText.filter((r) => r.comments_redacted);
       return {
         given: withText.length,
         people_who_commented: new Set(withText.map((r) => r.person_key).filter(Boolean)).size,
-        redacted: withText.filter((r) => r.comments_redacted).length,
-        // `calls` arrives newest-first, so this is already in the right order. Every comment ships:
-        // the page shows five and keeps the rest behind "See all", in a drawer.
+        redacted: redacted.length,
+        // A withheld comment had something in it (that is why it was withheld), so it counts as said.
+        said_more: more.length + redacted.length,
+        people_said_more: new Set(more.concat(redacted).map((r) => r.person_key).filter(Boolean)).size,
+        nothing_more: said.length - more.length,
+        // `calls` arrives newest-first, so this is already in the right order. Every comment ships,
+        // flagged: the page lists the ones that said something and folds the declines away in the
+        // drawer, so a reader can still see that "No." was said 24 times.
         recent: said.slice(0, 300).map((r) => ({
           conversation_id: r.conversation_id, started_at: r.started_at,
           respondent: who(r), response_seq: r.response_seq, text: r.open_comments,
+          more: saidSomething(r.open_comments),
         })),
       };
     })(),
