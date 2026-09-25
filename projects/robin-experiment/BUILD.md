@@ -91,7 +91,14 @@ shared: migrations 017 and 018. Both were verified to leave the live page readin
   Advanced, and both put things back. Walked through in a browser on the fixture: every step lands,
   hooks restore state, finish sets the flag, reload does not re-open, Help does. Other modules get
   a tour by registering steps; none do yet.
-- **Open, for Tanner:** second-wave dates when known (one row in `experiment_waves`).
+- **Simple is the slide again (2026-09-25).** Tanner: Simple should be the shareable slide, Advanced
+  the board. Simple now shows the old slide content for the slice in the rail (hero share with its
+  range, the split bar, NPS, voice, and the **top theme** in its own few words in place of the
+  "warm but wants a person" cell), with links into the board. The rail and caption show in both
+  modes. The tour switches to Advanced for its run and puts the viewer's mode back (engine gained
+  `onStart` / `onStop`); it opens with a step on the Simple / Advanced pill. Fourteen steps.
+- **Open, for Tanner:** second-wave dates when known (one row in `experiment_waves`); the
+  retired-instrument note on the NPS tile and drawer, if wanted.
 
 ### 2026-09-24 — A respondent is the name they gave (migrations 015 and 016, applied live mid-wave)
 

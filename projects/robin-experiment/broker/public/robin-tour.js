@@ -5,6 +5,7 @@
 //     welcome: { title, body },            // the first card, centred, with Start and Skip
 //     steps: [{ target, title, body, placement?, before?, after? }, ...],
 //     done: { title, body },               // the last card
+//     onStart?, onStop?,                   // page-level hooks, e.g. switch a view and put it back
 //   });
 //
 // target: a CSS selector or a function returning an element. before/after: optional functions
@@ -171,16 +172,19 @@
     await leave();
     try { localStorage.setItem(KEY(cfg.id), "1"); } catch {}
     unmount(); i = -1; current = null;
+    if (cfg.onStop) { try { cfg.onStop(); } catch {} }
   }
   function start() {
     if (!cfg) return;
     if (els) unmount();
     lastFocus = document.activeElement;
+    if (cfg.onStart) { try { cfg.onStart(); } catch {} }
     mount(); show(-1);
     try { localStorage.setItem(KEY(cfg.id), "1"); } catch {}
   }
 
   function addHelp() {
+    ensureStyle();   // the Help link wears the engine's styles before any tour has opened
     if (document.querySelector(".rt-help")) return;
     const b = el(`<button type="button" class="rt-help" aria-label="Start the guided tour of this page">Help</button>`);
     b.addEventListener("click", start);
