@@ -80,6 +80,17 @@ shared: migrations 017 and 018. Both were verified to leave the live page readin
   name, Simple / Advanced, the guide link and the pill; the facts live once, in the caption above
   the tiles, with the "updated" time; the rail keeps only the copy-link. Verified on the fixture:
   theme survives reload, five rows and the link, drawer grouped by theme; `next build` clean.
+- **Guided tour, 2026-09-25, on the branch.** `broker/public/robin-tour.js` is a small engine
+  shared by every page (copy-modules copies it to the portal; the Next.js layout loads it): a page
+  registers `{id, welcome, steps, done}`; each step names a target, a title, two or three
+  sentences and optional before/after hooks. The engine dims the page, spotlights the target,
+  floats the card beside it (docks to the bottom on phones), keeps focus inside, and handles Escape
+  and the arrow keys. The welcome card opens on its own the first time a browser sees the page
+  (`robin-tour-seen:<id>`), then only from **Help**, which the engine adds to the footer. Quality
+  registers thirteen steps in reading order; two are live, opening the NPS drawer and switching to
+  Advanced, and both put things back. Walked through in a browser on the fixture: every step lands,
+  hooks restore state, finish sets the flag, reload does not re-open, Help does. Other modules get
+  a tour by registering steps; none do yet.
 - **Open, for Tanner:** second-wave dates when known (one row in `experiment_waves`).
 
 ### 2026-09-24 — A respondent is the name they gave (migrations 015 and 016, applied live mid-wave)

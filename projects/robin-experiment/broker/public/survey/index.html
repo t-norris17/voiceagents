@@ -488,6 +488,7 @@
       stamp();
       loadThemes();   // separate endpoint: costs a model call, so it is not on the 60s refresh
       if(S.open){ const o=S.open; S.open=""; openDrill(o); }
+      registerTour();  // once the board exists, so the tour has things to point at
     }catch(e){
       document.getElementById("banner").innerHTML=`<div class="banner">Couldn't load live data: ${esc(e.message)}. Retrying…</div>`;
     }
@@ -623,7 +624,7 @@
     const bandName={promoter:"Promoters",passive:"Passives",detractor:"Detractors"};
     const hbp=s.promoter_but_prefers_person||0, dbp=s.detractor_but_prefers_agent||0;
     const xt=rows.length?`
-      <div class="card c7">
+      <div class="card c7" id="xtcard">
         <div class="chead"><h2>Score against choice<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-mx">?</button><span class="tip-box" role="tooltip" id="tip-mx"><b>What it shows.</b> The 0–10 score someone gave against what they said they would choose next time. One count per call.<br><br><b>How to read it.</b> A promoter who still wants a person: trust isn't there yet. A detractor who would still use Robin: convenience beats the flaws. Click a cell for its calls.</span></span></h2><span class="q">the two outlined cells decide the rollout</span></div>
         <div class="xt${anyUnclear?" four":""}" role="table" aria-label="Score given against stated preference">
           <div class="h">Score they gave</div><div class="h">Robin</div><div class="h">A person</div><div class="h">Either</div>${anyUnclear?`<div class="h">Unclear</div>`:""}
@@ -636,7 +637,7 @@
 
     const fbar=(n,cls)=>`<div class="bar"><span class="${cls||""}" style="width:${f.in_range?Math.round(n/f.in_range*100):0}%"></span></div>`;
     const funnel=`
-      <div class="card c5">
+      <div class="card c5" id="funcard">
         <div class="chead"><h2>What the slice excludes<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-fun">?</button><span class="tip-box" role="tooltip" id="tip-fun"><b>What it shows.</b> Every call in the range, and why some never reached the survey. Transferred calls are not surveyed by design. Counts all callers, staff included.<br><br><b>How to read it.</b> Every opinion on this board comes from the surveyed row. The rest is context, not silence.</span></span></h2><span class="q">all callers</span></div>
         <div class="fun">
           <div class="row static"><span class="k"><b>Calls in range</b></span>${fbar(f.in_range)}<span class="v">${f.in_range}</span></div>
@@ -650,7 +651,7 @@
       </div>`;
 
     const said=`<div class="card c6" id="saidcard"><div class="chead"><h2>What people said<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-said">?</button><span class="tip-box" role="tooltip" id="tip-said"><b>What it shows.</b> Every written comment, verbatim, one per call, grouped under themes a model found once there are enough comments. Personal details are scrubbed.<br><br><b>How to read it.</b> Two comments is two people. The themes are an index, not a finding; the comments are the evidence.</span></span></h2><span class="q" id="saidq"></span></div><div id="said"></div></div>`;
-    const listen=`<div class="card c6"><div class="chead"><h2>Needs a listen<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-rev">?</button><span class="tip-box" role="tooltip" id="tip-rev"><b>What it shows.</b> Calls with negative sentiment or a score of 6 or below, each opening to its transcript.<br><br><b>How to read it.</b> Read these first. An empty list on a small sample means nothing.</span></span></h2><span class="q">${rev.n?plural(rev.n,"call"):"none"}</span></div><div id="rev"></div></div>`;
+    const listen=`<div class="card c6" id="revcard"><div class="chead"><h2>Needs a listen<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-rev">?</button><span class="tip-box" role="tooltip" id="tip-rev"><b>What it shows.</b> Calls with negative sentiment or a score of 6 or below, each opening to its transcript.<br><br><b>How to read it.</b> Read these first. An empty list on a small sample means nothing.</span></span></h2><span class="q">${rev.n?plural(rev.n,"call"):"none"}</span></div><div id="rev"></div></div>`;
 
     el.innerHTML=tiles+xt+funnel+said+listen;
     renderReview(); renderSaid();
@@ -981,10 +982,64 @@
     if(row){ e.preventDefault(); openCall(row.dataset.id, row.dataset.who); }
   });
 
+  // ---- The guided tour (robin-tour.js): every section, in reading order ------------------------
+  // Registered after the first load so the targets exist. Opens on its own the first time a
+  // browser sees the page; after that, Help in the footer. Two steps are live: one opens the NPS
+  // drawer, one switches to Advanced, and both put things back.
+  let TOUR_REGISTERED=false;
+  function registerTour(){
+    if(TOUR_REGISTERED) return;
+    if(!window.RobinTour){ window.addEventListener("load",registerTour,{once:true}); return; }
+    TOUR_REGISTERED=true;
+    let modeBefore="simple";
+    RobinTour.register({
+      id:"quality",
+      welcome:{ title:"Would they rather use Robin?", body:[
+        "This page answers that question for the calls you choose, and every number on it opens to the calls behind it.",
+        "This tour walks through each section in about two minutes. You can bring it back any time from <b>Help</b> at the bottom of the page." ] },
+      steps:[
+        { target:"#rail > div:nth-child(1)", placement:"right", title:"Pick a wave", body:[
+          "Each wave is one round of testers. The count beside it is surveyed calls. <b>Internal testing</b> is the build team before the first wave, and <b>All calls</b> is everything.",
+          "Whatever you pick here, every number, comment and download on the page follows." ] },
+        { target:"#rail > div:nth-child(2)", placement:"right", title:"Or a range of dates", body:[
+          "This week, this month, this year, or two dates of your own. Days run midnight to midnight in <b>Central time</b>, and both ends of a custom range are included." ] },
+        { target:"#staffsw", placement:"right", title:"Staff calls", body:[
+          "The people who build Robin call her to check things. Their <b>opinions are hidden</b> unless you switch this on, so a rating from the team never counts as a tester's.",
+          "Operational numbers, like whether Robin asked the survey, always count every caller." ] },
+        { target:"#cap", placement:"bottom", title:"Read this line first", body:[
+          "It says exactly what you are looking at: which slice, how many people, how many surveyed calls, and whether staff are in. A screenshot without it is a number without a denominator." ] },
+        { target:()=>document.querySelector('#board .tile[data-drill="nps"]'), placement:"bottom", title:"The four numbers", body:[
+          "In the order the judgement guide reads them: <b>Net Promoter Score</b>, the share who would rather use Robin, how natural the voice felt, and whether Robin asked the survey when she should have.",
+          "Each tile shows its sample size and, where it has one, its likely range. <b>Every tile opens.</b>" ] },
+        { target:"#dd .drw-p", placement:"left", title:"Behind every number", before:()=>openDrill("nps"), after:()=>closeDrill(), body:[
+          "The formula in words with the real counts, every score given, the same number cut by day, and every underlying response. Each row opens the call itself: transcript, answers, what Robin was told.",
+          "Cross-tab cells, funnel rows and the comments link open this same drawer. Nothing on the board is a dead end." ] },
+        { target:"#xtcard", placement:"top", title:"Score against choice", body:[
+          "The score someone gave against what they said they would choose next time. The two <b>outlined cells</b> decide the rollout: promoters who still want a person, and detractors who would still pick Robin.",
+          "Click any cell for its calls." ] },
+        { target:"#funcard", placement:"left", title:"What the slice excludes", body:[
+          "Every call in the range, and why some never reached the survey. Transferred calls are not surveyed by design. Every opinion on this board comes from the <b>surveyed</b> row; click the others to see who was left out." ] },
+        { target:"#saidcard", placement:"top", title:"What people said", body:[
+          "The five themes said by the most people, each opening to the comments behind it. <b>See all</b> lists every comment under every theme. Two comments is two people, so the themes are an index; the comments are the evidence." ] },
+        { target:"#revcard", placement:"left", title:"Needs a listen", body:[
+          "Calls that scored 6 or below or sounded unhappy, each one click from its transcript. Read these before the averages. An empty list on a small sample means nothing." ] },
+        { target:"#askfab", placement:"left", title:"Ask the data", body:[
+          "Plain questions, answered only from the rows in the current slice, with the calls cited. If the rows cannot answer, it says so." ] },
+        { target:"#cumsec", placement:"top", title:"Simple and Advanced", before:()=>{ modeBefore=document.body.dataset.mode||"simple"; setMode("advanced",false); }, after:()=>setMode(modeBefore,false), body:[
+          "<b>Advanced</b>, in the title row, adds the sample-size chart, one dot per call, the full call browser and the downloads. The chart tells you whether the headline can be trusted yet." ] },
+        { target:".rt-help", placement:"top", title:"Help lives here", body:[
+          "Click <b>Help</b> at the bottom of the page to run this tour again. The <b>judgement guide</b>, linked at the top, is the one-page version for your notes." ] },
+      ],
+      done:{ title:"That's the page", body:[
+        "Pick a slice, read the caption, then the four numbers, then click into whatever you want to check. The rows are always there." ] },
+    });
+  }
+
   initAsk();
   load();
   setInterval(load, 60000);
 </script>
+<script src="/robin-tour.js" defer></script>
 <script>
   // Light / Dark. The same snippet the portal injects into every page (robin-portal/lib/theme.js);
   // guarded so it binds once when both are present. Stored as "robin-theme"; absent = system.

@@ -47,6 +47,9 @@ export default function RootLayout({ children }) {
           </footer>
         </div>
         <script dangerouslySetInnerHTML={{ __html: CONTROL_JS }} />
+        {/* The guided-tour engine (copied from the broker by scripts/copy-modules.mjs). A page
+            with no steps registered gets nothing from it; Quality registers its own. */}
+        <script src="/robin-tour.js" defer />
       </body>
     </html>
   );

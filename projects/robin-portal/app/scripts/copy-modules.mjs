@@ -30,6 +30,8 @@ const jobs = [
   [join(broker, "robin-q-tester"), join(app, "public", "robin-q-tester")],
   [join(cleaner, "index.html"), join(app, "public", "factory", "index.html")],
   [join(cleaner, "vendor"), join(app, "public", "vendor")],
+  // The guided-tour engine, shared by every page (the Next.js layout loads it too).
+  [join(broker, "robin-tour.js"), join(app, "public", "robin-tour.js")],
 ];
 
 for (const [from, to] of jobs) {
