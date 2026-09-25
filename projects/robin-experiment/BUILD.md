@@ -28,7 +28,11 @@ flyrobin.app. His first pass of notes is built on `claude/quality-polish` for th
 - **Migration 021 (live).** Seven more roster spellings: Michelle Aggson, Jacob Horsch, Brian
   Petri, Jonathon Rudisill, Kacey Goss (also heard "Kissy Goss"), Carin Kesterson, Kelli Benjamin.
   Verified on the view: every heard spelling maps, Kacey Goss is still one person with three calls,
-  first wave still 28 people / 57 surveyed without staff.
+  first wave still 28 people / 57 surveyed without staff. **022 (live):** Rudisill's first name is
+  Jonathan, per the roster; 021 had taken "Jonathon" from the note.
+- **Caption and tiles (round two).** The caption drops "· Central" and "staff hidden" and gains a
+  `?` that explains each figure, says whether staff calls are in (and how many), and notes the
+  minute refresh. The "open ↗" marker on the tiles is gone so the titles have the width.
 - **Notes built.** (1) The call drawer's summary showed `[object Object]`: `survey-call` returns
   `{title, text}` and the page printed the object; now title · text. (2) Tile titles say what they
   are: Net Promoter Score, **Prefer Robin to a person**, **Voice naturalness score**, **Survey

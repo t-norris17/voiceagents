@@ -131,9 +131,8 @@
   @media (min-width:1440px){ .tile{ grid-column:span 3; } }
   .tile:hover{ border-color:var(--sub); }
   .tile:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
-  .tile::after{ content:"open ↗"; position:absolute; top:12px; right:14px; font-size:.6rem; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); font-weight:700; }
   .tile.thin .fig{ color:var(--sub); }
-  .tile > .lbl{ display:block; padding-right:60px; }
+  .tile > .lbl{ display:block; }
   .tile .fig{ font-size:clamp(2.2rem,4vw,3rem); font-weight:800; line-height:.92; letter-spacing:-.03em; font-variant-numeric:tabular-nums; }
   .tile .fig .un{ font-size:.95rem; font-weight:600; color:var(--sub); letter-spacing:0; margin-left:3px; }
   .tile .note{ font-size:.74rem; color:var(--sub); line-height:1.4; margin-top:auto; }
@@ -612,10 +611,12 @@
   function renderCap(){
     const s=DATA.survey||{}, sl=s.slice||{}, f=s.funnel||{};
     const when=sl.when&&sl.when!==sl.label?sl.when:"";
-    document.getElementById("cap").innerHTML=`<b>${esc(sl.label||"All calls")}</b><span>${esc(when)}${when?" · Central":""}</span>`+
+    const staff=S.staff==="show"?`Staff calls are <b>included</b>${sl.staff_calls?` (${sl.staff_calls})`:""}.`:`Staff calls are <b>hidden</b>${sl.staff_calls?` (${sl.staff_calls} in this range)`:""}; the switch in the rail shows them.`;
+    document.getElementById("cap").innerHTML=`<b>${esc(sl.label||"All calls")}</b><span>${esc(when)}</span>`+
       `<span><b>${s.people??0}</b> ${s.people===1?"person":"people"}</span><span><b>${s.surveyed??0}</b> surveyed ${s.surveyed===1?"call":"calls"}</span>`+
-      `<span><b>${f.in_range??0}</b> calls in range</span><span>staff ${S.staff==="show"?"shown":"hidden"}${sl.staff_calls&&S.staff!=="show"?` (${sl.staff_calls})`:""}</span>`+
-      `<span class="soft">updated <span id="gen2"></span></span>`;
+      `<span><b>${f.in_range??0}</b> calls in range</span>`+
+      `<span class="soft">updated <span id="gen2"></span></span>`+
+      `<span class="tipw"><button type="button" class="tip" aria-label="About this line" aria-describedby="tip-cap">?</button><span class="tip-box" role="tooltip" id="tip-cap"><b>What it shows.</b> The slice every number on this page comes from. <b>People</b> is distinct callers who answered the survey; <b>surveyed calls</b> is the calls Robin asked on, repeats included; <b>calls in range</b> is every call Robin took in the window, asked or not. Dates run midnight to midnight, Central time.<br><br>${staff} The page refreshes itself every minute.</span></span>`;
   }
 
   // ---- Simple: the slide. The answer for the slice in the rail, reflowed for sharing. Every
@@ -1144,7 +1145,7 @@
           "The people who build Robin call her to check things. Their <b>opinions are hidden</b> unless you switch this on, so a rating from the team never counts as a tester's.",
           "Operational numbers, like whether Robin asked the survey, always count every caller." ] },
         { target:"#cap", placement:"bottom", title:"Read this line first", body:[
-          "It says exactly what you are looking at: which slice, how many people, how many surveyed calls, and whether staff are in. A screenshot without it is a number without a denominator." ] },
+          "It says exactly what you are looking at: which slice, how many people, how many surveyed calls, and how many calls came in. Its <b>?</b> explains each figure and whether staff calls are in. A screenshot without it is a number without a denominator." ] },
         { target:()=>document.querySelector('#board .tile[data-drill="nps"]'), placement:"bottom", title:"The four numbers", body:[
           "In the order the judgement guide reads them: <b>Net Promoter Score</b>, the share who prefer Robin to a person, the voice naturalness score, and the survey offer rate (how often Robin asked when the survey was due).",
           "Each tile shows its sample size and, where it has one, its likely range. <b>Every tile opens.</b>" ] },
