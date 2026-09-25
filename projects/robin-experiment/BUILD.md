@@ -12,7 +12,7 @@
 
 ---
 
-### 2026-09-24, later — The Quality page becomes a sliceable board (branch `claude/quality-rail`, NOT merged)
+### 2026-09-24, later — The Quality page becomes a sliceable board (branch `claude/quality-rail`, merged 2026-09-25)
 
 **Status:** the page rework is on the branch for Tanner and his bosses to test on a preview before
 anything reaches `main`. Two things did reach the live database, on purpose, because the views are
@@ -130,6 +130,95 @@ shared: migrations 017 and 018. Both were verified to leave the live page readin
   from here: production is Tanner's call.
 - **Open, for Tanner:** second-wave dates when known (one row in `experiment_waves`); the
   retired-instrument note on the NPS tile and drawer, if wanted.
+- **Merged to `main` 2026-09-25 on Tanner's say-so** ("I like the dashboard"), which puts it on
+  flyrobin.app. On the merge, two migrations were both numbered 017 (this branch's
+  `waves_are_a_dimension` and main's `loan_limit`, written the same evening in different sessions);
+  live order is waves (20:49Z), spellings (20:52Z), loan limit (20:53Z), so the loan-limit file is
+  now `019_loan_limit.sql`. The entry below still says "Migration 017" for it; read that as 019.
+
+---
+
+### 2026-09-24 (later) — Loan limit fix, in progress
+
+- **Root cause, from the live agent.** The 401(k) Loan Inquiries procedure
+  (`agtprcv_7001m2tvy0ccfc0s52j3cv09pxn8`) taught the limit with a worked example in which 50% of
+  vested is always the smaller number, and step 1 hard-coded "$17,500". The prompt said to "answer
+  from the plan rule AND their figures together". `get_balance` returned no limit.
+- **Migration 017 applied live** (`20260924205338 loan_limit`): `member_loans.paid_off_on`, a
+  check that paid-off loans are dated, synthetic persona **90004 Elena** (DOB 1968-02-14, $150,000
+  vested, $20,000 loan paid off 2026-03-20, expected limit $30,000). Verified: members 53 → 54,
+  member_loans 1 → 2, Marcus's row unchanged.
+- **Code, not yet deployed:** `get_balance` returns `loan_eligible`, `max_loan`, `min_loan`,
+  `loan_limit_reason` (`loanLimit()`); 65/65 tests. **017 must stay applied while this code is
+  live**: without `paid_off_on` every caller gets `needs_specialist`.
+- **Live-agent text** for the procedure, prompt and tool description is in
+  [`loan-limit-rollout.md`](./loan-limit-rollout.md). Nothing on the agent has changed yet.
+  Rollback point `agtvrsn_9101m2zv730xe9ss1h2yapgk7ga5` (the 9/11 note naming v115 is stale).
+- **`get_plan_details` removal approved.** No procedure references it any more; only Robin's
+  `tool_ids` does. Drop it on the agent branch, delete the tool after the merge, without `force`.
+- **Unverified from here:** the live `/api/verify_caller` for 90004; this environment's proxy
+  returns 403 for `vercel.app`.
+
+---
+
+### 2026-09-24 — Customer wave judged against the judgement guide (read-only session)
+
+Wave window 2026-09-21 12:16 → 09-23 21:23 UTC. 87 calls, 61 surveyed (60 excluding Tanner). Nothing
+live was changed. All figures below are from the live views, queried today.
+
+**Verdict: the survey half passes, the accuracy half fails the guide's own standard.** Do not
+present it as "people preferred her and she was accurate" until the loan-limit fix ships and the
+wave is regraded.
+
+- **Unit (Tanner's decision, same day): every surveyed call counts, and Tanner's own call is
+  excluded.** 60 surveyed calls from 29 people. The page's code does not exclude Tanner yet.
+- **Trust checks.** Asked when eligible 57 of 63 decided calls (90%, standard 70%). 29 people
+  (chart threshold 20). One shared office line (Colin, Kelsey, Stacy), resolved by 015/016.
+- **Preference.** 46 of 56 classified calls chose Robin, 82%, Wilson range 70 to 90%. Whole range
+  above 50%: **holds**. Two `unclassified` answers: María Retana Aguilera said "sí, preferiría
+  hacerlo contigo" (Robin; the parser has no Spanish) and Paul White said "I'd rather do it myself".
+- **NPS.** 31 promoters, 22 passives, 4 detractors of 57 calls: **+47** ("strong" band). Minus
+  the guide's 10 to 20 point employee discount, +27 to +37: good. Three of the four detractor calls
+  are Colin Stephens (3, 3, 0); the fourth is Kristen Johnson's third call (5).
+- **Voice.** 8.46 mean on 52 calls (good). Low scores with reasons: Ian Burrows 6 ×3 ("robot",
+  "too fast"), Maddie Bolton 5 ×3 (no reason), Colin Stephens 3. Robin Path's `voice_score = 1` on
+  `conv_8601m32vz43rearbt6mh15f4k72n` is a **parser defect** ("This one was..." read as 1); without
+  it the mean is 8.61 on 51.
+- **Fans who still want a person:** 0 of 31 promoter calls.
+- **Grader did not run on the wave.** `scored_at` is null on all 87 wave calls; last grade
+  2026-09-16 19:19 UTC. `api/grade.js` has no cron, so it is manual. `security_flag` defaults to
+  `false` (NOT NULL), so the "0 security flags" the dashboard shows for the wave is the column
+  default, **not a verdict. Security is unmeasured.**
+- **Contradicted the source: at least 6 calls** (transcript text search, not the grader). The KB
+  says the max is the lesser of $50,000 or 50% of vested. For Priya ($214,906 vested) that is
+  $50,000. Robin gave **$107,453** as the maximum on `conv_8701m327kzadf79syy0nh6q2jkn4` (David
+  Sutton), `conv_2201m3592zckee0byks4dk072kqk` (Maddie Bolton), `conv_4001m35re1mcfd9a0ft7rn0yy53f`
+  (Carla Lechliter, "which is less than the plan's $50,000 cap"), `conv_3401m359q90xfqy80c8jzcz2e4x0`
+  (Jacob Horse), `conv_7501m376gv5zf8hrrg17vmqzt8b4` (Matthew Fritz, NPS 10, "best one so far"),
+  `conv_1701m37e02g3e7h98tbx5bd5egeb` (Kristen Johnson). Only Jacob and Carla caught it. Another 3
+  calls state 50% = $107,453 then leave the cap implicit. The 2026-09-11 note that "derived loan
+  figures were correct" held for Marcus, where the 50% prong binds; Priya is where the $50k prong
+  binds, and she fails there about as often as she passes.
+- **Not Robin defects:** Colin's "it's a flat fee": Robin matched the live Loans doc
+  (`omgR8I0aJlWd7BAUptbJ`, "$75 origination fee and a $25/year maintenance fee") every time; he is
+  answering from a real plan he knows. Kristen's "Helen": the transcript text says "Kristen";
+  audio unverified (egress blocks elevenlabs.io).
+- **Pronunciation, reported by 3 testers:** `nesteggu.com` written as one token is heard as
+  "nesticu"; she writes "nest egg you dot com" on some calls and "nesteggu.com" on others. Nick
+  Mazioski: "401AKs" for 401(k)s.
+
+**Next session:**
+> (1) Design checkpoint: compute the loan maximum deterministically in `get_balance`
+> (lesser of $50,000 minus the highest loan balance in the past 12 months, or 50% of vested) and
+> retire the `no loan limit is ever returned` test, whose premise (limits unpublished) is false.
+> (2) Run the grader on all 87 wave calls; report security and contradiction counts from it.
+> (3) Pronunciation: normalise the portal URL and "401(k)s" in the prompt, the KB and the dictionary.
+> (4) Fix the voice parser returning 1 on a comment with no number.
+> (5) Get the call center's NPS for loan calls. That is the comparator the guide says matters.
+> (6) Survey page: exclude the builder's own calls, relabel "N respondents" as "N responses from
+> M people", and compute NPS from unrounded shares.
+
+---
 
 ### 2026-09-24 — A respondent is the name they gave (migrations 015 and 016, applied live mid-wave)
 
