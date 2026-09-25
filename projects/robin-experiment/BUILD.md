@@ -25,6 +25,10 @@ flyrobin.app. His first pass of notes is built on `claude/quality-polish` for th
 - **Migration 020 (live).** `respondent_aliases`: Carla Lechliter → Karla Leckliter (roster). One
   call; her `person_key` changed with the canonical name (P-2a7c9ec7 → P-a146d5b5), which is how
   015 keys people. Verified on the view.
+- **Migration 021 (live).** Seven more roster spellings: Michelle Aggson, Jacob Horsch, Brian
+  Petri, Jonathon Rudisill, Kacey Goss (also heard "Kissy Goss"), Carin Kesterson, Kelli Benjamin.
+  Verified on the view: every heard spelling maps, Kacey Goss is still one person with three calls,
+  first wave still 28 people / 57 surveyed without staff.
 - **Notes built.** (1) The call drawer's summary showed `[object Object]`: `survey-call` returns
   `{title, text}` and the page printed the object; now title · text. (2) Tile titles say what they
   are: Net Promoter Score, **Prefer Robin to a person**, **Voice naturalness score**, **Survey
