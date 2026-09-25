@@ -132,7 +132,16 @@
   .tile:hover{ border-color:var(--sub); }
   .tile:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
   .tile.thin .fig{ color:var(--sub); }
-  .tile > .lbl{ display:block; }
+  .tile > .lbl{ display:block; letter-spacing:.16em; }
+  .tile > .lbl .tipw{ margin-left:2px; }
+  /* The four tiles share row tracks (label, figure, bar, legend, note), so a title that wraps in
+     one tile pushes the same row down in all four and the figures stay level. Browsers without
+     subgrid keep the flex column above. */
+  @supports (grid-template-rows: subgrid){
+    .tile{ display:grid; grid-template-rows:subgrid; grid-row:span 5; row-gap:8px; align-content:start; }
+    .tile > .lbl{ grid-row:1; } .tile > .fig{ grid-row:2; } .tile > .stack, .tile > .rng{ grid-row:3; }
+    .tile > .legend{ grid-row:4; } .tile > .note{ grid-row:5; margin-top:0; align-self:end; }
+  }
   .tile .fig{ font-size:clamp(2.2rem,4vw,3rem); font-weight:800; line-height:.92; letter-spacing:-.03em; font-variant-numeric:tabular-nums; }
   .tile .fig .un{ font-size:.95rem; font-weight:600; color:var(--sub); letter-spacing:0; margin-left:3px; }
   .tile .note{ font-size:.74rem; color:var(--sub); line-height:1.4; margin-top:auto; }
@@ -670,27 +679,27 @@
     const warn = a.pct!=null && a.pct<70;
     const tiles=`
       <button type="button" class="tile${nTot&&nTot<10?" thin":""}" data-drill="nps">
-        <span class="lbl">Net Promoter Score<span class="tipw"><span class="tip" aria-hidden="true">?</span><span class="tip-box">Promoters (9–10) minus detractors (0–6), as a share of everyone who gave a number. Ranges −100 to +100. Passives (7–8) count in the denominator only.</span></span></span>
+        <span class="lbl">Net Promoter Score&nbsp;<span class="tipw"><span class="tip" aria-hidden="true">?</span><span class="tip-box">Promoters (9–10) minus detractors (0–6), as a share of everyone who gave a number. Ranges −100 to +100. Passives (7–8) count in the denominator only.</span></span></span>
         <div class="fig">${nTot?sign(nps.score):"—"}</div>
         ${nTot?`<div class="stack" role="img" aria-label="${nps.promoters} promoters, ${nps.passives} passives, ${nps.detractors} detractors"><span class="s-pro" style="${seg(nps.promoters)}"></span><span class="s-pas" style="${seg(nps.passives)}"></span><span class="s-det" style="${seg(nps.detractors)}"></span></div>
         <div class="legend"><span><i class="s-pro"></i>${nps.promoters} promoter${nps.promoters===1?"":"s"}</span><span><i class="s-pas"></i>${nps.passives} passive${nps.passives===1?"":"s"}</span><span><i class="s-det"></i>${nps.detractors} detractor${nps.detractors===1?"":"s"}</span></div>`:""}
         <div class="note">${nTot?`<b>${nTot}</b> of ${s.surveyed} gave a number${nTot<10?` · <span class="accent">provisional</span>`:""}`:"Nobody has given a number yet"}</div>
       </button>
       <button type="button" class="tile" data-drill="prefer">
-        <span class="lbl">Prefer Robin to a person<span class="tipw"><span class="tip" aria-hidden="true">?</span><span class="tip-box">Asked at the end of the call: next time, would you rather handle this with Robin or hold for a person? The bar is the 95% range for the true share at this sample size.</span></span></span>
+        <span class="lbl">Prefer Robin to a person&nbsp;<span class="tipw"><span class="tip" aria-hidden="true">?</span><span class="tip-box">Asked at the end of the call: next time, would you rather handle this with Robin or hold for a person? The bar is the 95% range for the true share at this sample size.</span></span></span>
         <div class="fig">${ci?ci.pct:"—"}<span class="un">%</span></div>
         ${ci?`<div class="rng" role="img" aria-label="likely between ${ci.lo} and ${ci.hi} percent"><b style="left:${ci.lo}%;width:${Math.max(1,ci.hi-ci.lo)}%"></b><i style="left:${ci.pct}%"></i></div>
         <div class="legend"><span>likely ${ci.lo} to ${ci.hi}% at this sample${settled?"":" · <b>still spans 50%</b>"}</span></div>`:""}
         <div class="note">${p.decided?`<b>${p.agent}</b> Robin · <b>${p.person}</b> a person · <b>${p.no_preference}</b> either, of ${p.decided} who chose${p.unclassified?` · ${p.unclassified} unclear`:""}`:"Nobody has answered the preference question yet"}</div>
       </button>
       <button type="button" class="tile${voice.n&&voice.n<10?" thin":""}" data-drill="voice">
-        <span class="lbl">Voice naturalness score<span class="tipw"><span class="tip" aria-hidden="true">?</span><span class="tip-box">How natural Robin's voice sounded, 0 to 10, averaged over everyone who rated it. Kept apart from NPS so a voice problem cannot hide behind a good score, or the reverse.</span></span></span>
+        <span class="lbl">Voice naturalness score&nbsp;<span class="tipw"><span class="tip" aria-hidden="true">?</span><span class="tip-box">How natural Robin's voice sounded, 0 to 10, averaged over everyone who rated it. Kept apart from NPS so a voice problem cannot hide behind a good score, or the reverse.</span></span></span>
         <div class="fig">${voice.n?Number(voice.mean).toFixed(1):"—"}<span class="un">/ 10</span></div>
         ${voice.n?`<div class="rng"><b class="solid" style="left:0;width:${Math.max(1,Math.round(voice.mean*10))}%"></b></div>`:""}
         <div class="note">${voice.n?`<b>${voice.n}</b> of ${s.surveyed} rated the voice${voice.unparsed?` · ${voice.unparsed} in words`:""}`:"No voice ratings yet"}</div>
       </button>
       <button type="button" class="tile" data-drill="asked">
-        <span class="lbl">Survey offer rate<span class="tipw"><span class="tip" aria-hidden="true">?</span><span class="tip-box">Of the calls where the survey was due, the share Robin actually asked on. Transferred calls and failed verifications are not due. Below 70%, every number on this board comes from a biased slice. Counts all callers, staff included.</span></span></span>
+        <span class="lbl">Survey offer rate&nbsp;<span class="tipw"><span class="tip" aria-hidden="true">?</span><span class="tip-box">Of the calls where the survey was due, the share Robin actually asked on. Transferred calls and failed verifications are not due. Below 70%, every number on this board comes from a biased slice. Counts all callers, staff included.</span></span></span>
         <div class="fig">${a.pct!=null?a.pct:"—"}<span class="un">%</span></div>
         ${a.eligible?`<div class="rng"><b class="solid${warn?" accent":""}" style="left:0;width:${a.pct}%${warn?";background:var(--accent)":""}"></b></div>`:""}
         <div class="note">${a.eligible?`${a.asked_when_eligible} of ${a.eligible} eligible calls, all callers${a.eligible-a.asked_when_eligible?` · <b>${a.eligible-a.asked_when_eligible} miss${a.eligible-a.asked_when_eligible===1?"":"es"}</b> listed inside`:""}${warn?` · <span class="accent">below 70%</span>`:""}`:"No eligible calls yet"}</div>
