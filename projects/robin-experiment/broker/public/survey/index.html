@@ -47,7 +47,7 @@
   .modes button:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
   /* Simple is the slide: the answer, shareable, for the slice in the rail. Advanced is the board
      with its drawers and the deeper sections. The rail and the caption show in both. */
-  body[data-mode="simple"] .adv, body[data-mode="simple"] #board, body[data-mode="simple"] #foot{ display:none; }
+  body[data-mode="simple"] .adv, body[data-mode="simple"] #board{ display:none; }
   body[data-mode="advanced"] #simplesec{ display:none; }
   #simplesec{ max-width:820px; }
   .sm-q{ margin:22px 0 0; font-size:1.05rem; color:var(--sub); max-width:52ch; line-height:1.45; }
@@ -124,16 +124,24 @@
   .railcap .copy:hover{ color:var(--ink); border-bottom-color:var(--ink); }
 
   /* ---- the board ---- */
-  .cap{ display:flex; flex-wrap:wrap; gap:6px 18px; align-items:baseline; font-size:.8rem; color:var(--sub); padding:2px 0 12px; }
+  .cap{ display:flex; flex-wrap:wrap; gap:6px 18px; align-items:baseline; font-size:.8rem; color:var(--sub); padding:10px 16px; margin:0 0 16px; background:var(--card); border:1px solid var(--hair); border-left:3px solid var(--ink); border-radius:4px; }
   .cap b{ color:var(--ink); font-weight:700; }
   .grid{ display:grid; grid-template-columns:repeat(12,1fr); gap:18px; }
   .tile{ grid-column:span 6; padding:16px 18px 14px; background:var(--card); border:1px solid var(--hair); border-radius:4px; display:flex; flex-direction:column; gap:8px; min-height:150px; position:relative; cursor:pointer; text-align:left; font:inherit; color:inherit; }
   @media (min-width:1440px){ .tile{ grid-column:span 3; } }
   .tile:hover{ border-color:var(--sub); }
   .tile:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
-  .tile::after{ content:"open ↗"; position:absolute; top:12px; right:14px; font-size:.6rem; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); font-weight:700; }
   .tile.thin .fig{ color:var(--sub); }
-  .tile > .lbl{ display:block; padding-right:60px; }
+  .tile > .lbl{ display:block; letter-spacing:.16em; }
+  .tile > .lbl .tipw{ margin-left:2px; }
+  /* The four tiles share row tracks (label, figure, bar, legend, note), so a title that wraps in
+     one tile pushes the same row down in all four and the figures stay level. Browsers without
+     subgrid keep the flex column above. */
+  @supports (grid-template-rows: subgrid){
+    .tile{ display:grid; grid-template-rows:subgrid; grid-row:span 5; row-gap:8px; align-content:start; }
+    .tile > .lbl{ grid-row:1; } .tile > .fig{ grid-row:2; } .tile > .stack, .tile > .rng{ grid-row:3; }
+    .tile > .legend{ grid-row:4; } .tile > .note{ grid-row:5; margin-top:0; align-self:end; }
+  }
   .tile .fig{ font-size:clamp(2.2rem,4vw,3rem); font-weight:800; line-height:.92; letter-spacing:-.03em; font-variant-numeric:tabular-nums; }
   .tile .fig .un{ font-size:.95rem; font-weight:600; color:var(--sub); letter-spacing:0; margin-left:3px; }
   .tile .note{ font-size:.74rem; color:var(--sub); line-height:1.4; margin-top:auto; }
@@ -221,9 +229,6 @@
   .rv .why q{ color:var(--ink); font-style:italic; }
   .badge{ font-size:.6rem; text-transform:uppercase; letter-spacing:.1em; font-weight:700; padding:2px 7px; border:1px solid var(--accent); color:var(--accent); border-radius:2px; white-space:nowrap; }
 
-  .foot{ display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px; padding:14px 0 0; margin-top:18px; border-top:1px solid var(--line); font-size:.76rem; color:var(--sub); }
-  .foot a{ color:var(--ink); font-weight:600; text-decoration:none; border-bottom:1px solid var(--line); margin-right:14px; }
-  .foot a:hover{ border-bottom-color:var(--ink); }
   footer{ margin-top:40px; padding-top:14px; border-top:1px solid var(--line); font-size:.68rem; letter-spacing:.04em; color:var(--faint); display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; }
 
   /* ---- Advanced: the deeper sections ---- */
@@ -241,6 +246,15 @@
   :root[data-theme="light"]{ --c-agent:#b8501e; --c-person:#2563a8; --c-none:#9a7d1e; --nps-pro:#2E6B4F; --nps-pas:#B9B2A8; --nps-det:#A8322A; }
   :root[data-theme="dark"]{ --c-agent:#cf7135; --c-person:#4f8ac2; --c-none:#ad8b2a; --nps-pro:#68BE91; --nps-pas:#6E665C; --nps-det:#EC786E; }
 
+  .pp-h{ font-size:.95rem; font-weight:700; margin:26px 0 2px; }
+  .pp{ display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:0 26px; margin:8px 0 12px; }
+  .pp .p{ display:flex; justify-content:space-between; align-items:center; gap:10px; padding:6px 0; border-bottom:1px solid var(--hair); font-size:.78rem; min-width:0; }
+  .pp .p .nm{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--sub); }
+  .pp .p.mixed .nm{ color:var(--ink); font-weight:700; }
+  .pp .p.mixed .nm::after{ content:" · changed"; font-weight:400; color:var(--accent); }
+  .pp .dl{ display:flex; gap:4px; flex-shrink:0; }
+  .pp .dg{ width:13px; height:13px; border:0; padding:0; cursor:pointer; }
+  .pp .dg:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
   .dotgrid{ display:flex; flex-wrap:wrap; gap:6px; margin:14px 0 6px; }
   .dg{ width:15px; height:15px; border-radius:50%; display:block; box-shadow:0 0 0 2px var(--paper); transition:transform .12s ease; }
   .dg:hover{ transform:scale(1.35); }
@@ -411,8 +425,6 @@
 
       <div class="grid" id="board"></div>
 
-      <div class="foot" id="foot"></div>
-
       <section class="adv" id="cumsec" hidden>
         <hr class="rule">
         <div class="shead"><h2 class="sect-h">Confidence<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-cum">?</button><span class="tip-box" role="tooltip" id="tip-cum"><b>What it shows.</b> How often Robin actually asked the survey, and the headline share redrawn one response at a time with its 95% range. The chart appears at 20 responses.<br><br><b>How to read it.</b> The result is callable once the shaded band stops crossing 50%. At n=30 a 60/40 is noise. If Robin asked on fewer than 70% of eligible calls, every figure above rests on a biased slice.</span></span></h2></div>
@@ -521,7 +533,7 @@
       const s=DATA.survey||{}, sl=s.slice||{};
       if(sl.valid===false) document.getElementById("banner").innerHTML=`<div class="banner bad">That range was not understood (${esc(sl.error||"")}), so this is everything.</div>`;
       document.title=`Robin — Quality: ${sl.label||"all calls"}`;
-      renderRail(); renderCap(); renderSimple(); renderBoard(); renderFoot(); renderCumulative(); renderDots(); renderCalls(); renderDownloads();
+      renderRail(); renderCap(); renderSimple(); renderBoard(); renderCumulative(); renderDots(); renderCalls(); renderDownloads();
       stamp();
       loadThemes();   // separate endpoint: costs a model call, so it is not on the 60s refresh
       if(S.open){ const o=S.open; S.open=""; openDrill(o); }
@@ -608,10 +620,12 @@
   function renderCap(){
     const s=DATA.survey||{}, sl=s.slice||{}, f=s.funnel||{};
     const when=sl.when&&sl.when!==sl.label?sl.when:"";
-    document.getElementById("cap").innerHTML=`<b>${esc(sl.label||"All calls")}</b><span>${esc(when)}${when?" · Central":""}</span>`+
+    const staff=S.staff==="show"?`Staff calls are <b>included</b>${sl.staff_calls?` (${sl.staff_calls})`:""}.`:`Staff calls are <b>hidden</b>${sl.staff_calls?` (${sl.staff_calls} in this range)`:""}; the switch in the rail shows them.`;
+    document.getElementById("cap").innerHTML=`<b>${esc(sl.label||"All calls")}</b><span>${esc(when)}</span>`+
       `<span><b>${s.people??0}</b> ${s.people===1?"person":"people"}</span><span><b>${s.surveyed??0}</b> surveyed ${s.surveyed===1?"call":"calls"}</span>`+
-      `<span><b>${f.in_range??0}</b> calls in range</span><span>staff ${S.staff==="show"?"shown":"hidden"}${sl.staff_calls&&S.staff!=="show"?` (${sl.staff_calls})`:""}</span>`+
-      `<span class="soft">updated <span id="gen2"></span></span>`;
+      `<span><b>${f.in_range??0}</b> calls in range</span>`+
+      `<span class="soft">updated <span id="gen2"></span></span>`+
+      `<span class="tipw"><button type="button" class="tip" aria-label="About this line" aria-describedby="tip-cap">?</button><span class="tip-box" role="tooltip" id="tip-cap"><b>What it shows.</b> The slice every number on this page comes from. <b>People</b> is distinct callers who answered the survey; <b>surveyed calls</b> is the calls Robin asked on, repeats included; <b>calls in range</b> is every call Robin took in the window, asked or not. Dates run midnight to midnight, Central time.<br><br>${staff} The page refreshes itself every minute.</span></span>`;
   }
 
   // ---- Simple: the slide. The answer for the slice in the rail, reflowed for sharing. Every
@@ -665,27 +679,27 @@
     const warn = a.pct!=null && a.pct<70;
     const tiles=`
       <button type="button" class="tile${nTot&&nTot<10?" thin":""}" data-drill="nps">
-        <span class="lbl">Net Promoter Score<span class="tipw"><span class="tip" aria-hidden="true">?</span><span class="tip-box">Promoters (9–10) minus detractors (0–6), as a share of everyone who gave a number. Ranges −100 to +100. Passives (7–8) count in the denominator only.</span></span></span>
+        <span class="lbl">Net Promoter Score&nbsp;<span class="tipw"><span class="tip" aria-hidden="true">?</span><span class="tip-box">Promoters (9–10) minus detractors (0–6), as a share of everyone who gave a number. Ranges −100 to +100. Passives (7–8) count in the denominator only.</span></span></span>
         <div class="fig">${nTot?sign(nps.score):"—"}</div>
         ${nTot?`<div class="stack" role="img" aria-label="${nps.promoters} promoters, ${nps.passives} passives, ${nps.detractors} detractors"><span class="s-pro" style="${seg(nps.promoters)}"></span><span class="s-pas" style="${seg(nps.passives)}"></span><span class="s-det" style="${seg(nps.detractors)}"></span></div>
         <div class="legend"><span><i class="s-pro"></i>${nps.promoters} promoter${nps.promoters===1?"":"s"}</span><span><i class="s-pas"></i>${nps.passives} passive${nps.passives===1?"":"s"}</span><span><i class="s-det"></i>${nps.detractors} detractor${nps.detractors===1?"":"s"}</span></div>`:""}
         <div class="note">${nTot?`<b>${nTot}</b> of ${s.surveyed} gave a number${nTot<10?` · <span class="accent">provisional</span>`:""}`:"Nobody has given a number yet"}</div>
       </button>
       <button type="button" class="tile" data-drill="prefer">
-        <span class="lbl">Would rather use Robin<span class="tipw"><span class="tip" aria-hidden="true">?</span><span class="tip-box">Asked at the end of the call: next time, would you rather handle this with Robin or hold for a person? The bar is the 95% range for the true share at this sample size.</span></span></span>
+        <span class="lbl">Prefer Robin to a person&nbsp;<span class="tipw"><span class="tip" aria-hidden="true">?</span><span class="tip-box">Asked at the end of the call: next time, would you rather handle this with Robin or hold for a person? The bar is the 95% range for the true share at this sample size.</span></span></span>
         <div class="fig">${ci?ci.pct:"—"}<span class="un">%</span></div>
         ${ci?`<div class="rng" role="img" aria-label="likely between ${ci.lo} and ${ci.hi} percent"><b style="left:${ci.lo}%;width:${Math.max(1,ci.hi-ci.lo)}%"></b><i style="left:${ci.pct}%"></i></div>
         <div class="legend"><span>likely ${ci.lo} to ${ci.hi}% at this sample${settled?"":" · <b>still spans 50%</b>"}</span></div>`:""}
         <div class="note">${p.decided?`<b>${p.agent}</b> Robin · <b>${p.person}</b> a person · <b>${p.no_preference}</b> either, of ${p.decided} who chose${p.unclassified?` · ${p.unclassified} unclear`:""}`:"Nobody has answered the preference question yet"}</div>
       </button>
       <button type="button" class="tile${voice.n&&voice.n<10?" thin":""}" data-drill="voice">
-        <span class="lbl">Voice felt natural<span class="tipw"><span class="tip" aria-hidden="true">?</span><span class="tip-box">How natural Robin's voice sounded, 0 to 10, averaged over everyone who rated it. Kept apart from NPS so a voice problem cannot hide behind a good score, or the reverse.</span></span></span>
+        <span class="lbl">Voice naturalness score&nbsp;<span class="tipw"><span class="tip" aria-hidden="true">?</span><span class="tip-box">How natural Robin's voice sounded, 0 to 10, averaged over everyone who rated it. Kept apart from NPS so a voice problem cannot hide behind a good score, or the reverse.</span></span></span>
         <div class="fig">${voice.n?Number(voice.mean).toFixed(1):"—"}<span class="un">/ 10</span></div>
         ${voice.n?`<div class="rng"><b class="solid" style="left:0;width:${Math.max(1,Math.round(voice.mean*10))}%"></b></div>`:""}
         <div class="note">${voice.n?`<b>${voice.n}</b> of ${s.surveyed} rated the voice${voice.unparsed?` · ${voice.unparsed} in words`:""}`:"No voice ratings yet"}</div>
       </button>
       <button type="button" class="tile" data-drill="asked">
-        <span class="lbl">Asked when she should<span class="tipw"><span class="tip" aria-hidden="true">?</span><span class="tip-box">Of the calls where the survey was due, how many did Robin actually ask on. Transferred calls and failed verifications are not due. Below 70%, every number on this board comes from a biased slice. Counts all callers, staff included.</span></span></span>
+        <span class="lbl">Survey offer rate&nbsp;<span class="tipw"><span class="tip" aria-hidden="true">?</span><span class="tip-box">Of the calls where the survey was due, the share Robin actually asked on. Transferred calls and failed verifications are not due. Below 70%, every number on this board comes from a biased slice. Counts all callers, staff included.</span></span></span>
         <div class="fig">${a.pct!=null?a.pct:"—"}<span class="un">%</span></div>
         ${a.eligible?`<div class="rng"><b class="solid${warn?" accent":""}" style="left:0;width:${a.pct}%${warn?";background:var(--accent)":""}"></b></div>`:""}
         <div class="note">${a.eligible?`${a.asked_when_eligible} of ${a.eligible} eligible calls, all callers${a.eligible-a.asked_when_eligible?` · <b>${a.eligible-a.asked_when_eligible} miss${a.eligible-a.asked_when_eligible===1?"":"es"}</b> listed inside`:""}${warn?` · <span class="accent">below 70%</span>`:""}`:"No eligible calls yet"}</div>
@@ -701,7 +715,7 @@
     const hbp=s.promoter_but_prefers_person||0, dbp=s.detractor_but_prefers_agent||0;
     const xt=rows.length?`
       <div class="card c7" id="xtcard">
-        <div class="chead"><h2>Score against choice<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-mx">?</button><span class="tip-box" role="tooltip" id="tip-mx"><b>What it shows.</b> The 0–10 score someone gave against what they said they would choose next time. One count per call.<br><br><b>How to read it.</b> A promoter who still wants a person: trust isn't there yet. A detractor who would still use Robin: convenience beats the flaws. Click a cell for its calls.</span></span></h2><span class="q">the two outlined cells decide the rollout</span></div>
+        <div class="chead"><h2>Score against choice<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-mx">?</button><span class="tip-box" role="tooltip" id="tip-mx"><b>What it shows.</b> The 0–10 score someone gave against what they said they would choose next time. One count per call.<br><br><b>How to read it.</b> A promoter who still wants a person: trust isn't there yet. A detractor who would still use Robin: convenience beats the flaws. Click a cell for its calls.</span></span></h2><span class="q">one count per call · outlined cells are the exceptions</span></div>
         <div class="xt${anyUnclear?" four":""}" role="table" aria-label="Score given against stated preference">
           <div class="h">Score they gave</div><div class="h">Robin</div><div class="h">A person</div><div class="h">Either</div>${anyUnclear?`<div class="h">Unclear</div>`:""}
           ${rows.map(r=>{ const total=r.agent+r.person+r.no_preference+r.unclassified;
@@ -723,11 +737,11 @@
           <button type="button" class="row" data-drill="excluded:abandoned"><span class="k"><b>Ended early</b>hung up before there was anything to rate</span>${fbar(f.abandoned,"mid")}<span class="v">${f.abandoned}</span></button>
           ${f.other?`<button type="button" class="row" data-drill="excluded:other"><span class="k"><b>Other</b>not asked: failed verification, too short</span>${fbar(f.other,"mid")}<span class="v">${f.other}</span></button>`:""}
         </div>
-        <p class="finding">Every number on this board comes from the <b>${s.surveyed}</b> surveyed calls${S.staff!=="show"&&(s.slice||{}).staff_calls?` (${(s.slice||{}).staff_calls} staff ${(s.slice||{}).staff_calls===1?"call":"calls"} hidden)`:""}.${(f.in_range-f.surveyed)>0?` The <b>${f.in_range-f.surveyed}</b> never asked are context, not silence: Robin does not survey a call she hands off or one that ended before it began.`:" Every call in the range was asked."}</p>
+        <p class="finding">Every number on this board comes from the <b>${s.surveyed}</b> surveyed calls${S.staff!=="show"&&(s.slice||{}).staff_calls?` (${(s.slice||{}).staff_calls} staff ${(s.slice||{}).staff_calls===1?"call":"calls"} hidden)`:""}.${(f.in_range-f.surveyed)>0?` <b>${f.in_range-f.surveyed}</b> calls were never asked; click a row to see which and why.`:" Every call in the range was asked."}</p>
       </div>`;
 
-    const said=`<div class="card c6" id="saidcard"><div class="chead"><h2>What people said<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-said">?</button><span class="tip-box" role="tooltip" id="tip-said"><b>What it shows.</b> What callers said in their own words, verbatim, one line per call. The survey ends with “anything else?”, and a plain “no” is counted but never listed as a comment. Once there are enough real comments a model groups everything callers said, their reasons on the choice question included, into themes: a label, one sentence, one quote, and the calls behind it. Personal details are scrubbed before any of this.<br><br><b>How to read it.</b> The five themes said by the most people are on the card; <b>See all</b> has every theme, every comment and the “no” pile. A theme is an index, not a finding: open it and read the comments, which are the evidence. Two comments is two people.</span></span></h2><span class="q" id="saidq"></span></div><div id="said"></div></div>`;
-    const listen=`<div class="card c6" id="revcard"><div class="chead"><h2>Needs a listen<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-rev">?</button><span class="tip-box" role="tooltip" id="tip-rev"><b>What it shows.</b> Calls with negative sentiment or a score of 6 or below, each opening to its transcript.<br><br><b>How to read it.</b> Read these first. An empty list on a small sample means nothing.</span></span></h2><span class="q">${rev.n?plural(rev.n,"call"):"none"}</span></div><div id="rev"></div></div>`;
+    const said=`<div class="card c6" id="saidcard"><div class="chead"><h2>Survey themes<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-said">?</button><span class="tip-box" role="tooltip" id="tip-said"><b>What it shows.</b> What callers said in their own words, verbatim, one line per call. The survey ends with “anything else?”, and a plain “no” is counted but never listed as a comment. Once there are enough real comments a model groups everything callers said, their reasons on the choice question included, into themes: a label, one sentence, one quote, and the calls behind it. Personal details are scrubbed before any of this.<br><br><b>How to read it.</b> The five themes said by the most people are on the card; <b>See all</b> has every theme, every comment and the “no” pile. A theme is an index, not a finding: open it and read the comments, which are the evidence. Two comments is two people.</span></span></h2><span class="q" id="saidq"></span></div><div id="said"></div></div>`;
+    const listen=`<div class="card c6" id="revcard"><div class="chead"><h2>Calls for review<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-rev">?</button><span class="tip-box" role="tooltip" id="tip-rev"><b>What it shows.</b> Calls with negative sentiment or a score of 6 or below, each opening to its transcript.<br><br><b>How to read it.</b> Each row says why it is here. An empty list on a small sample means nothing.</span></span></h2><span class="q">${rev.n?plural(rev.n,"call"):"none"}</span></div><div id="rev"></div></div>`;
 
     el.innerHTML=tiles+xt+funnel+said+listen;
     renderReview(); renderSaid();
@@ -747,7 +761,7 @@
       </div>`;}).join("");
   }
 
-  // ---- What people said: comments, grouped by theme once themes are ready --------------------
+  // ---- Survey themes: comments, grouped by theme once themes are ready -----------------------
   // "No." is not a comment. The survey's last question is "anything else?" and most people say no;
   // that answer is stored with the real comments and used to be listed with them. The API flags
   // each one (`more`), so the card lists only the ones that said something and reports the declines
@@ -812,10 +826,6 @@
     renderSaid(); if(DATA) renderSimple();   // the slide's top-theme cell waits on this
   }
 
-  function renderFoot(){
-    const s=DATA.survey||{};
-    document.getElementById("foot").innerHTML=`<span><a href="#clsec" data-goto="clsec">Every call (${s.responses??0})</a><a href="/api/survey-export${qs({level:"people"})}">Download responses</a><a href="/api/survey-export${qs({level:"calls"})}">Every call CSV</a><a href="/survey/slide/${qs()}">Slide</a></span><span>Confidence and the call browser below</span>`;
-  }
   function renderDownloads(){
     const s=DATA.survey||{}; document.getElementById("dlsec").hidden=!(s.funnel&&s.funnel.in_range);
     document.getElementById("dl").innerHTML=`<a href="/api/survey-export${qs({level:"people"})}">Download responses (CSV)</a><a class="sec" href="/api/survey-export${qs({level:"calls"})}">Every call (CSV)</a><a class="sec" href="/survey/slide/${qs()}">Presentation slide</a><a class="sec" href="/survey/guide/">Judgement guide</a>`;
@@ -862,7 +872,7 @@
         <h4>Every response · ${rows.length}</h4>${list(rows,{said:(r)=>r.open_comments})}${take(rows)}`;
     }else if(kind==="prefer"){
       const p=s.preference||{}, ci=p.ci, rows=V.filter(r=>r.prefer_agent);
-      t=`Would rather use Robin · ${ci?ci.pct+"%":"—"}`;
+      t=`Prefer Robin to a person · ${ci?ci.pct+"%":"—"}`;
       const grp=(k)=>rows.filter(r=>r.preference===k);
       html=`<div class="formula"><b>${p.agent}</b> chose Robin, <b>${p.person}</b> a person, <b>${p.no_preference}</b> either, of <b>${p.decided}</b> who chose${p.unclassified?`; <b>${p.unclassified}</b> could not be classified and are left out of the share`:""}. ${ci?`With ${p.decided} answers the true share is likely between <b>${ci.lo}% and ${ci.hi}%</b> (95% Wilson interval)${ci.lo>50?", which clears 50%.":", which still spans 50%."}`:""}</div>
         <h4>What they actually said</h4>
@@ -871,7 +881,7 @@
         <h4>Chose Robin · ${grp("agent").length}</h4>${list(grp("agent"),{said:(r)=>r.prefer_agent})}${take(rows)}`;
     }else if(kind==="voice"){
       const v=s.voice||{}, rows=V.filter(r=>r.voice_score!=null);
-      t=`Voice felt natural · ${v.mean!=null?Number(v.mean).toFixed(1):"—"} / 10`;
+      t=`Voice naturalness score · ${v.mean!=null?Number(v.mean).toFixed(1):"—"} / 10`;
       const low=rows.filter(r=>r.voice_score<=6);
       html=`<div class="formula">Mean of <b>${v.n}</b> ratings, 0 to 10. ${v.unparsed?`${v.unparsed} answered in words the parser could not score.`:""} ${low.length?`<b>${low.length}</b> rated it 6 or below.`:"Nobody rated it below 7."}</div>
         <h4>Every rating, 0 to 10</h4>${hist(rows,"voice_score",(i)=>i<=6?"d":"v")}
@@ -879,7 +889,7 @@
         <h4>Every rating · ${rows.length}</h4>${list(rows,{sort:"voice",voice:true,score:(r)=>r.voice_score,said:(r)=>r.voice})}${take(rows)}`;
     }else if(kind==="asked"){
       const a=s.adherence||{}, f=s.funnel||{}, misses=a.misses||[];
-      t=`Asked when she should · ${a.pct!=null?a.pct+"%":"—"}`;
+      t=`Survey offer rate · ${a.pct!=null?a.pct+"%":"—"}`;
       html=`<div class="formula">Robin asked on <b>${a.asked_when_eligible}</b> of <b>${a.eligible}</b> eligible calls. Eligibility is the agent's own post-call judgement: a call is not eligible if it was transferred, failed verification or had no real exchange (<b>${a.ineligible}</b> such calls in range). All callers count, staff included, because this measures Robin.</div>
         <h4>The misses · ${misses.length}</h4>
         <div class="list">${misses.map(m=>`<button type="button" class="li" data-id="${esc(m.conversation_id)}" data-who="${esc(m.respondent||"")}"><span class="nm">${esc(m.respondent||"Caller")}</span><span class="m">${esc(m.outcome||"")}</span><span class="m">${esc(whenC(m.started_at))}</span><span class="sc">–</span>${m.topic?`<span class="said">${esc(m.topic)}</span>`:""}</button>`).join("")||`<div class="empty">No misses in this slice.</div>`}</div>
@@ -989,13 +999,24 @@
           :last.hi<50?`It sits below 50%, so the preference against Robin <b>holds</b> at this sample size.`
           :`It still crosses 50%, so <b>more responses are needed</b>.`}</p>`;
   }
+  // Calls per person. The tiles count calls and the caption counts people; this is the join. One
+  // row per person, one dot per call in the order they happened, coloured by the choice made, so
+  // repeat callers and anyone who answered differently on a later call are visible rather than
+  // averaged away. Each dot opens its call.
   function renderDots(){
-    const s=DATA.survey||{}, dots=s.dots||[], p=s.preference||{}, el=document.getElementById("dots");
-    if(!dots.length){ el.innerHTML=""; return; }
-    const cls={agent:"dg-agent",person:"dg-person",no_preference:"dg-none"};
-    el.innerHTML=`<div class="dotgrid" role="img" aria-label="One dot per call: ${p.agent} prefer Robin, ${p.person} prefer a person, ${p.no_preference} no preference, out of ${dots.length} calls">${
-      dots.map(d=>`<span class="dg ${cls[d.preference]||"dg-unclear"}" title="${esc(d.respondent||("Respondent "+d.n))} · ${d.preference==="agent"?"prefers Robin":d.preference==="person"?"prefers a person":d.preference==="no_preference"?"either":"answer unclear"}"></span>`).join("")}</div>
-      <div class="key"><span><i class="c-agent"></i>${p.agent} would use Robin again</span><span><i class="c-none"></i>${p.no_preference} either</span><span><i class="c-person"></i>${p.person} would rather have a person</span></div>`;
+    const s=DATA.survey||{}, rows=s.verbatims||[], p=s.preference||{}, el=document.getElementById("dots");
+    if(!rows.length){ el.innerHTML=""; return; }
+    const cls={agent:"dg-agent",person:"dg-person",no_preference:"dg-none"}, word={agent:"Robin",person:"a person",no_preference:"either"};
+    const by=new Map();
+    rows.slice().sort((a,b)=>String(a.started_at).localeCompare(String(b.started_at))).forEach(r=>{ const k=r.respondent||"Respondent"; if(!by.has(k)) by.set(k,[]); by.get(k).push(r); });
+    const chose=(rs)=>new Set(rs.map(r=>r.preference).filter(x=>x in cls));
+    const people=[...by.entries()].sort((a,b)=>(b[1].length-a[1].length)||a[0].localeCompare(b[0]));
+    const repeat=people.filter(([,rs])=>rs.length>1).length, mixed=people.filter(([,rs])=>chose(rs).size>1).length;
+    el.innerHTML=`<h3 class="pp-h">Calls per person</h3>
+      <p class="svy-lede">One dot per call, in order, coloured by the choice made. ${plural(people.length,"person","people")}, ${plural(rows.length,"answered call")}; ${repeat} called more than once${mixed?`, and <b>${mixed}</b> chose differently on a later call`:""}. Click a dot to open the call.</p>
+      <div class="pp">${people.map(([name,rs])=>`<div class="p${chose(rs).size>1?" mixed":""}"><span class="nm">${esc(name)}${rs.some(r=>r.is_staff)?" · staff":""}</span><span class="dl">${
+        rs.map(r=>`<button type="button" class="dg ${cls[r.preference]||"dg-unclear"}" data-id="${esc(r.conversation_id)}" data-who="${esc(name)}" title="call ${r.response_seq||1} · chose ${word[r.preference]||"unclear"} · ${esc(whenC(r.started_at))}" aria-label="${esc(name)}, call ${r.response_seq||1}, chose ${word[r.preference]||"unclear"}"></button>`).join("")}</span></div>`).join("")}</div>
+      <div class="key"><span><i class="c-agent"></i>${p.agent} chose Robin</span><span><i class="c-none"></i>${p.no_preference} either</span><span><i class="c-person"></i>${p.person} chose a person</span></div>`;
   }
   const norm10=(v)=>v.nps_score!=null?v.nps_score:v.satisfaction_score!=null?Math.round(((v.satisfaction_score-1)/4)*10):null;
   const SORTS={
@@ -1068,7 +1089,7 @@
       const mins=c.duration_seconds!=null?`${Math.floor(c.duration_seconds/60)}m ${c.duration_seconds%60}s`:"—";
       document.getElementById("drwbody").innerHTML=`
         <div class="drw-meta"><b>${esc(whenC(c.started_at,{year:"numeric"}))}</b> Central · ${mins} · ${esc(c.outcome||"—")} · verification ${esc(c.auth_outcome||"—")}${who?`<br><b>${esc(who)}</b>${sv.response_seq>1?` · their call #${sv.response_seq}`:""}`:""}</div>
-        ${d.summary?`<div class="drw-svy"><div class="lbl">Summary</div><div style="font-size:.86rem;line-height:1.5">${esc(d.summary)}</div></div>`:""}
+        ${d.summary&&(d.summary.text||d.summary.title)?`<div class="drw-svy"><div class="lbl">Summary</div><div style="font-size:.86rem;line-height:1.5">${d.summary.title?`<b>${esc(d.summary.title)}</b>${d.summary.text?" · ":""}`:""}${esc(d.summary.text||"")}</div></div>`:""}
         ${sv.nps||sv.voice||sv.satisfaction_raw||sv.prefer_agent_raw?`
         <div class="drw-svy"><div class="lbl">Their answers</div><dl class="drw-a">
             ${sv.nps?`<dt>Would recommend</dt><dd>“${esc(sv.nps)}”${sv.nps_score!=null?` — scored ${sv.nps_score}/10${sv.nps_band?` (${sv.nps_band})`:""}`:""}</dd>`:""}
@@ -1092,7 +1113,7 @@
   // theme and answer citations. Rendered at different times by different fetches, so binding per
   // element would silently miss whichever rendered last.
   document.addEventListener("click",(e)=>{
-    const row=e.target.closest(".cl-row[data-id], .rv[data-id], .li[data-id]"), cid=e.target.closest(".cid[data-id]");
+    const row=e.target.closest(".cl-row[data-id], .rv[data-id], .li[data-id], .dg[data-id]"), cid=e.target.closest(".cid[data-id]");
     if(row) openCall(row.dataset.id, row.dataset.who); else if(cid) openCall(cid.dataset.id);
   });
   document.addEventListener("keydown",(e)=>{
@@ -1133,28 +1154,28 @@
           "The people who build Robin call her to check things. Their <b>opinions are hidden</b> unless you switch this on, so a rating from the team never counts as a tester's.",
           "Operational numbers, like whether Robin asked the survey, always count every caller." ] },
         { target:"#cap", placement:"bottom", title:"Read this line first", body:[
-          "It says exactly what you are looking at: which slice, how many people, how many surveyed calls, and whether staff are in. A screenshot without it is a number without a denominator." ] },
+          "It says exactly what you are looking at: which slice, how many people, how many surveyed calls, and how many calls came in. Its <b>?</b> explains each figure and whether staff calls are in. A screenshot without it is a number without a denominator." ] },
         { target:()=>document.querySelector('#board .tile[data-drill="nps"]'), placement:"bottom", title:"The four numbers", body:[
-          "In the order the judgement guide reads them: <b>Net Promoter Score</b>, the share who would rather use Robin, how natural the voice felt, and whether Robin asked the survey when she should have.",
+          "In the order the judgement guide reads them: <b>Net Promoter Score</b>, the share who prefer Robin to a person, the voice naturalness score, and the survey offer rate (how often Robin asked when the survey was due).",
           "Each tile shows its sample size and, where it has one, its likely range. <b>Every tile opens.</b>" ] },
         { target:"#dd .drw-p", placement:"left", title:"Behind every number", before:()=>openDrill("nps"), after:()=>closeDrill(), body:[
           "The formula in words with the real counts, every score given, the same number cut by day, and every underlying response. Each row opens the call itself: transcript, answers, what Robin was told.",
           "Cross-tab cells, funnel rows and the comments link open this same drawer. Nothing on the board is a dead end." ] },
         { target:"#xtcard", placement:"top", title:"Score against choice", body:[
-          "The score someone gave against what they said they would choose next time. The two <b>outlined cells</b> decide the rollout: promoters who still want a person, and detractors who would still pick Robin.",
+          "The score someone gave against what they said they would choose next time. The two <b>outlined cells</b> are the exceptions worth reading: promoters who still want a person, and detractors who would still pick Robin.",
           "Click any cell for its calls." ] },
         { target:"#funcard", placement:"left", title:"What the slice excludes", body:[
-          "Every call in the range, and how many reached the survey. Robin only asks at the end of a call that ends with her, so a transferred call or a hang-up was never asked: not lost, just not an opinion.",
+          "Every call in the range, and how many reached the survey. Robin only asks at the end of a call that ends with her, so transferred calls and hang-ups were never asked.",
           "Every number on this board comes from the <b>surveyed</b> row. Click a lower row to see the calls it holds and why." ] },
-        { target:"#saidcard", placement:"top", title:"What people said", body:[
+        { target:"#saidcard", placement:"top", title:"Survey themes", body:[
           "Callers' own words. The five themes said by the most people, each opening to the comments behind it; <b>See all</b> lists every theme and every comment. A plain “no” to “anything else?” is counted, not listed.",
           "Two comments is two people, so a theme is an index; the comments are the evidence." ] },
-        { target:"#revcard", placement:"left", title:"Needs a listen", body:[
-          "Calls that scored 6 or below or sounded unhappy, each one click from its transcript. Read these before the averages. An empty list on a small sample means nothing." ] },
+        { target:"#revcard", placement:"left", title:"Calls for review", body:[
+          "Calls that scored 6 or below or sounded unhappy, each one click from its transcript. An empty list on a small sample means nothing." ] },
         { target:"#askfab", placement:"left", title:"Ask the data", body:[
           "Plain questions, answered only from the rows in the current slice, with the calls cited. If the rows cannot answer, it says so." ] },
         { target:"#cumsec", placement:"top", title:"The deeper sections", body:[
-          "Under the board: the <b>Confidence</b> chart, one dot per call, the full call browser and the downloads. The chart shows the headline share with its 95% band as answers arrived; the result is settled once the band clears 50%." ] },
+          "Under the board: the <b>Confidence</b> chart, calls per person (one dot per call, so repeat callers and changed minds show), the full call browser and the downloads. The chart shows the headline share with its 95% band as answers arrived; the result is settled once the band clears 50%." ] },
         { target:".rt-help", placement:"top", title:"Help lives here", body:[
           "Click <b>Help</b> at the bottom of the page to run this tour again. The <b>judgement guide</b>, linked at the top, is the one-page version for your notes." ] },
       ],
