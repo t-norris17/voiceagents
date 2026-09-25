@@ -961,12 +961,17 @@
     highest:{label:"Highest rated",fn:(a,b)=>(norm10(b)??-1)-(norm10(a)??-1)},
     person:{label:"Wanted a person", fn:(a,b)=>(a.preference==="person"?0:1)-(b.preference==="person"?0:1)},
   };
+  // Ten rows, then "Show all". The list is the audit trail, not the reading; sorting decides which
+  // ten matter (lowest rated, wanted a person) and the fold keeps the page from running on.
+  const CALLS_FOLD=10; let CALLS_ALL=false;
   function renderCalls(){
     const sec=document.getElementById("clsec"), rows=(DATA.survey&&DATA.survey.verbatims)||[];
     if(!rows.length){ sec.hidden=true; return; }
     sec.hidden=false;
     document.getElementById("srt").innerHTML=Object.entries(SORTS).map(([k,v])=>`<button data-s="${k}" aria-pressed="${k===SORT}">${esc(v.label)}</button>`).join("");
-    const list=rows.slice().sort(SORTS[SORT].fn);
+    const sorted=rows.slice().sort(SORTS[SORT].fn);
+    const list=CALLS_ALL?sorted:sorted.slice(0,CALLS_FOLD);
+    const fold=sorted.length>CALLS_FOLD?`<button type="button" class="more" id="clmore">${CALLS_ALL?`Show the first ${CALLS_FOLD}`:`Show all ${plural(sorted.length,"call")}`}</button>`:"";
     document.getElementById("cl").innerHTML=list.map(v=>`
       <div class="cl-row" role="button" tabindex="0" data-id="${esc(v.conversation_id)}" data-who="${esc(v.respondent||"")}">
         <div>
@@ -974,9 +979,10 @@
           <div class="cl-sub">${esc(v.respondent||"")}${v.respondent?" · ":""}${esc(whenC(v.started_at))}${v.topic?` · ${esc(v.topic)}`:""}${v.response_seq>1?` · <span class="rpt">call ${v.response_seq} by this person</span>`:""}${v.is_staff?` · staff`:""}${v.comments_redacted?` · comment withheld`:""}${v.needs_review?` · <span class="flag">needs a listen</span>`:""}</div>
         </div>
         <div class="cl-meta"><span class="tagp ${esc(v.preference||"")}">${esc(PRETTY[v.preference]||"unclear")}</span><br>${v.nps_score!=null?`${v.nps_score}/10`:v.satisfaction_score!=null?`${v.satisfaction_score}/5`:v.nps?esc(v.nps):v.satisfaction?esc(v.satisfaction):"—"}</div>
-      </div>`).join("");
+      </div>`).join("")+fold;
   }
   document.getElementById("srt").addEventListener("click",(e)=>{ const b=e.target.closest("button[data-s]"); if(!b) return; SORT=b.dataset.s; renderCalls(); });
+  document.getElementById("cl").addEventListener("click",(e)=>{ if(!e.target.closest("#clmore")) return; CALLS_ALL=!CALLS_ALL; renderCalls(); if(!CALLS_ALL) document.getElementById("clsec").scrollIntoView({block:"start"}); });
 
   // ---- Ask the data --------------------------------------------------------------------------
   const EXAMPLES=["Did anyone who preferred a person say why?","What did the lowest raters actually say?","Is there a topic where people wanted a human?","Did anyone change their mind between calls?"];
