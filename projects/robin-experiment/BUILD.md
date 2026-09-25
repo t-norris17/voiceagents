@@ -12,6 +12,132 @@
 
 ---
 
+### 2026-09-24, later — The Quality page becomes a sliceable board (branch `claude/quality-rail`, merged 2026-09-25)
+
+**Status:** the page rework is on the branch for Tanner and his bosses to test on a preview before
+anything reaches `main`. Two things did reach the live database, on purpose, because the views are
+shared: migrations 017 and 018. Both were verified to leave the live page reading exactly as before.
+
+- **Design.** Tanner reviewed five mocks (https://claude.ai/artifact/Fjo95V9uyVGR6CoqvjcNVE) and
+  chose B: a left rail (wave, range presets, custom dates, staff switch), four tiles, cross-tab as a
+  heat grid, a funnel of what the slice excludes, comments and the listen list, with **every tile,
+  cell and row opening a drawer** that shows the formula, the distribution, the by-day cut and every
+  underlying row. Timeline-as-slicer (D) and the respondent wall (E) were liked and not chosen.
+  Staff hidden by default. Viewers are on desktop monitors, so hover and density are fine.
+- **Migration 017 (live).** `experiment_waves` gains `label` and `internal`; the first wave is keyed
+  `first`, labelled, and closed at midnight Central after Sep 23; `internal` (Sep 8 to 21) is a wave
+  of its own. `survey_wave_start()` is now the earliest non-internal wave start with no "active"
+  clause, so closing a wave never widens the live survey era. `experiment_staff` (Tanner Norris,
+  Scott Farber, Steve Castro-Miller). `survey_answers` appends `wave` and `is_staff`; `survey_people`
+  appends `is_staff` and `wave`. Verified: wave start still 2026-09-21 05:00Z, 30 people / 61 calls
+  unchanged with staff shown; by wave: internal 26 surveyed / 8 people, first 61 / 30 (57 / 28
+  without staff), one stray call on Sep 24 in no wave. One bug caught before applying: an
+  unqualified `started_at` inside the wave subquery would have bound to `experiment_waves.started_at`
+  and put every call in every wave.
+- **Migration 018 (live).** Roster spellings from Tanner as alias rows: Sheree Holbrook, Nick
+  Museousky, Robert Pfaff, Maddie Bolton, Jennifer Bertematti, Ian Burroughs, Derek Parris, Colin
+  Stephens, Adie Robles (plus Steve Castro-Miller's four spellings in 017). Still 30 / 61.
+- **Broker (branch).** `lib/survey-slice.js`: `?range=wave:first | week | month | year | all |
+  YYYY-MM-DD..YYYY-MM-DD`, `?staff=show`; boundaries at Central midnight, weeks start Monday, custom
+  ranges inclusive; default is the newest non-internal wave. `surveySlice()` in `survey-data.js`
+  fetches every call that carries the instrument (`in_survey_era or wave not null`) once and
+  filters in memory; returns `everyone` (all callers) and `calls` (staff rule applied).
+  `summariseSurvey(opinions, calls, everyone)`: opinions exclude staff, adherence and the new
+  `funnel` count everyone; `adherence.misses` and `funnel.excluded` list the calls. Threaded
+  through metrics, themes (cache keyed by slice, up to 8 entries), ask (slice named in the prompt,
+  people derived per slice by `peopleFromCalls`), export (filename carries the slice). The slide
+  forwards its query string. Tests 67/67.
+- **Page (branch).** `broker/public/survey/index.html` rewritten. URL carries `range`, `staff`,
+  `open` (a drawer), `view`. Rendered against a fixture built from the real per-person sequences
+  (no Supabase credentials here): 28 people, 57 surveyed, NPS +44, 81% (69 to 89), voice 8.4,
+  asked 91%. Checked at 1600, 1280, 400 wide, with the NPS drawer and a cross-tab cell open. No
+  script errors. Portal copy step injects the masthead as before.
+- **Unverified from here:** the live endpoints with a real slice (egress to vercel.app is blocked
+  in this environment), the themes model call on a sliced input, and the Vercel builds of the
+  branch. The preview is where those get checked.
+- **Portal previews follow the branch.** `robin-portal/app/lib/upstreams.js`: a preview build
+  (`VERCEL_ENV=preview`, branch not `main`) proxies to the broker preview of the same branch
+  (`voiceagents-git-<slug>-…vercel.app`, or `BROKER_PREVIEW_URL`), so a branch that changes both
+  can be tested end to end. Production and local dev still read `BROKER_URL`. Portal tests 5/5.
+  Caveat: both projects have Vercel SSO protection on previews (`all_except_custom_domains`), so
+  the portal's server-side fetch to the broker preview will hit the login wall until protection is
+  off on the broker project. The portal's own gate password still applies either way.
+- **Preview plumbing, done 2026-09-24 evening.** Tanner turned Vercel Authentication off on both
+  projects' previews and gave the previews their own `ROBIN_INTERNAL_SECRET` (Preview-only rows on
+  both projects; the Production values are Sensitive and unreadable, so a fresh shared value was the
+  only way). Broker `SURVEY_PASSWORD` has separate Production and Preview rows. Health and the home
+  tiles now read the same broker the proxy uses (`brokerBase()`), so a preview's health check
+  reports on the preview broker. Verified from outside: portal preview health `ok`, broker preview
+  reachable, secret accepted. Tanner: "works perfectly."
+- **Round two, 2026-09-25, on the branch.** (1) What people said: the five themes said by the most
+  people, each expandable to its comments, then one "See all N comments" link into a drawer that
+  groups every comment under every theme, then the rest; without themes, the five most recent.
+  `comments.recent` now ships up to 300. (2) Light / Dark for the whole portal: `data-theme` on
+  `<html>`, stored as `robin-theme`, applied before paint by a head snippet; the pill sits in the
+  Next.js masthead (`layout.js`, `lib/theme.js`) and in the masthead `copy-modules.mjs` injects
+  into the module pages; Question Tester and Knowledge Factory gained `data-theme` overrides; the
+  survey page carries its own pill, hidden under the portal's. (3) The Quality title row is the
+  name, Simple / Advanced, the guide link and the pill; the facts live once, in the caption above
+  the tiles, with the "updated" time; the rail keeps only the copy-link. Verified on the fixture:
+  theme survives reload, five rows and the link, drawer grouped by theme; `next build` clean.
+- **Guided tour, 2026-09-25, on the branch.** `broker/public/robin-tour.js` is a small engine
+  shared by every page (copy-modules copies it to the portal; the Next.js layout loads it): a page
+  registers `{id, welcome, steps, done}`; each step names a target, a title, two or three
+  sentences and optional before/after hooks. The engine dims the page, spotlights the target,
+  floats the card beside it (docks to the bottom on phones), keeps focus inside, and handles Escape
+  and the arrow keys. The welcome card opens on its own the first time a browser sees the page
+  (`robin-tour-seen:<id>`), then only from **Help**, which the engine adds to the footer. Quality
+  registers thirteen steps in reading order; two are live, opening the NPS drawer and switching to
+  Advanced, and both put things back. Walked through in a browser on the fixture: every step lands,
+  hooks restore state, finish sets the flag, reload does not re-open, Help does. Other modules get
+  a tour by registering steps; none do yet.
+- **Simple is the slide again (2026-09-25).** Tanner: Simple should be the shareable slide, Advanced
+  the board. Simple now shows the old slide content for the slice in the rail (hero share with its
+  range, the split bar, NPS, voice, and the **top theme** in its own few words in place of the
+  "warm but wants a person" cell), with links into the board. The rail and caption show in both
+  modes. The tour switches to Advanced for its run and puts the viewer's mode back (engine gained
+  `onStart` / `onStop`); it opens with a step on the Simple / Advanced pill. Fourteen steps.
+- **"No." is not a comment (2026-09-25).** Tanner, on the What people said card showing "Uh,
+  nope." / "No." / "Nope, that's it." as its five rows: "these are not themes." Two defects behind
+  it. (1) The survey ends with "anything else?", most people say no, and that answer was stored and
+  listed with the real comments; on live data 24 of 70 comments were declines. `lib/survey-comments.js`
+  (`saidSomething`): strip fillers and the stock closers ("that's it", "I don't think so", "you've
+  got everything", "sería todo"…), and three content words left means a comment. Checked against
+  every distinct live comment; "Went smooth as silk." and "Everything was smooth." count, "No, I
+  don't think so. Thank you." does not. `comments` now carries `said_more`, `people_said_more`,
+  `nothing_more`, and every `recent` row a `more` flag; `given` is unchanged for old readers. The
+  card leads with "N comments from M people · K more said no", lists real comments only, and the
+  drawer folds the declines under "K callers said no · show them" so the count can be checked. The
+  themes gate counts real comments, the model is told a decline is not a theme, and a theme resting
+  on choice-question words lists those calls tagged "on the choice question". (2) The 60-second
+  refresh cleared the themes and refetched them every minute (five hits a minute in the logs), so
+  the card sat on "finding themes…" with the raw list most of the time. Themes now fetch when the
+  slice or its comments change and stay on screen while a newer set loads. `survey-themes` gets
+  `maxDuration: 60` in `vercel.json` (the function's actual duration is unmeasured; 200s in the
+  logs, no timeouts seen). Also this pass: the excluded-calls card explains itself (Robin only asks
+  at the end of a call that ends with her; the lower bars are why the rest were never asked), with
+  per-row sublabels, a fuller drawer paragraph per reason, and the tour step to match. Tests 71/71;
+  fixture render: one themes fetch across a load and a refresh, drawer grouped with the declines
+  folded, no script errors.
+- **Portal production got the branch (2026-09-25, ~9:24 AM Central).** Two `robin-portal`
+  deployments with target **production** were made from `claude/quality-rail` (commits 26a7abe and
+  b14d5ab) from Tanner's Vercel account, from the dashboard. Production portal then served the
+  branch page against the **production broker** (main, no slice support), which reads as "0 calls
+  in range", no waves in the rail, and the caption's "30 people" beside "0 surveyed". The live
+  database was checked at the same time and is intact: 141 rows, both waves. The last main
+  production deployment is `dpl_DbVeXREJ8g2vcaQSys86MMpK4e2G` (537466a). The branch alias also
+  pointed at the production-targeted build until the next push made a new preview. Not rolled back
+  from here: production is Tanner's call.
+- **Open, for Tanner:** second-wave dates when known (one row in `experiment_waves`); the
+  retired-instrument note on the NPS tile and drawer, if wanted.
+- **Merged to `main` 2026-09-25 on Tanner's say-so** ("I like the dashboard"), which puts it on
+  flyrobin.app. On the merge, two migrations were both numbered 017 (this branch's
+  `waves_are_a_dimension` and main's `loan_limit`, written the same evening in different sessions);
+  live order is waves (20:49Z), spellings (20:52Z), loan limit (20:53Z), so the loan-limit file is
+  now `019_loan_limit.sql`. The entry below still says "Migration 017" for it; read that as 019.
+
+---
+
 ### 2026-09-24 (later) — Loan limit fix, in progress
 
 - **Root cause, from the live agent.** The 401(k) Loan Inquiries procedure

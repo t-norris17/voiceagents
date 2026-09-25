@@ -15,7 +15,7 @@
 // Behind the password gate (see middleware.js).
 // TEMPORARY: delete with the instrument after the customer wave.
 import Anthropic from "@anthropic-ai/sdk";
-import { surveyPeople, surveyCalls, respondentLabels, readable } from "../lib/survey-data.js";
+import { surveySlice, peopleFromCalls, respondentLabels, readable } from "../lib/survey-data.js";
 
 const client = new Anthropic(); // ANTHROPIC_API_KEY
 
@@ -96,20 +96,29 @@ export default async function handler(req, res) {
   if (question.length > 500) return res.status(400).json({ error: "question too long" });
 
   try {
-    const [people, calls] = await Promise.all([surveyPeople(), surveyCalls()]);
+    // The same slice as the page. The range rides in the query string (or the body, for callers
+    // that prefer it), so the answer is about the calls the viewer is looking at and nothing else.
+    const q = { range: req.body?.range ?? req.query?.range, staff: req.body?.staff ?? req.query?.staff };
+    const s = await surveySlice(q);
+    const calls = s.calls.filter((c) => c.survey_offered);
+    const people = peopleFromCalls(calls);
 
     // Swap the hash for "Respondent N" before the rows ever reach the model. Not handing it a hash
     // is stronger than asking it not to print one.
     const labels = respondentLabels(calls);
-    const label = (r) => ({ ...r, respondent: labels.get(r.person_key) || null, person_key: undefined });
+    const label = (r) => ({ ...r, respondent: labels.get(r.person_key) || null, person_key: undefined, is_staff: undefined });
     const labelledPeople = people.map(label);
     const labelledCalls = calls.map(label);
     if (!people.length) {
       return res.status(200).json({
-        answer: "No survey responses have landed yet, so there is nothing to answer from.",
+        answer: `No survey responses in this slice (${s.info.label}, ${s.info.when}), so there is nothing to answer from.`,
         answerable: false, cited: [], caveat: "",
       });
     }
+    const sliceNote =
+      `These rows are ONE SLICE of the data: "${s.info.label}" (${s.info.when}, Central time)` +
+      `${s.info.staff === "hidden" ? ", with the build team's own calls excluded" : ""}. ` +
+      `If the question is about a different period or wave, say that the rows shown do not cover it.`;
 
     const msg = await client.messages.create({
       model: "claude-opus-5",
@@ -122,6 +131,7 @@ export default async function handler(req, res) {
         {
           role: "user",
           content:
+            `${sliceNote}\n\n` +
             `people (${people.length} respondents, one row each):\n${JSON.stringify(labelledPeople)}\n\n` +
             `calls (${calls.length} surveyed calls; "respondent" repeats when one person called more ` +
             `than once):\n${JSON.stringify(labelledCalls)}\n\n` +

@@ -9,7 +9,7 @@
 // anyone checking the dedup.
 //
 // TEMPORARY: delete with the instrument after the customer wave.
-import { surveyPeople, surveyCalls, PEOPLE_COLS, CALL_COLS } from "../lib/survey-data.js";
+import { surveySlice, peopleFromCalls, PEOPLE_COLS, CALL_COLS } from "../lib/survey-data.js";
 
 // RFC 4180. Also guards against CSV injection: a comment starting with = or + is a live formula
 // in Excel, and these cells hold text a caller dictated. Prefix with a quote so it stays text.
@@ -24,13 +24,17 @@ export default async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).json({ error: "GET only" });
   const level = String(req.query?.level || "people").toLowerCase() === "calls" ? "calls" : "people";
   try {
-    const rows = level === "calls" ? await surveyCalls() : await surveyPeople();
+    // The same slice as the page (?range=, ?staff=), so the file matches the screen it came from.
+    const s = await surveySlice(req.query || {});
+    const surveyed = s.calls.filter((c) => c.survey_offered);
+    const rows = level === "calls" ? surveyed : peopleFromCalls(surveyed);
     const cols = (level === "calls" ? CALL_COLS : PEOPLE_COLS).split(",");
     const csv = [cols.join(","), ...rows.map((r) => cols.map((c) => cell(r[c])).join(","))].join("\r\n");
 
     const stamp = new Date().toISOString().slice(0, 10);
+    const tag = String(s.info.param || "all").replace(/[^a-z0-9.-]+/gi, "_");
     res.setHeader("content-type", "text/csv; charset=utf-8");
-    res.setHeader("content-disposition", `attachment; filename="robin-survey-${level}-${stamp}.csv"`);
+    res.setHeader("content-disposition", `attachment; filename="robin-survey-${level}-${tag}${s.info.staff === "shown" ? "-with-staff" : ""}-${stamp}.csv"`);
     res.setHeader("cache-control", "no-store");
     return res.status(200).send(csv);
   } catch (e) {

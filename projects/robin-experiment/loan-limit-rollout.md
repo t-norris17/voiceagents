@@ -9,7 +9,7 @@ $50,000. Root cause, from the live agent on 2026-09-24:
 - The prompt told her to "answer from the plan rule AND their figures together", i.e. to compute.
 - `get_balance` returned no limit to quote.
 
-The code change (`broker/api/get_balance.js`, migration 017) gives her `max_loan`. The three
+The code change (`broker/api/get_balance.js`, migration 019 `loan_limit`) gives her `max_loan`. The three
 changes below tell her to use it. Live agent before this change: `agtvrsn_9101m2zv730xe9ss1h2yapgk7ga5`
 on branch `agtbrch_8801kwj5qb38f7n966f5375s5ccz` (Main). That version is the rollback point.
 
@@ -56,7 +56,7 @@ Append to the existing description:
 
 ## Order
 
-1. Migration 017 applied; 90004 and the `paid_off_on` column verified. **This must land before the
+1. Migration 019 (`loan_limit`, live as `20260924205338`) applied; 90004 and the `paid_off_on` column verified. **This must land before the
    code.** The new `get_balance` selects `paid_off_on`; against a database without it the loan
    lookup fails, every caller gets `needs_specialist`, and Marcus loses his loan detail. For the same
    reason, never roll back 017 while this code is live.

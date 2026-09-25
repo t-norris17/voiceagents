@@ -112,6 +112,23 @@ test("two comments from one person are two comments and one person", () => {
   assert.equal(r.comments.people_who_commented, 1, "chatty repeats must not look like breadth");
 });
 
+// "No." to "anything else?" is an answer, not a comment. It stays counted (nothing_more) so the
+// number can be checked, and it never inflates the comment count the page leads with.
+test("a bare no is counted as nothing more, never as a comment", () => {
+  const r = summariseSurvey(
+    [person({ person_key: "P-1" }), person({ person_key: "P-2" }), person({ person_key: "P-3" })],
+    [call({ conversation_id: "c1", person_key: "P-1", open_comments: "No." }),
+     call({ conversation_id: "c2", person_key: "P-2", open_comments: "Nope, that's it." }),
+     call({ conversation_id: "c3", person_key: "P-3", open_comments: "The website she gave was wrong." }),
+     call({ conversation_id: "c4", person_key: "P-3", open_comments: null, comments_redacted: true })]
+  );
+  assert.equal(r.comments.said_more, 2, "one real comment and one withheld one");
+  assert.equal(r.comments.people_said_more, 1, "both from the same person");
+  assert.equal(r.comments.nothing_more, 2);
+  assert.equal(r.comments.given, 4, "the old count still counts every comment with text");
+  assert.deepEqual(r.comments.recent.map((c) => c.more), [false, false, true], "every comment ships, flagged");
+});
+
 test("redacted comments keep their count without their words", () => {
   const r = summariseSurvey(
     [person({})],

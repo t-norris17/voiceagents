@@ -32,7 +32,7 @@ export function loanLimit(m, loans, today = new Date()) {
 
   // Highest balance in the past 12 months. Principal stands in for it (balance history is not
   // stored), which can only understate the limit. A paid-off row with no date counts, for the same
-  // reason; migration 017 makes that row impossible anyway.
+  // reason; migration 019 (loan_limit) makes that row impossible anyway.
   const windowStart = new Date(Date.UTC(today.getUTCFullYear() - 1, today.getUTCMonth(), today.getUTCDate()));
   const recent = loans.filter(
     (l) => l.status === "paid_off" && (!l.paid_off_on || new Date(`${l.paid_off_on}T00:00:00Z`) >= windowStart)

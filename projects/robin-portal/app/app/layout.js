@@ -1,6 +1,7 @@
 import "./globals.css";
 import Link from "next/link";
 import HomeLink from "./components/HomeLink.js";
+import { PRE_PAINT, CONTROL_JS } from "../lib/theme.js";
 
 export const metadata = {
   title: "Robin",
@@ -18,7 +19,12 @@ const DOORS = [
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    // data-theme lands on <html> before hydration (PRE_PAINT), which React did not render, so the
+    // mismatch warning is suppressed on purpose.
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: PRE_PAINT }} />
+      </head>
       <body>
         <div className="sheet">
           <div className="mast">
@@ -28,6 +34,10 @@ export default function RootLayout({ children }) {
                 <a key={d.href} href={d.href}>{d.label}</a>
               ))}
             </nav>
+            <div className="rp-theme" role="group" aria-label="Theme">
+              <button type="button" data-theme-set="light" aria-pressed="false">Light</button>
+              <button type="button" data-theme-set="dark" aria-pressed="false">Dark</button>
+            </div>
           </div>
           {children}
           <HomeLink />
@@ -36,6 +46,10 @@ export default function RootLayout({ children }) {
             <span>Robin's own call path never runs through this portal.</span>
           </footer>
         </div>
+        <script dangerouslySetInnerHTML={{ __html: CONTROL_JS }} />
+        {/* The guided-tour engine (copied from the broker by scripts/copy-modules.mjs). A page
+            with no steps registered gets nothing from it; Quality registers its own. */}
+        <script src="/robin-tour.js" defer />
       </body>
     </html>
   );
