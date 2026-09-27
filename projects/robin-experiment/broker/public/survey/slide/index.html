@@ -62,7 +62,11 @@
   .b-top .n{ font-size:clamp(.7rem,1.1cqi,.9rem); color:var(--sub); font-variant-numeric:tabular-nums; }
   .b-q{ font-size:clamp(1rem,2.1cqi,1.7rem); font-weight:600; margin:clamp(16px,2.4cqi,30px) 0 0;
     max-width:30ch; line-height:1.25; }
-  .b-hero{ display:flex; align-items:baseline; gap:clamp(14px,2cqi,26px); margin-top:clamp(8px,1.4cqi,18px); }
+  /* The caption is three lines; aligning its first baseline to the figure's left the other two
+     hanging below the number. The block's bottom now sits on the figure's baseline. */
+  .b-hero{ display:flex; align-items:flex-end; gap:clamp(14px,2cqi,26px); margin-top:clamp(8px,1.4cqi,18px); }
+  .b-hero .fig{ line-height:.82; }
+  .b-hero .ci{ padding-bottom:.08em; }
   .b-hero .fig{ font-size:clamp(3.4rem,11cqi,8rem); font-weight:800; line-height:.82; letter-spacing:-.04em; }
   .b-hero .un{ font-size:clamp(1rem,2.4cqi,2rem); font-weight:700; color:var(--sub); }
   .b-hero .ci{ font-size:clamp(.75rem,1.3cqi,1.05rem); color:var(--sub); line-height:1.4; }
