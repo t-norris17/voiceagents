@@ -371,8 +371,8 @@
     font:inherit; background:none; border:0; padding:0; cursor:pointer; }
   .askfab[hidden]{ display:none; }
   /* A die-cut sticker of her head: transparent around her, a white border, a soft shadow. */
-  .askfab-i{ width:96px; height:96px; display:block; transform:rotate(7deg); filter:drop-shadow(0 8px 14px rgba(0,0,0,.28)); transition:transform .15s ease, filter .15s ease; }
-  .askfab:hover .askfab-i, .askfab:focus-visible .askfab-i{ transform:translateY(-3px) scale(1.05) rotate(-2deg); filter:drop-shadow(0 12px 18px rgba(0,0,0,.32)); }
+  .askfab-i{ width:96px; height:96px; display:block; filter:drop-shadow(0 8px 14px rgba(0,0,0,.28)); transition:transform .15s ease, filter .15s ease; }
+  .askfab:hover .askfab-i, .askfab:focus-visible .askfab-i{ transform:translateY(-3px) scale(1.05); filter:drop-shadow(0 12px 18px rgba(0,0,0,.32)); }
   .askfab[aria-expanded="true"] .askfab-i{ filter:drop-shadow(0 0 0 2px var(--accent)) drop-shadow(0 8px 14px rgba(0,0,0,.28)); }
   .askfab:focus-visible{ outline:none; }
   .askpanel-who{ display:inline-flex; align-items:center; gap:11px; }

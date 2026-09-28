@@ -71,7 +71,7 @@ flyrobin.app. His first pass of notes is built on `claude/quality-polish` for th
   thinking, excited, helpful) cut from `Robin Character Sheet.png` at the repo root as 224 px
   die-cut stickers (background flood-filled away, white border), in `broker/public/survey/robin/`.
   The launcher is her face alone (Tanner: "her face only as the sticker"): an 80 px sticker in
-  the corner with no pill, ring or text, a lift and tilt on hover, an accent edge while open, and
+  the corner with no pill, ring or text, straight up (Tanner: no tilt), a lift on hover, an accent edge while open, and
   the chat panel opening above her; the panel header carries a 42 px face that follows the exchange:
   listening while typing, thinking while the rows are read, helpful once an answer lands, happy
   otherwise. The five files are preloaded so the switch never flickers. Verified on the fixture
