@@ -364,25 +364,20 @@
   .ask-cav{ font-size:.78rem; color:var(--accent); margin-top:11px; line-height:1.5; }
   .ask-cite{ margin-top:13px; display:flex; flex-wrap:wrap; gap:9px; align-items:baseline; }
   .ask-cite .lbl{ font-size:.6rem; }
-  /* The launcher is Robin herself: a round face in the corner, no pill, no text. The heads come
-     from the character sheet at the repo root, cut as circles on the sheet's own off-white so the
-     disc reads the same on either theme. The label appears on hover and focus, and the panel opens
-     above her. */
+  /* The launcher is Robin herself: her face as a sticker in the corner, nothing else. The heads
+     come from the character sheet at the repo root with the background cut away and a white
+     die-cut border, so they sit on either theme. The panel opens above her. */
   .askfab{ position:fixed; right:22px; bottom:22px; z-index:60; display:flex; align-items:center; gap:12px;
     font:inherit; background:none; border:0; padding:0; cursor:pointer; }
   .askfab[hidden]{ display:none; }
-  .askfab-i{ width:64px; height:64px; border-radius:50%; object-fit:cover; display:block;
-    box-shadow:0 0 0 3px var(--ink), 0 10px 28px rgba(0,0,0,.28); transition:transform .15s ease, box-shadow .15s ease; }
-  .askfab:hover .askfab-i, .askfab:focus-visible .askfab-i{ transform:translateY(-2px) scale(1.04); box-shadow:0 0 0 3px var(--accent), 0 14px 32px rgba(0,0,0,.3); }
-  .askfab[aria-expanded="true"] .askfab-i{ box-shadow:0 0 0 3px var(--accent), 0 10px 28px rgba(0,0,0,.28); }
+  /* A die-cut sticker of her head: transparent around her, a white border, a soft shadow. */
+  .askfab-i{ width:80px; height:80px; display:block; filter:drop-shadow(0 8px 14px rgba(0,0,0,.28)); transition:transform .15s ease, filter .15s ease; }
+  .askfab:hover .askfab-i, .askfab:focus-visible .askfab-i{ transform:translateY(-3px) scale(1.05) rotate(-3deg); filter:drop-shadow(0 12px 18px rgba(0,0,0,.32)); }
+  .askfab[aria-expanded="true"] .askfab-i{ filter:drop-shadow(0 0 0 2px var(--accent)) drop-shadow(0 8px 14px rgba(0,0,0,.28)); }
   .askfab:focus-visible{ outline:none; }
-  .askfab-tag{ order:-1; font-size:.68rem; letter-spacing:.12em; text-transform:uppercase; font-weight:700; color:var(--paper);
-    background:var(--ink); border-radius:999px; padding:8px 13px; opacity:0; transform:translateX(6px); transition:opacity .15s, transform .15s; pointer-events:none; white-space:nowrap; }
-  .askfab:hover .askfab-tag, .askfab:focus-visible .askfab-tag{ opacity:1; transform:none; }
-  .askfab[aria-expanded="true"] .askfab-tag{ display:none; }
   .askpanel-who{ display:inline-flex; align-items:center; gap:11px; }
-  .askface{ width:42px; height:42px; border-radius:50%; object-fit:cover; display:block; box-shadow:0 0 0 1px var(--line); transition:opacity .15s; }
-  .askpanel{ position:fixed; right:22px; bottom:100px; z-index:60; width:min(420px,calc(100vw - 32px)); max-height:min(70vh,640px);
+  .askface{ width:46px; height:46px; display:block; transition:opacity .15s; }
+  .askpanel{ position:fixed; right:22px; bottom:112px; z-index:60; width:min(420px,calc(100vw - 32px)); max-height:min(70vh,640px);
     overflow-y:auto; background:var(--paper); color:var(--ink); border:1px solid var(--ink); box-shadow:0 14px 40px rgba(0,0,0,.22); padding:16px 18px 20px; }
   .askpanel[hidden]{ display:none; }
   .askpanel-h{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding-bottom:10px; border-bottom:2px solid var(--ink); }
@@ -398,7 +393,7 @@
     .c7,.c5,.c6{ grid-column:span 12; }
   }
   @media (max-width:560px){
-    .tile{ grid-column:span 12; } .xt{ font-size:.74rem; } .askfab{ right:14px; bottom:14px; } .askfab-i{ width:56px; height:56px; } .askpanel{ right:14px; bottom:84px; }
+    .tile{ grid-column:span 12; } .xt{ font-size:.74rem; } .askfab{ right:14px; bottom:14px; } .askfab-i{ width:66px; height:66px; } .askpanel{ right:14px; bottom:88px; }
     .ask-form{ flex-direction:column; } .ask-form button{ padding:12px; }
     .fun .row{ grid-template-columns:96px 1fr 36px; }
   }
@@ -485,11 +480,11 @@
 </div>
 
 <button class="askfab" id="askfab" type="button" aria-expanded="false" aria-controls="askpanel" aria-label="Ask Robin about the data" hidden>
-  <img class="askfab-i" id="askfabface" src="robin/happy.png" alt="" width="64" height="64"><span class="askfab-tag" aria-hidden="true">Ask the data</span>
+  <img class="askfab-i" id="askfabface" src="robin/happy.png" alt="" width="80" height="80" title="Ask the data">
 </button>
 <div class="askpanel" id="askpanel" role="dialog" aria-label="Ask a question about the survey data" hidden>
   <div class="askpanel-h">
-    <span class="askpanel-who"><img class="askface" id="askface" src="robin/happy.png" alt="" width="42" height="42"><span class="t">Ask the data</span></span>
+    <span class="askpanel-who"><img class="askface" id="askface" src="robin/happy.png" alt="" width="46" height="46"><span class="t">Ask the data</span></span>
     <button class="drw-x" id="askx" type="button">Close</button>
   </div>
   <p class="askpanel-lede" id="asklede">Answers come only from the survey responses in the current slice, with the calls cited. If they can’t answer, it says so.</p>
