@@ -373,7 +373,10 @@
   /* A die-cut sticker of her head: transparent around her, a white border, a soft shadow. */
   .askfab-i{ width:96px; height:96px; display:block; filter:drop-shadow(0 8px 14px rgba(0,0,0,.28)); transition:transform .15s ease, filter .15s ease; }
   .askfab:hover .askfab-i, .askfab:focus-visible .askfab-i{ transform:translateY(-3px) scale(1.05); filter:drop-shadow(0 12px 18px rgba(0,0,0,.32)); }
-  .askfab[aria-expanded="true"] .askfab-i{ filter:drop-shadow(0 0 0 2px var(--accent)) drop-shadow(0 8px 14px rgba(0,0,0,.28)); }
+  /* While the chat is open she is mirrored so she faces the panel (and the data) instead of away
+     from it; the listening head is drawn looking to the right. */
+  .askfab[aria-expanded="true"] .askfab-i{ transform:scaleX(-1); filter:drop-shadow(0 0 0 2px var(--accent)) drop-shadow(0 8px 14px rgba(0,0,0,.28)); }
+  .askfab[aria-expanded="true"]:hover .askfab-i, .askfab[aria-expanded="true"]:focus-visible .askfab-i{ transform:translateY(-3px) scale(1.05) scaleX(-1); }
   .askfab:focus-visible{ outline:none; }
   .askpanel-who{ display:inline-flex; align-items:center; gap:11px; }
   .askface{ width:46px; height:46px; display:block; transition:opacity .15s; }
