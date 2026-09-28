@@ -371,11 +371,15 @@
   .askfab[hidden]{ display:none; }
   .askfab:hover{ background:var(--accent); border-color:var(--accent); }
   .askfab:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
-  .askfab-i{ display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:var(--paper); color:var(--ink); font-size:.8rem; font-weight:800; }
+  /* Robin, from the character sheet at the repo root: five expression heads cut as circles on the
+     sheet's own off-white, so the disc reads the same on the ink button and on either theme. */
+  .askfab-i{ width:26px; height:26px; border-radius:50%; object-fit:cover; display:block; box-shadow:0 0 0 2px var(--paper); }
+  .askpanel-who{ display:inline-flex; align-items:center; gap:11px; }
+  .askface{ width:42px; height:42px; border-radius:50%; object-fit:cover; display:block; box-shadow:0 0 0 1px var(--line); transition:opacity .15s; }
   .askpanel{ position:fixed; right:22px; bottom:78px; z-index:60; width:min(420px,calc(100vw - 32px)); max-height:min(70vh,640px);
     overflow-y:auto; background:var(--paper); color:var(--ink); border:1px solid var(--ink); box-shadow:0 14px 40px rgba(0,0,0,.22); padding:16px 18px 20px; }
   .askpanel[hidden]{ display:none; }
-  .askpanel-h{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding-bottom:10px; border-bottom:2px solid var(--ink); }
+  .askpanel-h{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding-bottom:10px; border-bottom:2px solid var(--ink); }
   .askpanel-h .t{ font-size:.85rem; font-weight:800; text-transform:uppercase; letter-spacing:.03em; }
   .askpanel-lede{ font-size:.78rem; color:var(--sub); margin:10px 0 0; line-height:1.5; }
   .askpanel .ask-form{ flex-direction:column; } .askpanel .ask-form button{ padding:11px; }
@@ -475,11 +479,11 @@
 </div>
 
 <button class="askfab" id="askfab" type="button" aria-expanded="false" aria-controls="askpanel" hidden>
-  <span class="askfab-i" aria-hidden="true">?</span> Ask the data
+  <img class="askfab-i" src="robin/happy.png" alt="" width="26" height="26"> Ask the data
 </button>
 <div class="askpanel" id="askpanel" role="dialog" aria-label="Ask a question about the survey data" hidden>
   <div class="askpanel-h">
-    <span class="t">Ask the data</span>
+    <span class="askpanel-who"><img class="askface" id="askface" src="robin/happy.png" alt="" width="42" height="42"><span class="t">Ask the data</span></span>
     <button class="drw-x" id="askx" type="button">Close</button>
   </div>
   <p class="askpanel-lede" id="asklede">Answers come only from the survey responses in the current slice, with the calls cited. If they can’t answer, it says so.</p>
@@ -1050,12 +1054,20 @@
 
   // ---- Ask the data --------------------------------------------------------------------------
   const EXAMPLES=["Did anyone who preferred a person say why?","What did the lowest raters actually say?","Is there a topic where people wanted a human?","Did anyone change their mind between calls?"];
+  // Robin's face on the panel follows the exchange: listening while you type, thinking while the
+  // rows are read, helpful once there is an answer, and back to happy otherwise. The five heads
+  // are preloaded so the switch never flickers.
+  const FACES=["happy","listening","thinking","helpful","excited"];
+  FACES.forEach(f=>{ const i=new Image(); i.src=`robin/${f}.png`; });
+  function face(state){ const el=document.getElementById("askface"); if(el&&FACES.includes(state)) el.src=`robin/${state}.png`; }
   function initAsk(){
     const fab=document.getElementById("askfab"), panel=document.getElementById("askpanel");
     fab.hidden=false;
-    const setOpen=(o)=>{ panel.hidden=!o; fab.setAttribute("aria-expanded",String(o)); if(o) document.getElementById("askq").focus(); };
+    const setOpen=(o)=>{ panel.hidden=!o; fab.setAttribute("aria-expanded",String(o)); if(o) document.getElementById("askq").focus(); else face("happy"); };
     fab.addEventListener("click",()=>setOpen(panel.hidden));
     document.getElementById("askx").addEventListener("click",()=>setOpen(false));
+    document.getElementById("askq").addEventListener("focus",()=>face("listening"));
+    document.getElementById("askq").addEventListener("input",()=>face("listening"));
     document.addEventListener("keydown",(e)=>{ if(e.key==="Escape"&&!panel.hidden) setOpen(false); });
     document.getElementById("askeg").innerHTML=EXAMPLES.map(q=>`<button type="button" data-q="${esc(q)}">${esc(q)}</button>`).join("");
     document.getElementById("askeg").addEventListener("click",(e)=>{ const b=e.target.closest("button[data-q]"); if(!b) return; document.getElementById("askq").value=b.dataset.q; document.getElementById("askform").requestSubmit(); });
@@ -1063,13 +1075,14 @@
       e.preventDefault();
       const q=document.getElementById("askq").value.trim(); if(!q) return;
       const btn=document.getElementById("asksend"), out=document.getElementById("askout");
-      btn.disabled=true; out.innerHTML=`<div class="ask-out"><p class="soft">Reading the rows…</p></div>`;
+      btn.disabled=true; face("thinking"); out.innerHTML=`<div class="ask-out"><p class="soft">Reading the rows…</p></div>`;
       try{
         const r=await fetch("/api/survey-ask"+qs(),{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({question:q})});
         const a=await r.json();
         if(!r.ok) throw new Error(a.error||("HTTP "+r.status));
         out.innerHTML=`<div class="ask-out"><p>${esc(a.answer)}</p>${a.caveat?`<div class="ask-cav">${esc(a.caveat)}</div>`:""}${(a.cited||[]).length?`<div class="ask-cite"><span class="lbl">From these calls</span>${a.cited.map(id=>`<button class="cid" data-id="${esc(id)}">${esc(String(id).slice(-8))}</button>`).join("")}</div>`:""}</div>`;
-      }catch(err){ out.innerHTML=`<div class="ask-out"><p class="soft">${esc(err.message)}</p></div>`; }
+        face("helpful");
+      }catch(err){ face("happy"); out.innerHTML=`<div class="ask-out"><p class="soft">${esc(err.message)}</p></div>`; }
       finally{ btn.disabled=false; }
     });
   }

@@ -65,8 +65,18 @@ flyrobin.app. His first pass of notes is built on `claude/quality-polish` for th
   and fills the third cell with the theme said by the most people, its count and sentiment
   (accent when negative); while waiting it says "finding the top theme…", and when there are not
   enough comments it says at what count themes appear. Verified on the fixture through both states.
-- **Open, for Tanner:** merge the slide branch; second-wave dates; the retired-instrument note on
-  the NPS tile, if wanted; the themes cache table.
+- **Slide merged as PR #78**, live 2026-09-28. Grader stays on Sonnet 5 (Tanner); themes and Ask
+  are Opus 5, the Question Tester's ask is Haiku 4.5.
+- **Robin on Ask the data (branch `claude/ask-robin`).** Five expression heads (happy, listening,
+  thinking, excited, helpful) cut from `Robin Character Sheet.png` at the repo root as 192 px
+  circles on the sheet's own off-white, in `broker/public/survey/robin/`. The Ask button wears the
+  happy head in place of the "?"; the panel header carries a 42 px face that follows the exchange:
+  listening while typing, thinking while the rows are read, helpful once an answer lands, happy
+  otherwise. The five files are preloaded so the switch never flickers. Verified on the fixture
+  in both themes through all four states, no script errors. The answers still come from a model
+  reading survey rows, not from the live agent; the face is branding.
+- **Open, for Tanner:** merge the Ask-Robin branch; second-wave dates; the retired-instrument
+  note on the NPS tile, if wanted; the themes cache table.
 
 ---
 
