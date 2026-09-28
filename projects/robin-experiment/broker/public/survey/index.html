@@ -364,18 +364,24 @@
   .ask-cav{ font-size:.78rem; color:var(--accent); margin-top:11px; line-height:1.5; }
   .ask-cite{ margin-top:13px; display:flex; flex-wrap:wrap; gap:9px; align-items:baseline; }
   .ask-cite .lbl{ font-size:.6rem; }
-  .askfab{ position:fixed; right:22px; bottom:22px; z-index:60; display:inline-flex; align-items:center; gap:10px;
-    font:inherit; font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; font-weight:700;
-    background:var(--ink); color:var(--paper); border:1px solid var(--ink); border-radius:999px; padding:11px 18px 11px 12px;
-    cursor:pointer; box-shadow:0 8px 24px rgba(0,0,0,.18); }
+  /* The launcher is Robin herself: her face as a sticker in the corner, nothing else. The heads
+     come from the character sheet at the repo root with the background cut away and a white
+     die-cut border, so they sit on either theme. The panel opens above her. */
+  .askfab{ position:fixed; right:22px; bottom:22px; z-index:60; display:flex; align-items:center; gap:12px;
+    font:inherit; background:none; border:0; padding:0; cursor:pointer; }
   .askfab[hidden]{ display:none; }
-  .askfab:hover{ background:var(--accent); border-color:var(--accent); }
-  .askfab:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
-  .askfab-i{ display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:var(--paper); color:var(--ink); font-size:.8rem; font-weight:800; }
-  .askpanel{ position:fixed; right:22px; bottom:78px; z-index:60; width:min(420px,calc(100vw - 32px)); max-height:min(70vh,640px);
+  /* A die-cut sticker of her head: transparent around her, a white border, a soft shadow. */
+  .askfab-i{ width:96px; height:96px; display:block; filter:drop-shadow(0 8px 14px rgba(0,0,0,.28)); transition:transform .15s ease, filter .15s ease; }
+  .askfab:hover .askfab-i, .askfab:focus-visible .askfab-i{ transform:translateY(-3px) scale(1.05); filter:drop-shadow(0 12px 18px rgba(0,0,0,.32)); }
+  /* While the chat is open she is mirrored so she faces the panel (and the data) instead of away
+     from it; the listening head is drawn looking to the right. */
+  .askfab[aria-expanded="true"] .askfab-i{ transform:scaleX(-1); filter:drop-shadow(0 0 0 2px var(--accent)) drop-shadow(0 8px 14px rgba(0,0,0,.28)); }
+  .askfab[aria-expanded="true"]:hover .askfab-i, .askfab[aria-expanded="true"]:focus-visible .askfab-i{ transform:translateY(-3px) scale(1.05) scaleX(-1); }
+  .askfab:focus-visible{ outline:none; }
+  .askpanel{ position:fixed; right:22px; bottom:126px; z-index:60; width:min(420px,calc(100vw - 32px)); max-height:min(70vh,640px);
     overflow-y:auto; background:var(--paper); color:var(--ink); border:1px solid var(--ink); box-shadow:0 14px 40px rgba(0,0,0,.22); padding:16px 18px 20px; }
   .askpanel[hidden]{ display:none; }
-  .askpanel-h{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding-bottom:10px; border-bottom:2px solid var(--ink); }
+  .askpanel-h{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding-bottom:10px; border-bottom:2px solid var(--ink); }
   .askpanel-h .t{ font-size:.85rem; font-weight:800; text-transform:uppercase; letter-spacing:.03em; }
   .askpanel-lede{ font-size:.78rem; color:var(--sub); margin:10px 0 0; line-height:1.5; }
   .askpanel .ask-form{ flex-direction:column; } .askpanel .ask-form button{ padding:11px; }
@@ -388,7 +394,7 @@
     .c7,.c5,.c6{ grid-column:span 12; }
   }
   @media (max-width:560px){
-    .tile{ grid-column:span 12; } .xt{ font-size:.74rem; } .askfab{ right:14px; bottom:14px; } .askpanel{ right:14px; bottom:68px; }
+    .tile{ grid-column:span 12; } .xt{ font-size:.74rem; } .askfab{ right:14px; bottom:14px; } .askfab-i{ width:84px; height:84px; } .askpanel{ right:14px; bottom:106px; }
     .ask-form{ flex-direction:column; } .ask-form button{ padding:12px; }
     .fun .row{ grid-template-columns:96px 1fr 36px; }
   }
@@ -474,12 +480,12 @@
   </div>
 </div>
 
-<button class="askfab" id="askfab" type="button" aria-expanded="false" aria-controls="askpanel" hidden>
-  <span class="askfab-i" aria-hidden="true">?</span> Ask the data
+<button class="askfab" id="askfab" type="button" aria-expanded="false" aria-controls="askpanel" aria-label="Ask Robin about the data" hidden>
+  <img class="askfab-i" id="askfabface" src="robin/happy.png" alt="" width="96" height="96" title="Ask Robin">
 </button>
 <div class="askpanel" id="askpanel" role="dialog" aria-label="Ask a question about the survey data" hidden>
   <div class="askpanel-h">
-    <span class="t">Ask the data</span>
+    <span class="t">Ask Robin</span>
     <button class="drw-x" id="askx" type="button">Close</button>
   </div>
   <p class="askpanel-lede" id="asklede">Answers come only from the survey responses in the current slice, with the calls cited. If they can’t answer, it says so.</p>
@@ -1048,14 +1054,22 @@
   document.getElementById("srt").addEventListener("click",(e)=>{ const b=e.target.closest("button[data-s]"); if(!b) return; SORT=b.dataset.s; renderCalls(); });
   document.getElementById("cl").addEventListener("click",(e)=>{ if(!e.target.closest("#clmore")) return; CALLS_ALL=!CALLS_ALL; renderCalls(); if(!CALLS_ALL) document.getElementById("clsec").scrollIntoView({block:"start"}); });
 
-  // ---- Ask the data --------------------------------------------------------------------------
+  // ---- Ask Robin -----------------------------------------------------------------------------
   const EXAMPLES=["Did anyone who preferred a person say why?","What did the lowest raters actually say?","Is there a topic where people wanted a human?","Did anyone change their mind between calls?"];
+  // Robin's face on the panel follows the exchange: listening while you type, thinking while the
+  // rows are read, helpful once there is an answer, and back to happy otherwise. The five heads
+  // are preloaded so the switch never flickers.
+  const FACES=["happy","listening","thinking","helpful","excited"];
+  FACES.forEach(f=>{ const i=new Image(); i.src=`robin/${f}.png`; });
+  function face(state){ if(!FACES.includes(state)) return; const el=document.getElementById("askfabface"); if(el) el.src=`robin/${state}.png`; }
   function initAsk(){
     const fab=document.getElementById("askfab"), panel=document.getElementById("askpanel");
     fab.hidden=false;
-    const setOpen=(o)=>{ panel.hidden=!o; fab.setAttribute("aria-expanded",String(o)); if(o) document.getElementById("askq").focus(); };
+    const setOpen=(o)=>{ panel.hidden=!o; fab.setAttribute("aria-expanded",String(o)); if(o){ face("listening"); document.getElementById("askq").focus(); } else face("happy"); };
     fab.addEventListener("click",()=>setOpen(panel.hidden));
     document.getElementById("askx").addEventListener("click",()=>setOpen(false));
+    document.getElementById("askq").addEventListener("focus",()=>face("listening"));
+    document.getElementById("askq").addEventListener("input",()=>face("listening"));
     document.addEventListener("keydown",(e)=>{ if(e.key==="Escape"&&!panel.hidden) setOpen(false); });
     document.getElementById("askeg").innerHTML=EXAMPLES.map(q=>`<button type="button" data-q="${esc(q)}">${esc(q)}</button>`).join("");
     document.getElementById("askeg").addEventListener("click",(e)=>{ const b=e.target.closest("button[data-q]"); if(!b) return; document.getElementById("askq").value=b.dataset.q; document.getElementById("askform").requestSubmit(); });
@@ -1063,13 +1077,14 @@
       e.preventDefault();
       const q=document.getElementById("askq").value.trim(); if(!q) return;
       const btn=document.getElementById("asksend"), out=document.getElementById("askout");
-      btn.disabled=true; out.innerHTML=`<div class="ask-out"><p class="soft">Reading the rows…</p></div>`;
+      btn.disabled=true; face("thinking"); out.innerHTML=`<div class="ask-out"><p class="soft">Reading the rows…</p></div>`;
       try{
         const r=await fetch("/api/survey-ask"+qs(),{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({question:q})});
         const a=await r.json();
         if(!r.ok) throw new Error(a.error||("HTTP "+r.status));
         out.innerHTML=`<div class="ask-out"><p>${esc(a.answer)}</p>${a.caveat?`<div class="ask-cav">${esc(a.caveat)}</div>`:""}${(a.cited||[]).length?`<div class="ask-cite"><span class="lbl">From these calls</span>${a.cited.map(id=>`<button class="cid" data-id="${esc(id)}">${esc(String(id).slice(-8))}</button>`).join("")}</div>`:""}</div>`;
-      }catch(err){ out.innerHTML=`<div class="ask-out"><p class="soft">${esc(err.message)}</p></div>`; }
+        face("helpful");
+      }catch(err){ face("happy"); out.innerHTML=`<div class="ask-out"><p class="soft">${esc(err.message)}</p></div>`; }
       finally{ btn.disabled=false; }
     });
   }
@@ -1172,8 +1187,8 @@
           "Two comments is two people, so a theme is an index; the comments are the evidence." ] },
         { target:"#revcard", placement:"left", title:"Calls for review", body:[
           "Calls that scored 6 or below or sounded unhappy, each one click from its transcript. An empty list on a small sample means nothing." ] },
-        { target:"#askfab", placement:"left", title:"Ask the data", body:[
-          "Plain questions, answered only from the rows in the current slice, with the calls cited. If the rows cannot answer, it says so." ] },
+        { target:"#askfab", placement:"left", title:"Ask Robin", body:[
+          "Click Robin to open the chat. Plain questions, answered only from the rows in the current slice, with the calls cited. If the rows cannot answer, it says so." ] },
         { target:"#cumsec", placement:"top", title:"The deeper sections", body:[
           "Under the board: the <b>Confidence</b> chart, calls per person (one dot per call, so repeat callers and changed minds show), the full call browser and the downloads. The chart shows the headline share with its 95% band as answers arrived; the result is settled once the band clears 50%." ] },
         { target:".rt-help", placement:"top", title:"Help lives here", body:[
