@@ -378,8 +378,6 @@
   .askfab[aria-expanded="true"] .askfab-i{ transform:scaleX(-1); filter:drop-shadow(0 0 0 2px var(--accent)) drop-shadow(0 8px 14px rgba(0,0,0,.28)); }
   .askfab[aria-expanded="true"]:hover .askfab-i, .askfab[aria-expanded="true"]:focus-visible .askfab-i{ transform:translateY(-3px) scale(1.05) scaleX(-1); }
   .askfab:focus-visible{ outline:none; }
-  .askpanel-who{ display:inline-flex; align-items:center; gap:11px; }
-  .askface{ width:46px; height:46px; display:block; transition:opacity .15s; }
   .askpanel{ position:fixed; right:22px; bottom:126px; z-index:60; width:min(420px,calc(100vw - 32px)); max-height:min(70vh,640px);
     overflow-y:auto; background:var(--paper); color:var(--ink); border:1px solid var(--ink); box-shadow:0 14px 40px rgba(0,0,0,.22); padding:16px 18px 20px; }
   .askpanel[hidden]{ display:none; }
@@ -487,7 +485,7 @@
 </button>
 <div class="askpanel" id="askpanel" role="dialog" aria-label="Ask a question about the survey data" hidden>
   <div class="askpanel-h">
-    <span class="askpanel-who"><img class="askface" id="askface" src="robin/happy.png" alt="" width="46" height="46"><span class="t">Ask the data</span></span>
+    <span class="t">Ask the data</span>
     <button class="drw-x" id="askx" type="button">Close</button>
   </div>
   <p class="askpanel-lede" id="asklede">Answers come only from the survey responses in the current slice, with the calls cited. If they can’t answer, it says so.</p>
@@ -1063,7 +1061,7 @@
   // are preloaded so the switch never flickers.
   const FACES=["happy","listening","thinking","helpful","excited"];
   FACES.forEach(f=>{ const i=new Image(); i.src=`robin/${f}.png`; });
-  function face(state){ if(!FACES.includes(state)) return; for(const id of ["askface","askfabface"]){ const el=document.getElementById(id); if(el) el.src=`robin/${state}.png`; } }
+  function face(state){ if(!FACES.includes(state)) return; const el=document.getElementById("askfabface"); if(el) el.src=`robin/${state}.png`; }
   function initAsk(){
     const fab=document.getElementById("askfab"), panel=document.getElementById("askpanel");
     fab.hidden=false;

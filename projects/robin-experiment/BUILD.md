@@ -72,10 +72,14 @@ flyrobin.app. His first pass of notes is built on `claude/quality-polish` for th
   die-cut stickers (background flood-filled away, white border), in `broker/public/survey/robin/`.
   The launcher is her face alone (Tanner: "her face only as the sticker"): an 80 px sticker in
   the corner with no pill, ring or text, straight up (Tanner: no tilt), a lift on hover, an accent edge while open, and
-  the chat panel opening above her; the panel header carries a 42 px face that follows the exchange:
-  listening while typing, thinking while the rows are read, helpful once an answer lands, happy
-  otherwise. The five files are preloaded so the switch never flickers. Verified on the fixture
-  in both themes through all four states, no script errors. The answers still come from a model
+  the chat panel opening above her. While the chat is open she is mirrored (CSS `scaleX(-1)`) so
+  she faces the panel; the headset "R" reads backwards in that pose, a known cost of flipping the
+  same file. The sticker itself follows the exchange: listening while typing, thinking while the
+  rows are read, helpful once an answer lands, happy otherwise. A second small face in the panel
+  header was tried and removed (Tanner, 2026-09-28: it read the wrong way; "just remove the
+  smaller image"), so the sticker is the only Robin on the page. The five files are preloaded so
+  the switch never flickers. Verified on the fixture in both themes and on a phone viewport
+  through all four states, no script errors. The answers still come from a model
   reading survey rows, not from the live agent; the face is branding.
 - **Open, for Tanner:** merge the Ask-Robin branch; second-wave dates; the retired-instrument
   note on the NPS tile, if wanted; the themes cache table.
