@@ -481,11 +481,11 @@
 </div>
 
 <button class="askfab" id="askfab" type="button" aria-expanded="false" aria-controls="askpanel" aria-label="Ask Robin about the data" hidden>
-  <img class="askfab-i" id="askfabface" src="robin/happy.png" alt="" width="96" height="96" title="Ask the data">
+  <img class="askfab-i" id="askfabface" src="robin/happy.png" alt="" width="96" height="96" title="Ask Robin">
 </button>
 <div class="askpanel" id="askpanel" role="dialog" aria-label="Ask a question about the survey data" hidden>
   <div class="askpanel-h">
-    <span class="t">Ask the data</span>
+    <span class="t">Ask Robin</span>
     <button class="drw-x" id="askx" type="button">Close</button>
   </div>
   <p class="askpanel-lede" id="asklede">Answers come only from the survey responses in the current slice, with the calls cited. If they can’t answer, it says so.</p>
@@ -1054,7 +1054,7 @@
   document.getElementById("srt").addEventListener("click",(e)=>{ const b=e.target.closest("button[data-s]"); if(!b) return; SORT=b.dataset.s; renderCalls(); });
   document.getElementById("cl").addEventListener("click",(e)=>{ if(!e.target.closest("#clmore")) return; CALLS_ALL=!CALLS_ALL; renderCalls(); if(!CALLS_ALL) document.getElementById("clsec").scrollIntoView({block:"start"}); });
 
-  // ---- Ask the data --------------------------------------------------------------------------
+  // ---- Ask Robin -----------------------------------------------------------------------------
   const EXAMPLES=["Did anyone who preferred a person say why?","What did the lowest raters actually say?","Is there a topic where people wanted a human?","Did anyone change their mind between calls?"];
   // Robin's face on the panel follows the exchange: listening while you type, thinking while the
   // rows are read, helpful once there is an answer, and back to happy otherwise. The five heads
@@ -1187,7 +1187,7 @@
           "Two comments is two people, so a theme is an index; the comments are the evidence." ] },
         { target:"#revcard", placement:"left", title:"Calls for review", body:[
           "Calls that scored 6 or below or sounded unhappy, each one click from its transcript. An empty list on a small sample means nothing." ] },
-        { target:"#askfab", placement:"left", title:"Ask the data", body:[
+        { target:"#askfab", placement:"left", title:"Ask Robin", body:[
           "Click Robin to open the chat. Plain questions, answered only from the rows in the current slice, with the calls cited. If the rows cannot answer, it says so." ] },
         { target:"#cumsec", placement:"top", title:"The deeper sections", body:[
           "Under the board: the <b>Confidence</b> chart, calls per person (one dot per call, so repeat callers and changed minds show), the full call browser and the downloads. The chart shows the headline share with its 95% band as answers arrived; the result is settled once the band clears 50%." ] },

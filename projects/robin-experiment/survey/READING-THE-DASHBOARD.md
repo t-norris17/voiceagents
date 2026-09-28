@@ -35,7 +35,7 @@ Then: 0 to 10 would you recommend this, 0 to 10 how natural did the voice sound,
 | **Confidence** | How often Robin actually asked the survey, then the headline redrawn one respondent at a time with its band. The chart appears at 20 respondents. | Below 70% asked, every figure above rests on a biased slice. When the band stops crossing 50%, the result is callable. At n=30, 60/40 is noise. |
 | **Every call** | Every answered call, newest first, repeats included, with transcript. | The audit trail. |
 | **Downloads** | People CSV (one row per respondent, basis of every figure), calls CSV (with repeats), one slide. | Start from the people file to check the page. |
-| **Ask the data** (button, bottom right) | Plain-English questions answered only from these rows, with the calls cited. Says when it can't answer. | Test a hunch, then open the cited calls. It sees nothing outside the survey. |
+| **Ask Robin** (her face, bottom right) | Plain-English questions answered only from these rows, with the calls cited. Says when it can't answer. | Test a hunch, then open the cited calls. It sees nothing outside the survey. |
 
 ## Don't
 
