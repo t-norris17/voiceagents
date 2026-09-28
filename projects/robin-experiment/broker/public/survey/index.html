@@ -371,13 +371,13 @@
     font:inherit; background:none; border:0; padding:0; cursor:pointer; }
   .askfab[hidden]{ display:none; }
   /* A die-cut sticker of her head: transparent around her, a white border, a soft shadow. */
-  .askfab-i{ width:80px; height:80px; display:block; filter:drop-shadow(0 8px 14px rgba(0,0,0,.28)); transition:transform .15s ease, filter .15s ease; }
-  .askfab:hover .askfab-i, .askfab:focus-visible .askfab-i{ transform:translateY(-3px) scale(1.05) rotate(-3deg); filter:drop-shadow(0 12px 18px rgba(0,0,0,.32)); }
+  .askfab-i{ width:96px; height:96px; display:block; transform:rotate(7deg); filter:drop-shadow(0 8px 14px rgba(0,0,0,.28)); transition:transform .15s ease, filter .15s ease; }
+  .askfab:hover .askfab-i, .askfab:focus-visible .askfab-i{ transform:translateY(-3px) scale(1.05) rotate(-2deg); filter:drop-shadow(0 12px 18px rgba(0,0,0,.32)); }
   .askfab[aria-expanded="true"] .askfab-i{ filter:drop-shadow(0 0 0 2px var(--accent)) drop-shadow(0 8px 14px rgba(0,0,0,.28)); }
   .askfab:focus-visible{ outline:none; }
   .askpanel-who{ display:inline-flex; align-items:center; gap:11px; }
   .askface{ width:46px; height:46px; display:block; transition:opacity .15s; }
-  .askpanel{ position:fixed; right:22px; bottom:112px; z-index:60; width:min(420px,calc(100vw - 32px)); max-height:min(70vh,640px);
+  .askpanel{ position:fixed; right:22px; bottom:126px; z-index:60; width:min(420px,calc(100vw - 32px)); max-height:min(70vh,640px);
     overflow-y:auto; background:var(--paper); color:var(--ink); border:1px solid var(--ink); box-shadow:0 14px 40px rgba(0,0,0,.22); padding:16px 18px 20px; }
   .askpanel[hidden]{ display:none; }
   .askpanel-h{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding-bottom:10px; border-bottom:2px solid var(--ink); }
@@ -393,7 +393,7 @@
     .c7,.c5,.c6{ grid-column:span 12; }
   }
   @media (max-width:560px){
-    .tile{ grid-column:span 12; } .xt{ font-size:.74rem; } .askfab{ right:14px; bottom:14px; } .askfab-i{ width:66px; height:66px; } .askpanel{ right:14px; bottom:88px; }
+    .tile{ grid-column:span 12; } .xt{ font-size:.74rem; } .askfab{ right:14px; bottom:14px; } .askfab-i{ width:84px; height:84px; } .askpanel{ right:14px; bottom:106px; }
     .ask-form{ flex-direction:column; } .ask-form button{ padding:12px; }
     .fun .row{ grid-template-columns:96px 1fr 36px; }
   }
@@ -480,7 +480,7 @@
 </div>
 
 <button class="askfab" id="askfab" type="button" aria-expanded="false" aria-controls="askpanel" aria-label="Ask Robin about the data" hidden>
-  <img class="askfab-i" id="askfabface" src="robin/happy.png" alt="" width="80" height="80" title="Ask the data">
+  <img class="askfab-i" id="askfabface" src="robin/happy.png" alt="" width="96" height="96" title="Ask the data">
 </button>
 <div class="askpanel" id="askpanel" role="dialog" aria-label="Ask a question about the survey data" hidden>
   <div class="askpanel-h">
