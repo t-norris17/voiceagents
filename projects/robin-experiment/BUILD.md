@@ -69,8 +69,10 @@ flyrobin.app. His first pass of notes is built on `claude/quality-polish` for th
   are Opus 5, the Question Tester's ask is Haiku 4.5.
 - **Robin on Ask the data (branch `claude/ask-robin`).** Five expression heads (happy, listening,
   thinking, excited, helpful) cut from `Robin Character Sheet.png` at the repo root as 192 px
-  circles on the sheet's own off-white, in `broker/public/survey/robin/`. The Ask button wears the
-  happy head in place of the "?"; the panel header carries a 42 px face that follows the exchange:
+  circles on the sheet's own off-white, in `broker/public/survey/robin/`. The launcher is Robin
+  herself (Tanner: as on Lumio): a 64 px round face in the corner with no pill or text, the "Ask
+  the data" tag only on hover or focus, an accent ring while open, and the chat panel opening
+  above her; the panel header carries a 42 px face that follows the exchange:
   listening while typing, thinking while the rows are read, helpful once an answer lands, happy
   otherwise. The five files are preloaded so the switch never flickers. Verified on the fixture
   in both themes through all four states, no script errors. The answers still come from a model

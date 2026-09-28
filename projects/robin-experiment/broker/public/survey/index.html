@@ -364,19 +364,25 @@
   .ask-cav{ font-size:.78rem; color:var(--accent); margin-top:11px; line-height:1.5; }
   .ask-cite{ margin-top:13px; display:flex; flex-wrap:wrap; gap:9px; align-items:baseline; }
   .ask-cite .lbl{ font-size:.6rem; }
-  .askfab{ position:fixed; right:22px; bottom:22px; z-index:60; display:inline-flex; align-items:center; gap:10px;
-    font:inherit; font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; font-weight:700;
-    background:var(--ink); color:var(--paper); border:1px solid var(--ink); border-radius:999px; padding:11px 18px 11px 12px;
-    cursor:pointer; box-shadow:0 8px 24px rgba(0,0,0,.18); }
+  /* The launcher is Robin herself: a round face in the corner, no pill, no text. The heads come
+     from the character sheet at the repo root, cut as circles on the sheet's own off-white so the
+     disc reads the same on either theme. The label appears on hover and focus, and the panel opens
+     above her. */
+  .askfab{ position:fixed; right:22px; bottom:22px; z-index:60; display:flex; align-items:center; gap:12px;
+    font:inherit; background:none; border:0; padding:0; cursor:pointer; }
   .askfab[hidden]{ display:none; }
-  .askfab:hover{ background:var(--accent); border-color:var(--accent); }
-  .askfab:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
-  /* Robin, from the character sheet at the repo root: five expression heads cut as circles on the
-     sheet's own off-white, so the disc reads the same on the ink button and on either theme. */
-  .askfab-i{ width:26px; height:26px; border-radius:50%; object-fit:cover; display:block; box-shadow:0 0 0 2px var(--paper); }
+  .askfab-i{ width:64px; height:64px; border-radius:50%; object-fit:cover; display:block;
+    box-shadow:0 0 0 3px var(--ink), 0 10px 28px rgba(0,0,0,.28); transition:transform .15s ease, box-shadow .15s ease; }
+  .askfab:hover .askfab-i, .askfab:focus-visible .askfab-i{ transform:translateY(-2px) scale(1.04); box-shadow:0 0 0 3px var(--accent), 0 14px 32px rgba(0,0,0,.3); }
+  .askfab[aria-expanded="true"] .askfab-i{ box-shadow:0 0 0 3px var(--accent), 0 10px 28px rgba(0,0,0,.28); }
+  .askfab:focus-visible{ outline:none; }
+  .askfab-tag{ order:-1; font-size:.68rem; letter-spacing:.12em; text-transform:uppercase; font-weight:700; color:var(--paper);
+    background:var(--ink); border-radius:999px; padding:8px 13px; opacity:0; transform:translateX(6px); transition:opacity .15s, transform .15s; pointer-events:none; white-space:nowrap; }
+  .askfab:hover .askfab-tag, .askfab:focus-visible .askfab-tag{ opacity:1; transform:none; }
+  .askfab[aria-expanded="true"] .askfab-tag{ display:none; }
   .askpanel-who{ display:inline-flex; align-items:center; gap:11px; }
   .askface{ width:42px; height:42px; border-radius:50%; object-fit:cover; display:block; box-shadow:0 0 0 1px var(--line); transition:opacity .15s; }
-  .askpanel{ position:fixed; right:22px; bottom:78px; z-index:60; width:min(420px,calc(100vw - 32px)); max-height:min(70vh,640px);
+  .askpanel{ position:fixed; right:22px; bottom:100px; z-index:60; width:min(420px,calc(100vw - 32px)); max-height:min(70vh,640px);
     overflow-y:auto; background:var(--paper); color:var(--ink); border:1px solid var(--ink); box-shadow:0 14px 40px rgba(0,0,0,.22); padding:16px 18px 20px; }
   .askpanel[hidden]{ display:none; }
   .askpanel-h{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding-bottom:10px; border-bottom:2px solid var(--ink); }
@@ -392,7 +398,7 @@
     .c7,.c5,.c6{ grid-column:span 12; }
   }
   @media (max-width:560px){
-    .tile{ grid-column:span 12; } .xt{ font-size:.74rem; } .askfab{ right:14px; bottom:14px; } .askpanel{ right:14px; bottom:68px; }
+    .tile{ grid-column:span 12; } .xt{ font-size:.74rem; } .askfab{ right:14px; bottom:14px; } .askfab-i{ width:56px; height:56px; } .askpanel{ right:14px; bottom:84px; }
     .ask-form{ flex-direction:column; } .ask-form button{ padding:12px; }
     .fun .row{ grid-template-columns:96px 1fr 36px; }
   }
@@ -478,8 +484,8 @@
   </div>
 </div>
 
-<button class="askfab" id="askfab" type="button" aria-expanded="false" aria-controls="askpanel" hidden>
-  <img class="askfab-i" src="robin/happy.png" alt="" width="26" height="26"> Ask the data
+<button class="askfab" id="askfab" type="button" aria-expanded="false" aria-controls="askpanel" aria-label="Ask Robin about the data" hidden>
+  <img class="askfab-i" id="askfabface" src="robin/happy.png" alt="" width="64" height="64"><span class="askfab-tag" aria-hidden="true">Ask the data</span>
 </button>
 <div class="askpanel" id="askpanel" role="dialog" aria-label="Ask a question about the survey data" hidden>
   <div class="askpanel-h">
@@ -1059,11 +1065,11 @@
   // are preloaded so the switch never flickers.
   const FACES=["happy","listening","thinking","helpful","excited"];
   FACES.forEach(f=>{ const i=new Image(); i.src=`robin/${f}.png`; });
-  function face(state){ const el=document.getElementById("askface"); if(el&&FACES.includes(state)) el.src=`robin/${state}.png`; }
+  function face(state){ if(!FACES.includes(state)) return; for(const id of ["askface","askfabface"]){ const el=document.getElementById(id); if(el) el.src=`robin/${state}.png`; } }
   function initAsk(){
     const fab=document.getElementById("askfab"), panel=document.getElementById("askpanel");
     fab.hidden=false;
-    const setOpen=(o)=>{ panel.hidden=!o; fab.setAttribute("aria-expanded",String(o)); if(o) document.getElementById("askq").focus(); else face("happy"); };
+    const setOpen=(o)=>{ panel.hidden=!o; fab.setAttribute("aria-expanded",String(o)); if(o){ face("listening"); document.getElementById("askq").focus(); } else face("happy"); };
     fab.addEventListener("click",()=>setOpen(panel.hidden));
     document.getElementById("askx").addEventListener("click",()=>setOpen(false));
     document.getElementById("askq").addEventListener("focus",()=>face("listening"));
@@ -1186,7 +1192,7 @@
         { target:"#revcard", placement:"left", title:"Calls for review", body:[
           "Calls that scored 6 or below or sounded unhappy, each one click from its transcript. An empty list on a small sample means nothing." ] },
         { target:"#askfab", placement:"left", title:"Ask the data", body:[
-          "Plain questions, answered only from the rows in the current slice, with the calls cited. If the rows cannot answer, it says so." ] },
+          "Click Robin to open the chat. Plain questions, answered only from the rows in the current slice, with the calls cited. If the rows cannot answer, it says so." ] },
         { target:"#cumsec", placement:"top", title:"The deeper sections", body:[
           "Under the board: the <b>Confidence</b> chart, calls per person (one dot per call, so repeat callers and changed minds show), the full call browser and the downloads. The chart shows the headline share with its 95% band as answers arrived; the result is settled once the band clears 50%." ] },
         { target:".rt-help", placement:"top", title:"Help lives here", body:[
