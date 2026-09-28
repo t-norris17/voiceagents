@@ -58,7 +58,14 @@ flyrobin.app. His first pass of notes is built on `claude/quality-polish` for th
   carry none. Estimate 15 to 45 s per cold compute; the in-memory cache is per instance, so cold
   instances recompute. Proposed, not built: log the duration; move the cache to a Supabase table
   keyed by slice + comment fingerprint so it computes once per new comment.
-- **Open, for Tanner:** merge the tour branch; second-wave dates; the retired-instrument note on
+- **Tour merged as PR #77**, live.
+- **Slide shows the top theme (branch `claude/slide-top-theme`).** `/survey/slide/` still carried
+  the "would recommend it warmly and still want a person" cell that Simple had already swapped
+  for the top theme. The slide now fetches `/api/survey-themes` for its slice after the metrics
+  and fills the third cell with the theme said by the most people, its count and sentiment
+  (accent when negative); while waiting it says "finding the top theme…", and when there are not
+  enough comments it says at what count themes appear. Verified on the fixture through both states.
+- **Open, for Tanner:** merge the slide branch; second-wave dates; the retired-instrument note on
   the NPS tile, if wanted; the themes cache table.
 
 ---
