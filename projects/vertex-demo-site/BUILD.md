@@ -22,6 +22,11 @@
 - Removed an invented eligibility claim from Careers ("full benefits from the first of the month after hire") so the site cannot contradict the plan KB.
 - Verified in headless Chromium: six pages, no overflow, zero `data-ask-robin` hooks on public pages.
 
+**Found later in session 2 (read from the live ElevenLabs config, not assumed):**
+- Tanner enabled text-only and it landed on **live Robin** (`agent_8301…`), not on the duplicate: live `conversation.text_only` and widget `supports_text_only` read `true`; `Robin (web demo)` still reads `false`. The phone line is the tester wave, so this needs a deliberate decision. The last live call (`conv_7201m3shnddyeae95dx0adn0cg7p`, 2026-09-30 16:16Z, Tanner as Priya) predates any evidence of the change and ran normally; what a phone call does on a text-only agent is UNVERIFIED. Tanner said to treat today's failed call as a non-factor.
+- My earlier "TTS drift" diagnosis was wrong. Live Robin was saved between my two reads, so the duplicate (0.55 stability, two audio tags) was faithful and my pin to 0.57 made it differ. Realigned the duplicate to 0.55 plus the two tags. Verified by full diff: the only remaining difference from live Robin is `conversation.text_only`.
+- Avatar: `site/assets/robin-avatar-172.png`, 172 x 172 px, about 37 KB (limit 2 MB), cut from the hero pose on `Robin Character Sheet.png`, flat sage background (214,226,178) matching the sheet's avatar circles, framed so both headset cups stay inside the circle the widget crops to.
+
 **Decisions made:**
 - Robin invisible on the public site; see SPEC key decisions.
 - Tester guide URL (`/tester-guide`) is shared directly with testers, never linked.
