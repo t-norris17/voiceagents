@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tester guide · Vertex Manufacturing</title>
+<meta name="description" content="Internal guide for testing Robin on chat and voice.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#f1eee6">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="/assets/fonts/barlow-condensed-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/ibm-plex-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/" aria-label="Vertex Manufacturing home"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" fill="#12171c"/><path d="M5 7h5.4L16 21.5 21.6 7H27L18.6 26h-5.2z" fill="#f1eee6"/><path d="M13.4 26L16 19.8 18.6 26z" fill="#e4572e"/></svg><span>Vertex<small>Manufacturing</small></span></a>
+    <button class="nav-toggle" aria-expanded="false" aria-controls="nav">Menu</button>
+    <nav class="nav" id="nav" aria-label="Primary">
+      <a href="/">Home</a>
+      <a href="/about">About</a>
+      <a href="/careers">Careers</a>
+      <a href="/benefits">Benefits</a>
+      <a href="/contact">Contact</a>
+      <a class="btn signal" href="/benefits" data-ask-robin>Ask Robin</a>
+    </nav>
+  </div>
+</header>
+<main>
+
+<section class="hero" style="padding-bottom:48px">
+  <div class="wrap" style="grid-template-columns:1fr">
+    <p class="mono">Internal · not linked from the main nav</p>
+    <h1 style="max-width:12em">Tester guide: is chat as good as voice?</h1>
+    <p class="lede" style="margin-top:24px">Ask the same ten questions in the chat window and again by voice, as the same persona, then compare. Everything below is synthetic.</p>
+  </div>
+</section>
+<section class="block" style="padding-top:56px">
+  <div class="wrap">
+    <div class="sec-head reveal"><p class="mono">Who you are</p><h2>Three synthetic members.</h2></div>
+    <div class="persona-grid reveal">
+      <div class="card persona"><h3>Dana</h3><dl><dt>Member ID</dt><dd>90001</dd><dt>Birth date</dt><dd>April 12, 1953</dd></dl><p style="margin:14px 0 0;color:var(--steel);font-size:.92rem">Age 73. Makes "when do I have to start taking money out" a real question. No loan.</p></div>
+      <div class="card persona"><h3>Marcus</h3><dl><dt>Member ID</dt><dd>90002</dd><dt>Birth date</dt><dd>September 30, 1998</dd></dl><p style="margin:14px 0 0;color:var(--steel);font-size:.92rem">New employee. Vested balance is lower than total (profit sharing short of its cliff) and he has an outstanding loan.</p></div>
+      <div class="card persona"><h3>Priya</h3><dl><dt>Member ID</dt><dd>90003</dd><dt>Birth date</dt><dd>June 8, 1974</dd></dl><p style="margin:14px 0 0;color:var(--steel);font-size:.92rem">Age 52. Catch-up contributions apply. Fully vested, no loan.</p></div>
+    </div>
+    <div class="callout reveal"><b>Verification.</b> Robin verifies on Member ID and date of birth, per the demo call cards. The Account Recovery procedure text still mentions the last four of an SSN. If Robin asks for one, do not supply a real number, make one up and note it as a finding. Real member data never goes into this page or into a conversation.</div>
+  </div>
+</section>
+<section class="block alt">
+  <div class="wrap">
+    <div class="sec-head reveal"><p class="mono">Parity script</p><h2>Ten questions, two channels.</h2></div>
+    <table class="parity reveal">
+      <thead><tr><th>#</th><th>Ask</th><th>What it exercises</th></tr></thead>
+      <tbody><tr><td>01</td><td>Was I automatically enrolled, and at what rate?</td><td>Plan fact from the KB</td></tr><tr><td>02</td><td>How do I change how much I am putting in?</td><td>Process and path</td></tr><tr><td>03</td><td>Can I roll my old 401(k) from a previous job into this plan?</td><td>Rollover KB</td></tr><tr><td>04</td><td>What is my balance?</td><td>Tool call (get_balance), listen for total vs vested on Marcus</td></tr><tr><td>05</td><td>What is my loan balance and when is it paid off?</td><td>Tool call with loan detail (Marcus)</td></tr><tr><td>06</td><td>Can I take another loan?</td><td>Loan rule plus tool data, the known weak spot</td></tr><tr><td>07</td><td>What happens to my account if I leave Vertex?</td><td>Leaving KB</td></tr><tr><td>08</td><td>I cannot log in to my account.</td><td>Account Recovery procedure: voice-shaped, watch it in chat</td></tr><tr><td>09</td><td>Can you connect me to a person?</td><td>Escalation: transfer_to_number cannot connect from a browser</td></tr><tr><td>10</td><td>What should I invest in?</td><td>Financial-advice guardrail should decline</td></tr></tbody>
+    </table>
+    <p class="mono" style="margin-top:20px">Grade each answer correct, incomplete or wrong, in both channels. Note the conversation id (the widget shows it) so it can be pulled from the ElevenLabs dashboard.</p>
+  </div>
+</section>
+<section class="block">
+  <div class="wrap">
+    <div class="sec-head reveal"><p class="mono">Prove-it list</p><h2>Where each item stands.</h2></div>
+    <div class="reveal">
+      <div class="status-row"><b>Chat vs voice parity</b><span class="pill now">Testing now</span><span>Duplicate agent with identical prompt, procedures, tools and KB. This page is the script.</span></div>
+      <div class="status-row"><b>Chat escalation</b><span class="pill next">Next</span><span>Robin cannot transfer a browser session. Path under evaluation: post-call webhook into a Rangly-style inbox. Whether the webhook fires for chat is the first thing to confirm.</span></div>
+      <div class="status-row"><b>Agent command center</b><span class="pill later">After escalation</span><span>Portal redesign with one design language and an inbox where escalated requests land for retirement call center agents.</span></div>
+      <div class="status-row"><b>SMS</b><span class="pill later">Pinned</span><span>Needs a Twilio number and carrier registration. Not started.</span></div>
+    </div>
+  </div>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <div>
+      <a class="brand" href="/" style="color:#fff;padding:0"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" fill="#12171c"/><path d="M5 7h5.4L16 21.5 21.6 7H27L18.6 26h-5.2z" fill="#f1eee6"/><path d="M13.4 26L16 19.8 18.6 26z" fill="#e4572e"/></svg><span>Vertex<small>Manufacturing</small></span></a>
+      <p style="margin-top:16px;max-width:26em;color:#8b969f">Precision-machined components and assemblies for the people who build things that have to work.</p>
+    </div>
+    <div>
+      <h4>Company</h4>
+      <a href="/about">About</a><a href="/careers">Careers</a><a href="/contact">Contact</a>
+    </div>
+    <div>
+      <h4>Team members</h4>
+      <a href="/benefits">Retirement benefits</a><a href="/benefits" data-ask-robin>Ask Robin</a><a href="/tester-guide">Tester guide</a>
+    </div>
+    <p class="fiction">Vertex Manufacturing is a fictional company created for a technology demonstration. It is not a real business, and nothing here is a real offer, plan or advice. All member data used with the assistant is synthetic.</p>
+  </div>
+</footer>
+<script src="/assets/site.js"></script>
+</body>
+</html>

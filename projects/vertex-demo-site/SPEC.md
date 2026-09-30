@@ -1,0 +1,75 @@
+# SPEC — Vertex Manufacturing Demo Site
+
+**Slug:** vertex-demo-site
+**Status:** active
+**Last updated:** 2026-09-30
+
+---
+
+## Stack
+
+| Layer | Choice | Rationale |
+|---|---|---|
+| Site | Static HTML, one CSS file, one JS file | Nothing to build, nothing to break; the widget is the only moving part. |
+| Fonts | Barlow Condensed, IBM Plex Sans, IBM Plex Mono (Google Fonts) | Industrial, drawn-on-a-spec-sheet feel. |
+| Widget | `@elevenlabs/convai-widget-embed` from unpkg | Official embed. Version 0.18.3 attributes verified from the published bundle. |
+| Agent | `Robin (web demo)` `agent_0101m3sjqvfyejsa9kn127ez26mm` | Duplicate of live Robin. |
+| Hosting | Vercel project `vertex-demo-site`, root `projects/vertex-demo-site/site` | Same host the rest of the workbench uses. |
+
+## Architecture
+
+```
+visitor ──▶ vercel static site ──▶ <elevenlabs-convai agent-id=…> ──▶ ElevenLabs
+                 │                        │                              │
+        assets/site.js injects the        text + browser voice           Robin (web demo)
+        widget and wires "Ask Robin"      from one launcher              same prompt/KB/tools
+        buttons via elevenlabs-agent:expand                              post-call webhook (workspace)
+```
+
+## File / folder structure
+
+```
+projects/vertex-demo-site/
+  SCOPE.md SPEC.md BUILD.md
+  site/
+    index.html about.html careers.html benefits.html contact.html
+    tester-guide.html      # noindex; synthetic personas + parity script
+    assets/style.css       # design tokens + components
+    assets/site.js         # ROBIN config, widget injection, expand buttons, reveal-on-scroll
+    assets/favicon.svg
+    vercel.json            # clean URLs, noindex header
+```
+
+## Integrations
+
+| Integration | Purpose | Auth method | Status |
+|---|---|---|---|
+| ElevenLabs widget | Chat and voice on the page | Public agent id; origin allowlist on the agent | Live agent; allowlist pending deploy URL |
+| ElevenLabs post-call webhook | Conversation record (workspace level, already set) | HMAC | Existing; chat delivery unverified |
+| Vercel | Hosting | Team project | Pending |
+
+## Key decisions
+
+- **Duplicate the agent, do not reuse live Robin.** Keeps demo traffic out of tester-wave survey and quality numbers. Verified identical on prompt (18,315 chars), four procedure bodies, tool ids, KB, data-collection, LLM and webhook; TTS stability and audio tags were drifted by the duplicate and pinned back to live values.
+- **Page-level `override-first-message`, agent unchanged.** Live greeting says "Thank you for calling NestEgg U support", which is wrong on a website. The override is allowed by the agent (`first_message: true`) and leaves the agent config identical.
+- **No plan facts on the site.** The benefits page names topics and sends every question to Robin, so any accuracy gap is Robin's and never a site-versus-KB contradiction.
+- **SMS shown as "Planned" on the benefits page.** Honest status, and it keeps the three-channel story visible.
+- **Fictional-company footer on every page.**
+
+## Open questions
+
+- [ ] Widget `text-only` mode is not available (`supports_text_only: false`, `conversation.text_only` override off). The full variant with `text_input_enabled: true` covers typing and voice; a dedicated typing-only surface would need a config change.
+- [ ] Wildcard allowlist support.
+
+## Risks
+
+| Risk | Likelihood | Mitigation |
+|---|---|---|
+| Public widget on a public URL means anyone can start conversations against the duplicate | Medium | Origin allowlist plus `require_origin_header`; 600s call cap already set; delete or disable the duplicate when the test ends. Origin header is spoofable outside a browser, so this limits casual use, not a determined caller. |
+| Voice-shaped procedures ("stay on the line", `skip_turn`, `transfer_to_number`) behave oddly in chat | High | That is the finding to capture, not a bug to hide. Config stays identical. |
+| `transfer_to_number` cannot connect from a browser widget | Certain | Documented in docs/elevenlabs-reference.md; chat escalation is the next prove-it item. |
+| Preview URL behind Vercel auth blocks testers | Medium | Check deployment protection after first deploy. |
+
+---
+
+*Spec last updated: 2026-09-30*

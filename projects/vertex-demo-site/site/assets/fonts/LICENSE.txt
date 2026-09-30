@@ -1,0 +1,1 @@
+Barlow Condensed, IBM Plex Sans and IBM Plex Mono are licensed under the SIL Open Font License, Version 1.1 (https://openfontlicense.org). Files here are the Latin subsets distributed by the Fontsource project (@fontsource/*).
