@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contact · Vertex Manufacturing</title>
+<meta name="description" content="Contact Vertex Manufacturing (fictional).">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#f1eee6">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="/assets/fonts/barlow-condensed-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/ibm-plex-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/" aria-label="Vertex Manufacturing home"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" fill="#12171c"/><path d="M5 7h5.4L16 21.5 21.6 7H27L18.6 26h-5.2z" fill="#f1eee6"/><path d="M13.4 26L16 19.8 18.6 26z" fill="#e4572e"/></svg><span>Vertex<small>Manufacturing</small></span></a>
+    <button class="nav-toggle" aria-expanded="false" aria-controls="nav">Menu</button>
+    <nav class="nav" id="nav" aria-label="Primary">
+      <a href="/">Home</a>
+      <a href="/about">About</a>
+      <a href="/careers">Careers</a>
+      <a href="/benefits">Benefits</a>
+      <a href="/contact" aria-current="page">Contact</a>
+      <a class="btn signal" href="/benefits" data-ask-robin>Ask Robin</a>
+    </nav>
+  </div>
+</header>
+<main>
+
+<section class="hero" style="padding-bottom:56px">
+  <div class="wrap" style="grid-template-columns:1fr">
+    <p class="mono">Contact</p>
+    <h1 style="max-width:10em">Talk to a person at Vertex.</h1>
+    <p class="lede" style="margin-top:24px">Quotes, careers and general questions. Retirement questions go faster through <a href="/benefits" data-ask-robin>Robin</a>.</p>
+  </div>
+</section>
+<section class="block">
+  <div class="wrap split">
+    <form class="contact reveal" onsubmit="event.preventDefault();this.querySelector('button').textContent='Demo only: nothing was sent';this.querySelector('button').disabled=true">
+      <label>Name<input required autocomplete="name"></label>
+      <label>Email<input type="email" required autocomplete="email"></label>
+      <label>Message<textarea required></textarea></label>
+      <button class="btn" type="submit">Send message</button>
+    </form>
+    <ul class="rule-list reveal">
+      <li><span>Dayton, Ohio</span><span>Main plant and headquarters</span></li>
+      <li><span>Fort Wayne, Indiana</span><span>Second plant</span></li>
+      <li><span>Sales</span><span>quotes@vertex.example</span></li>
+      <li><span>Careers</span><span>careers@vertex.example</span></li>
+    </ul>
+  </div>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <div>
+      <a class="brand" href="/" style="color:#fff;padding:0"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" fill="#12171c"/><path d="M5 7h5.4L16 21.5 21.6 7H27L18.6 26h-5.2z" fill="#f1eee6"/><path d="M13.4 26L16 19.8 18.6 26z" fill="#e4572e"/></svg><span>Vertex<small>Manufacturing</small></span></a>
+      <p style="margin-top:16px;max-width:26em;color:#8b969f">Precision-machined components and assemblies for the people who build things that have to work.</p>
+    </div>
+    <div>
+      <h4>Company</h4>
+      <a href="/about">About</a><a href="/careers">Careers</a><a href="/contact">Contact</a>
+    </div>
+    <div>
+      <h4>Team members</h4>
+      <a href="/benefits">Retirement benefits</a><a href="/benefits" data-ask-robin>Ask Robin</a><a href="/tester-guide">Tester guide</a>
+    </div>
+    <p class="fiction">Vertex Manufacturing is a fictional company created for a technology demonstration. It is not a real business, and nothing here is a real offer, plan or advice. All member data used with the assistant is synthetic.</p>
+  </div>
+</footer>
+<script src="/assets/site.js"></script>
+</body>
+</html>
