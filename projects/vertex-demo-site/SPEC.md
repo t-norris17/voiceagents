@@ -33,7 +33,7 @@ projects/vertex-demo-site/
   SCOPE.md SPEC.md BUILD.md
   site/
     index.html about.html careers.html benefits.html contact.html
-    tester-guide.html      # noindex; synthetic personas + parity script
+    tester-guide.html      # noindex, unlinked; personas, parity script, prove-it status, "Open the chat widget" button
     assets/style.css       # design tokens + components
     assets/site.js         # ROBIN config, widget injection, expand buttons, reveal-on-scroll
     assets/favicon.svg
@@ -52,8 +52,9 @@ projects/vertex-demo-site/
 
 - **Duplicate the agent, do not reuse live Robin.** Keeps demo traffic out of tester-wave survey and quality numbers. Verified identical on prompt (18,315 chars), four procedure bodies, tool ids, KB, data-collection, LLM and webhook; TTS stability and audio tags were drifted by the duplicate and pinned back to live values.
 - **Page-level `override-first-message`, agent unchanged.** Live greeting says "Thank you for calling NestEgg U support", which is wrong on a website. The override is allowed by the agent (`first_message: true`) and leaves the agent config identical.
-- **No plan facts on the site.** The benefits page names topics and sends every question to Robin, so any accuracy gap is Robin's and never a site-versus-KB contradiction.
-- **SMS shown as "Planned" on the benefits page.** Honest status, and it keeps the three-channel story visible.
+- **Robin is invisible on the public site; the widget is the only surface.** A real employer's pages do not advertise their help-desk assistant, so the site carries no "Ask Robin" buttons, nav items or retirement marketing blocks (changed 2026-09-30 on Tanner's feedback). The benefits page is ordinary HR copy with one generic line pointing to the chat in the corner.
+- **No plan facts on the site.** The 401(k) line is generic ("eligibility, contributions and account access are in the plan documents"), so any accuracy gap is Robin's and never a site-versus-KB contradiction. Eligibility rules, match, vesting and fees are deliberately absent.
+- **Tester instructions live only on the unlisted `/tester-guide`**, not linked from any page. Share the URL with testers directly. SMS status lives there too.
 - **Fictional-company footer on every page.**
 
 ## Open questions

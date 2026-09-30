@@ -2,13 +2,33 @@
 
 **Slug:** vertex-demo-site
 **Started:** 2026-09-30
-**Status:** active, built and committed, NOT yet deployed (Vercel project creation returned 403 for the connector)
+**Status:** active, deployed at https://vertex-demo-site.vercel.app/ (see Session 2)
 
 ---
 
 ## Session log
 
 <!-- Add new sessions at the top, newest first -->
+
+---
+
+### 2026-09-30 — Session 2 (same day, after first deploy)
+
+**Status after session:** site restyled on branch, awaiting PR and merge; widget behavior still untested by Tanner as far as this log knows
+
+**What we did:**
+- Tanner deployed `https://vertex-demo-site.vercel.app/` (Vercel project created by hand after the connector's 403; PR #80 merged first so the folder was on `main`).
+- Feedback: the site over-promoted Robin and looked unrealistic (footer retirement block, orange "Ask Robin" nav button, "Ask Robin about your 401(k)" hero button). Removed all of it. The widget is now the only Robin surface. Home gets a hiring band instead of the retirement block; Benefits is ordinary HR copy with one generic "use the chat in the corner" line; footer is plain; Careers and Contact copy no longer mention the assistant. The tester guide is unlinked and now carries an "Open the chat widget" button.
+- Removed an invented eligibility claim from Careers ("full benefits from the first of the month after hire") so the site cannot contradict the plan KB.
+- Verified in headless Chromium: six pages, no overflow, zero `data-ask-robin` hooks on public pages.
+
+**Decisions made:**
+- Robin invisible on the public site; see SPEC key decisions.
+- Tester guide URL (`/tester-guide`) is shared directly with testers, never linked.
+- Agent allowlist deliberately NOT set yet. Tanner has not confirmed the widget works unrestricted, and I cannot verify from here what `enable_auth` does with a plain agent-id embed (it may require signed URLs and break the widget). Change one thing at a time: confirm the widget works, then set the allowlist, then retest.
+
+**Next session:**
+> 1. Tanner confirms what the widget does on the live site (opens? typing? voice? any console error?). 2. Only then set the agent allowlist to `vertex-demo-site.vercel.app` using the allowlist only (leave `enable_auth` false unless the docs/behavior say otherwise), and retest in a browser plus a check from another origin. 3. Run the ten-question parity script. 4. Check whether the post-call webhook fired for the first chat. 5. Regroup on prove-it: chat escalation, command center, SMS.
 
 ---
 
