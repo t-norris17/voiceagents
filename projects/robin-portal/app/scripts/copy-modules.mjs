@@ -14,7 +14,7 @@
 //
 // Runs as `prebuild`. Fails loudly if a source is missing: a silently empty door is worse than a
 // failed build.
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PRE_PAINT, CONTROL_HTML, CONTROL_JS } from "../lib/theme.js";
@@ -32,6 +32,9 @@ const jobs = [
   [join(cleaner, "vendor"), join(app, "public", "vendor")],
   // The guided-tour engine, shared by every page (the Next.js layout loads it too).
   [join(broker, "robin-tour.js"), join(app, "public", "robin-tour.js")],
+  // The Vertex Manufacturing demo website (vertex-demo-site stays the source of truth). Mounted under
+  // /demo-website/ so it is served from the portal's own domain, behind the portal's password.
+  [join(projects, "vertex-demo-site", "site"), join(app, "public", "demo-website")],
 ];
 
 for (const [from, to] of jobs) {
@@ -44,6 +47,36 @@ for (const [from, to] of jobs) {
   cpSync(from, to, { recursive: true });
   console.log(`copy-modules: ${from.replace(projects + "/", "")} -> ${to.replace(app + "/", "")}`);
 }
+
+// The demo website is authored to be served from a site root (/assets/..., /about). It is mounted
+// here under /demo-website/, so every root-absolute URL in the copy gets the prefix. The copy gets
+// NO portal masthead or home link, on purpose: it has to read as a real employer's site, so a tester
+// (or a boss) sees Vertex, and Robin appears only as the widget. Its own vercel.json (headers for
+// its standalone deployment) is dropped. Fails loudly if a root-absolute URL survives the rewrite.
+const DEMO_PREFIX = "/demo-website";
+const demoDir = join(app, "public", "demo-website");
+rmSync(join(demoDir, "vercel.json"), { force: true });
+const demoFiles = (dir) =>
+  readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+    e.isDirectory() ? demoFiles(join(dir, e.name)) : [join(dir, e.name)]
+  );
+let demoRewritten = 0;
+for (const file of demoFiles(demoDir)) {
+  let text;
+  if (file.endsWith(".html")) {
+    text = readFileSync(file, "utf8").replace(/\b(href|src)="\/(?!\/)/g, `$1="${DEMO_PREFIX}/`);
+  } else if (file.endsWith(".css")) {
+    text = readFileSync(file, "utf8").replace(/url\((["']?)\/(?!\/)/g, `url($1${DEMO_PREFIX}/`);
+  } else continue;
+  writeFileSync(file, text);
+  demoRewritten++;
+  const left = text.match(/\b(?:href|src)="\/(?!demo-website\/|\/)|url\(["']?\/(?!demo-website\/|\/)/g);
+  if (left) {
+    console.error(`copy-modules: root-absolute URL left in ${file.replace(app + "/", "")}: ${left[0]}`);
+    process.exit(1);
+  }
+}
+console.log(`copy-modules: demo website mounted under ${DEMO_PREFIX}/ (${demoRewritten} files rewritten)`);
 
 const HOME_LINK = `
 <a id="rp-home" href="/" aria-label="Back to the Robin portal">&larr; Robin portal</a>
@@ -64,8 +97,8 @@ const HOME_LINK = `
 const MAST = (current, width) => `
 <div class="rp-mast"><div class="rp-in"><a class="rp-wm" href="/">Robin</a><nav aria-label="Sections">${[
   ["/survey/", "Quality"], ["/grader", "Accuracy"], ["/factory/", "Knowledge Factory"],
-  ["/robin-q-tester/", "Question Tester"], ["/calls", "Calls"], ["/about", "About Robin"],
-].map(([h, l]) => `<a href="${h}"${h === current ? ' aria-current="page"' : ""}>${l}</a>`).join("")}</nav>${CONTROL_HTML}</div></div>
+  ["/robin-q-tester/", "Question Tester"], ["/calls", "Calls"], ["/demo-website/", "Demo Website"], ["/about", "About Robin"],
+].map(([h, l]) => `<a href="${h}"${h === current ? ' aria-current="page"' : ""}${h === "/demo-website/" ? ' target="_blank" rel="noopener"' : ""}>${l}</a>`).join("")}</nav>${CONTROL_HTML}</div></div>
 <style>
 .rp-mast{background:var(--paper,#f2f0ea);border-bottom:2px solid var(--ink,#17181c);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
 .rp-in{max-width:${width}px;margin:0 auto;padding:16px ${width > 1000 ? 36 : 40}px 12px;display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap}

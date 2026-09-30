@@ -14,6 +14,7 @@ const DOORS = [
   { href: "/factory/", label: "Knowledge Factory" },
   { href: "/robin-q-tester/", label: "Question Tester" },
   { href: "/calls", label: "Calls" },
+  { href: "/demo-website/", label: "Demo Website", newTab: true },
   { href: "/about", label: "About Robin" },
 ];
 
@@ -31,7 +32,7 @@ export default function RootLayout({ children }) {
             <Link className="wm" href="/">Robin</Link>
             <nav aria-label="Sections">
               {DOORS.map((d) => (
-                <a key={d.href} href={d.href}>{d.label}</a>
+                <a key={d.href} href={d.href} {...(d.newTab ? { target: "_blank", rel: "noopener" } : {})}>{d.label}</a>
               ))}
             </nav>
             <div className="rp-theme" role="group" aria-label="Theme">

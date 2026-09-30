@@ -33,6 +33,7 @@ export default async function Home() {
     { href: "/factory/", t: "Knowledge Factory", d: "Turn a messy source into a Robin-ready article, test it, publish it to her Knowledge Base.", n: null, un: null },
     { href: "/robin-q-tester/", t: "Question Tester", d: "Ask a question the way a caller would and see what Robin's published knowledge answers.", n: null, un: null },
     { href: "/calls", t: "Calls", d: "Every recent call: who verified, what they asked, how it ended, and the transcript.", n: summary?.last_24h ?? null, un: "calls, 24 h" },
+    { href: "/demo-website/", t: "Demo Website", d: "A realistic employer site with Robin as the chat and voice widget in the corner. Try her the way a team member would; the tester guide has the personas and the script.", n: null, un: null, newTab: true },
   ];
 
   return (
@@ -58,7 +59,7 @@ export default async function Home() {
 
       <section className="doors" aria-label="Sections">
         {doors.map((d) => (
-          <a className="door" href={d.href} key={d.href}>
+          <a className="door" href={d.href} key={d.href} {...(d.newTab ? { target: "_blank", rel: "noopener" } : {})}>
             <span className="t">{d.t}</span>
             <span className="d">{d.d}</span>
             {d.n != null ? (

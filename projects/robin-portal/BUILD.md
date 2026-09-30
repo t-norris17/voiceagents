@@ -12,6 +12,14 @@
 
 ---
 
+### 2026-10-01 — Demo Website door
+
+**What changed (branch, not yet merged):** a sixth home tile, "Demo Website", and a nav entry on every page, both opening `/demo-website/` in a new tab. The page is the Vertex Manufacturing demo site (`projects/vertex-demo-site/site`, source of truth there) copied into `public/demo-website/` at prebuild with root-absolute URLs prefixed, so it is served from the portal's own domain and sits behind the same password. No portal masthead is injected into it, on purpose. Directory and clean-URL rewrites moved into `lib/module-paths.js` (unit-tested; existing module routes unchanged). `.gitignore` gains `public/demo-website/`.
+
+**Verified:** local production build, gate 401/200, all six pages 200, widget script served from the portal origin, other modules unaffected, 8/8 tests. **Not verified:** the live widget (needs ElevenLabs), and the deployed robin-portal build (Vercel must include source files outside the root directory for `vertex-demo-site`, as it already does for the broker and cleaner).
+
+---
+
 ### 2026-09-16 — Session 3 (second round of live feedback)
 
 **Status after session:** built and verified against the mock; on the branch, awaiting promote and

@@ -4,6 +4,7 @@
 //
 // Fails CLOSED when PORTAL_PASSWORD is unset: a 503 with the fix on it, never an open portal.
 import { NextResponse } from "next/server";
+import { moduleRewrite } from "./lib/module-paths.js";
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
@@ -18,8 +19,7 @@ function timingSafeEqual(a, b) {
 }
 
 // The copied module pages live in public/ and Next serves public files by exact path only, so the
-// directory URLs the pages are linked by (with or without the trailing slash) map to index.html.
-const MODULE_DIRS = /^\/(survey\/slide|survey\/guide|survey|robin-q-tester|factory)\/?$/;
+// directory URLs the pages are linked by map to index.html (see lib/module-paths.js).
 
 export function middleware(request) {
   // The wiring check is the one path outside the gate (exact match only): it reports booleans and
@@ -40,8 +40,8 @@ export function middleware(request) {
     try { decoded = atob(header.slice(6)); } catch { decoded = ""; }
     const supplied = decoded.slice(decoded.indexOf(":") + 1);
     if (decoded.includes(":") && timingSafeEqual(supplied, expected)) {
-      const m = request.nextUrl.pathname.match(MODULE_DIRS);
-      if (m) return NextResponse.rewrite(new URL(`/${m[1]}/index.html`, request.url));
+      const target = moduleRewrite(request.nextUrl.pathname);
+      if (target) return NextResponse.rewrite(new URL(target, request.url));
       return NextResponse.next();
     }
   }

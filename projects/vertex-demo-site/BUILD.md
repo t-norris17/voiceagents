@@ -2,13 +2,38 @@
 
 **Slug:** vertex-demo-site
 **Started:** 2026-09-30
-**Status:** active, deployed at https://vertex-demo-site.vercel.app/ (see Session 2)
+**Status:** active, deployed standalone at https://vertex-demo-site.vercel.app/ and, once the portal PR merges, also mounted in the Robin portal at /demo-website/ (see Session 3)
 
 ---
 
 ## Session log
 
 <!-- Add new sessions at the top, newest first -->
+
+---
+
+### 2026-10-01 — Session 3 (Robin portal tile, blocked-domain workaround)
+
+**Status after session:** built and tested on branch, awaiting Tanner's go to open the PR and merge
+
+**What we did:**
+- Tanner's boss cannot reach shared domains (vercel.app). A tile that merely links to the standalone site would not help because his browser would still request that host, so the site is now also **served from the portal's own domain**: `scripts/copy-modules.mjs` copies `vertex-demo-site/site` into `public/demo-website/` at build time (the same mechanism the portal already uses for Quality, Factory and the Question Tester), rewriting root-absolute URLs to the `/demo-website/` prefix. `vertex-demo-site/site` stays the source of truth; the standalone deployment is unchanged.
+- New "Demo Website" tile on the portal home (opens in a new tab) and a nav entry on every portal page. The copy deliberately gets NO portal masthead or home link so it reads as a real employer site.
+- `lib/module-paths.js` holds the directory and clean-URL rewrite rules (`/demo-website/about` to `about.html`); the existing survey, factory and tester routes map exactly as before (unit-tested).
+- The widget script is now hosted with the site (`assets/vendor/convai-widget-embed-0.18.3.js`, MIT, license beside it) instead of loaded from unpkg.com, resolved relative to `site.js` so it works under any path prefix. The page-level greeting override is removed: the agent owns its greeting now.
+- Agent (web demo only, verified by reading the stored config back): greeting set on the agent; prompt made channel-aware via `{{system__is_text_only}}` (chat writes NesteggU.com and 401(k) with plain formatting; voice keeps the spoken spellings). `system__is_text_only` confirmed defined in a real voice conversation (false) as well as a chat (true).
+- Findings from the test conversations: the post-call webhook DOES fire for text-only chats (rows landed in `ai_call_events` about 20 s after the chat ended); the broker does NOT filter by agent, so 6 web-demo conversations are in the tester-wave table (only the `survey_answers` view references it; nothing deleted).
+
+**Verified (local production build, headless Chromium):** password gate 401 without, 200 with; all six demo pages 200 through the gate; widget custom element defined from the vendored script served by the portal origin; zero unpkg requests; in-site navigation and clean URLs work; survey, factory, tester and calls unaffected; 8/8 portal tests pass.
+
+**Not verified:** the widget UI itself and the ElevenLabs allowlist (container cannot reach ElevenLabs); whether the boss's network allows flyrobin.app (registered 2026-09-23, a newly registered domain) or ElevenLabs' chat and voice endpoints; `{{system__is_text_only}}` substitution inside the prompt (needs a real chat).
+
+**Decisions made:**
+- Serve under the portal path rather than a subdomain: one host, behind the portal password, no new DNS. The portal password now also gates the tester guide and the widget page.
+- Left the standalone vercel.app site running; it loads its widget script locally after the merge too.
+
+**Next session:**
+> 1. Merge the PR (Tanner has not yet said go), confirm https://flyrobin.app/demo-website/ after the robin-portal redeploy. 2. Test chat and voice there; confirm chat stops saying "nest egg you dot com" and voice still does. 3. Set the agent allowlist to flyrobin.app (leave enable_auth off, retest) and decide whether to restrict or retire the standalone vercel.app site. 4. Decide how to keep web-demo conversations out of the tester-wave table (own webhook vs a skip rule in broker postcall.js) and whether to clean the 6 rows. 5. OTP verification for chat: still needs an email delivery service and a demo inbox from Tanner before any build. 6. Then regroup on the prove-it list.
 
 ---
 
