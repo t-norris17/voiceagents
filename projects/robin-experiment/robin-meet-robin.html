@@ -82,6 +82,15 @@ ol.steps b{color:var(--navy);font-weight:600;font-size:12.2px}
 .band .item .lbl::before{background:var(--orange)}
 .band .item .txt{color:#CBD8E4}
 
+/* ---- the pivot panel ----------------------------------------------------- */
+ul.cond{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px}
+ul.cond > li{position:relative;padding-left:15px;font-size:12.4px;line-height:1.4;color:var(--ink)}
+ul.cond > li::before{content:"";position:absolute;left:0;top:.52em;width:5px;height:5px;
+                     border-radius:50%;background:var(--green)}
+
+.fits{background:var(--cream);border-radius:5px;padding:13px 17px;gap:9px}
+.fits > h2{border-bottom-color:rgba(14,42,71,.2)}
+
 /* ---- closing ------------------------------------------------------------ */
 .close{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 20px;
        padding-top:11px;border-top:1px solid var(--rule)}
@@ -106,8 +115,10 @@ ol.steps b{color:var(--navy);font-weight:600;font-size:12.2px}
   ol.steps{gap:7pt 19pt} ol.steps > li{font-size:8.9pt;line-height:1.42;padding-left:22pt}
   ol.steps > li::before{font-size:17pt} ol.steps b{font-size:9.3pt}
   .band{padding:11pt 14pt 12pt;gap:7pt}
+  .fits{padding:10pt 13pt;gap:6.5pt}
+  ul.cond{gap:3.5pt} ul.cond > li{font-size:9.7pt;line-height:1.38;padding-left:12pt}
   .close{padding-top:8pt} .close .pitch{font-size:9.3pt} .close .motto{font-size:10.6pt}
-  .sec,.band,.mast{break-inside:avoid}
+  .sec,.band,.mast,.fits{break-inside:avoid}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -119,8 +130,9 @@ ol.steps b{color:var(--navy);font-weight:600;font-size:12.2px}
     <div class="id">
       <p class="wordmark">Robin</p>
       <p class="tagline">Your NestEgg U Retirement Guide</p>
-      <p class="promise">She answers the retirement plan's phone line. First ring, any hour,
-        English or Spanish.</p>
+      <p class="promise">She answers the retirement plan's phone line, on the first ring, at any
+        hour, in English or Spanish. The same build works on any line where the same questions
+        keep arriving.</p>
     </div>
     <div class="portrait">
       <div class="bubble">Hi! I'm <b>Robin</b>. Ask me anything about your 401(k).</div>
@@ -129,32 +141,12 @@ ol.steps b{color:var(--navy);font-weight:600;font-size:12.2px}
   </header>
 
   <section class="sec">
-    <h2>What Robin is</h2>
-    <p class="lead">A voice assistant, not a phone tree. She confirms who is calling before
-      anything personal is said out loud, answers plan questions from documents the plan has
-      approved, looks up a verified caller's own figures, and puts someone through to a person the
-      moment a question needs judgment. The fortieth caller of the morning gets the same answer as
-      the first.</p>
-  </section>
-
-  <section class="sec">
-    <h2>What she can do</h2>
-    <div class="grid">
-      <div class="item"><p class="lbl">Answer plan questions</p><p class="txt">Contributions, loans,
-        withdrawals, rollovers, leaving the company, the online portal — all from approved
-        documents.</p></div>
-      <div class="item"><p class="lbl">Confirm who is calling</p><p class="txt">Member ID and date of
-        birth against the plan's records. Nothing about the account until that clears.</p></div>
-      <div class="item"><p class="lbl">Read a caller their own numbers</p><p class="txt">Balance,
-        vested balance, contribution rate, loan status — looked up live, for the verified caller
-        only.</p></div>
-      <div class="item"><p class="lbl">Hand off to a person</p><p class="txt">A warm transfer carrying
-        the reason, so the caller does not start over and the specialist is not blind.</p></div>
-      <div class="item"><p class="lbl">Speak English and Spanish</p><p class="txt">She hears the
-        switch and follows it, mid-call. No second number, no separate queue.</p></div>
-      <div class="item"><p class="lbl">Stay on the line</p><p class="txt">She waits while someone
-        finds a statement or gets to a computer, then picks up where they left off.</p></div>
-    </div>
+    <h2>What Robin is, and what she can do</h2>
+    <p class="lead">A voice assistant that answers a phone line the way a well-trained person
+      would. She checks who is calling, then answers plan questions from documents a person
+      approved — loans, withdrawals, rollovers, leaving the company — and reads a verified caller
+      their own balance and loan status. She works in English and Spanish, and passes the call to
+      a person, along with the reason, the moment a question needs judgment.</p>
   </section>
 
   <section class="sec">
@@ -164,9 +156,9 @@ ol.steps b{color:var(--navy);font-weight:600;font-size:12.2px}
         at once.</li>
       <li><b>She makes sure it is you.</b> Two pieces of identification against the plan's records
         before a single figure is said out loud.</li>
-      <li><b>She looks it up.</b> Plan questions come from the approved documents, personal figures
-        from a live lookup. She cannot fill a gap with a guess — when the answer is not there she
-        says so and offers a person.</li>
+      <li><b>She looks it up.</b> Questions come from the approved documents, personal figures from
+        a live lookup. She cannot fill a gap with a guess — when the answer is not there she says
+        so and offers a person.</li>
       <li><b>She writes it down.</b> Why they called, what happened, how it went — every call,
         automatically, so the team reviews the work instead of reconstructing it.</li>
     </ol>
@@ -175,20 +167,34 @@ ol.steps b{color:var(--navy);font-weight:600;font-size:12.2px}
   <section class="band">
     <h2>What she solves</h2>
     <div class="grid">
-      <div class="item"><p class="lbl">The hold queue</p><p class="txt">Enrollment season, year end,
-        a bad week in the market. Robin takes those calls at the same time, not in order.</p></div>
-      <div class="item"><p class="lbl">The hours</p><p class="txt">Retirement questions turn up at
-        ten on a Sunday night, which is when nobody is staffed to answer them.</p></div>
-      <div class="item"><p class="lbl">Bilingual coverage</p><p class="txt">Staffing Spanish on every
+      <div class="item"><p class="lbl">The same question, all day</p><p class="txt">Most of a team's
+        volume is a short list of questions asked over and over. Robin takes all of them.</p></div>
+      <div class="item"><p class="lbl">The hours</p><p class="txt">Questions turn up at ten on a
+        Sunday night, which is when nobody is staffed to answer them.</p></div>
+      <div class="item"><p class="lbl">A second language</p><p class="txt">Staffing one on every
         shift is expensive and fragile. Robin speaks it on every call.</p></div>
-      <div class="item"><p class="lbl">The ramp-up</p><p class="txt">A new hire needs weeks on a plan
-        before taking calls. Robin has the current document the day it is published.</p></div>
+      <div class="item"><p class="lbl">The ramp-up</p><p class="txt">A new hire needs weeks before
+        taking calls. Robin has the current document the day it is published.</p></div>
     </div>
+  </section>
+
+  <section class="sec fits">
+    <h2>Where else this fits</h2>
+    <p class="lead">Nothing about how Robin works is particular to retirement. She suits any line
+      where four things are true.</p>
+    <ul class="cond">
+      <li>The same questions arrive over and over.</li>
+      <li>The answers already live in documents someone keeps current.</li>
+      <li>You need to know who is calling before you say anything personal.</li>
+      <li>There is a clear point where a person has to take over.</li>
+    </ul>
+    <p class="lead">If that describes your team's line, most of the hard thinking is already
+      done.</p>
   </section>
 
   <div class="close">
     <p class="pitch"><b>Every routine call Robin takes is one the team does not.</b> The calls that
-      genuinely need a person still get one, faster, with the context already gathered.</p>
+      need a person still get one, faster, with the context already gathered.</p>
     <p class="motto">Always here to help.</p>
   </div>
 
