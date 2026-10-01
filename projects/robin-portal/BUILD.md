@@ -12,6 +12,12 @@
 
 ---
 
+### 2026-10-01 — Channel pill
+
+Calls and Accuracy list rows show a channel pill (Phone, Web voice, Web chat) from the new `channel` field on `/api/calls` (broker `lib/channel.js`). Unknown or missing channel renders nothing. See robin-experiment/BUILD.md for the broker side and what is unverified.
+
+---
+
 ### 2026-10-01 — Demo Website door
 
 **What changed (branch, not yet merged):** a sixth home tile, "Demo Website", and a nav entry on every page, both opening `/demo-website/` in a new tab. The page is the Vertex Manufacturing demo site (`projects/vertex-demo-site/site`, source of truth there) copied into `public/demo-website/` at prebuild with root-absolute URLs prefixed, so it is served from the portal's own domain and sits behind the same password. No portal masthead is injected into it, on purpose. Directory and clean-URL rewrites moved into `lib/module-paths.js` (unit-tested; existing module routes unchanged). `.gitignore` gains `public/demo-website/`.

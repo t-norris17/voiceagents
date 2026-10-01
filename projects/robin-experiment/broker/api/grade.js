@@ -24,6 +24,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { sb } from "../lib/supabase.js";
 import { scoreAnswer } from "../lib/score.js";
 import { fetchElevenLabsDocument } from "../lib/kb-text.js";
+import { CHANNEL_COLS, channelOf, systemForChannel } from "../lib/channel.js";
 
 const client = new Anthropic(); // ANTHROPIC_API_KEY
 const MAX_PER_RUN = 10; // bound latency/cost per invocation; later polls catch up the rest
@@ -272,7 +273,8 @@ Review this call per your instructions. Return ONLY the structured JSON.`;
     max_tokens: 8000,
     thinking: { type: "adaptive" },
     output_config: { effort: "high", format: { type: "json_schema", schema: SCHEMA } },
-    system: SYSTEM,
+    // A typed chat gets the channel-adapted prompt; every other channel gets SYSTEM untouched.
+    system: systemForChannel(SYSTEM, channelOf(call)),
     messages: [{ role: "user", content: user }],
   });
   const text = msg.content.find((b) => b.type === "text");
@@ -357,10 +359,18 @@ Review this call per your instructions. Return ONLY the structured JSON.`;
 export default async function handler(req, res) {
   if (req.method !== "POST" && req.method !== "GET") return res.status(405).json({ error: "POST only" });
   try {
-    const pending = await sb(
+    const pendingPath = (cols) =>
       `ai_call_events?provider=eq.elevenlabs&scored_at=is.null&transcript=not.is.null` +
-        `&select=conversation_id,transcript&order=created_at.asc&limit=${MAX_PER_RUN}`
-    );
+      `&select=${cols}&order=created_at.asc&limit=${MAX_PER_RUN}`;
+    let pending;
+    try {
+      pending = await sb(pendingPath(`conversation_id,transcript,${CHANNEL_COLS}`));
+    } catch (e) {
+      // The channel select is an addition; if the database rejects it, grade as before (a chat then
+      // gets the call wording) and say so, rather than stop grading.
+      console.error("grade: channel select failed, grading without channel:", String(e?.message || e));
+      pending = await sb(pendingPath("conversation_id,transcript"));
+    }
 
     if (!pending.length) return res.status(200).json({ ok: true, graded: 0, scored_rows: 0, asked_rows: 0 });
 

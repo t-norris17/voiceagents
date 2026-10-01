@@ -2,6 +2,7 @@
 // Every recent call, newest first. What the Experiment Monitor was for, without its grading grid.
 import { useCallback, useEffect, useState } from "react";
 import CallDrawer from "../components/CallDrawer.js";
+import { CHANNEL_LABEL } from "../../lib/channel-label.js";
 
 const when = (iso) => (iso ? String(iso).slice(0, 16).replace("T", " ") : "—");
 
@@ -45,6 +46,7 @@ export default function CallsPage() {
             <div>
               <div className="main">
                 {c.topic || "Call"}
+                {CHANNEL_LABEL[c.channel] && <span className="pill">{CHANNEL_LABEL[c.channel]}</span>}
                 {c.auth_outcome === "verified" ? <span className="pill ok">verified</span> : <span className="pill">{c.auth_outcome || "unverified"}</span>}
                 {c.outcome === "transferred" && <span className="pill">transferred</span>}
                 {c.security_flag && <span className="pill bad">security</span>}
