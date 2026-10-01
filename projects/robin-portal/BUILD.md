@@ -6,6 +6,44 @@
 
 ---
 
+
+## Session 2026-10-01 (design pass, batch 1): one masthead, Interactions and Accuracy
+
+**What changed.** The nav now lives in ONE file, `lib/mast.js` (groups, secondary links, markup and CSS),
+rendered by `components/Masthead.js` on the Next.js pages and injected by `scripts/copy-modules.mjs` into
+Quality, Dry Run and the Knowledge Factory. It used to be hand-copied in three places. Destinations are
+grouped by what a person is doing: **Listen** (Interactions), **Understand** (Quality), **Improve**
+(Accuracy, Knowledge Factory, Dry Run); Demo Website and About Robin sit quietly on the right. Group
+labels sit ABOVE the links, which is what keeps the bar on one row (labels beside the links wrapped it).
+Home stays tiles; only names changed. Routes did not change: `/calls` is still `/calls`.
+
+**Renames.** Calls is now Interactions, Question Tester is now Dry Run (labels, tiles, page headings).
+The survey module still says "calls" on purpose: renaming it belongs with the chat-respondent work, since
+a chat has no phone number to key on.
+
+**Interactions and Accuracy** follow one language: a mono kicker, a plain heading, numbers without boxes,
+hairline rows, status as a dot (`lib/interaction-state.js`, unit-tested), channel as a small tag. The dot
+means "does this one need me": red for a security flag or failed verification, amber for a hand-off to a
+person, green for verified, hollow for unknown. Interactions gains filters (Needs a look, Phone, Web
+voice, Web chat, Not graded). Sheet width is 1120 everywhere except Quality's 1400 board; Dry Run and the
+survey guide were widened to 1120 with their reading column kept at 820 so the masthead aligns.
+
+**Verified.** Portal tests 19/19 (new: `nav.test.mjs`, `interaction-state.test.mjs`), portal builds, and
+every room was screenshotted in light and dark with the masthead measured for alignment (wordmark left
+edge equals the page's content edge on all five). **Not verified:** the pages against real `/api/calls`
+data (stubbed here), and narrow screens beyond the existing breakpoints.
+
+**Not done yet.** Dry Run, Quality and About bodies still carry their old styling (pill buttons, uppercase
+titles). That is the next batch.
+
+**Two findings that are not design.** (1) Dry Run answers from `kb_articles` rows in state `published`
+(`broker/api/ask.js`). Live, those are the 29 INTRUST articles from July, and ElevenLabs shows them with
+NO dependent agents, so they are not attached to Robin. Robin's actual knowledge is five Vertex documents
+uploaded straight to ElevenLabs, with no `kb_articles` row. So Dry Run tests knowledge Robin is not
+serving, and the Factory Library's "live" counts rows in state `published`, not documents attached to the
+agent. (2) The grader already reads which documents Robin retrieved per turn
+(`rag_retrieval_info.chunks[].document_id`); that is the data any Utilization measure should start from.
+
 ## Session log
 
 <!-- Add new sessions at the top, newest first -->

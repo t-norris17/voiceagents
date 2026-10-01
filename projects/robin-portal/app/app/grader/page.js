@@ -1,9 +1,10 @@
 "use client";
-// The Accuracy page, the grader's face. It grades what Robin said against what she read; this page lists calls by
-// graded / not graded, runs the grader on demand, and opens each call to the evidence.
+// The Accuracy page, the grader's face. It grades what Robin said against what she read; this page lists
+// interactions by graded / not graded, runs the grader on demand, and opens each one to the evidence.
 import { useCallback, useEffect, useState } from "react";
 import CallDrawer from "../components/CallDrawer.js";
 import { CHANNEL_LABEL } from "../../lib/channel-label.js";
+import { topicOf } from "../../lib/interaction-state.js";
 
 const when = (iso) => (iso ? String(iso).slice(0, 16).replace("T", " ") : "—");
 
@@ -39,42 +40,44 @@ export default function GraderPage() {
 
   const calls = data?.calls || [];
   const graded = calls.filter((c) => c.scored_at), pending = calls.filter((c) => !c.scored_at);
+  const n = (k, one, many) => `${k} ${k === 1 ? one : many}`;
   return (
     <>
+      <div className="kicker">Improve</div>
       <div className="page-h">
         <div>
           <h1>Accuracy</h1>
-          <p>Was what Robin said true to the documents she actually read on that call? No answer key. Grades up to ten calls per run; run it again to catch up. Open a call for its grade results.</p>
+          <p>Was what Robin said true to the documents she actually read in that interaction? No answer key. Grades up to ten interactions per run; run it again to catch up. Open one for its grade results.</p>
         </div>
-        <button className="btn" type="button" onClick={grade} disabled={busy}>{busy ? "Grading…" : "Grade new calls"}</button>
+        <button className="btn" type="button" onClick={grade} disabled={busy}>{busy ? "Grading…" : "Grade new interactions"}</button>
       </div>
-      {err && <div className="banner">Couldn't load calls: {err}</div>}
+      {err && <div className="banner">Couldn't load interactions: {err}</div>}
       {last && (
         <div className="banner">
           {last.error ? `Grading failed: ${last.error}` :
-            `Graded ${last.graded ?? 0} call${last.graded === 1 ? "" : "s"}${last.calls_without_source ? `, ${last.calls_without_source} with no readable source` : ""}${last.pending > (last.graded ?? 0) ? `, ${last.pending - last.graded} still waiting` : ""}.`}
+            `Graded ${n(last.graded ?? 0, "interaction", "interactions")}${last.calls_without_source ? `, ${last.calls_without_source} with no readable source` : ""}${last.pending > (last.graded ?? 0) ? `, ${last.pending - last.graded} still waiting` : ""}.`}
         </div>
       )}
       <div className="stat-row">
-        <div className="stat"><div className="n tnum">{pending.length}</div><div className="k">not yet graded</div></div>
-        <div className="stat"><div className="n tnum">{graded.length}</div><div className="k">graded</div></div>
+        <div className="stat"><div className="n">{pending.length}</div><div className="k">not yet graded</div></div>
+        <div className="stat"><div className="n">{graded.length}</div><div className="k">graded</div></div>
       </div>
       <div className="list">
-        {data && calls.length === 0 && <p className="empty">No calls to grade.</p>}
+        {data && calls.length === 0 && <p className="empty">No interactions to grade.</p>}
         {[...pending, ...graded].map((c) => (
           <div className="row" role="button" tabIndex={0} key={c.conversation_id}
                onClick={() => setOpen(c.conversation_id)}
                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen(c.conversation_id); } }}>
+            <i className={`dot d-${c.security_flag ? "bad" : c.scored_at ? "ok" : "none"}`} aria-hidden="true" />
             <div>
               <div className="main">
-                {c.topic || "Call"}
-                {CHANNEL_LABEL[c.channel] && <span className="pill">{CHANNEL_LABEL[c.channel]}</span>}
-                {c.scored_at ? <span className="pill ok">graded</span> : <span className="pill">not graded</span>}
-                {c.security_flag && <span className="pill bad">security</span>}
+                <span className="t">{topicOf(c)}</span>
+                {CHANNEL_LABEL[c.channel] && <span className="tag">{CHANNEL_LABEL[c.channel]}</span>}
+                {c.security_flag && <span className="tag bad">Security</span>}
               </div>
-              <div className="sub">{when(c.started_at)} · verification {c.auth_outcome || "—"}{c.outcome ? ` · ${c.outcome}` : ""}</div>
+              <div className="sub">{when(c.started_at)} · verification {c.auth_outcome === "not_attempted" ? "not attempted" : (c.auth_outcome || "unknown")}{c.outcome ? ` · ${c.outcome}` : ""}</div>
             </div>
-            <div className="meta">{c.scored_at ? when(c.scored_at) : "—"}</div>
+            <div className="meta">{c.scored_at ? `graded ${when(c.scored_at)}` : "not graded"}</div>
           </div>
         ))}
       </div>

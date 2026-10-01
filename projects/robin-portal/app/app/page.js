@@ -1,4 +1,4 @@
-// The landing page. Name, one sentence, the phone number, a one-line live status, then five doors,
+// The landing page. Name, one sentence, the phone number, a one-line live status, then the doors,
 // each with one line and, where cheap, one live number. The full configuration read from
 // ElevenLabs lives on /about. Server-rendered; numbers revalidate every 60 seconds.
 import { getRobinStatus } from "../lib/elevenlabs.js";
@@ -29,10 +29,10 @@ export default async function Home() {
 
   const doors = [
     { href: "/survey/", t: "Quality", d: "Would they rather use Robin than wait for a person? What callers said, and every number opens to the call behind it.", n: responses, un: "responses" },
-    { href: "/grader", t: "Accuracy", d: "Was what Robin said true to the documents she read on each call? Grade new calls and read the evidence.", n: summary?.ungraded_in_window ?? null, un: "ungraded, 7 days" },
+    { href: "/grader", t: "Accuracy", d: "Was what Robin said true to the documents she read in each interaction? Grade new ones and read the evidence.", n: summary?.ungraded_in_window ?? null, un: "ungraded, 7 days" },
     { href: "/factory/", t: "Knowledge Factory", d: "Turn a messy source into answers Robin can give. Review each one, publish them to her Knowledge Base, then try them.", n: null, un: null },
-    { href: "/robin-q-tester/", t: "Question Tester", d: "Ask a question the way a caller would and see what Robin's published knowledge answers.", n: null, un: null },
-    { href: "/calls", t: "Calls", d: "Every recent call: who verified, what they asked, how it ended, and the transcript.", n: summary?.last_24h ?? null, un: "calls, 24 h" },
+    { href: "/robin-q-tester/", t: "Dry Run", d: "Ask a question the way a caller would and see what Robin's published knowledge answers.", n: null, un: null },
+    { href: "/calls", t: "Interactions", d: "Every recent conversation, by phone or chat: who verified, what they asked, how it ended, and the transcript.", n: summary?.last_24h ?? null, un: "interactions, 24 h" },
     { href: "/demo-website/", t: "Demo Website", d: "A realistic employer site with Robin as the chat and voice widget in the corner. Try her the way a team member would; the tester guide has the personas and the script.", n: null, un: null, newTab: true },
   ];
 

@@ -92,12 +92,12 @@ export default function CallDrawer({ id, withScores = false, onClose }) {
 
   return (
     <div className="drw" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="drw-p" role="dialog" aria-modal="true" aria-label="Call">
+      <div className="drw-p" role="dialog" aria-modal="true" aria-label="Interaction">
         <div className="drw-h">
           <span className="t">{String(id).slice(-8)}</span>
           <button className="drw-x" type="button" onClick={onClose}>Close</button>
         </div>
-        {err && <p className="empty">Couldn't load that call: {err}</p>}
+        {err && <p className="empty">Couldn't load that interaction: {err}</p>}
         {!err && !call && <p className="empty">Loading…</p>}
         {c && (
           <div className="drw-meta">
@@ -122,13 +122,13 @@ export default function CallDrawer({ id, withScores = false, onClose }) {
                 The caller asked <b>{questions.length || rows.length}</b> question{(questions.length || rows.length) === 1 ? "" : "s"}.
                 Robin answered <b>{questions.length ? answered : rows.length}</b>
                 {problems > 0 ? <>, <span className="bad">{problems} with a problem</span></> : <>, none with a problem</>}.
-                {noSource && <> <span className="bad">No document was readable for this call, so nothing could be checked.</span></>}
+                {noSource && <> <span className="bad">No document was readable for this interaction, so nothing could be checked.</span></>}
               </div>
             )}
             {(fix.length > 0 || wins.length > 0) && (
               <div className="gr-act">
                 <div className="h">What to do</div>
-                {fix.length === 0 && <div className="gr-none">Nothing to fix on this call.</div>}
+                {fix.length === 0 && <div className="gr-none">Nothing to fix in this interaction.</div>}
                 <ul>
                   {fix.map((x, i) => <li key={`f${i}`}>{x}</li>)}
                   {wins.map((x, i) => <li className="win" key={`w${i}`}>{x}</li>)}
@@ -175,7 +175,7 @@ export default function CallDrawer({ id, withScores = false, onClose }) {
         )}
         {call && (
           <div className="section">
-            {turns.length === 0 && <p className="empty">No transcript stored for this call.</p>}
+            {turns.length === 0 && <p className="empty">No transcript stored for this interaction.</p>}
             {turns.map((t, i) => (
               <div className={`turn ${t.role}`} key={i}>
                 <div className="who">{t.role === "agent" ? "Robin" : "Caller"}</div>

@@ -1,22 +1,13 @@
 import "./globals.css";
-import Link from "next/link";
 import HomeLink from "./components/HomeLink.js";
+import Masthead from "./components/Masthead.js";
 import { PRE_PAINT, CONTROL_JS } from "../lib/theme.js";
+import { mastCss } from "../lib/mast.js";
 
 export const metadata = {
   title: "Robin",
-  description: "One front door for Robin: quality, accuracy, knowledge factory, question tester, calls.",
+  description: "One front door for Robin: interactions, quality, accuracy, knowledge factory, dry run.",
 };
-
-const DOORS = [
-  { href: "/survey/", label: "Quality" },
-  { href: "/grader", label: "Accuracy" },
-  { href: "/factory/", label: "Knowledge Factory" },
-  { href: "/robin-q-tester/", label: "Question Tester" },
-  { href: "/calls", label: "Calls" },
-  { href: "/demo-website/", label: "Demo Website", newTab: true },
-  { href: "/about", label: "About Robin" },
-];
 
 export default function RootLayout({ children }) {
   return (
@@ -25,21 +16,11 @@ export default function RootLayout({ children }) {
     <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: PRE_PAINT }} />
+        <style dangerouslySetInnerHTML={{ __html: mastCss(1120) }} />
       </head>
       <body>
+        <Masthead />
         <div className="sheet">
-          <div className="mast">
-            <Link className="wm" href="/">Robin</Link>
-            <nav aria-label="Sections">
-              {DOORS.map((d) => (
-                <a key={d.href} href={d.href} {...(d.newTab ? { target: "_blank", rel: "noopener" } : {})}>{d.label}</a>
-              ))}
-            </nav>
-            <div className="rp-theme" role="group" aria-label="Theme">
-              <button type="button" data-theme-set="light" aria-pressed="false">Light</button>
-              <button type="button" data-theme-set="dark" aria-pressed="false">Dark</button>
-            </div>
-          </div>
           {children}
           <HomeLink />
           <footer>

@@ -17,7 +17,8 @@
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { PRE_PAINT, CONTROL_HTML, CONTROL_JS } from "../lib/theme.js";
+import { PRE_PAINT, CONTROL_JS } from "../lib/theme.js";
+import { mastHtml, mastCss } from "../lib/mast.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const app = resolve(here, "..");
@@ -89,28 +90,13 @@ const HOME_LINK = `
 </style>
 `;
 
-// The masthead. Colours come from each page's own tokens where it has them (all three define
-// --paper/--ink/--sub), with the portal's values as the fallback, so a page that forces a theme
-// carries the bar with it. `width` matches the page's own sheet so the bar and the page align:
-// the Quality board is 1400 wide, the others 920. The Light / Dark control is the portal's
-// (lib/theme.js); a page's own copy of it is hidden under the masthead (.pg-theme).
+// The masthead is written once, in lib/mast.js (the Next.js pages render the same bar). A page's own
+// small kicker line (.tag) and its own Light / Dark control (.pg-theme) are hidden under it. The
+// theme control itself is the portal's (lib/theme.js).
 const MAST = (current, width) => `
-<div class="rp-mast"><div class="rp-in"><a class="rp-wm" href="/">Robin</a><nav aria-label="Sections">${[
-  ["/survey/", "Quality"], ["/grader", "Accuracy"], ["/factory/", "Knowledge Factory"],
-  ["/robin-q-tester/", "Question Tester"], ["/calls", "Calls"], ["/demo-website/", "Demo Website"], ["/about", "About Robin"],
-].map(([h, l]) => `<a href="${h}"${h === current ? ' aria-current="page"' : ""}${h === "/demo-website/" ? ' target="_blank" rel="noopener"' : ""}>${l}</a>`).join("")}</nav>${CONTROL_HTML}</div></div>
+${mastHtml(current)}
 <style>
-.rp-mast{background:var(--paper,#f2f0ea);border-bottom:2px solid var(--ink,#17181c);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
-.rp-in{max-width:${width}px;margin:0 auto;padding:16px ${width > 1000 ? 36 : 40}px 12px;display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap}
-.rp-wm{font-size:1.25rem;font-weight:800;letter-spacing:.02em;text-transform:uppercase;text-decoration:none;color:var(--ink,#17181c)}
-.rp-mast nav{display:flex;gap:16px;flex-wrap:wrap;margin-left:auto}
-.rp-mast nav a{font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:var(--sub,#6c7075);text-decoration:none;padding-bottom:3px;border-bottom:2px solid transparent}
-.rp-mast nav a:hover,.rp-mast nav a[aria-current="page"]{color:var(--ink,#17181c);border-bottom-color:var(--ink,#17181c)}
-.rp-theme{display:inline-flex;border:1px solid var(--line,#d7d3c9);border-radius:999px;overflow:hidden;align-self:center}
-.rp-theme button{font:inherit;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;padding:5px 11px;background:none;color:var(--sub,#6c7075);border:0;cursor:pointer}
-.rp-theme button[aria-pressed="true"]{background:var(--ink,#17181c);color:var(--paper,#f2f0ea)}
-.rp-theme button:focus-visible{outline:2px solid var(--accent,#b8501e);outline-offset:2px}
-@media (max-width:640px){.rp-in{padding:14px 18px 10px}}
+${mastCss(width)}
 .rp-hide-tag .tag,.rp-hide-tag .pg-theme{display:none}
 </style>
 <script>${CONTROL_JS}</script>
@@ -118,9 +104,9 @@ const MAST = (current, width) => `
 
 const pages = [
   ["survey/index.html", "/survey/", 1400],
-  ["robin-q-tester/index.html", "/robin-q-tester/", 920],
+  ["robin-q-tester/index.html", "/robin-q-tester/", 1120],
   ["factory/index.html", "/factory/", 1120],
-  ["survey/guide/index.html", "/survey/", 920],
+  ["survey/guide/index.html", "/survey/", 1120],
   ["survey/slide/index.html", null, 920],
 ];
 for (const [rel, current, width] of pages) {
