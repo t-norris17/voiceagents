@@ -412,7 +412,15 @@
   }
 
   function staleCount(){ return RUN.articles.filter(a => a._stale).length; }
-  function approvedRows(){ return LIB.rows.filter(r => r.state === "approved"); }
+  // The dock publishes ONLY the rows this run approved: the server hands back a row id on every approve
+  // and the run remembers it (and keeps it across a reload). The server also holds approved rows from
+  // other plans and earlier days, sometimes under a plan name that matches by accident. Those wait in
+  // the Library, never in the dock: a batch press must not carry a stale row into Robin's live
+  // knowledge base.
+  const allApproved = () => LIB.rows.filter(r => r.state === "approved");
+  const inThisRun = (r) => RUN.articles.some(a => a.rowId === r.id);
+  function approvedRows(){ return allApproved().filter(inThisRun); }
+  const dateOf = (iso) => (iso ? String(iso).slice(0, 10) : "an unknown date");
 
   function renderDock(){
     const dock = $("#dock"); dock.innerHTML = "";
@@ -434,7 +442,7 @@
       end.append(r, c); dock.append(end);
     } else if(n){
       const stale = staleCount();
-      dock.append(elHtml("span", "k", `<b>${n}</b> approved, ready to publish`),
+      dock.append(elHtml("span", "k", `<b>${n}</b> approved in this run, ready to publish`),
         el("span", "k" + (stale ? " warn" : ""), stale ? `${stale} answer${stale>1?"s":""} changed after approval. Approve again first.` : "Nothing is live until you publish"));
       const end = el("div","end");
       const b = el("button","btn go", `Publish ${n} to Robin`); b.type = "button"; b.disabled = stale > 0; b.onclick = () => publishAll();
@@ -973,7 +981,8 @@
     try{
       const d = await stageArticle(a);
       const order = orderedAnswers(), at = order.indexOf(a);
-      a.staged = true; a._stale = false; a.live = !!d.already_published;
+      a.staged = true; a._stale = false; a.live = !!d.already_published; if(d.staged && d.staged.id) a.rowId = d.staged.id;
+      saveRun();
       const next = order.slice(at + 1).find(x => !x.staged) || order.find(x => !x.staged);
       SEL = next ? next._id : a._id;
       renderReview(); loadLibrary(true);
@@ -992,9 +1001,10 @@
     let ok = 0; const failed = [];
     for(let i = 0; i < targets.length; i++){
       prog.textContent = `Approving ${i+1} of ${targets.length}…`;
-      try{ const d = await stageArticle(targets[i]); targets[i].staged = true; targets[i]._stale = false; targets[i].live = !!d.already_published; ok++; }
+      try{ const d = await stageArticle(targets[i]); targets[i].staged = true; targets[i]._stale = false; targets[i].live = !!d.already_published; if(d.staged && d.staged.id) targets[i].rowId = d.staged.id; ok++; }
       catch(e){ failed.push(`${targets[i].slug} (${e.message})`); }
     }
+    saveRun();
     const cur = byId(SEL); if(cur && cur.staged){ const n = orderedAnswers().find(x => !x.staged); if(n) SEL = n._id; }
     renderReview(); loadLibrary(true);
     if(failed.length) $("#v-review").append(msg("warn", `Didn't approve: ${failed.map(esc).join("; ")}. Open each one and use Approve to retry.`));
@@ -1013,7 +1023,7 @@
       if(SSN_RE.test(body)){ err.innerHTML = ""; err.append(msg("bad", "That looks like it contains an SSN-shaped number. Remove it before saving.")); return; }
       a.md = body; a.findings = a.findings.filter(f => f.severity !== "fatal"); // cleared PII by editing
       if(a.staged){ a.staged = false; a._stale = true; }
-      renderReview();
+      saveRun(); renderReview();
     };
     cancel.onclick = () => renderReview();
     box.append(save, cancel, err);
@@ -1034,7 +1044,7 @@
       if(d.review) a.review = d.review;
       if(d.candidate_questions) a.candidate_questions = d.candidate_questions;
       if(a.staged){ a.staged = false; a._stale = true; }
-      renderReview();
+      saveRun(); renderReview();
     }catch(e){
       paintActions(a, $("#actions"), a.findings.some(f => f.severity === "fatal"));
       $("#actions").append(msg("warn", "Refine failed: " + esc(e.message)));
@@ -1129,6 +1139,7 @@
   // browser only (it never leaves the machine) and offered back for a day.
   const RUN_KEY = "cleaner:lastrun", RUN_TTL = 24*60*60*1000;
   function saveRun(){
+    if(RUN.running) return;
     const d = { meta:RUN.meta, articles:RUN.articles, dropped:RUN.dropped, coverage_gaps:RUN.coverage_gaps, terminology_notes:RUN.terminology_notes, reports:RUN.reports, summary:RUN.summary };
     try{ localStorage.setItem(RUN_KEY, JSON.stringify({ at: Date.now(), d })); }catch(_){ /* a very large run just doesn't get cached */ }
   }
@@ -1160,7 +1171,8 @@
       LIB.rows = d.rows || []; LIB.loaded = true; LIB.error = null;
     }catch(e){ LIB.error = e.message; LIB.loaded = false; LIB.rows = []; }
     const live = LIB.rows.filter(r => r.state === "published").length;
-    $("#libbtn").textContent = LIB.loaded ? `Library · ${live} live` : "Library";
+    const waiting = allApproved().length;
+    $("#libbtn").textContent = LIB.loaded ? `Library · ${live} live` + (waiting ? ` · ${waiting} waiting` : "") : "Library";
     renderDock();
     if(VIEW === "library") renderLibrary();
   }
@@ -1185,7 +1197,7 @@
       box.append(msg("warn", `Publishing isn't configured yet: ${esc(LIB.error)}. Add SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ELEVENLABS_API_KEY and ELEVENLABS_AGENT_ID to this Vercel project, then Refresh.`));
       return;
     }
-    const approved = LIB.rows.filter(r => r.state === "approved"), published = LIB.rows.filter(r => r.state === "published"), superseded = LIB.rows.filter(r => r.state === "superseded");
+    const approved = allApproved(), published = LIB.rows.filter(r => r.state === "published"), superseded = LIB.rows.filter(r => r.state === "superseded");
     box.append(el("p","sub", `${published.length} live · ${approved.length} approved and waiting`));
 
     const s1 = el("div","rsec"); s1.append(el("h3", null, "Ready to publish"));
@@ -1217,13 +1229,27 @@
     c.append(head);
     const doc = r.elevenlabs_document_id ? ` · doc ${String(r.elevenlabs_document_id).slice(0,8)}…` : "";
     const idx = r.state === "published" ? (r.elevenlabs_rag_indexed ? " · indexed" : " · indexing…") : "";
-    c.append(el("div","pubmeta", `${r.slug} · v${r.version}${doc}${idx}`));
+    const outside = r.state === "approved" && !inThisRun(r);
+    const origin = r.state === "approved" ? ` · plan ${r.plan_id} · approved ${dateOf(r.updated_at)}` : "";
+    c.append(el("div","pubmeta", `${r.slug} · v${r.version}${origin}${doc}${idx}`));
+    if(outside) c.append(msg("warn", RUN.meta ? "Not approved in the run on screen, so the Publish button on the Review screen will not touch it." : "Approved earlier and not part of any run on screen. Check it before you publish."));
     if(r.state === "approved" && similar && similar.length)
       c.append(msg("warn", `Looks similar to a live answer: ${esc(similar.join(", "))}. This has a different slug, so publishing won't replace it. Publish anyway, or unpublish the old one.`));
     if(r.state === "approved" || r.state === "published"){
       const act = el("div","pubact");
       if(r.state === "approved"){
-        const b = el("button","btn sm go","Publish"); b.type = "button"; b.onclick = () => { b.disabled = true; publishRow(r.id); }; act.append(b);
+        const b = el("button","btn sm go","Publish"); b.type = "button";
+        b.onclick = () => {
+          if(!outside){ b.disabled = true; publishRow(r.id); return; }
+          // An answer outside the run on screen gets an explicit second press, with where it came from.
+          const ask = el("span","note", `Approved ${dateOf(r.updated_at)} under plan ${r.plan_id}. Publish it to Robin?`);
+          const yes = el("button","btn sm go","Yes, publish"); yes.type = "button";
+          const no = el("button","lnk","Cancel"); no.type = "button";
+          const undo = () => { ask.remove(); yes.remove(); no.remove(); b.hidden = false; };
+          yes.onclick = () => { yes.disabled = true; publishRow(r.id); }; no.onclick = undo;
+          b.hidden = true; act.prepend(ask, yes, no);
+        };
+        act.append(b);
       }
       const e = el("button","btn sm sec","Edit"); e.type = "button"; e.onclick = () => openArticleEditor(r, c, e);
       act.append(e);

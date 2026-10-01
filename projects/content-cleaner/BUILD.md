@@ -147,8 +147,11 @@ Redesigned 2026-10-01 (see the session entry below). Review is one screen, not a
   clean** stages every 5/5 answer with no flags, one at a time, re-checking triage at click time.
 - **Editing or refining an approved answer un-approves it** and disables Publish until it is approved
   again, because the staged copy on the server is the OLD text.
-- **The dock** at the bottom is the publish step: it counts what the server holds as approved
-  (`kb_list`) and one press publishes the batch through the same serialized queue as before.
+- **The dock** at the bottom is the publish step: it counts ONLY the rows this run approved (the row id
+  the server returns from `/api/approve`, remembered on the answer and saved with the run so it
+  survives a reload) and one press publishes that batch through the same serialized queue as before.
+  Approved rows from other plans or earlier days wait in the Library, where each shows its plan and
+  approval date and asks for a second press before it publishes.
 - **Library** (top right) is what used to be the Publish tab: ready, live, history, edit, unpublish.
 - The last run is kept in `localStorage` for a day (local only) so a stray refresh doesn't burn a
   clean pass.
@@ -197,6 +200,18 @@ prefilled (`?qs=`). `confirm()` and `alert()` became inline messages.
   a file button opens the chooser; dropping a file on the screen loads it.
 - Light and dark, standalone and inside the portal (masthead aligned, the portal's Home pill does not
   collide with the dock). Cleaner suite 32/32 (needs `npm ci` first), portal 8/8.
+
+**Defect found after the first push, and fixed (same day).** The first version of the dock counted every
+`approved` row the server held. Live `kb_articles` had exactly one, an INTRUST answer approved on
+2026-07-30 under plan `intrust-401k-plan` and never published, so the page opened with "1 approved,
+Publish 1 to Robin" and a batch press would have carried it into a Vertex agent's live knowledge base
+(the old Publish tab did the same, but behind its own page and a per-row button). I had checked
+staleness inside a run, not across runs. Reproduced against the committed page with a stubbed API
+(dock "2 approved", published ids `["stale-1","row-1"]`), then fixed: the dock is scoped to the run's own
+row ids, not to the plan name, because a row under a plan name that matches by accident (typing
+"INTRUST 401k Plan" yields exactly `intrust-401k-plan`) would otherwise slip through.
+`test/factory-dock.test.mjs` pins it (needs Playwright; skipped, not passed, without it). The July row
+itself was left alone: publishing or archiving it is a deliberate call for Tanner.
 
 **Not verified:** a real clean or publish against live ElevenLabs/Supabase (no keys here); a real DOCX through
 `/api/extract`; behaviour on a phone (reviewers use desktops, so it only stacks sensibly).
