@@ -136,15 +136,20 @@ critic keeps catching it if it slips through.
 
 ## The review room
 
-The Articles tab is a triage surface, not a list:
+Redesigned 2026-10-01 (see the session entry below). Review is one screen, not a list of cards:
 
-- **Filters** — All / ⛔ PII blocked / ⚠ Needs a look / ✓ Clean 5/5, with counts.
-- **Worst-first ordering**, lowest score first within a bucket. Clean cards fold.
-- **An unscored article is "needs a look", never clean.** Silence from the critic is not a pass.
-- **Send all clean (n)** stages every 5/5 card with no flags, serialized, re-checking triage at click
-  time; then a handoff bar into Step 3.
-- **Receipts** — each card opens to show every claim next to the source text backing it (or
-  "no matching text in your document"), and the score's arithmetic on hover.
+- **A list of answers on the left, grouped by what needs you** (blocked and needs-a-look first, lowest
+  score first), then clean, then approved. The selected answer sits on the right, rendered the way
+  Robin will say it, with the receipts in the margin: every claim next to the source text backing it
+  (or "no matching text in your document"), omissions, and what the source does not cover.
+- **An unscored answer is "needs you", never clean.** Silence from the critic is not a pass.
+- **Approve** stages an answer (`/api/approve`). Arrow keys move, Enter approves, E edits. **Approve N
+  clean** stages every 5/5 answer with no flags, one at a time, re-checking triage at click time.
+- **Editing or refining an approved answer un-approves it** and disables Publish until it is approved
+  again, because the staged copy on the server is the OLD text.
+- **The dock** at the bottom is the publish step: it counts what the server holds as approved
+  (`kb_list`) and one press publishes the batch through the same serialized queue as before.
+- **Library** (top right) is what used to be the Publish tab: ready, live, history, edit, unpublish.
 - The last run is kept in `localStorage` for a day (local only) so a stray refresh doesn't burn a
   clean pass.
 
@@ -164,3 +169,43 @@ path only alongside a Vercel settings change.
   from the hand-made KB.
 - Optional: auto-seed the eval set from `_candidate-questions.md` into a plan's `curated_questions`;
   a "refine all flagged" batch to mirror "send all clean"; HTML/URL ingestion.
+
+## Session 2026-10-01: front-end redesign (one flow, one object)
+
+**What changed.** `cleaner/public/index.html` only. Three tabs (Clean, QA, Publish) became one flow:
+Source (drop a document, no empty form), Review (the reader above), Publish (the dock, then Library).
+No `/api/*` file was touched. The Q Tester iframe is gone: Dry Run reads the PUBLISHED articles
+(`broker/api/ask.js`, cached about 60 seconds), so testing between Clean and Publish tested the OLD
+knowledge. After publishing, the dock offers "Try it in Dry Run" with the candidate questions
+prefilled (`?qs=`). `confirm()` and `alert()` became inline messages.
+
+**Drifts from the design Tanner approved.**
+- "Applies to" is remembered from the last run, not guessed from the filename: it becomes `plan_id`,
+  and a wrong guess would stamp the wrong plan on live content. Source IS prefilled from the filename.
+- "Not covered by the source" sits in the margin, not under the answer: the answer text already ends
+  with the routing sentence naming those gaps (`articleToMarkdown`), so showing it twice duplicated it.
+- The Drop report, Coverage map, Candidate Q's and Downloads tabs survive as a quiet row above the
+  reader (Dropped, Coverage, Questions, Reports).
+
+**Verified** (Playwright against a stubbed API; nothing here touched ElevenLabs or Supabase):
+- The `/api/clean` and `/api/approve` request bodies are byte-identical to the old page's for the same
+  input; `/api/publish` is still `{id}`, serialized.
+- SSN-shaped text is refused on save; editing an approved answer disables Publish until re-approved;
+  a failed publish shows the reason and Try again publishes the rest; unpublish asks inline.
+- Large documents open the section picker and clean in `<slug>-N` sections; restore after reload.
+- A real text PDF (made with Chromium) is read in the browser through the vendored pdf.js; the Choose
+  a file button opens the chooser; dropping a file on the screen loads it.
+- Light and dark, standalone and inside the portal (masthead aligned, the portal's Home pill does not
+  collide with the dock). Cleaner suite 32/32 (needs `npm ci` first), portal 8/8.
+
+**Not verified:** a real clean or publish against live ElevenLabs/Supabase (no keys here); a real DOCX through
+`/api/extract`; behaviour on a phone (reviewers use desktops, so it only stacks sensibly).
+
+**Observation, not changed:** a chunked run stamps every answer with the FIRST section's slug as
+`plan_id` (`<slug>-1`), while a single-pass run uses `<slug>`. Same plan, different `plan_id` across
+runs. Pre-existing; worth a look before a second plan goes through.
+
+## Next session (updated)
+
+- Roll the same tokens (heading scale, square buttons, one sheet width) across the other modules.
+- Pre-publish testing: `ask.js` would need to accept staged text. A broker change, so its own checkpoint.

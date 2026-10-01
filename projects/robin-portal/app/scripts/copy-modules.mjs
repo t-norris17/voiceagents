@@ -119,7 +119,7 @@ const MAST = (current, width) => `
 const pages = [
   ["survey/index.html", "/survey/", 1400],
   ["robin-q-tester/index.html", "/robin-q-tester/", 920],
-  ["factory/index.html", "/factory/", 920],
+  ["factory/index.html", "/factory/", 1120],
   ["survey/guide/index.html", "/survey/", 920],
   ["survey/slide/index.html", null, 920],
 ];
