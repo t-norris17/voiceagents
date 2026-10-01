@@ -3,6 +3,7 @@
 // graded / not graded, runs the grader on demand, and opens each call to the evidence.
 import { useCallback, useEffect, useState } from "react";
 import CallDrawer from "../components/CallDrawer.js";
+import { CHANNEL_LABEL } from "../../lib/channel-label.js";
 
 const when = (iso) => (iso ? String(iso).slice(0, 16).replace("T", " ") : "—");
 
@@ -67,6 +68,7 @@ export default function GraderPage() {
             <div>
               <div className="main">
                 {c.topic || "Call"}
+                {CHANNEL_LABEL[c.channel] && <span className="pill">{CHANNEL_LABEL[c.channel]}</span>}
                 {c.scored_at ? <span className="pill ok">graded</span> : <span className="pill">not graded</span>}
                 {c.security_flag && <span className="pill bad">security</span>}
               </div>

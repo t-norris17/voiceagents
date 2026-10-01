@@ -12,6 +12,28 @@
 
 ---
 
+### 2026-10-01 — Web chat in the grader (Tanner's boss wants chat in the survey and the grader)
+
+**Status:** grader side built and tested on branch `claude/great-thompson-5hqub2`; NOT merged; survey side NOT started.
+
+**Decisions (Tanner, 2026-10-01):** chat and phone are **blended** (not shown side by side); a chat respondent is **anyone who answers**, regardless of channel. Note for the record: blending trades away the like-for-like parity comparison (different people, different questions, tiny chat sample); it was chosen deliberately.
+
+**What changed:**
+- `lib/channel.js` (new): derives a conversation's channel at READ time from the stored webhook payload (`raw_payload`): `text_only` true means **chat**; else a `phone_call.type` means **phone**; else **web voice**. Checked against the live table (219 rows): 211 phone, 5 web voice, 3 chat, none unclassified. The marker is `phone_call.type`, never the caller's number (PII).
+- `api/grade.js`: the chat gets a channel-adapted system prompt (opening sentence swapped, short note appended: judge content not formatting, same bar). Phone, web voice and unknown channels get the prompt **unchanged (string-identical, tested)**, so phone grading is byte-for-byte what it was. The grader already graded chats (it selects every unscored row from any agent); this only fixes the wording.
+- `api/calls.js`: each row gains `channel` (and no helper fields). The select is a PostgREST JSON-path alias, documented by Supabase and matched exactly; if the live REST layer rejects it, the list still loads with `channel: null` and grading carries on (tested with a stubbed database).
+- Portal: a channel pill on the Calls and Accuracy lists (`lib/channel-label.js`).
+- Tests: broker 80 to 91 passing, portal 8 passing.
+
+**Not verified:** the JSON-path select against the live REST layer (this container cannot reach supabase.co; the code degrades safely if rejected); a real chat graded end to end (needs `ANTHROPIC_API_KEY`, not available here); how the grader performs on chat transcripts versus calls.
+
+**Survey side, still to build (design agreed, scope not yet approved):** `survey_answers` builds respondent identity from the caller's PHONE NUMBER or a roster-matched name, so a chat with no name given has `person_key` NULL and is excluded from the respondent-level numbers (`survey_people`). Needs: a chat respondent key (the widget's per-browser `user_id` is in the payload), a chat variant of survey question 3 ("how natural did my voice sound" is meaningless in text), and a decision on waves (they are assigned by date, so chats pool into the tester wave). Blended means chats then count with phone in the headline numbers. Do not edit the live `survey_answers` view casually; prefer a new view joined in broker code so existing phone numbers stay identical.
+
+**Next session:**
+> 1. Tanner approves merging the grader change (PR touches the live broker and the portal). 2. After deploy, open Calls and Accuracy and confirm the three web-demo chats show a "Web chat" pill; if every row shows no pill, the JSON-path select was rejected (check the broker log line "channel select failed"). 3. Run "Grade new calls" and read one graded chat in the drawer. 4. Then scope the survey half with Tanner (identity key, chat question 3, wave handling) before any migration.
+
+---
+
 ### 2026-09-25 — Quality on flyrobin.app, and the first round of notes (branch `claude/quality-polish`, NOT merged)
 
 **Status:** PR #75 merged and both projects built production from it; Tanner confirmed the rail on
