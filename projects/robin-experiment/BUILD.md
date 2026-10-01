@@ -6,6 +6,34 @@
 
 ---
 
+
+## Session 2026-10-02: Dry Run reads Robin, not a snapshot of her
+
+**Defect.** Dry Run (`broker/api/ask.js`) answered from `kb_articles` rows in state `published`, falling
+back to an embedded INTRUST knowledge base, under a persona prompt that said "NestEgg U assistant ...
+INTRUST 401(k) Plan" with INTRUST phone numbers. Live Robin is the Vertex agent: her attached documents
+are five Vertex files plus an "Online Portal" note (none INTRUST), and her prompt is 18k characters of her
+own. So Dry Run tested knowledge and a persona she does not have. Evidence: her agent configuration
+(`knowledge_base`, six entries), `dependent_agents: []` on all 29 INTRUST documents, and retrieval counts
+from stored calls (Vertex documents retrieved in 177 to 209 of 224 calls over 90 days, INTRUST documents in
+1 or 2).
+
+**Fix.** `lib/robin-live.js` reads the agent from ElevenLabs (prompt, temperature, attached documents and
+their text, cached a minute). `dryRunSystem` frames her real prompt as a text dry run (no verification, no
+tools) with her documents and restates those rules last. It NEVER falls back to other knowledge: missing
+config is a 503 that says what to set. `GET /api/ask` returns the attached document names at no model cost;
+the page shows "Answering from N documents attached to Robin: ...". The INTRUST answer key and "Load the
+25" are removed (they belonged to the INTRUST experiment). `api/questions.js` and `lib/kb.js` are now
+unused by the page and left in place.
+
+**Needs `ELEVENLABS_AGENT_ID` on the broker project** (production and preview) and a redeploy; the broker
+did not reference it anywhere before. Without it Dry Run refuses to run, by design. `ELEVENLABS_API_KEY`
+is also required (docs say it was set; unverified). Suite 98/98 (`test/robin-live.test.mjs`, 7).
+
+**Not verified:** a real answer from the live prompt (the container cannot reach ElevenLabs or Anthropic);
+whether a long live prompt plus the dry-run frame makes Haiku skip the verification steps reliably. That
+needs one real run after the env var is set.
+
 ## Session log
 
 <!-- Add new sessions at the top, newest first -->

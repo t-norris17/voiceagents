@@ -33,6 +33,13 @@ every room was screenshotted in light and dark with the masthead measured for al
 edge equals the page's content edge on all five). **Not verified:** the pages against real `/api/calls`
 data (stubbed here), and narrow screens beyond the existing breakpoints.
 
+**Follow-up the same day.** The masthead was lopsided (three unequal groups on the left, a stray pair
+stacked on the right). It is now FOUR even groups, right-aligned (Listen, Understand, Improve, Robin),
+with the theme switch as two small icons, which also leaves room for Utilization under Understand.
+The wordmark is now **Birdnest** with the tagline "all your eggs in one place" in mono under it, and the
+way-back pill reads "← Birdnest". Robin stays the name of the agent: the home page, About and the footer
+about her still say Robin. Trademark and domain availability for "Birdnest" are unverified.
+
 **Not done yet.** Dry Run, Quality and About bodies still carry their old styling (pill buttons, uppercase
 titles). That is the next batch.
 

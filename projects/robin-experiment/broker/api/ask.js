@@ -1,44 +1,37 @@
 // POST /api/ask  { question }  ->  { answer }
-// Phase-1 text test tool. Answers a plan question the way Robin would — grounded in Robin's
-// PUBLISHED knowledge base (the kb_articles she's actually serving), so the tester reflects
-// what she truly knows RIGHT NOW and stays current as you publish more. Falls back to the
-// embedded static KB when nothing is published yet. Uses the same model Robin runs on
-// (Haiku 4.5) at a similar temperature, so this reflects Robin's actual brain.
+// GET  /api/ask                ->  { kb: { documents, unreadable } }   (no model call, no cost)
+//
+// The dry-run text tool. It answers a caller's question the way Robin would RIGHT NOW: her live prompt
+// and the documents attached to her, both read from ElevenLabs (lib/robin-live.js). Same model family and
+// temperature as her agent configuration. If Robin's configuration cannot be read it says so; it never
+// falls back to some other knowledge.
 import Anthropic from "@anthropic-ai/sdk";
-import { KB as STATIC_KB } from "../lib/kb.js";
-import { qaSystem } from "../lib/robin-prompt.js";
-import { sb } from "../lib/supabase.js";
+import { liveRobin, dryRunSystem } from "../lib/robin-live.js";
 
 const client = new Anthropic(); // ANTHROPIC_API_KEY
 
-// The live KB = the published articles. Cached 60s so we don't hit Supabase on every question.
-let _kb = { text: null, at: 0 };
-async function currentKB() {
-  const now = Date.now();
-  if (_kb.text && now - _kb.at < 60000) return _kb.text;
-  try {
-    const rows = await sb(`kb_articles?state=eq.published&select=body_md&order=updated_at.desc`);
-    if (rows && rows.length) {
-      const text = rows.map((r) => r.body_md).join("\n\n---\n\n");
-      _kb = { text, at: now };
-      return text;
-    }
-  } catch (_) { /* fall through to static */ }
-  return STATIC_KB;
-}
-
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
+  if (req.method === "GET") {
+    try {
+      const live = await liveRobin();
+      return res.status(200).json({ kb: { documents: live.documents.map(({ name, usage_mode }) => ({ name, usage_mode })), unreadable: live.unreadable } });
+    } catch (e) { return res.status(503).json({ error: String(e.message || e) }); }
+  }
+  if (req.method !== "POST") return res.status(405).json({ error: "GET or POST only" });
   try {
     const { question } = req.body || {};
     const q = String(question || "").trim();
     if (!q) return res.status(400).json({ error: "no question" });
 
+    let live;
+    try { live = await liveRobin(); }
+    catch (e) { return res.status(503).json({ error: String(e.message || e) }); }
+
     const msg = await client.messages.create({
       model: "claude-haiku-4-5",
       max_tokens: 512,
-      temperature: 0.5, // mirror Robin's voice temp — gives natural variation on resend
-      system: qaSystem(await currentKB()),
+      temperature: Math.min(1, Math.max(0, live.temperature)), // her configured temperature, so resend varies as she does
+      system: dryRunSystem(live),
       messages: [{ role: "user", content: q }],
     });
 

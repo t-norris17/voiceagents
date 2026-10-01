@@ -32,6 +32,8 @@
   h1 .dot{ color:var(--accent); }
   .tag{ font-family:var(--mono); font-size:.66rem; text-transform:uppercase; letter-spacing:.16em; color:var(--accent); }
   .lede{ color:var(--sub); font-size:.95rem; margin:8px 0 0; }
+  .srcline{ font-family:var(--mono); font-size:.7rem; color:var(--sub); margin:12px 0 0; line-height:1.6; }
+  .srcline.bad{ color:var(--accent); }
 
   label.lbl{ display:block; font-family:var(--mono); font-size:.66rem; text-transform:uppercase; letter-spacing:.14em; color:var(--sub); margin:26px 0 8px; }
   textarea{ width:100%; min-height:150px; resize:vertical; background:var(--card); color:var(--ink);
@@ -49,10 +51,6 @@
   .card{ border:1px solid var(--line); border-radius:12px; background:var(--card); padding:15px 17px; }
   .q{ font-weight:700; display:flex; gap:10px; align-items:flex-start; }
   .q .n{ font-family:var(--mono); font-size:.8rem; color:var(--accent); flex:none; padding-top:2px; }
-
-  .ideal{ margin-top:12px; background:var(--ideal); border:1px solid var(--idealln); border-radius:10px; padding:10px 13px; }
-  .ideal .vlabel{ color:var(--idealtx); }
-  .ideal .text{ color:var(--idealtx); font-size:.9rem; }
 
   .answers{ margin:12px 0 0 0; padding-left:16px; border-left:2px solid var(--hair); display:grid; gap:14px; }
   .ans .vlabel{ font-family:var(--mono); font-size:.62rem; text-transform:uppercase; letter-spacing:.1em; color:var(--faint); margin-bottom:3px; display:flex; gap:8px; align-items:baseline; }
@@ -93,10 +91,10 @@
   <header>
     <div class="tag">Robin · Dry Run</div>
     <h1>Dry Run<span class="dot">.</span></h1>
-    <p class="lede">Paste in questions a participant might ask about the INTRUST 401(k) Plan — one per
-      line. Robin answers each from the plan knowledge base, the same way she would on a call, and
-      when the question is one of our 25 you'll see the <b>answer key</b> beside it. Hit <b>resend</b>
-      to see how an answer varies, or <b>flag</b> any answer to collect it for review. No phone call needed.</p>
+    <p class="lede">Paste in questions a caller might ask, one per line. Robin answers each one using her live prompt
+      and the documents attached to her, the same way she would on a call. Hit <b>resend</b> to see how an
+      answer varies, or <b>flag</b> any answer to collect it for review. No phone call needed.</p>
+    <p class="srcline" id="srcline">Reading what Robin is using<span class="dots"></span></p>
   </header>
 
   <label class="lbl" for="qs">Questions (one per line)</label>
@@ -108,8 +106,7 @@ What happens to my plan if I leave?"></textarea>
 
   <div class="row">
     <button class="run" id="run">Run all</button>
-    <button class="ghost" id="load">Load the 25</button>
-    <span class="count" id="count"></span>
+        <span class="count" id="count"></span>
   </div>
 
   <div id="flagged" hidden>
@@ -119,25 +116,25 @@ What happens to my plan if I leave?"></textarea>
 
   <div id="results"></div>
 
-  <footer>Dry Run · INTRUST 401(k) experiment · answers grounded in the plan KB · synthetic test data</footer>
+  <footer>Dry Run · answers use Robin's live prompt and the documents attached to her · synthetic test data</footer>
 </div>
 
 <script>
   const $ = (s, r=document) => r.querySelector(s);
   const results = $("#results");
   const runBtn = $("#run");
-  const loadBtn = $("#load");
   const countEl = $("#count");
 
-  // ---- curated set (fetched once) : normalized question -> ideal answer ----
-  const IDEALS = new Map();
-  let CURATED = [];
   const norm = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
 
-  fetch("/api/questions").then(r=>r.json()).then(d=>{
-    CURATED = d.questions || [];
-    CURATED.forEach(x => IDEALS.set(norm(x.q), x.ideal));
-  }).catch(()=>{ loadBtn.disabled = true; });
+  // What she is using right now: her attached documents, read from ElevenLabs (no model call, no cost).
+  fetch("/api/ask").then(r=>r.json().then(d=>({ok:r.ok,d}))).then(({ok,d})=>{
+    const el = $("#srcline");
+    if(!ok || d.error){ el.className = "srcline bad"; el.textContent = "Can't run: " + (d.error || "Robin's configuration could not be read."); runBtn.disabled = true; return; }
+    const docs = d.kb.documents || [];
+    el.textContent = "Answering from " + docs.length + " document" + (docs.length===1?"":"s") + " attached to Robin: " + docs.map(x=>x.name).join(" · ")
+      + (d.kb.unreadable && d.kb.unreadable.length ? ". Could not read: " + d.kb.unreadable.join(", ") : "");
+  }).catch(()=>{ const el=$("#srcline"); el.className="srcline bad"; el.textContent="Can't run: the portal could not reach the broker."; runBtn.disabled = true; });
 
   // Prefill from ?qs= (used by the cleaner's "Test these in QA" button — one question per line).
   try{
@@ -188,13 +185,8 @@ What happens to my plan if I leave?"></textarea>
     card.id = "card-" + n;
     card.dataset.q = question;
     card.dataset.variations = "0";
-    const ideal = IDEALS.get(norm(question));
-    const idealHtml = ideal
-      ? `<div class="ideal"><div class="vlabel">Ideal answer · answer key</div><div class="text">${md(ideal)}</div></div>`
-      : "";
     card.innerHTML = `
       <div class="q"><span class="n">${String(n).padStart(2,"0")}</span><span class="qtext"></span></div>
-      ${idealHtml}
       <div class="answers"></div>
       <div class="cardfoot"><span class="spin dots">Thinking</span></div>`;
     $(".qtext", card).textContent = question;
@@ -257,11 +249,6 @@ What happens to my plan if I leave?"></textarea>
     });
     await Promise.all(workers);
   }
-
-  loadBtn.addEventListener("click", ()=>{
-    if(!CURATED.length) return;
-    $("#qs").value = CURATED.map(x=>x.q).join("\n");
-  });
 
   runBtn.addEventListener("click", async ()=>{
     const lines = $("#qs").value.split("\n").map(s=>s.trim()).filter(Boolean);

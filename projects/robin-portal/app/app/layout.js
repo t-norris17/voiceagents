@@ -5,8 +5,8 @@ import { PRE_PAINT, CONTROL_JS } from "../lib/theme.js";
 import { mastCss } from "../lib/mast.js";
 
 export const metadata = {
-  title: "Robin",
-  description: "One front door for Robin: interactions, quality, accuracy, knowledge factory, dry run.",
+  title: "Birdnest · all your eggs in one place",
+  description: "Birdnest: one place to listen to, measure and improve Robin. Interactions, quality, accuracy, knowledge factory, dry run.",
 };
 
 export default function RootLayout({ children }) {
@@ -24,7 +24,7 @@ export default function RootLayout({ children }) {
           {children}
           <HomeLink />
           <footer>
-            <span>Robin · Vertex Manufacturing 401(k)</span>
+            <span>Birdnest · Vertex Manufacturing 401(k)</span>
             <span>Robin's own call path never runs through this portal.</span>
           </footer>
         </div>

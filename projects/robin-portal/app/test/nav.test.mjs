@@ -46,3 +46,9 @@ test("the css takes the page's own width", () => {
   assert.match(mastCss(1400), /max-width:1400px/);
   assert.match(mastCss(), /max-width:1120px/);
 });
+
+test("the wordmark is Birdnest with its tagline, and it links home", () => {
+  const html = mastHtml("/calls");
+  assert.match(html, /<a class="rp-wm" href="\/"[^>]*>.*Birdnest.*all your eggs.*in one place/s);
+  assert.ok(!/class="rp-wm"[^>]*>Robin</.test(html), "the old Robin wordmark is gone");
+});

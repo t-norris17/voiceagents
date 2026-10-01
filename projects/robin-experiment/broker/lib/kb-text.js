@@ -32,8 +32,7 @@ export function htmlToText(html) {
 // Returns { title, body_md } in the same shape as a kb_articles row, or null when the document
 // cannot be read (no key, not found, network). Never throws: a grading run must not die because
 // one document was unreadable — that answer grades `no_source` and the rest of the batch proceeds.
-export async function fetchElevenLabsDocument(documentId, { fetchImpl = fetch } = {}) {
-  const key = process.env.ELEVENLABS_API_KEY;
+export async function fetchElevenLabsDocument(documentId, { fetchImpl = fetch, key = process.env.ELEVENLABS_API_KEY } = {}) {
   if (!key) return null;
   if (!/^[A-Za-z0-9_-]{6,80}$/.test(String(documentId || ""))) return null;
   try {

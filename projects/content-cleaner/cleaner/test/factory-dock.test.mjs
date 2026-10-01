@@ -30,7 +30,7 @@ const skip = !pw ? "Playwright is not installed here" : false;
 const STALE = { id: "stale-1", plan_id: "intrust-401k-plan", slug: "employer-right-to-terminate", title: "Can INTRUST end the plan?",
   version: 1, state: "approved", updated_at: "2026-07-30 14:50:14.137+00", body_md: "stale body" };
 
-function makeStub(seed) {
+function makeStub(seed, extra = {}) {
   let rows = seed.map((r) => ({ ...r })); let n = 0; const log = [];
   const art = (slug, title) => ({ slug, title, md: `${title}\n\nYes. A one hundred dollar fee applies.\n`, findings: [],
     review: { score: 5, counts: { claims: 1 }, issues: [], claims: [{ claim: "$100 fee", verdict: "supported", source_quote: "$100 fee" }], omissions: [], deductions: [] },
@@ -42,7 +42,7 @@ function makeStub(seed) {
     let body = null; try { body = route.request().postDataJSON(); } catch { /* GET */ }
     log.push({ name, body });
     const json = (o, status = 200) => route.fulfill({ status, contentType: "application/json", body: JSON.stringify(o) });
-    if (name === "kb_list") return json({ rows });
+    if (name === "kb_list") return json({ rows, ...extra });
     if (name === "clean") return json({ meta: { slug: body.slug, environment: body.env, source: null },
       articles: [art(`${body.slug}-loan`, "Can I take a loan?"), art(`${body.slug}-match`, "Is my match vested?")],
       summary: { articles: 2 }, reports: { drop: "", coverage: "", questions: "" }, dropped: [], coverage_gaps: [], terminology_notes: [] });
@@ -57,7 +57,7 @@ function makeStub(seed) {
   return { handle, log, rows: () => rows };
 }
 
-async function withPage(seed, fn) {
+async function withPage(seed, fn, extra = {}) {
   const server = createServer((req, res) => {
     const path = join(PUBLIC, new URL(req.url, "http://x").pathname === "/" ? "index.html" : new URL(req.url, "http://x").pathname);
     if (!path.startsWith(PUBLIC) || !existsSync(path)) { res.writeHead(404).end(); return; }
@@ -67,7 +67,7 @@ async function withPage(seed, fn) {
   const browser = await pw.chromium.launch();
   try {
     const page = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
-    const stub = makeStub(seed); await page.route("**/api/**", stub.handle);
+    const stub = makeStub(seed, extra); await page.route("**/api/**", stub.handle);
     await page.goto(`http://127.0.0.1:${server.address().port}/`);
     await fn(page, stub);
   } finally { await browser.close(); server.close(); }
@@ -135,4 +135,37 @@ test("after a reload and restore the dock is still scoped to the run's plan", { 
     await page.waitForSelector("#dock:not([hidden])");
     assert.match(await page.textContent("#dock"), /1 approved in this run/, "the approval survives the reload, the stale row is still excluded, and the restored run remembers which rows it approved");
   });
+});
+
+// ---- the Library says what Robin actually has -------------------------------------------------------
+const PUBLISHED_ATTACHED = { id: "p1", plan_id: "meridian", slug: "loans", title: "Loans", version: 1, state: "published", elevenlabs_document_id: "DOC_A", attached: true, updated_at: "2026-10-01T00:00:00Z" };
+const PUBLISHED_ORPHAN = { id: "p2", plan_id: "intrust-401k-plan", slug: "old", title: "Old INTRUST answer", version: 1, state: "published", elevenlabs_document_id: "DOC_O", attached: false, updated_at: "2026-07-24T00:00:00Z" };
+const ATTACHED = [{ id: "DOC_A", name: "Loans (Factory)", type: "text", usage_mode: "auto" }, { id: "DOC_D", name: "Vertex 401(k) Loans (dashboard)", type: "file", usage_mode: "auto" }];
+
+test("live means attached: the Library lists what is attached, and sets published-but-detached rows apart", { skip }, async () => {
+  await withPage([PUBLISHED_ATTACHED, PUBLISHED_ORPHAN], async (page) => {
+    await page.waitForFunction(() => /live/.test(document.querySelector("#libbtn").textContent));
+    assert.match(await page.textContent("#libbtn"), /Library · 2 live/, "the count is attached documents, not published rows");
+    await page.click("#libbtn"); await page.waitForSelector("#v-library .pub");
+    const text = await page.textContent("#v-library");
+    assert.match(text, /Live in Robin's knowledge base · 2/);
+    assert.match(text, /Vertex 401\(k\) Loans \(dashboard\)/);
+    assert.match(text, /added in the ElevenLabs dashboard/);
+    assert.match(text, /Published, but not attached to Robin · 1/);
+    assert.match(text, /Old INTRUST answer/);
+    // a dashboard document is shown but cannot be edited or unpublished from here
+    const dashCard = page.locator("#v-library .pub", { hasText: "Vertex 401(k) Loans (dashboard)" });
+    assert.equal(await dashCard.locator("button").count(), 0);
+  }, { attached: ATTACHED, attached_known: true });
+});
+
+test("when the agent cannot be read, nothing is called live", { skip }, async () => {
+  await withPage([PUBLISHED_ATTACHED, PUBLISHED_ORPHAN], async (page) => {
+    await page.waitForFunction(() => /Library · /.test(document.querySelector("#libbtn").textContent));
+    assert.match(await page.textContent("#libbtn"), /Library · 2 published/);
+    await page.click("#libbtn"); await page.waitForSelector("#v-library .pub");
+    const text = await page.textContent("#v-library");
+    assert.match(text, /Couldn't tell which documents are attached to Robin/);
+    assert.ok(!/Live in Robin's knowledge base/.test(text));
+  }, { attached: [], attached_known: false, attached_error: "403" });
 });

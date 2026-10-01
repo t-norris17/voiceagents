@@ -7,7 +7,7 @@
 //   cleaner/public/vendor         -> public/vendor          (the cleaner imports /vendor/pdf.min.mjs)
 //
 // After the copy, each module page gets two things the sources do not have: the portal's masthead
-// (wordmark and the same nav as the landing page) at the top, and a fixed "Robin portal" link at the
+// (wordmark and the same nav as the landing page) at the top, and a fixed "Birdnest" link at the
 // bottom-left (the survey's Ask button owns bottom-right). Both are added to the copy only, so the
 // pages stay byte-identical where they are served on their own. The slide gets neither: it is the
 // projector artifact.
@@ -80,7 +80,7 @@ for (const file of demoFiles(demoDir)) {
 console.log(`copy-modules: demo website mounted under ${DEMO_PREFIX}/ (${demoRewritten} files rewritten)`);
 
 const HOME_LINK = `
-<a id="rp-home" href="/" aria-label="Back to the Robin portal">&larr; Robin portal</a>
+<a id="rp-home" href="/" aria-label="Back to Birdnest">&larr; Birdnest</a>
 <style>
 #rp-home{position:fixed;left:18px;bottom:18px;z-index:70;font:700 .68rem/1 system-ui,-apple-system,"Segoe UI",sans-serif;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;padding:10px 14px;background:#17181c;color:#f2f0ea;border:1px solid #17181c;border-radius:999px;box-shadow:0 2px 10px rgba(0,0,0,.18)}
 #rp-home:hover{background:#f2f0ea;color:#17181c}
@@ -128,7 +128,7 @@ for (const [rel, current, width] of pages) {
   console.log(`copy-modules: portal chrome -> public/${rel}`);
 }
 
-// The demo website gets ONLY the fixed "Robin portal" link, bottom-left (the chat widget owns
+// The demo website gets ONLY the fixed "Birdnest" link, bottom-left (the chat widget owns
 // bottom-right), so a tester who opened it from the portal can get back. No masthead: the site must
 // still read as a real employer's. It goes into the portal's copy only, so the standalone deployment
 // of the site has no trace of the portal.

@@ -35,7 +35,7 @@ export function mastHtml(current) {
   const groups = GROUPS.map((g) =>
     `<div class="rp-grp"><span class="rp-gl">${esc(g.label)}</span><span class="rp-links">${g.items.map((i) => link(i, current)).join("")}</span></div>`
   ).join("");
-  return `<div class="rp-mast"><div class="rp-in"><a class="rp-wm" href="/">Robin</a><nav aria-label="Sections">${groups}</nav><div class="rp-end">${CONTROL_HTML}</div></div></div>`;
+  return `<div class="rp-mast"><div class="rp-in"><a class="rp-wm" href="/" aria-label="Birdnest, all your eggs in one place"><span class="rp-wmt">Birdnest</span><span class="rp-tag">all your eggs<br>in one place</span></a><nav aria-label="Sections">${groups}</nav><div class="rp-end">${CONTROL_HTML}</div></div></div>`;
 }
 
 // Colours come from the page's own tokens where it has them, with the portal's values as the
@@ -45,14 +45,16 @@ export function mastCss(width = 1120) {
   return `
 .rp-mast{background:var(--paper,#f2f0ea);border-bottom:2px solid var(--ink,#17181c);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
 .rp-in{max-width:${width}px;margin:0 auto;padding:14px 36px 12px;display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap}
-.rp-wm{font-size:1.25rem;font-weight:800;letter-spacing:.02em;text-transform:uppercase;text-decoration:none;color:var(--ink,#17181c);line-height:1;padding-bottom:3px}
+.rp-wm{display:flex;flex-direction:column;gap:4px;text-decoration:none;color:var(--ink,#17181c);padding-bottom:2px}
+.rp-wmt{font-size:1.2rem;font-weight:800;letter-spacing:.03em;text-transform:uppercase;line-height:1}
+.rp-tag{font:600 .5rem/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--faint,#a29e95)}
 .rp-mast nav{display:flex;gap:18px;margin-left:auto;min-width:0;flex-wrap:wrap}
 .rp-grp{display:flex;flex-direction:column;gap:5px}
 .rp-grp+.rp-grp{border-left:1px solid var(--line,#d7d3c9);padding-left:18px}
 .rp-gl{font:600 .56rem ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--faint,#a29e95)}
 .rp-links{display:flex;gap:14px}
-.rp-mast a:not(.rp-wm){font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:var(--sub,#6c7075);text-decoration:none;padding-bottom:3px;border-bottom:2px solid transparent;white-space:nowrap}
-.rp-mast a:not(.rp-wm):hover,.rp-mast a[aria-current="page"]{color:var(--ink,#17181c);border-bottom-color:var(--ink,#17181c)}
+.rp-mast nav a{font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:var(--sub,#6c7075);text-decoration:none;padding-bottom:3px;border-bottom:2px solid transparent;white-space:nowrap}
+.rp-mast nav a:hover,.rp-mast nav a[aria-current="page"]{color:var(--ink,#17181c);border-bottom-color:var(--ink,#17181c)}
 .rp-end{display:flex;align-items:flex-end;padding-bottom:1px}
 .rp-theme{display:inline-flex;border:1px solid var(--line,#d7d3c9);border-radius:999px;overflow:hidden;align-self:center}
 .rp-theme button{display:inline-flex;align-items:center;justify-content:center;width:28px;height:24px;padding:0;background:none;color:var(--sub,#6c7075);border:0;cursor:pointer}

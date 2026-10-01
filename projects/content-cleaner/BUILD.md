@@ -220,6 +220,22 @@ itself was left alone: publishing or archiving it is a deliberate call for Tanne
 `plan_id` (`<slug>-1`), while a single-pass run uses `<slug>`. Same plan, different `plan_id` across
 runs. Pre-existing; worth a look before a second plan goes through.
 
+## Session 2026-10-02: the Library says what Robin actually has
+
+"Published" is a state in OUR table; whether Robin uses a document is a fact about the agent in
+ElevenLabs. They had drifted: 29 INTRUST articles were `published` and attached to NO agent (ElevenLabs
+shows `dependent_agents: []` for each), while Robin's five live Vertex documents have no `kb_articles`
+row at all. So the Library's "29 live" was wrong in both directions.
+
+- `api/kb_list.js` now also reads the agent (`knowledge_base` on its prompt) and returns `attached` per
+  row (true, false, or null when the agent cannot be read) plus the full list of documents attached to her.
+- The Library shows "Live in Robin's knowledge base" = every attached document, whoever put it there
+  (dashboard-uploaded ones read-only, "managed in ElevenLabs"), and sets published-but-detached rows apart
+  as "Published, but not attached to Robin". When the agent cannot be read nothing is called live: the
+  count says "published".
+- Tests: `test/kb-list.test.mjs` (4) and two Library cases in `test/factory-dock.test.mjs`. Suite 43/43.
+- Needs `ELEVENLABS_API_KEY` and `ELEVENLABS_AGENT_ID` on this project (publish already requires both).
+
 ## Next session (updated)
 
 - Roll the same tokens (heading scale, square buttons, one sheet width) across the other modules.
