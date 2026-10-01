@@ -3,10 +3,10 @@
 // twice, the current page is marked, and a rename never changes a route.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { GROUPS, SECONDARY, mastHtml, mastCss } from "../lib/mast.js";
+import { GROUPS, mastHtml, mastCss } from "../lib/mast.js";
 import { moduleRewrite } from "../lib/module-paths.js";
 
-const all = [...GROUPS.flatMap((g) => g.items), ...SECONDARY];
+const all = GROUPS.flatMap((g) => g.items);
 
 test("every destination is unique", () => {
   const hrefs = all.map((i) => i.href);
@@ -26,6 +26,7 @@ test("labels are the names agreed for the portal, routes are the old ones", () =
   assert.equal(by["Interactions"], "/calls");
   assert.equal(by["Dry Run"], "/robin-q-tester/");
   assert.equal(by["Accuracy"], "/grader");
+  assert.equal(by["About"], "/about");
   assert.ok(!("Calls" in by) && !("Question Tester" in by), "the old names must be gone");
 });
 

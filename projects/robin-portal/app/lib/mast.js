@@ -4,7 +4,8 @@
 // three hand-copied places, so a rename had to be made three times.
 //
 // The destinations are grouped by what a person is doing, not by tool name. The group label sits above
-// its links, so the links keep one line each. Routes are unchanged by a rename: /calls is still
+// its links, so the links keep one line each. Four groups of similar weight, right-aligned against the
+// wordmark, with the theme switch last. Routes are unchanged by a rename: /calls is still
 // /calls, only its label changed.
 import { CONTROL_HTML } from "./theme.js";
 
@@ -16,12 +17,12 @@ export const GROUPS = [
     { href: "/factory/", label: "Knowledge Factory" },
     { href: "/robin-q-tester/", label: "Dry Run" },
   ] },
-];
-
-// Quiet, on the right: not part of the work itself.
-export const SECONDARY = [
-  { href: "/demo-website/", label: "Demo Website", newTab: true },
-  { href: "/about", label: "About Robin" },
+  // About the agent herself, and a way to try her. A fourth group of the same weight as the others, so
+  // the bar is four even clusters instead of three plus a stray pair on the right.
+  { label: "Robin", items: [
+    { href: "/about", label: "About" },
+    { href: "/demo-website/", label: "Demo Website", newTab: true },
+  ] },
 ];
 
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -34,8 +35,7 @@ export function mastHtml(current) {
   const groups = GROUPS.map((g) =>
     `<div class="rp-grp"><span class="rp-gl">${esc(g.label)}</span><span class="rp-links">${g.items.map((i) => link(i, current)).join("")}</span></div>`
   ).join("");
-  const secondary = SECONDARY.map((i) => link(i, current)).join("");
-  return `<div class="rp-mast"><div class="rp-in"><a class="rp-wm" href="/">Robin</a><nav aria-label="Sections">${groups}</nav><div class="rp-end"><span class="rp-sec">${secondary}</span>${CONTROL_HTML}</div></div></div>`;
+  return `<div class="rp-mast"><div class="rp-in"><a class="rp-wm" href="/">Robin</a><nav aria-label="Sections">${groups}</nav><div class="rp-end">${CONTROL_HTML}</div></div></div>`;
 }
 
 // Colours come from the page's own tokens where it has them, with the portal's values as the
@@ -44,21 +44,18 @@ export function mastHtml(current) {
 export function mastCss(width = 1120) {
   return `
 .rp-mast{background:var(--paper,#f2f0ea);border-bottom:2px solid var(--ink,#17181c);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
-.rp-in{max-width:${width}px;margin:0 auto;padding:14px 36px 12px;display:flex;align-items:flex-end;gap:24px;flex-wrap:wrap}
+.rp-in{max-width:${width}px;margin:0 auto;padding:14px 36px 12px;display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap}
 .rp-wm{font-size:1.25rem;font-weight:800;letter-spacing:.02em;text-transform:uppercase;text-decoration:none;color:var(--ink,#17181c);line-height:1;padding-bottom:3px}
-.rp-mast nav{display:flex;gap:22px;flex:1 1 auto;min-width:0;flex-wrap:wrap}
+.rp-mast nav{display:flex;gap:18px;margin-left:auto;min-width:0;flex-wrap:wrap}
 .rp-grp{display:flex;flex-direction:column;gap:5px}
-.rp-grp+.rp-grp{border-left:1px solid var(--line,#d7d3c9);padding-left:22px}
+.rp-grp+.rp-grp{border-left:1px solid var(--line,#d7d3c9);padding-left:18px}
 .rp-gl{font:600 .56rem ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--faint,#a29e95)}
-.rp-links{display:flex;gap:16px}
-.rp-mast a:not(.rp-wm){font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:var(--sub,#6c7075);text-decoration:none;padding-bottom:3px;border-bottom:2px solid transparent;white-space:nowrap}
+.rp-links{display:flex;gap:14px}
+.rp-mast a:not(.rp-wm){font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:var(--sub,#6c7075);text-decoration:none;padding-bottom:3px;border-bottom:2px solid transparent;white-space:nowrap}
 .rp-mast a:not(.rp-wm):hover,.rp-mast a[aria-current="page"]{color:var(--ink,#17181c);border-bottom-color:var(--ink,#17181c)}
-.rp-end{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:7px}
-.rp-sec{display:flex;gap:14px}
-.rp-sec a{font-size:.6rem!important;color:var(--faint,#a29e95)!important}
-.rp-sec a:hover{color:var(--ink,#17181c)!important}
+.rp-end{display:flex;align-items:flex-end;padding-bottom:1px}
 .rp-theme{display:inline-flex;border:1px solid var(--line,#d7d3c9);border-radius:999px;overflow:hidden;align-self:center}
-.rp-theme button{font:inherit;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;padding:5px 11px;background:none;color:var(--sub,#6c7075);border:0;cursor:pointer}
+.rp-theme button{display:inline-flex;align-items:center;justify-content:center;width:28px;height:24px;padding:0;background:none;color:var(--sub,#6c7075);border:0;cursor:pointer}
 .rp-theme button[aria-pressed="true"]{background:var(--ink,#17181c);color:var(--paper,#f2f0ea)}
 .rp-theme button:focus-visible{outline:2px solid var(--accent,#b8501e);outline-offset:2px}
 @media (max-width:640px){.rp-in{padding:14px 18px 10px}}
