@@ -12,9 +12,9 @@
 |---|---|---|
 | Site | Static HTML, one CSS file, one JS file | Nothing to build, nothing to break; the widget is the only moving part. |
 | Fonts | Barlow Condensed, IBM Plex Sans, IBM Plex Mono (Google Fonts) | Industrial, drawn-on-a-spec-sheet feel. |
-| Widget | `@elevenlabs/convai-widget-embed` from unpkg | Official embed. Version 0.18.3 attributes verified from the published bundle. |
+| Widget | `@elevenlabs/convai-widget-embed` 0.18.3, hosted with the site (`assets/vendor`, MIT) | Official embed with no public-CDN dependency, so it works on networks that block shared hosts. Attributes verified from the bundle. |
 | Agent | `Robin (web demo)` `agent_0101m3sjqvfyejsa9kn127ez26mm` | Duplicate of live Robin. |
-| Hosting | Vercel project `vertex-demo-site`, root `projects/vertex-demo-site/site` | Same host the rest of the workbench uses. |
+| Hosting | (1) Vercel project `vertex-demo-site`, standalone; (2) mounted in the Robin portal at `/demo-website/` via `copy-modules.mjs` | (2) serves it from flyrobin.app behind the portal password, for people whose networks block shared domains. |
 
 ## Architecture
 
