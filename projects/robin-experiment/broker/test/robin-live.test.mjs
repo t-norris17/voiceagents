@@ -5,6 +5,7 @@
 // Run: npm test
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { createRequire } from "node:module";
 import { liveRobin, dryRunSystem } from "../lib/robin-live.js";
 
 const ENV = { ELEVENLABS_API_KEY: "k", ELEVENLABS_AGENT_ID: "agent_x" };
@@ -85,7 +86,9 @@ test("the agent is read once per minute, not once per question", async () => {
 
 // The endpoint itself: with Robin's configuration unreadable it refuses (503) instead of answering from
 // some other knowledge. This is the behaviour that replaced the silent INTRUST fallback.
-test("/api/ask refuses with a 503 that names the missing setting, on GET and on POST", async () => {
+// The handler imports the Anthropic SDK, so this one needs `npm ci` first; without it, it is SKIPPED, not passed.
+const hasSdk = (() => { try { createRequire(import.meta.url).resolve("@anthropic-ai/sdk"); return true; } catch { return false; } })();
+test("/api/ask refuses with a 503 that names the missing setting, on GET and on POST", { skip: hasSdk ? false : "@anthropic-ai/sdk is not installed (run npm ci)" }, async () => {
   delete process.env.ELEVENLABS_API_KEY; delete process.env.ELEVENLABS_AGENT_ID;
   process.env.ANTHROPIC_API_KEY = "test";
   const { default: handler } = await import("../api/ask.js");

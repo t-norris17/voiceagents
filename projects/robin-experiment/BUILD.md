@@ -28,7 +28,7 @@ unused by the page and left in place.
 
 **Needs `ELEVENLABS_AGENT_ID` on the broker project** (production and preview) and a redeploy; the broker
 did not reference it anywhere before. Without it Dry Run refuses to run, by design. `ELEVENLABS_API_KEY`
-is also required (docs say it was set; unverified). Suite 98/98 (`test/robin-live.test.mjs`, 7).
+is also required (docs say it was set; unverified). Suite 99/99 (`test/robin-live.test.mjs`, 8; the endpoint case needs `npm install --no-package-lock` first, the broker has no lockfile, and is skipped without the SDK).
 
 **Not verified:** a real answer from the live prompt (the container cannot reach ElevenLabs or Anthropic);
 whether a long live prompt plus the dry-run frame makes Haiku skip the verification steps reliably. That
