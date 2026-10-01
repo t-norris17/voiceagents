@@ -50,8 +50,8 @@ for (const [from, to] of jobs) {
 
 // The demo website is authored to be served from a site root (/assets/..., /about). It is mounted
 // here under /demo-website/, so every root-absolute URL in the copy gets the prefix. The copy gets
-// NO portal masthead or home link, on purpose: it has to read as a real employer's site, so a tester
-// (or a boss) sees Vertex, and Robin appears only as the widget. Its own vercel.json (headers for
+// NO portal masthead, on purpose: it has to read as a real employer's site, so a tester (or a boss)
+// sees Vertex, and Robin appears only as the widget. The one addition is a small back link, below. Its own vercel.json (headers for
 // its standalone deployment) is dropped. Fails loudly if a root-absolute URL survives the rewrite.
 const DEMO_PREFIX = "/demo-website";
 const demoDir = join(app, "public", "demo-website");
@@ -141,3 +141,20 @@ for (const [rel, current, width] of pages) {
   writeFileSync(file, html);
   console.log(`copy-modules: portal chrome -> public/${rel}`);
 }
+
+// The demo website gets ONLY the fixed "Robin portal" link, bottom-left (the chat widget owns
+// bottom-right), so a tester who opened it from the portal can get back. No masthead: the site must
+// still read as a real employer's. It goes into the portal's copy only, so the standalone deployment
+// of the site has no trace of the portal.
+let demoLinks = 0;
+for (const file of demoFiles(demoDir)) {
+  if (!file.endsWith(".html")) continue;
+  const html = readFileSync(file, "utf8");
+  if (!html.includes("</body>")) {
+    console.error(`copy-modules: no </body> in ${file.replace(app + "/", "")}, cannot add the portal link`);
+    process.exit(1);
+  }
+  writeFileSync(file, html.replace("</body>", `${HOME_LINK}</body>`));
+  demoLinks++;
+}
+console.log(`copy-modules: portal link -> ${demoLinks} demo website pages`);
