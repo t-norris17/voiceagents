@@ -43,204 +43,202 @@
 <style>
   :root{
     --paper:#f2f0ea; --ink:#17181c; --sub:#6c7075; --faint:#a29e95;
-    --line:#d7d3c9; --hair:#e4e1d8; --card:#fbfaf7; --accent:#b8501e;
-    --good:#e8f0e6; --goodln:#bcd3b4; --goodtx:#3f5c39;
-    --warn:#f6ead2; --warnln:#e0c48a; --warntx:#7a5a1e;
-    --bad:#f6dcd6; --badln:#e0a596; --badtx:#8a2f1e;
+    --line:#d7d3c9; --hair:#e4e1d8; --accent:#b8501e;
+    --ok:#3f5c39; --warn:#8a5f12; --bad:#9a2f1e;
     --sans:"Helvetica Neue",Helvetica,Arial,system-ui,sans-serif;
     --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
   }
   /* The viewer's setting unless they chose Light or Dark in the portal (data-theme on <html>). */
   @media (prefers-color-scheme:dark){
     :root:not([data-theme="light"]){ --paper:#15161a; --ink:#ecebe6; --sub:#9a9ea4; --faint:#6a6e74;
-      --line:#2b2d33; --hair:#212329; --card:#1b1d22; --accent:#e08a4a;
-      --good:#182016; --goodln:#2f4429; --goodtx:#9cc091;
-      --warn:#241f14; --warnln:#4a3d1f; --warntx:#d6b878;
-      --bad:#241512; --badln:#4a2820; --badtx:#e0a596; color-scheme:dark; }
+      --line:#2b2d33; --hair:#212329; --accent:#e08a4a; --ok:#9cc091; --warn:#d6b878; --bad:#e0a596; color-scheme:dark; }
   }
   :root[data-theme="dark"]{ --paper:#15161a; --ink:#ecebe6; --sub:#9a9ea4; --faint:#6a6e74;
-    --line:#2b2d33; --hair:#212329; --card:#1b1d22; --accent:#e08a4a;
-    --good:#182016; --goodln:#2f4429; --goodtx:#9cc091;
-    --warn:#241f14; --warnln:#4a3d1f; --warntx:#d6b878;
-    --bad:#241512; --badln:#4a2820; --badtx:#e0a596; color-scheme:dark; }
+    --line:#2b2d33; --hair:#212329; --accent:#e08a4a; --ok:#9cc091; --warn:#d6b878; --bad:#e0a596; color-scheme:dark; }
   *{ box-sizing:border-box; }
+  [hidden]{ display:none !important; }
   body{ margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans); line-height:1.55; -webkit-font-smoothing:antialiased; }
-  .wrap{ max-width:960px; margin:0 auto; padding:clamp(24px,5vw,52px) clamp(18px,4vw,32px) 72px; }
-  header{ border-bottom:2px solid var(--ink); padding-bottom:14px; }
-  h1{ font-size:1.5rem; margin:0; letter-spacing:.02em; text-transform:uppercase; }
-  h1 .dot{ color:var(--accent); }
-  .tag{ font-family:var(--mono); font-size:.66rem; text-transform:uppercase; letter-spacing:.16em; color:var(--accent); }
-  .lede{ color:var(--sub); font-size:.95rem; margin:8px 0 0; }
+  button{ font:inherit; color:inherit; cursor:pointer; }
+  :focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
 
-  /* pipeline nav — read left to right: Clean → QA → Publish */
-  .pipe{ display:flex; align-items:stretch; margin:22px 0 6px; flex-wrap:wrap; }
-  .step{ background:none; border:1px solid var(--line); border-radius:12px; padding:11px 16px; text-align:left; display:flex; flex-direction:column; gap:2px; flex:1; min-width:150px; cursor:pointer; }
-  .step .num{ font-family:var(--mono); font-size:.62rem; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); }
-  .step .name{ font-weight:700; font-size:1.02rem; color:var(--sub); }
-  .step .sub{ font-family:var(--mono); font-size:.63rem; color:var(--faint); text-transform:uppercase; letter-spacing:.05em; }
-  .step.active{ border-color:var(--accent); background:var(--card); box-shadow:inset 0 -2px 0 var(--accent); }
-  .step.active .num{ color:var(--accent); } .step.active .name{ color:var(--ink); }
-  .arrow{ align-self:center; color:var(--faint); padding:0 8px; font-size:1.1rem; }
-  @media (max-width:620px){ .arrow{ display:none; } .step{ min-width:100%; margin-bottom:6px; } }
+  .sheet{ max-width:1120px; margin:0 auto; padding:30px 36px 150px; }
 
-  .tabpanel{ display:none; } .tabpanel.active{ display:block; }
-  .panelintro{ color:var(--sub); font-size:.95rem; margin:18px 0 4px; }
+  /* the spine: where you are, never a menu of pages */
+  .top{ display:flex; justify-content:space-between; align-items:baseline; gap:16px; flex-wrap:wrap; }
+  .spine{ display:flex; gap:26px; }
+  .spine button{ background:none; border:0; border-bottom:2px solid transparent; padding:0 0 4px; font:600 .66rem var(--mono); letter-spacing:.16em; text-transform:uppercase; color:var(--faint); }
+  .spine button:disabled{ cursor:default; }
+  .spine button:not(:disabled):hover{ color:var(--ink); }
+  .spine button.on{ color:var(--ink); border-bottom-color:var(--accent); }
+  .topr{ display:flex; gap:22px; }
+  .lnk{ background:none; border:0; border-bottom:1px solid var(--line); padding:0 0 1px; font:600 .66rem var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--sub); }
+  .lnk:hover{ color:var(--ink); border-bottom-color:var(--ink); }
+  .lnk[aria-current="true"]{ color:var(--ink); border-bottom-color:var(--accent); }
+  .lnk.inline{ font:inherit; letter-spacing:0; text-transform:none; color:var(--ink); border:0; padding:0; text-decoration:underline; text-decoration-color:var(--line); text-underline-offset:3px; }
+  a.lnk{ text-decoration:none; display:inline-block; }
 
-  label.lbl{ display:block; font-family:var(--mono); font-size:.66rem; text-transform:uppercase; letter-spacing:.14em; color:var(--sub); margin:22px 0 7px; }
-  textarea,input[type=text]{ width:100%; background:var(--card); color:var(--ink); border:1px solid var(--line); border-radius:10px; padding:11px 13px; font:inherit; font-size:.92rem; }
-  textarea{ min-height:200px; resize:vertical; font-family:var(--mono); font-size:.8rem; }
-  textarea:focus,input:focus{ outline:2px solid var(--accent); outline-offset:1px; }
-  .fields{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-  .fields .full{ grid-column:1/-1; }
-  @media (max-width:560px){ .fields{ grid-template-columns:1fr; } }
-  .row{ display:flex; align-items:center; gap:12px; margin-top:16px; flex-wrap:wrap; }
-  button{ font:inherit; cursor:pointer; }
-  .run{ background:var(--ink); color:var(--paper); border:0; border-radius:999px; padding:10px 22px; font-weight:600; }
-  .run:disabled{ opacity:.5; cursor:default; }
-  .ghost{ background:none; border:1px solid var(--line); border-radius:999px; padding:8px 15px; color:var(--sub); }
-  .ghost:hover{ border-color:var(--accent); color:var(--accent); }
-  .note{ font-family:var(--mono); font-size:.7rem; color:var(--faint); }
-  .seg{ display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center; padding:9px 0; border-bottom:1px solid var(--hair); cursor:pointer; }
-  .seg:last-of-type{ border-bottom:0; }
-  .seg-title{ font-weight:600; font-size:.92rem; }
-  .seg-meta{ font-family:var(--mono); font-size:.68rem; color:var(--faint); white-space:nowrap; }
-  @media (max-width:560px){ .seg{ grid-template-columns:auto 1fr; } .seg-meta{ grid-column:2; white-space:normal; } }
-  .note a{ color:var(--sub); }
+  h1{ font-size:2.1rem; line-height:1.15; letter-spacing:-.01em; margin:44px 0 10px; font-weight:700; }
+  h2.sec{ font-size:1.5rem; letter-spacing:-.01em; margin:40px 0 4px; font-weight:700; }
+  .sub{ color:var(--sub); font-size:1.02rem; max-width:58ch; margin:0; }
+  .lbl{ font:600 .66rem var(--mono); letter-spacing:.16em; text-transform:uppercase; color:var(--sub); }
+  .note{ font:.7rem var(--mono); color:var(--faint); }
 
-  /* leadership explainer — prose, wider line-height, deliberately not mono */
-  .learn{ margin:24px 0 4px; padding:22px 24px; border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:12px; background:var(--card); }
-  .learn[hidden]{ display:none; }
-  .learn h2{ margin:0 0 6px; font-size:1.15rem; letter-spacing:.01em; }
-  .learn h3{ margin:22px 0 4px; font-size:.95rem; letter-spacing:.01em; }
-  .learn .lp{ margin:6px 0; font-size:.92rem; line-height:1.65; color:var(--sub); max-width:68ch; }
-  .learn .lp b{ color:var(--ink); }
-  .learn ul.lp, .learn ol.lp{ padding-left:20px; } .learn ul.lp li, .learn ol.lp li{ margin:6px 0; }
+  /* buttons: square, like the rest of the portal. Ink is the default; orange is reserved for publishing. */
+  .btn{ display:inline-block; font:600 .72rem var(--sans); letter-spacing:.12em; text-transform:uppercase; padding:12px 20px; border:1px solid var(--ink); background:var(--ink); color:var(--paper); text-decoration:none; }
+  .btn:hover:not(:disabled){ background:var(--paper); color:var(--ink); }
+  .btn.sec{ background:none; color:var(--ink); }
+  .btn.sec:hover:not(:disabled){ background:var(--ink); color:var(--paper); }
+  .btn.go{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  .btn.go:hover:not(:disabled){ background:var(--paper); color:var(--accent); }
+  .btn.sm{ padding:8px 14px; font-size:.66rem; }
+  .btn:disabled{ opacity:.4; cursor:default; }
 
-  #status{ margin-top:22px; font-family:var(--mono); font-size:.8rem; color:var(--sub); }
+  .msg{ border-left:2px solid var(--line); padding:2px 0 2px 12px; margin:14px 0; font-size:.9rem; color:var(--sub); max-width:70ch; }
+  .msg.warn{ border-left-color:var(--warn); color:var(--warn); }
+  .msg.bad{ border-left-color:var(--bad); color:var(--bad); }
+  .msg.ok{ border-left-color:var(--ok); color:var(--ok); }
+  .msg .row{ margin-top:10px; }
+  .row{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
   @media (prefers-reduced-motion:no-preference){ .dots::after{ content:''; animation:d 1.2s steps(4,end) infinite; } }
   @keyframes d{ 0%{content:''} 25%{content:'.'} 50%{content:'..'} 75%{content:'...'} }
 
-  #out{ margin-top:26px; display:none; }
-  .summary{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:8px; }
-  .chip{ font-family:var(--mono); font-size:.72rem; border:1px solid var(--line); border-radius:999px; padding:4px 11px; color:var(--sub); }
-  .chip.bad{ background:var(--bad); border-color:var(--badln); color:var(--badtx); font-weight:700; }
-  .chip.good{ background:var(--good); border-color:var(--goodln); color:var(--goodtx); }
+  /* how this works: prose, quiet */
+  .learn{ margin:22px 0 0; padding:20px 0 6px; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+  .learn h2{ margin:0 0 6px; font-size:1.15rem; }
+  .learn h3{ margin:22px 0 4px; font-size:.95rem; }
+  .learn .lp{ margin:6px 0; font-size:.92rem; line-height:1.65; color:var(--sub); max-width:68ch; }
+  .learn .lp b{ color:var(--ink); }
+  .learn ul.lp, .learn ol.lp{ padding-left:20px; } .learn li{ margin:6px 0; }
 
-  .tabs{ display:flex; gap:6px; margin:16px 0 10px; flex-wrap:wrap; border-bottom:1px solid var(--line); }
-  .tab{ background:none; border:0; border-bottom:2px solid transparent; padding:7px 10px; color:var(--sub); font-family:var(--mono); font-size:.72rem; text-transform:uppercase; letter-spacing:.08em; }
-  .tab.active{ color:var(--ink); border-bottom-color:var(--accent); }
-  .panel{ display:none; } .panel.active{ display:block; }
+  /* source */
+  .drop{ margin-top:34px; border:1px solid var(--line); padding:84px 24px; text-align:center; }
+  .drop.drag{ border-color:var(--accent); }
+  .drop big{ display:block; font-size:1.5rem; font-weight:600; letter-spacing:-.005em; }
+  .drop p{ color:var(--sub); margin:8px 0 22px; }
+  .alt{ margin-top:16px; font-size:.88rem; color:var(--sub); }
+  .loaded{ margin-top:34px; padding-bottom:14px; border-bottom:1px solid var(--ink); display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }
+  .loaded b{ font-size:1.25rem; letter-spacing:-.005em; }
+  .loaded .lnk{ margin-left:auto; }
+  .fields{ display:grid; grid-template-columns:1fr 1fr; gap:22px; margin-top:26px; }
+  .fields label{ display:block; margin-bottom:6px; }
+  input[type=text], textarea{ width:100%; background:none; color:var(--ink); border:0; border-bottom:1px solid var(--line); border-radius:0; padding:8px 0; font:inherit; font-size:1rem; }
+  input[type=text]:focus, textarea:focus{ outline:0; border-bottom-color:var(--accent); }
+  textarea{ min-height:200px; resize:vertical; font-family:var(--mono); font-size:.8rem; border:1px solid var(--line); padding:12px; }
+  textarea:focus{ border-color:var(--accent); }
+  details.tx{ margin-top:22px; } details.tx summary, details.more summary{ cursor:pointer; font:600 .66rem var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--sub); margin:0 0 10px; }
+  .go-row{ margin-top:28px; }
 
-  .card{ border:1px solid var(--line); border-radius:12px; background:var(--card); padding:16px 18px; margin-bottom:14px; }
-  .card.hasfatal{ border-color:var(--badln); }
-  .chead{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; flex-wrap:wrap; }
-  .ctitle{ font-weight:700; font-size:1.02rem; }
-  .score{ font-family:var(--mono); font-size:.72rem; color:var(--faint); }
-  .flags{ margin:10px 0; display:grid; gap:6px; }
-  .flag{ font-family:var(--mono); font-size:.72rem; border-radius:8px; padding:6px 10px; }
-  .flag.fatal{ background:var(--bad); border:1px solid var(--badln); color:var(--badtx); font-weight:700; }
-  .flag.warn{ background:var(--warn); border:1px solid var(--warnln); color:var(--warntx); }
-  .issues{ margin:8px 0; padding-left:16px; border-left:2px solid var(--warnln); }
-  .issues li{ font-size:.86rem; color:var(--warntx); }
-  .md{ font-size:.93rem; margin-top:10px; }
-  .md h1{ font-size:1.05rem; text-transform:none; letter-spacing:0; margin:.2em 0 .4em; border:0; }
-  .md h2{ font-size:.72rem; font-family:var(--mono); text-transform:uppercase; letter-spacing:.1em; color:var(--sub); margin:1em 0 .3em; }
-  .md p{ margin:0 0 .6em; } .md strong{ font-weight:700; } .md em{ font-style:italic; }
-  .md ul{ margin:.3em 0 .6em; padding-left:1.15em; } .md li{ margin:.15em 0; }
-  .md blockquote{ margin:.4em 0; padding-left:12px; border-left:3px solid var(--accent); color:var(--sub); }
-  .cardfoot{ margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-  .dl{ background:none; border:1px solid var(--line); border-radius:999px; padding:5px 13px; font-family:var(--mono); font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:var(--sub); }
-  .dl:hover{ border-color:var(--accent); color:var(--accent); }
-  .send{ background:none; border:1px solid var(--accent); border-radius:999px; padding:5px 13px; font-family:var(--mono); font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:var(--accent); }
-  .send:disabled{ opacity:.55; cursor:default; }
-  /* triage bar: filters + bulk stage. Attention is a scarce resource — the bar exists so a
-     20-card run reads as "3 need you" instead of 20 identical blocks. */
-  .triage{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:14px 0 16px; padding-bottom:14px; border-bottom:1px solid var(--hair); }
-  .fchip{ background:none; border:1px solid var(--line); border-radius:999px; padding:5px 13px; font-family:var(--mono); font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:var(--sub); cursor:pointer; }
-  .fchip:hover:not(:disabled){ border-color:var(--accent); color:var(--accent); }
-  .fchip.on{ border-color:var(--accent); color:var(--accent); background:var(--card); font-weight:700; }
-  .fchip:disabled{ opacity:.35; cursor:default; }
-  .fchip.blocked.on{ border-color:var(--badln); color:var(--badtx); background:var(--bad); }
-  .bulk{ margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-  .stageall{ background:none; border:1px solid var(--accent); border-radius:999px; padding:5px 14px; font-family:var(--mono); font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:var(--accent); font-weight:700; }
-  .stageall:disabled{ opacity:.4; cursor:default; border-color:var(--line); color:var(--faint); font-weight:400; }
-  .handoff[hidden]{ display:none; }
-  .handoff{ border:1px solid var(--goodln); background:var(--good); color:var(--goodtx); border-radius:12px; padding:12px 16px; margin:0 0 14px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; font-size:.9rem; }
-  .handoff button{ background:none; border:1px solid var(--goodln); border-radius:999px; padding:5px 13px; font-family:var(--mono); font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:var(--goodtx); font-weight:700; }
+  /* scan: choose what to clean */
+  .seg{ display:grid; grid-template-columns:auto 1fr auto; gap:14px; align-items:baseline; padding:11px 0; border-bottom:1px solid var(--hair); cursor:pointer; }
+  .seg input{ accent-color:var(--accent); }
+  .seg-title{ font-weight:600; }
+  .seg-meta{ font:.68rem var(--mono); color:var(--faint); text-align:right; }
+  .est{ margin:18px 0 6px; font:.74rem var(--mono); color:var(--sub); }
 
-  .card[hidden]{ display:none; }
-  .card.collapsed{ padding:11px 18px; }
-  .card.collapsed .flagbox, .card.collapsed .issuebox, .card.collapsed .evidbox, .card.collapsed .md, .card.collapsed .cardfoot{ display:none; }
-  .chead{ cursor:default; }
-  .card.canfold .chead{ cursor:pointer; }
-  .tstamp{ font-family:var(--mono); font-size:.6rem; text-transform:uppercase; letter-spacing:.08em; padding:3px 9px; border-radius:999px; border:1px solid var(--line); color:var(--sub); white-space:nowrap; }
-  .tstamp.blocked{ background:var(--bad); border-color:var(--badln); color:var(--badtx); font-weight:700; }
-  .tstamp.attention{ background:var(--warn); border-color:var(--warnln); color:var(--warntx); }
-  .tstamp.clean{ background:var(--good); border-color:var(--goodln); color:var(--goodtx); }
-  .fold{ font-family:var(--mono); font-size:.66rem; color:var(--faint); display:none; }
-  .card.canfold .fold{ display:inline; }
-  .why{ font-family:var(--mono); font-size:.66rem; color:var(--faint); margin-top:6px; }
+  /* review */
+  .subnav{ display:flex; gap:22px; align-items:baseline; flex-wrap:wrap; margin-top:30px; }
+  .subnav button{ background:none; border:0; padding:0; font:600 .66rem var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--faint); border-bottom:1px solid transparent; }
+  .subnav button:hover{ color:var(--ink); }
+  .subnav button.on{ color:var(--ink); border-bottom-color:var(--ink); }
+  .subnav .prog{ margin-left:auto; font:.7rem var(--mono); color:var(--sub); letter-spacing:0; text-transform:none; }
+  .rev{ display:grid; grid-template-columns:300px minmax(0,1fr); margin-top:14px; border-top:1px solid var(--ink); background:linear-gradient(var(--line),var(--line)) 300px 0/1px 100% no-repeat; }
+  .idx{ padding:18px 22px 24px 0; position:sticky; top:0; align-self:start; max-height:100vh; overflow:auto; }
+  .idx .head{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; }
+  .idx .bulk{ background:none; border:0; border-bottom:1px solid var(--accent); padding:0; font:600 .66rem var(--mono); letter-spacing:.1em; text-transform:uppercase; color:var(--accent); }
+  .idx .bulk:disabled{ color:var(--faint); border-bottom-color:var(--line); cursor:default; }
+  .idx .bprog{ font:.66rem var(--mono); color:var(--sub); margin-top:6px; }
+  .grp{ font:600 .62rem var(--mono); letter-spacing:.16em; text-transform:uppercase; color:var(--faint); margin:22px 0 4px; }
+  .it{ display:grid; grid-template-columns:14px 1fr auto; gap:8px; align-items:baseline; width:100%; text-align:left; background:none; border:0; border-bottom:1px solid var(--hair); padding:9px 8px 9px 0; font-size:.9rem; line-height:1.3; }
+  .it:hover .t{ text-decoration:underline; text-decoration-color:var(--line); text-underline-offset:3px; }
+  .it .n{ font:.66rem var(--mono); color:var(--faint); white-space:nowrap; }
+  .it.sel{ font-weight:700; box-shadow:inset 3px 0 0 var(--accent); padding-left:11px; margin-left:-11px; width:calc(100% + 11px); }
+  .it i{ width:7px; height:7px; border-radius:50%; display:inline-block; transform:translateY(-1px); }
+  .d-ok{ background:var(--ok); } .d-warn{ background:var(--warn); } .d-bad{ background:var(--bad); }
+  .d-done{ background:none; border:1.5px solid var(--faint); }
+  .rd{ padding:18px 0 0 40px; min-width:0; }
+  .rd.cols{ display:grid; grid-template-columns:minmax(0,1fr) 250px; gap:44px; }
+  @media (prefers-reduced-motion:no-preference){ .rd .main{ animation:rise .18s ease; } }
+  @keyframes rise{ from{ opacity:0; transform:translateY(4px); } to{ opacity:1; transform:none; } }
+  .rd h2{ font-size:1.75rem; line-height:1.2; letter-spacing:-.01em; margin:10px 0 18px; font-weight:700; }
+  .ans{ font-size:1.08rem; line-height:1.7; max-width:60ch; }
+  .ans p{ margin:0 0 .9em; }
+  .ans textarea{ min-height:300px; }
+  .strip{ margin:0 0 18px; display:grid; gap:6px; }
+  .strip div{ font-size:.86rem; padding-left:14px; position:relative; color:var(--warn); }
+  .strip div::before{ content:""; position:absolute; left:0; top:.55em; width:6px; height:6px; border-radius:50%; background:currentColor; }
+  .strip .fatal{ color:var(--bad); font-weight:700; }
+  .actions{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:34px; padding-top:18px; border-top:1px solid var(--hair); max-width:60ch; }
+  .actions .kbd{ flex-basis:100%; margin-top:2px; font:.64rem var(--mono); color:var(--faint); }
+  .marg{ border-left:1px solid var(--hair); padding-left:22px; font-size:.84rem; align-self:start; margin-top:10px; }
+  .verdict{ font:600 .66rem var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--ok); margin:0 0 16px; }
+  .verdict.warn{ color:var(--warn); }
+  .mnote{ margin:0 0 12px; color:var(--warn); }
+  .mh{ font:600 .62rem var(--mono); letter-spacing:.16em; text-transform:uppercase; color:var(--faint); margin:20px 0 8px; }
+  .cl{ margin:0 0 14px; display:grid; grid-template-columns:16px 1fr; gap:2px 6px; list-style:none; }
+  .cl .v{ font-family:var(--mono); color:var(--ok); grid-row:1/3; }
+  .cl.unsupported .v, .cl.omitted .v{ color:var(--warn); font-weight:700; }
+  .cl.contradicted .v{ color:var(--bad); font-weight:700; }
+  .cl .cq{ font-style:italic; color:var(--faint); }
+  .cl .cq.none{ font-style:normal; font:.7rem var(--mono); color:var(--warn); }
+  .cl.omitted .ct::before{ content:"Left out: "; color:var(--warn); }
+  .clist{ margin:0; padding:0; }
+  .marg ul.cov{ margin:0; padding-left:1.1em; color:var(--sub); }
+  .empty{ padding:40px 0; color:var(--sub); max-width:52ch; }
+  .empty b{ display:block; font-size:1.3rem; color:var(--ink); margin-bottom:6px; letter-spacing:-.005em; }
 
-  .evid{ margin:10px 0 2px; }
-  .evid summary{ font-family:var(--mono); font-size:.68rem; text-transform:uppercase; letter-spacing:.06em; color:var(--faint); }
-  .clist{ list-style:none; margin:8px 0 0; padding:0; display:grid; gap:7px; }
-  .cl{ display:grid; grid-template-columns:16px 1fr; gap:2px 8px; font-size:.86rem; }
-  .cl .v{ grid-row:1/3; font-family:var(--mono); color:var(--faint); }
-  .cl.supported .v{ color:var(--goodtx); }
-  .cl.unsupported .v, .cl.omitted .v{ color:var(--warntx); font-weight:700; }
-  .cl.contradicted .v{ color:var(--badtx); font-weight:700; }
-  .cl .cq{ font-size:.8rem; color:var(--faint); font-style:italic; }
-  .cl .cq.none{ color:var(--warntx); font-style:normal; font-family:var(--mono); font-size:.72rem; }
-  .cl.omitted .ct::before{ content:"left out: "; color:var(--warntx); font-family:var(--mono); font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; }
-
-  .rsec{ margin:16px 0; }
-  .rsec h3{ font-family:var(--mono); font-size:.66rem; text-transform:uppercase; letter-spacing:.1em; color:var(--sub); margin:0 0 8px; }
+  /* reports */
+  .rsec{ margin:22px 0; }
+  .rsec h3{ font:600 .66rem var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--sub); margin:0 0 8px; }
   .rscroll{ overflow-x:auto; }
-  .rtable{ width:100%; border-collapse:collapse; font-size:.87rem; }
-  .rtable th,.rtable td{ text-align:left; vertical-align:top; padding:7px 10px; border-bottom:1px solid var(--hair); }
-  .rtable th{ font-family:var(--mono); font-size:.62rem; text-transform:uppercase; letter-spacing:.08em; color:var(--faint); font-weight:400; }
+  .rtable{ width:100%; border-collapse:collapse; font-size:.9rem; }
+  .rtable th,.rtable td{ text-align:left; vertical-align:top; padding:8px 12px 8px 0; border-bottom:1px solid var(--hair); }
+  .rtable th{ font:600 .62rem var(--mono); letter-spacing:.1em; text-transform:uppercase; color:var(--faint); }
   .rtable td.reason{ color:var(--sub); }
-  .rlist{ margin:0; padding-left:18px; display:grid; gap:6px; font-size:.9rem; }
-  .rlist .sub{ margin:3px 0 0; padding-left:16px; display:grid; gap:3px; }
-  .rlist .sub li{ font-size:.84rem; color:var(--sub); list-style:none; position:relative; }
-  .rlist .sub li::before{ content:"↳"; position:absolute; left:-14px; color:var(--faint); }
-  .muted{ color:var(--faint); font-size:.87rem; }
-  .qgroup{ margin:0 0 14px; }
-  .qgroup .qt{ font-weight:700; font-size:.92rem; margin-bottom:4px; }
+  .rlist{ margin:0; padding-left:18px; display:grid; gap:6px; font-size:.92rem; }
+  .rlist .sub2{ margin:3px 0 0; padding-left:16px; display:grid; gap:3px; list-style:none; font-size:.84rem; color:var(--sub); }
+  .muted{ color:var(--faint); font-size:.9rem; }
+  .qgroup{ margin:0 0 16px; } .qgroup .qt{ font-weight:700; margin-bottom:4px; }
+  .dls{ display:flex; gap:10px; flex-wrap:wrap; margin-top:8px; }
 
-  /* QA + Publish */
-  .qaframe{ margin-top:14px; }
-  .qaframe iframe{ width:100%; height:78vh; border:1px solid var(--line); border-radius:12px; background:var(--card); }
-  .pubrow{ border:1px solid var(--line); border-radius:12px; background:var(--card); padding:14px 16px; margin-bottom:12px; }
-  .pubrow.live{ border-color:var(--goodln); }
-  .pubhead{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; }
-  .pubtitle{ font-weight:700; font-size:1rem; }
-  .pubmeta{ font-family:var(--mono); font-size:.7rem; color:var(--faint); margin-top:4px; }
-  .pill{ font-family:var(--mono); font-size:.6rem; text-transform:uppercase; letter-spacing:.08em; padding:3px 9px; border-radius:999px; border:1px solid var(--line); color:var(--sub); white-space:nowrap; }
-  .pill.published{ background:var(--good); border-color:var(--goodln); color:var(--goodtx); }
-  .pill.approved{ background:var(--warn); border-color:var(--warnln); color:var(--warntx); }
-  .pill.superseded{ color:var(--faint); }
-  details summary{ cursor:pointer; font-family:var(--mono); font-size:.72rem; color:var(--sub); margin:10px 0; }
+  /* library */
+  .lib-h{ display:flex; justify-content:space-between; align-items:baseline; gap:16px; flex-wrap:wrap; }
+  .pub{ padding:16px 0; border-bottom:1px solid var(--hair); }
+  .pubhead{ display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+  .pubtitle{ font-weight:700; font-size:1.02rem; }
+  .state{ font:600 .62rem var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--faint); white-space:nowrap; }
+  .state.published{ color:var(--ok); } .state.approved{ color:var(--warn); }
+  .pubmeta{ font:.7rem var(--mono); color:var(--faint); margin-top:3px; }
+  .pubact{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:12px; }
+  .artedit{ margin-top:14px; max-width:70ch; }
+  .artedit textarea{ min-height:260px; }
 
-  footer{ margin-top:44px; border-top:1px solid var(--line); padding-top:14px; font-family:var(--mono); font-size:.68rem; color:var(--faint); }
+  /* the dock: approved answers wait here; one press publishes the batch. The only orange on the page. */
+  .dock{ position:fixed; left:50%; transform:translateX(-50%); bottom:18px; z-index:60; width:min(860px,calc(100vw - 340px)); min-width:480px; background:var(--paper); border:2px solid var(--ink); padding:12px 16px; display:flex; align-items:center; gap:16px; }
+  .dock .k{ font:.7rem var(--mono); letter-spacing:.06em; color:var(--sub); white-space:nowrap; }
+  .dock .btn{ white-space:nowrap; }
+  .dock .k b{ color:var(--ink); font-size:.95rem; letter-spacing:0; }
+  .dock .k.warn{ color:var(--warn); } .dock .k.bad{ color:var(--bad); } .dock .k.ok{ color:var(--ok); }
+  .dock .end{ margin-left:auto; display:flex; gap:14px; align-items:center; }
+  @media (max-width:900px){ .rev{ grid-template-columns:1fr; background:none; } .idx{ position:static; max-height:none; border-bottom:1px solid var(--line); padding-right:0; }
+    .rd{ padding-left:0; } .rd.cols{ grid-template-columns:1fr; gap:10px; } .marg{ border-left:0; padding-left:0; } .fields{ grid-template-columns:1fr; }
+    .dock{ min-width:0; width:calc(100vw - 24px); } .actions .kbd{ display:none; } }
+  footer{ margin-top:56px; border-top:1px solid var(--line); padding-top:14px; font:.68rem var(--mono); color:var(--faint); }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div class="tag">Robin · Knowledge Factory</div>
-    <h1>The Knowledge Factory<span class="dot">.</span></h1>
-    <p class="lede">One place to take a messy source doc all the way to Robin: <b>clean</b> it into
-      knowledge articles, <b>test</b> how she answers, and <b>publish</b> it live. Nothing reaches
-      Robin without your click.</p>
-    <div class="row" style="margin-top:10px">
-      <button class="ghost" id="learnbtn" aria-expanded="false" aria-controls="learn">How this works ↓</button>
-      <span class="note">a plain-English walkthrough of every stage</span>
+<div class="sheet">
+  <div class="top">
+    <nav class="spine" id="spine" aria-label="Progress">
+      <button type="button" data-s="source">1 Source</button>
+      <button type="button" data-s="review" disabled>2 Review</button>
+      <button type="button" data-s="publish" disabled tabindex="-1">3 Publish</button>
+    </nav>
+    <div class="topr">
+      <button class="lnk" type="button" id="learnbtn" aria-expanded="false" aria-controls="learn">How this works</button>
+      <button class="lnk" type="button" id="libbtn">Library</button>
     </div>
-  </header>
+  </div>
 
-  <!-- Leadership-level explainer. Collapsed by default so it never gets in the way of the work. -->
-  <!-- Executive explainer. Concrete over reassuring: every claim carries an example. -->
   <section id="learn" class="learn" hidden>
     <h2>How this works</h2>
     <p class="lp">This tool turns a plan document into <b>answer cards</b> — a question a member asks, and
@@ -302,357 +300,314 @@
       from the document you gave it and waits for your approval.</p>
   </section>
 
-  <nav class="pipe" id="pipe">
-    <button class="step active" data-tab="clean"><span class="num">Step 1</span><span class="name">Clean</span><span class="sub">paste → clean → review</span></button>
-    <span class="arrow">→</span>
-    <button class="step" data-tab="qa"><span class="num">Step 2</span><span class="name">QA</span><span class="sub">test Robin's answers</span></button>
-    <span class="arrow">→</span>
-    <button class="step" data-tab="publish"><span class="num">Step 3</span><span class="name">Publish</span><span class="sub">push live to Robin</span></button>
-  </nav>
+  <!-- 1 SOURCE -->
+  <section id="v-source">
+    <h1>Turn a document into answers Robin can give.</h1>
+    <p class="sub">Drop a plan document. You review every answer before anything reaches Robin.</p>
 
-  <!-- STEP 1 — CLEAN -->
-  <section class="tabpanel active" id="p-clean">
-    <p class="panelintro">Drop in a messy guide or SOP. It proposes clean, <b>KCS-gold, Robin-ready</b>
-      articles — one topic each, voice-friendly, grounded — plus a report of what it dropped and what
-      the source doesn't answer. Review each, then <b>Send to Publish</b>.</p>
+    <div class="drop" id="drop">
+      <big>Drop a document here</big>
+      <p>PDF, Word or text. A PDF is read in your browser and never uploaded.</p>
+      <label class="btn" for="file" style="cursor:pointer">Choose a file</label>
+      <input type="file" id="file" accept=".txt,.md,.markdown,.text,.pdf,.docx" hidden>
+    </div>
+    <p class="alt" id="altpaste">Or <button class="lnk inline" type="button" id="pastebtn">paste text</button> instead.</p>
 
-    <div class="fields">
-      <div class="full">
-        <label class="lbl" for="src">Raw source text</label>
-        <textarea id="src" placeholder="Paste the raw guide / SOP text here, or use Upload for a .txt/.md file. (PDF? Extract text first — see the note below.)"></textarea>
+    <div id="prep" hidden>
+      <div class="loaded">
+        <span class="lbl" id="fkind">Source</span><b id="fname"></b><span class="note" id="fmeta"></span>
+        <button class="lnk" type="button" id="change">Choose another</button>
       </div>
-      <div>
-        <label class="lbl" for="env">Applies to</label>
-        <input type="text" id="env" placeholder="INTRUST 401(k) Plan">
+      <div class="fields">
+        <div><label class="lbl" for="env">Applies to</label><input type="text" id="env" placeholder="INTRUST 401(k) Plan" autocomplete="off"></div>
+        <div><label class="lbl" for="source">Source <span style="text-transform:none;letter-spacing:0">(optional)</span></label><input type="text" id="source" placeholder="2025 INTRUST Enrollment Packet" autocomplete="off"></div>
       </div>
-      <div>
-        <label class="lbl" for="source">Source <span style="text-transform:none;letter-spacing:0">(optional)</span></label>
-        <input type="text" id="source" placeholder="2025 INTRUST Enrollment Packet">
-      </div>
+      <details class="tx" id="textbox"><summary>Read or edit the text</summary>
+        <textarea id="src" aria-label="Source text" placeholder="Paste the raw guide or SOP text here."></textarea>
+      </details>
+      <div class="go-row row"><button class="btn" type="button" id="run">Clean it</button><span class="note" id="runnote"></span></div>
     </div>
 
-    <div class="row">
-      <button class="run" id="run">Clean it</button>
-      <label class="ghost" for="file" style="cursor:pointer">Upload a file</label>
-      <input type="file" id="file" accept=".txt,.md,.markdown,.text,.pdf,.docx" style="display:none">
-      <span class="note">Accepts .txt, .md, .pdf, .docx — PDFs are read in your browser (any size); text is extracted for you</span>
-    </div>
-
-    <div id="status"></div>
-    <div id="out"></div>
+    <div id="status" role="status" aria-live="polite"></div>
+    <div id="restore"></div>
   </section>
 
-  <!-- STEP 2 — QA -->
-  <section class="tabpanel" id="p-qa">
-    <p class="panelintro">Pressure-test Robin's answers without placing a call — same model, same
-      knowledge she uses on the line. Paste questions, compare to the answer key, and flag any answer
-      for review.</p>
-    <div class="qaframe">
-      <iframe id="qaframe" src="https://voiceagents-seven.vercel.app/robin-q-tester" title="Robin Q Tester" loading="lazy"></iframe>
-    </div>
-    <p class="note"><a href="https://voiceagents-seven.vercel.app/robin-q-tester" target="_blank" rel="noopener">Open the Q Tester in its own tab ↗</a></p>
-  </section>
+  <!-- scan: choose what to clean (large documents only) -->
+  <section id="v-scan" hidden></section>
 
-  <!-- STEP 3 — PUBLISH -->
-  <section class="tabpanel" id="p-publish">
-    <p class="panelintro">Push approved articles into Robin's ElevenLabs knowledge base. Staged
-      articles wait here until you publish; published articles are live for retrieval on her calls.
-      Robin retrieves them natively — no database call mid-conversation.</p>
-    <div class="row">
-      <button class="ghost" id="pubrefresh">Refresh</button>
-      <span class="note" id="pubmeta"></span>
-    </div>
-    <div id="pubout"></div>
-  </section>
+  <!-- 2 REVIEW -->
+  <section id="v-review" hidden></section>
 
-  <footer>The Knowledge Factory · Clean (KCS v6 + voice-RAG) · QA · Publish (Supabase → ElevenLabs KB) · a human approves before anything goes live · synthetic test data</footer>
+  <!-- LIBRARY (what is live, and everything staged) -->
+  <section id="v-library" hidden></section>
+
+  <footer>The Knowledge Factory · Source, Review, Publish · a person approves before anything goes live · synthetic test data</footer>
 </div>
+
+<div class="dock" id="dock" hidden role="region" aria-label="Publish"></div>
 
 <script>
   const $ = (s, r=document) => r.querySelector(s);
   const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
-  const statusEl = $("#status"), out = $("#out"), runBtn = $("#run");
   const el = (tag, cls, text) => { const e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; };
-  let CURRENT_META = null; // {slug, environment, source} from the last clean run
+  const esc = (t) => String(t==null?"":t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const store = {
+    get(k){ try{ return localStorage.getItem(k); }catch(_){ return null; } },
+    set(k,v){ try{ localStorage.setItem(k,v); }catch(_){} },
+    del(k){ try{ localStorage.removeItem(k); }catch(_){} },
+  };
 
-  // ---------- top-level pipeline nav ----------
-  function switchTab(name){
-    $$("#pipe .step").forEach(s=>s.classList.toggle("active", s.dataset.tab===name));
-    $$(".tabpanel").forEach(p=>p.classList.toggle("active", p.id==="p-"+name));
-    if(name==="publish") loadPublish();
+  // ============================================================ state
+  // One run's worth of answers lives in RUN. "Approved" and "live" come from the server (kb_list),
+  // mirrored in LIB. Nothing here talks to Robin: that only happens in /api/publish.
+  const RUN = blankRun();
+  function blankRun(){ return { meta:null, articles:[], dropped:[], coverage_gaps:[], terminology_notes:[], reports:{drop:"",coverage:"",questions:""}, summary:null, running:false, progress:"", notes:[], failed:[] }; }
+  let UID = 0;           // stable id per answer (slugs can repeat across sections)
+  let SEL = null;        // selected answer _id
+  let TAB = "answers";   // answers | drop | coverage | questions | reports
+  let VIEW = "source";   // source | scan | review | library
+  const LIB = { rows:[], loaded:false, error:null };
+  const PUB = { mode:"idle", total:0, ok:0, fails:[] };   // idle | publishing | done | failed
+
+  // ============================================================ chrome: views, spine, dock
+  function setView(v){
+    VIEW = v;
+    ["source","scan","review","library"].forEach(n => { $("#v-"+n).hidden = (n !== v); });
+    renderSpine(); renderDock();
+    $("#libbtn").setAttribute("aria-current", String(v === "library"));
   }
-  $$("#pipe .step").forEach(s=>s.addEventListener("click", ()=>switchTab(s.dataset.tab)));
-
-  // ---------- "how this works" explainer ----------
+  function renderSpine(){
+    const here = VIEW === "review" ? "review" : (VIEW === "source" || VIEW === "scan") ? "source" : "";
+    const pub = PUB.mode !== "idle";
+    $$("#spine button").forEach(b => {
+      const s = b.dataset.s;
+      b.classList.toggle("on", s === "publish" ? pub : (!pub && s === here));
+      if(s === "review") b.disabled = !(RUN.articles.length || RUN.running);
+    });
+  }
+  $("#spine").addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if(!b || b.disabled) return;
+    if(b.dataset.s === "source") setView("source");
+    if(b.dataset.s === "review"){ setView("review"); renderReview(); }
+  });
+  $("#libbtn").addEventListener("click", () => { setView("library"); loadLibrary(); });
   (function(){
     const btn = $("#learnbtn"), panel = $("#learn");
-    if(!btn || !panel) return;
-    btn.addEventListener("click", ()=>{
+    btn.addEventListener("click", () => {
       const open = panel.hasAttribute("hidden");
-      if(open){ panel.removeAttribute("hidden"); } else { panel.setAttribute("hidden",""); }
+      if(open) panel.removeAttribute("hidden"); else panel.setAttribute("hidden","");
       btn.setAttribute("aria-expanded", String(open));
-      btn.textContent = open ? "Hide how this works ↑" : "How this works ↓";
+      btn.textContent = open ? "Hide how this works" : "How this works";
       if(open) panel.scrollIntoView({ behavior:"smooth", block:"start" });
     });
   })();
 
-  // ---------- clean ----------
-  $("#file").addEventListener("change", async (e)=>{
-    const f = e.target.files[0]; if(!f) return;
+  // Dry Run reads what is PUBLISHED (api/ask.js, cached about a minute), so it is offered after
+  // publishing, never before. Inside the portal it is a sibling page; standalone it is the broker's.
+  function dryRunUrl(questions){
+    const base = location.pathname.startsWith("/factory") ? "/robin-q-tester/" : "https://voiceagents-seven.vercel.app/robin-q-tester";
+    let qs = (questions || []).filter(Boolean).slice(0, 40), enc = "";
+    while(qs.length){ enc = encodeURIComponent(qs.join("\n")); if(enc.length <= 6000) break; qs = qs.slice(0, qs.length - 5); }
+    return qs.length ? base + "?qs=" + enc : base;
+  }
+
+  function staleCount(){ return RUN.articles.filter(a => a._stale).length; }
+  // The dock publishes ONLY the rows this run approved: the server hands back a row id on every approve
+  // and the run remembers it (and keeps it across a reload). The server also holds approved rows from
+  // other plans and earlier days, sometimes under a plan name that matches by accident. Those wait in
+  // the Library, never in the dock: a batch press must not carry a stale row into Robin's live
+  // knowledge base.
+  const allApproved = () => LIB.rows.filter(r => r.state === "approved");
+  const inThisRun = (r) => RUN.articles.some(a => a.rowId === r.id);
+  function approvedRows(){ return allApproved().filter(inThisRun); }
+  const dateOf = (iso) => (iso ? String(iso).slice(0, 10) : "an unknown date");
+
+  function renderDock(){
+    const dock = $("#dock"); dock.innerHTML = "";
+    const rows = approvedRows(), n = rows.length;
+    if(PUB.mode === "publishing"){
+      dock.append(elHtml("span", "k", `Publishing <b>${PUB.ok + PUB.fails.length} of ${PUB.total}</b><span class="dots"></span>`), el("span","k","Keep this tab open"));
+    } else if(PUB.mode === "done"){
+      dock.append(elHtml("span", "k ok", `<b>${PUB.ok}</b> live`), el("span","k","Dry Run sees new answers within a minute"));
+      const end = el("div","end");
+      const qs = RUN.articles.filter(a => a.staged).flatMap(a => a.candidate_questions || []);
+      const t = el("a","btn sm go","Try it in Dry Run"); t.href = dryRunUrl(qs); t.target = "_blank"; t.rel = "noopener";
+      const c = el("button","lnk","Close"); c.type = "button"; c.onclick = () => { PUB.mode = "idle"; renderSpine(); renderDock(); };
+      end.append(t, c); dock.append(end);
+    } else if(PUB.mode === "failed"){
+      dock.append(elHtml("span", "k bad", `<b>${PUB.fails.length}</b> failed to publish`), el("span","k", PUB.fails.slice(0,2).join("; ")));
+      const end = el("div","end");
+      const r = el("button","btn sm","Try again"); r.type = "button"; r.onclick = () => publishAll();
+      const c = el("button","lnk","Close"); c.type = "button"; c.onclick = () => { PUB.mode = "idle"; renderSpine(); renderDock(); };
+      end.append(r, c); dock.append(end);
+    } else if(n){
+      const stale = staleCount();
+      dock.append(elHtml("span", "k", `<b>${n}</b> approved in this run, ready to publish`),
+        el("span", "k" + (stale ? " warn" : ""), stale ? `${stale} answer${stale>1?"s":""} changed after approval. Approve again first.` : "Nothing is live until you publish"));
+      const end = el("div","end");
+      const b = el("button","btn go", `Publish ${n} to Robin`); b.type = "button"; b.disabled = stale > 0; b.onclick = () => publishAll();
+      end.append(b); dock.append(end);
+    }
+    dock.hidden = !dock.childNodes.length;
+  }
+  function elHtml(tag, cls, html){ const e = el(tag, cls); e.innerHTML = html; return e; }
+
+  // ============================================================ source
+  let autoSource = "";
+  function setStatus(content, kind){
+    const s = $("#status"); s.innerHTML = "";
+    if(!content) return;
+    if(typeof content === "string"){ const m = el("div","msg" + (kind ? " "+kind : "")); m.innerHTML = content; s.append(m); }
+    else s.append(content);
+  }
+  // Inline replacement for confirm(): resolves true on the confirm button, false on cancel.
+  function askInline(html, yes){
+    return new Promise(res => {
+      const m = el("div","msg warn"); m.innerHTML = html;
+      const row = el("div","row");
+      const y = el("button","btn sm",yes); y.type = "button";
+      const n = el("button","btn sm sec","Cancel"); n.type = "button";
+      y.onclick = () => { setStatus(""); res(true); }; n.onclick = () => { setStatus(""); res(false); };
+      row.append(y, n); m.append(row); setStatus(m);
+    });
+  }
+  function showPrep(kind, name, meta, openText){
+    $("#drop").hidden = true; $("#altpaste").hidden = true; $("#prep").hidden = false;
+    $("#fkind").textContent = kind; $("#fname").textContent = name; $("#fmeta").textContent = meta || "";
+    $("#textbox").open = !!openText;
+    if(!$("#env").value){ const last = store.get("cleaner:env"); if(last) $("#env").value = last; }
+  }
+  function showDrop(){
+    $("#drop").hidden = false; $("#altpaste").hidden = false; $("#prep").hidden = true;
+    $("#src").value = ""; setStatus("");
+  }
+  $("#change").addEventListener("click", showDrop);
+  $("#pastebtn").addEventListener("click", () => { showPrep("Source", "Pasted text", "0 characters", true); $("#src").focus(); });
+  $("#src").addEventListener("input", () => { if($("#fname").textContent === "Pasted text") $("#fmeta").textContent = `${$("#src").value.length.toLocaleString()} characters`; });
+
+  // Drag and drop anywhere on the source screen. The browser must never navigate to a dropped file.
+  ["dragover","drop"].forEach(ev => window.addEventListener(ev, e => e.preventDefault()));
+  const srcView = $("#v-source");
+  srcView.addEventListener("dragenter", () => { if(!$("#drop").hidden) $("#drop").classList.add("drag"); });
+  srcView.addEventListener("dragleave", (e) => { if(!srcView.contains(e.relatedTarget)) $("#drop").classList.remove("drag"); });
+  srcView.addEventListener("drop", (e) => { $("#drop").classList.remove("drag"); const f = e.dataTransfer && e.dataTransfer.files[0]; if(f) handleFile(f); });
+  $("#file").addEventListener("change", (e) => { const f = e.target.files[0]; if(f) handleFile(f); e.target.value = ""; });
+
+  function nameToSource(name){ return name.replace(/\.[^.]+$/, "").replace(/[_]+/g, " ").trim(); }
+  function loaded(f, text, meta){
+    $("#src").value = text;
+    showPrep("Source", f.name, meta, false);
+    const guess = nameToSource(f.name);
+    if(!$("#source").value || $("#source").value === autoSource){ $("#source").value = guess; autoSource = guess; }
+    setStatus("");
+  }
+  async function handleFile(f){
     const name = f.name.toLowerCase();
     const isText = /\.(txt|md|markdown|text)$/.test(name) || f.type === "text/plain";
     if(isText){
       const r = new FileReader();
-      r.onload = ()=>{ $("#src").value = r.result; statusEl.textContent = `Loaded ${f.name} (${(f.size/1024|0)} KB).`; };
+      r.onload = () => loaded(f, r.result, `${Math.max(1, f.size/1024|0)} KB`);
       r.readAsText(f);
-      e.target.value = "";
       return;
     }
-    // PDF → extract in the browser (no upload, so no 4.5 MB body limit and no serverless timeout).
+    // PDF: extracted in the browser (no upload, so no 4.5 MB body limit and no serverless timeout).
     if(name.endsWith(".pdf") || f.type === "application/pdf"){
-      if(typeof window.pdfExtract !== "function"){ statusEl.textContent = "PDF reader is still loading — give it a second and try again."; e.target.value=""; return; }
-      statusEl.innerHTML = `<span class="dots">Reading ${f.name} in your browser</span>`;
+      if(typeof window.pdfExtract !== "function"){ setStatus("The PDF reader is still loading. Give it a second and try again.", "warn"); return; }
+      setStatus(`<span class="dots">Reading ${esc(f.name)} in your browser</span>`);
       try{
-        const d = await window.pdfExtract(f, (i,n)=>{ statusEl.innerHTML = `<span class="dots">Reading ${f.name} — page ${i} of ${n}</span>`; });
-        $("#src").value = d.text;
-        statusEl.textContent = `Extracted ${d.chars.toLocaleString()} characters from ${f.name} (${d.pages} pages, read in your browser). Review it, set “Applies to”, then Clean it.`;
-      }catch(err){ statusEl.textContent = "Couldn't read that PDF: " + err.message; }
-      finally{ e.target.value = ""; }
+        const d = await window.pdfExtract(f, (i,n) => { setStatus(`<span class="dots">Reading ${esc(f.name)}, page ${i} of ${n}</span>`); });
+        loaded(f, d.text, `${d.pages} pages · ${d.chars.toLocaleString()} characters`);
+      }catch(err){ setStatus("Couldn't read that PDF: " + esc(err.message), "bad"); }
       return;
     }
-    // DOCX → server-side extraction (mammoth). Still subject to Vercel's 4.5 MB request-body limit,
-    // so guard on size client-side to give a clear message instead of a raw non-JSON 413.
+    // DOCX: extracted on the server (mammoth), so it is bound by Vercel's 4.5 MB request body.
     const UPLOAD_LIMIT = 4.4 * 1024 * 1024;
     if(f.size > UPLOAD_LIMIT){
-      statusEl.textContent = `That .docx is ${(f.size/1024/1024).toFixed(1)} MB — over the 4.5 MB upload limit. Save it as a PDF (read in-browser, no limit) or paste the text.`;
-      e.target.value = ""; return;
+      setStatus(`That .docx is ${(f.size/1024/1024).toFixed(1)} MB, over the 4.5 MB upload limit. Save it as a PDF (read in your browser, no limit) or paste the text.`, "warn");
+      return;
     }
-    statusEl.innerHTML = `<span class="dots">Extracting text from ${f.name}</span>`;
+    setStatus(`<span class="dots">Extracting text from ${esc(f.name)}</span>`);
     try{
       const res = await fetch("/api/extract", { method:"POST", headers:{ "x-filename": f.name }, body: f });
-      const d = await res.json().catch(()=>({ error: res.status===413
+      const d = await res.json().catch(() => ({ error: res.status===413
         ? "file too large for upload (4.5 MB limit)"
-        : "the server didn't return readable data — the file may be too large or too complex to extract" }));
+        : "the server didn't return readable data, the file may be too large or too complex to extract" }));
       if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
-      $("#src").value = d.text;
-      statusEl.textContent = `Extracted ${d.chars.toLocaleString()} characters from ${f.name} (${d.kind}). Review it, set “Applies to”, then Clean it.`;
-    }catch(err){ statusEl.textContent = "Couldn't read that file: " + err.message; }
-    finally{ e.target.value = ""; }
-  });
-
-  function md(text){
-    let s = String(text).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-    s = s.replace(/\*\*([^*]+?)\*\*/g,"<strong>$1</strong>").replace(/(^|[^*])\*(?!\s)([^*\n]+?)\*(?!\*)/g,"$1<em>$2</em>");
-    const blocks = s.split(/\n{2,}/).map(b=>b.trim()).filter(Boolean);
-    return blocks.map(b=>{
-      if(/^#\s/.test(b)) return "<h1>"+b.replace(/^#\s/,"")+"</h1>";
-      if(/^##\s/.test(b)) return "<h2>"+b.replace(/^##\s/,"")+"</h2>";
-      if(/^>\s/.test(b)) return "<blockquote>"+b.replace(/^>\s?/gm,"")+"</blockquote>";
-      const lines = b.split("\n");
-      if(lines.every(l=>/^\s*[-•]\s+/.test(l))) return "<ul>"+lines.map(l=>"<li>"+l.replace(/^\s*[-•]\s+/,"")+"</li>").join("")+"</ul>";
-      return "<p>"+lines.join("<br>")+"</p>";
-    }).join("");
+      loaded(f, d.text, `${d.chars.toLocaleString()} characters · ${d.kind}`);
+    }catch(err){ setStatus("Couldn't read that file: " + esc(err.message), "bad"); }
   }
 
-  function download(name, text){
-    const b = new Blob([text], {type:"text/markdown"});
-    const u = URL.createObjectURL(b);
-    const a = document.createElement("a"); a.href=u; a.download=name; a.click();
-    setTimeout(()=>URL.revokeObjectURL(u), 1000);
-  }
-
-  function tabs(defs){
-    const bar = document.createElement("div"); bar.className="tabs";
-    const panels = document.createElement("div");
-    defs.forEach((d,i)=>{
-      const t=document.createElement("button"); t.className="tab"+(i===0?" active":""); t.textContent=d.label;
-      const p=document.createElement("div"); p.className="panel"+(i===0?" active":""); p.append(d.node);
-      t.addEventListener("click", ()=>{ bar.querySelectorAll(".tab").forEach(x=>x.classList.remove("active")); panels.querySelectorAll(".panel").forEach(x=>x.classList.remove("active")); t.classList.add("active"); p.classList.add("active"); });
-      bar.append(t); panels.append(p);
-    });
-    const box=document.createElement("div"); box.append(bar, panels); return box;
-  }
-
-  // One staging POST. Returns a result instead of touching the DOM, so a single card button and
-  // the bulk "stage all clean" run share exactly one code path (and one PII gate).
-  async function stageArticle(a){
-    const meta = CURRENT_META || {};
-    if(!meta.environment) throw new Error("no plan set");
-    const payload = { article: { plan_id: meta.slug, slug: a.slug, title: a.title, environment: meta.environment,
-      body_md: a.md, source: meta.source || null, coverage_flags: a.coverage_flags || [], candidate_questions: a.candidate_questions || [] } };
-    const res = await fetch("/api/approve", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
-    const d = await res.json().catch(()=>({error:"bad response"}));
-    if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
-    return d;
-  }
-
-  async function approve(a, btn){
-    if(!(CURRENT_META||{}).environment){ btn.textContent="No plan set"; return; }
-    btn.disabled = true; btn.textContent = "Staging…";
-    try{
-      const d = await stageArticle(a);
-      a.staged = true;
-      btn.textContent = d.already_published ? "✓ Already live — re-send" : "✓ Sent — click to re-send";
-      btn.title = "Re-send to update the staged copy in Publish";
-    }catch(e){ btn.textContent="⚠ Failed — retry"; btn.title=e.message; }
-    finally{ btn.disabled = false; } // stays clickable so you can re-send
-  }
-
+  // ============================================================ answers: triage, scoring, markdown
   const SSN_RE = /\b\d{3}[-.\s]?\d{2}[-.\s]?\d{4}\b/; // client mirror of the PII guard
 
   // Three buckets, in the order a reviewer should spend attention on them.
-  //   blocked   — a PII fatal. Cannot be staged at all until it's edited.
-  //   attention — anything the graders found, OR an article the critic never scored. An
-  //               unverified article is NOT a clean one; silence from the critic is not a pass.
-  //   clean     — no findings, no critic issues, and a full 5/5 from the evidence-based score.
+  //   blocked   a PII fatal. Cannot be staged until it is edited.
+  //   attention anything the graders found, OR an article the critic never scored. Silence from
+  //             the critic is not a pass.
+  //   clean     no findings, no critic issues, and a full 5/5 from the evidence-based score.
   function triage(a){
-    if(a.findings.some(f=>f.severity==="fatal")) return "blocked";
+    if(a.findings.some(f => f.severity === "fatal")) return "blocked";
     if(a.findings.length) return "attention";
     if(!a.review || typeof a.review.score !== "number") return "attention";
     if(a.review.score < 5) return "attention";
     if(a.review.issues && a.review.issues.length) return "attention";
     return "clean";
   }
-  const TRIAGE_LABEL = { blocked:"PII — blocked", attention:"needs a look", clean:"clean 5/5" };
-  const TRIAGE_RANK = { blocked:0, attention:1, clean:2 };
-
-  // "critic 4/5" on its own is a vibe. Showing how many claims were actually checked, and what
-  // each lost point was for, is what makes the number worth trusting (or worth arguing with).
   function scoreLine(r){
     if(!r || typeof r.score !== "number") return "not verified";
     const n = r.counts || {};
-    const bits = [`critic ${r.score}/5`];
+    const bits = [`${r.score} of 5`];
     if(typeof n.claims === "number") bits.push(`${n.claims} claim${n.claims===1?"":"s"} checked`);
     if(n.unsupported) bits.push(`${n.unsupported} unsupported`);
     if(n.contradicted) bits.push(`${n.contradicted} contradicted`);
     if(n.omissions) bits.push(`${n.omissions} omitted`);
     return bits.join(" · ");
   }
-  // The receipts. Every checkable claim the article makes, next to the exact words in YOUR
-  // document that back it up — or nothing, when the source never said it. This is the difference
-  // between "a model gave it 5/5" and "here is what was checked".
-  function esc(t){ return String(t==null?"":t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
-  function evidenceHtml(r){
-    if(!r || !Array.isArray(r.claims) || !r.claims.length) return "";
-    const MARK = { supported:"✓", unsupported:"○", contradicted:"✕" };
-    const rows = r.claims.map(c=>`<li class="cl ${c.verdict}"><span class="v">${MARK[c.verdict]||"?"}</span>
-        <span class="ct">${esc(c.claim)}</span>
-        ${c.source_quote ? `<span class="cq">“${esc(c.source_quote)}”</span>`
-                         : `<span class="cq none">no matching text in your document</span>`}</li>`).join("");
-    const om = (r.omissions||[]).map(o=>`<li class="cl omitted"><span class="v">–</span>
-        <span class="ct">${esc(o.missing)}</span>
-        <span class="cq">“${esc(o.source_quote)}”</span></li>`).join("");
-    const n = r.counts || {};
-    return `<details class="evid"><summary>Evidence — ${n.claims} claim${n.claims===1?"":"s"} checked against your document</summary>
-      <ul class="clist">${rows}${om}</ul></details>`;
-  }
-
   function scoreTitle(r){
-    if(!r) return "The critic didn't return a verdict for this article — review it yourself.";
+    if(!r) return "The critic didn't return a verdict for this answer. Review it yourself.";
     if(!r.deductions || !r.deductions.length) return "Nothing found against it: no unsupported claims, no omissions, no style defects.";
-    return "5 minus " + r.deductions.map(d=>`${d.points} (${d.label})`).join(", ");
+    return "5 minus " + r.deductions.map(d => `${d.points} (${d.label})`).join(", ");
+  }
+  function md(text){
+    let s = esc(text);
+    s = s.replace(/\*\*([^*]+?)\*\*/g,"<strong>$1</strong>").replace(/(^|[^*])\*(?!\s)([^*\n]+?)\*(?!\*)/g,"$1<em>$2</em>");
+    return s.split(/\n{2,}/).map(b => b.trim()).filter(Boolean).map(b => {
+      if(/^#\s/.test(b)) return "<h3>"+b.replace(/^#\s/,"")+"</h3>";
+      if(/^##\s/.test(b)) return "<h3>"+b.replace(/^##\s/,"")+"</h3>";
+      if(/^>\s/.test(b)) return "<blockquote>"+b.replace(/^>\s?/gm,"")+"</blockquote>";
+      const lines = b.split("\n");
+      if(lines.every(l => /^\s*[-•]\s+/.test(l))) return "<ul>"+lines.map(l => "<li>"+l.replace(/^\s*[-•]\s+/,"")+"</li>").join("")+"</ul>";
+      return "<p>"+lines.join("<br>")+"</p>";
+    }).join("");
+  }
+  function download(name, text){
+    const b = new Blob([text], {type:"text/markdown"});
+    const u = URL.createObjectURL(b);
+    const a = document.createElement("a"); a.href = u; a.download = name; a.click();
+    setTimeout(() => URL.revokeObjectURL(u), 1000);
   }
 
-  function articleCard(a){
-    const c = el("div", "card");
-    c.dataset.slug = a.slug;
-    c.innerHTML = `
-      <div class="chead"><span class="ctitle"></span><span class="tstamp"></span><span class="score"></span><span class="fold"></span></div>
-      <div class="flagbox"></div>
-      <div class="issuebox"></div>
-      <div class="evidbox"></div>
-      <div class="md"></div>
-      <div class="cardfoot"></div>`;
-
-    // Clean cards start folded: the reviewer opens what they choose to read, instead of
-    // scrolling past twenty open articles to find the three that need them.
-    function setFold(folded){
-      c.classList.toggle("collapsed", folded);
-      $(".fold", c).textContent = folded ? "▸ show" : "▾ hide";
-    }
-    $(".chead", c).addEventListener("click", (e)=>{
-      if(!c.classList.contains("canfold")) return;
-      if(e.target.closest("button")) return;
-      setFold(!c.classList.contains("collapsed"));
-    });
-
-    function paint(){
-      const fatal = a.findings.some(f=>f.severity==="fatal");
-      const t = triage(a);
-      c.classList.toggle("hasfatal", fatal);
-      c.dataset.triage = t;
-      c.classList.toggle("canfold", t === "clean");
-      $(".ctitle", c).textContent = a.title;
-      const stamp = $(".tstamp", c); stamp.className = "tstamp " + t; stamp.textContent = TRIAGE_LABEL[t];
-      const sc = $(".score", c); sc.textContent = scoreLine(a.review); sc.title = scoreTitle(a.review);
-      $(".flagbox", c).innerHTML = a.findings.length
-        ? `<div class="flags">${a.findings.map(f=>`<div class="flag ${f.severity}">${f.severity==="fatal"?"⛔":"⚠"} ${f.kind} — ${f.detail}</div>`).join("")}</div>` : "";
-      $(".issuebox", c).innerHTML = (a.review && a.review.issues && a.review.issues.length)
-        ? `<ul class="issues">${a.review.issues.map(i=>`<li>${i}</li>`).join("")}</ul>` : "";
-      $(".evidbox", c).innerHTML = evidenceHtml(a.review);
-      $(".md", c).innerHTML = md(a.md.replace(/^[^\n]*\n+/, "")); // drop the title line — card shows it
-      paintFoot(fatal);
-      setFold(t === "clean");
-    }
-
-    function paintFoot(fatal){
-      const foot = $(".cardfoot", c); foot.innerHTML = "";
-      const dl = el("button", "dl", "↓ " + a.slug + ".md"); dl.onclick = ()=>download(a.slug+".md", a.md);
-      const edit = el("button", "dl", "✎ Edit"); edit.onclick = startEdit;
-      const refine = el("button", "dl", "↻ Refine"); refine.onclick = doRefine;
-      const send = el("button", "send", fatal ? "Fix PII to publish" : (a.staged ? "✓ Sent — click to re-send" : "→ Send to Publish"));
-      if(fatal){ send.disabled = true; send.title = "This article has a PII flag — Edit it out before publishing."; }
-      else send.onclick = ()=>approve(a, send);
-      foot.append(dl, edit, refine, send);
-    }
-
-    function startEdit(){
-      const ta = el("textarea"); ta.value = a.md; ta.style.minHeight = "240px";
-      $(".md", c).replaceWith(ta);
-      const foot = $(".cardfoot", c); foot.innerHTML = "";
-      const save = el("button", "run", "Save"); save.onclick = ()=>{
-        const body = ta.value.trim();
-        if(SSN_RE.test(body)){ alert("That looks like it contains an SSN-shaped number. Remove it before saving."); return; }
-        a.md = body; a.findings = a.findings.filter(f=>f.severity!=="fatal"); // cleared PII by editing
-        ta.replaceWith(el("div", "md")); paint();
-      };
-      const cancel = el("button", "dl", "Cancel"); cancel.onclick = ()=>{ ta.replaceWith(el("div", "md")); paint(); };
-      foot.append(save, cancel);
-      ta.focus();
-    }
-
-    async function doRefine(){
-      const foot = $(".cardfoot", c); foot.innerHTML = `<span class="spin dots">Refining</span>`;
-      const meta = CURRENT_META || {};
-      const issues = (a.review?.issues || []).concat(a.findings.filter(f=>f.severity!=="fatal").map(f=>f.detail));
-      try{
-        const res = await fetch("/api/refine", { method:"POST", headers:{"Content-Type":"application/json"},
-          body: JSON.stringify({ article: { slug:a.slug, title:a.title, environment: meta.environment || "", source: meta.source || null, body_md: a.md, issues } }) });
-        const d = await res.json().catch(()=>({error:"bad response"}));
-        if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
-        a.md = d.md || a.md;
-        a.findings = d.findings || a.findings;
-        if(d.review) a.review = d.review;
-        if(d.candidate_questions) a.candidate_questions = d.candidate_questions;
-        paint();
-      }catch(e){ paint(); const err = el("div","flag warn","⚠ refine failed: "+e.message); err.style.marginTop="8px"; c.append(err); }
-    }
-
-    paint();
-    c._repaint = paint;   // bulk staging repaints the card so its button reflects "sent"
-    return c;
+  // ONE staging POST, shared by a single approve and the bulk approve so there is exactly one code
+  // path (and one PII gate). Same payload the old page sent.
+  async function stageArticle(a){
+    const meta = RUN.meta || {};
+    if(!meta.environment) throw new Error("no plan set");
+    const payload = { article: { plan_id: meta.slug, slug: a.slug, title: a.title, environment: meta.environment,
+      body_md: a.md, source: meta.source || null, coverage_flags: a.coverage_flags || [], candidate_questions: a.candidate_questions || [] } };
+    const res = await fetch("/api/approve", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
+    const d = await res.json().catch(() => ({error:"bad response"}));
+    if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
+    return d;
   }
 
-  // One clean pass is bounded by the model's OUTPUT budget, not just its input: a whole plan document
-  // produces far more cleaned text than fits in a single response. So a large source is split into
-  // sections and cleaned one at a time — each pass stays well inside the limits, results stream in as
-  // they finish (nothing is lost if you stop early), and one failed section doesn't sink the run.
+  // ============================================================ clean (engine unchanged)
+  // One clean pass is bounded by the model's OUTPUT budget, so a large source is split into sections
+  // and cleaned one at a time: results stream in as each finishes and one failed section doesn't
+  // sink the run.
   const CHUNK_MAX = 45000;
-  const SCAN_MIN = 3;          // only triage genuinely large documents — below this a picker is just clicks
+  const SCAN_MIN = 3;          // only triage genuinely large documents
   const COST_PER_PASS = 0.77;  // measured rough per-pass cost, shown as an estimate only
 
-  // Split on blank lines so a section never starts mid-sentence. A single oversized paragraph is
-  // hard-split as a last resort.
   function splitSource(text){
     if(text.length <= CHUNK_MAX) return [text];
     const paras = text.split(/\n{2,}/);
@@ -665,112 +620,94 @@
     if(cur.trim()) chunks.push(cur);
     return chunks;
   }
-
   async function postClean(text, env, slug, source){
-    const res = await fetch("/api/clean", { method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ text, env, slug, source }) });
-    const d = await res.json().catch(()=>({error:"bad response"}));
+    const res = await fetch("/api/clean", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ text, env, slug, source }) });
+    const d = await res.json().catch(() => ({error:"bad response"}));
     if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
     return d;
   }
 
+  function resetRun(){ Object.assign(RUN, blankRun()); RUN._r = { drop:[], coverage:[], questions:[] }; SEL = null; TAB = "answers"; }
+  function addResult(d){
+    (d.articles || []).forEach(a => {
+      a._id = ++UID;
+      // The same topic can surface in two sections; publishing is keyed on slug, so flag it rather
+      // than silently dropping one. The human decides which version to approve.
+      if(RUN.articles.some(x => x.slug === a.slug)){ a._dupe = true; RUN.notes.push(a.slug); }
+      RUN.articles.push(a);
+    });
+    RUN.dropped.push(...(d.dropped || []));
+    RUN.coverage_gaps.push(...(d.coverage_gaps || []));
+    RUN.terminology_notes.push(...(d.terminology_notes || []));
+    if(!RUN.meta) RUN.meta = d.meta || null;
+    if(d.reports && RUN._r){ RUN._r.drop.push(d.reports.drop || ""); RUN._r.coverage.push(d.reports.coverage || ""); RUN._r.questions.push(d.reports.questions || ""); }
+  }
+  function finishRun(){
+    const scored = RUN.articles.map(a => a.review && a.review.score).filter(n => typeof n === "number");
+    const j = (a) => a.filter(Boolean).join("\n\n---\n\n");
+    RUN.reports = { drop: j(RUN._r.drop), coverage: j(RUN._r.coverage), questions: j(RUN._r.questions) };
+    RUN.summary = { articles: RUN.articles.length, criticAvg: scored.length ? scored.reduce((x,y) => x+y, 0) / scored.length : null };
+    RUN.running = false; RUN.progress = "";
+    saveRun();
+  }
+
   async function run(){
     const text = $("#src").value.trim(), env = $("#env").value.trim();
-    if(!text){ statusEl.textContent="Paste or upload some source text first."; return; }
-    if(!env){ statusEl.textContent="Fill in 'Applies to' — the plan or product these articles cover."; return; }
+    if(!text){ setStatus("Paste or upload some source text first.", "warn"); return; }
+    if(!env){ setStatus("Fill in <b>Applies to</b>: the plan or product these answers cover.", "warn"); $("#env").focus(); return; }
+    store.set("cleaner:env", env);
     const slug = env.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,40) || "cleaned";
     const source = $("#source").value.trim();
     const chunks = splitSource(text);
 
-    // Small source: one pass, unchanged.
     if(chunks.length === 1){
-      out.style.display="none"; out.innerHTML="";
-      runBtn.disabled=true;
-      statusEl.innerHTML = `<span class="dots">Cleaning — segmenting, rewriting to KCS-gold, validating</span> · a big guide can take a minute or two`;
-      try{ render(await postClean(text, env, slug, source)); }
-      catch(e){ statusEl.textContent = "Error: "+e.message; }
-      finally{ runBtn.disabled=false; }
+      resetRun(); RUN.running = true; RUN.progress = "Cleaning: segmenting, rewriting, validating. A big guide can take a minute or two";
+      $("#run").disabled = true;
+      setView("review"); renderReview();
+      try{ addResult(await postClean(text, env, slug, source)); finishRun(); }
+      catch(e){ RUN.running = false; resetRun(); setView("source"); setStatus("Error: " + esc(e.message), "bad"); $("#run").disabled = false; return; }
+      $("#run").disabled = false;
+      afterRun();
       return;
     }
-
-    // Large source: triage before spending. A plan document is mostly fund tables, legal boilerplate
-    // and glossaries that the cleaner drops anyway — so scan it cheaply, let the human choose the
-    // sections worth cleaning, and only then run the expensive passes. Smaller multi-section runs skip
-    // the picker: it would just be extra clicks for one or two sections.
+    // Large source: scan cheaply, let the human choose what is worth cleaning, then run.
     if(chunks.length >= SCAN_MIN) return openSectionPicker(text, env, slug, source);
-
     const mins = Math.round(chunks.length * 1.2);
-    if(!confirm(`This document is large (${(text.length/1000|0)}k characters). It'll be cleaned in ${chunks.length} sections, roughly ${mins}–${mins*2} minutes, and each section is a separate model run — so this costs meaningfully more than a normal clean.\n\nArticles appear as each section finishes, so you can stop early and keep what's done. Keep this tab open.\n\nStart?`)) return;
+    const ok = await askInline(`This document is large (${text.length/1000|0}k characters). It will be cleaned in <b>${chunks.length} sections</b>, roughly ${mins} to ${mins*2} minutes, and each section is a separate model run, so it costs more than a normal clean. Answers appear as each section finishes. Keep this tab open.`, "Start");
+    if(!ok) return;
     return runChunks(chunks, env, slug, source);
   }
+  $("#run").addEventListener("click", run);
 
-  // Clean an explicit list of sections, one at a time, streaming results in as each finishes.
   async function runChunks(chunks, env, slug, source){
-    runBtn.disabled=true;
-    out.style.display="block"; out.innerHTML="";
-    const sumEl = document.createElement("div"); sumEl.className="summary"; out.append(sumEl);
-    out.append(el("p","note","Review each article, then “Send to Publish” to stage it for Step 3."));
-    const artsEl = document.createElement("div"); out.append(artsEl);
-
-    const agg = { articles:0, fatal:0, warns:0 };
-    const seen = new Set(), dupes = [], fails = [];
-    const reports = { drop:[], coverage:[], questions:[] };
-    // Everything the single-pass view needs, accumulated across sections so the Drop report,
-    // Coverage map and Candidate Q's tabs can be rebuilt at the end.
-    const merged = { meta:null, articles:[], dropped:[], coverage_gaps:[], terminology_notes:[] };
-
-    const paintSummary = (done) => {
-      sumEl.innerHTML = `<span class="chip">${agg.articles} articles</span>`
-        + (agg.fatal>0?`<span class="chip bad">⛔ ${agg.fatal} PII — NOT safe to import</span>`:`<span class="chip good">✓ no PII</span>`)
-        + `<span class="chip">${agg.warns} review flags</span>`
-        + `<span class="chip">${done}/${chunks.length} sections</span>`
-        + (dupes.length?`<span class="chip">${dupes.length} duplicate topic${dupes.length>1?"s":""}</span>`:"")
-        + (fails.length?`<span class="chip bad">${fails.length} section${fails.length>1?"s":""} failed</span>`:"");
-    };
-    paintSummary(0);
-
-    for(let i=0;i<chunks.length;i++){
-      statusEl.innerHTML = `<span class="dots">Cleaning section ${i+1} of ${chunks.length}</span> · ${agg.articles} articles so far — keep this tab open`;
-      try{
-        const d = await postClean(chunks[i], env, `${slug}-${i+1}`, source);
-        if(!CURRENT_META) CURRENT_META = d.meta || null;
-        (d.articles||[]).forEach(a=>{
-          // The same topic can surface in two sections; publishing is keyed on slug, so flag it
-          // rather than silently dropping one — the human decides which version to stage.
-          if(seen.has(a.slug)){ dupes.push(a.slug); a._dupe = true; }
-          seen.add(a.slug);
-          artsEl.append(articleCard(a));
-        });
-        agg.articles += (d.articles||[]).length;
-        agg.fatal += d.summary?.fatal || 0;
-        agg.warns += d.summary?.warns || 0;
-        merged.articles.push(...(d.articles||[]));
-        merged.dropped.push(...(d.dropped||[]));
-        merged.coverage_gaps.push(...(d.coverage_gaps||[]));
-        merged.terminology_notes.push(...(d.terminology_notes||[]));
-        if(!merged.meta) merged.meta = d.meta || null;
-        if(d.reports){ reports.drop.push(d.reports.drop||""); reports.coverage.push(d.reports.coverage||""); reports.questions.push(d.reports.questions||""); }
-      }catch(e){ fails.push(`section ${i+1}: ${e.message}`); }
-      paintSummary(i+1);
+    resetRun(); RUN.running = true; $("#run").disabled = true;
+    setView("review"); renderReview();
+    const fails = [];
+    for(let i = 0; i < chunks.length; i++){
+      RUN.progress = `Cleaning section ${i+1} of ${chunks.length} · ${RUN.articles.length} answers so far. Keep this tab open`;
+      softRefresh();
+      try{ addResult(await postClean(chunks[i], env, `${slug}-${i+1}`, source)); }
+      catch(e){ fails.push(`section ${i+1}: ${e.message}`); }
+      softRefresh();
     }
-
-    // Everything's in — rebuild the full reviewable view. The streamed cards were progress; this is
-    // the same tabbed result a single-pass clean gives you (Drop report / Coverage map / Candidate Q's).
-    const j = (a)=>a.filter(Boolean).join("\n\n---\n\n");
-    const scored = merged.articles.map(a=>a.review && a.review.score).filter(n=>typeof n === "number");
-    merged.summary = { articles: merged.articles.length, fatal: agg.fatal, warns: agg.warns,
-      criticAvg: scored.length ? scored.reduce((x,y)=>x+y,0)/scored.length : null };
-    merged.reports = { drop: j(reports.drop), coverage: j(reports.coverage), questions: j(reports.questions) };
-    render(merged);
-
-    if(dupes.length || fails.length){
-      const n = el("div","flag warn",
-        (fails.length ? `⚠ ${fails.length} section${fails.length>1?"s":""} failed and produced no articles: ${fails.join("; ")}. ` : "")
-        + (dupes.length ? `${dupes.length} topic${dupes.length>1?"s":""} appeared in more than one section (${[...new Set(dupes)].join(", ")}) — staging one replaces the other, so pick the better version.` : ""));
-      n.style.marginTop = "12px"; out.append(n);
-    }
-    statusEl.textContent = `Done — ${merged.articles.length} articles from ${chunks.length - fails.length}/${chunks.length} sections.`;
-    runBtn.disabled=false;
+    RUN.failed = fails;
+    finishRun();
+    $("#run").disabled = false;
+    afterRun();
+  }
+  function afterRun(){
+    if(!byId(SEL)){ const first = orderedAnswers()[0]; SEL = first ? first._id : null; }
+    softRefresh();
+  }
+  // While answers stream in (or a run finishes) the reader must not be rebuilt under someone who is
+  // editing, so only the list and the progress line are refreshed unless nothing is selected yet.
+  function softRefresh(){
+    if(VIEW !== "review" || TAB !== "answers") return;
+    const editing = $("#v-review textarea");
+    if(!byId(SEL) && RUN.articles.length){ SEL = orderedAnswers()[0]._id; renderReview(); return; }
+    if(!editing){ renderReview(); return; }
+    const old = $("#v-review .idx"); if(old) old.replaceWith(buildIndex());
+    const p = $("#v-review .prog"); if(p) p.innerHTML = RUN.running ? `<span class="dots">${esc(RUN.progress)}</span>` : "";
   }
 
   // Cheap, LLM-free structure pass: find candidate headings so sections get meaningful names.
@@ -779,26 +716,22 @@
   function detectSegments(text){
     const lines = text.split("\n");
     const heads = [];
-    for(let i=0;i<lines.length;i++){
+    for(let i = 0; i < lines.length; i++){
       const l = lines[i].trim();
       if(!l || l.length > 80) continue;
       const words = l.split(/\s+/).length;
       const numbered = /^(article\s+[ivxlcdm\d]+|section\s+\d|appendix\s+[a-z\d]|\d+(\.\d+)*\.?)\s+\S/i.test(l);
       const caps = l === l.toUpperCase() && /[A-Z]{3}/.test(l) && words <= 12;
-      // Single-word headings are common in plan documents ("Loans", "Vesting"), so allow them.
-      // False positives from wrapped prose get folded away by the sliver merge below.
       const titled = /^[A-Z][^.!?;:]*$/.test(l) && words >= 1 && words <= 10;
       if(numbered || caps || titled) heads.push(i);
     }
     if(heads.length < 2) return null;
-
     const segs = [];
-    for(let h=0; h<heads.length; h++){
+    for(let h = 0; h < heads.length; h++){
       const start = heads[h], stop = h+1 < heads.length ? heads[h+1] : lines.length;
       const body = lines.slice(start, stop).join("\n").trim();
       if(body) segs.push({ title: lines[start].trim(), text: body });
     }
-    // Fold slivers into the previous section so a stray bold line isn't its own "section".
     const merged = [];
     for(const seg of segs){
       const prev = merged[merged.length-1];
@@ -809,543 +742,622 @@
     return merged;
   }
 
-  // Scan a large document and let the human pick what's worth cleaning. Nothing is cleaned, and
-  // nothing is charged for cleaning, until they press the button.
   async function openSectionPicker(text, env, slug, source){
-    runBtn.disabled = true;
-    statusEl.innerHTML = `<span class="dots">Scanning the document for sections</span> · quick, cheap pass — nothing is cleaned yet`;
-
+    $("#run").disabled = true;
+    setStatus(`<span class="dots">Scanning the document for sections</span>. A quick, cheap pass. Nothing is cleaned yet`);
     const detected = detectSegments(text);
     const fromHeadings = !!detected;
-    const segs = detected || splitSource(text).map((t)=>({ title:"", text:t }));
+    const segs = detected || splitSource(text).map(t => ({ title:"", text:t }));
 
     let sections;
     try{
-      const payload = segs.map((s,i)=>({ i, title: s.title || "", chars: s.text.length, snippet: s.text.slice(0, 260) }));
+      const payload = segs.map((s,i) => ({ i, title: s.title || "", chars: s.text.length, snippet: s.text.slice(0, 260) }));
       const res = await fetch("/api/scan", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ segments: payload, env }) });
-      const d = await res.json().catch(()=>({error:"bad response"}));
+      const d = await res.json().catch(() => ({error:"bad response"}));
       if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
       sections = d.sections || [];
     }catch(e){
-      statusEl.textContent = "";
       const all = splitSource(text);
-      if(!confirm(`Couldn't scan the document into sections (${e.message}).\n\nClean the whole thing anyway? That's ${all.length} passes.`)){ runBtn.disabled=false; return; }
+      const ok = await askInline(`Couldn't scan the document into sections (${esc(e.message)}). Clean the whole thing anyway? That is <b>${all.length} passes</b>.`, "Clean everything");
+      $("#run").disabled = false;
+      if(!ok) return;
       return runChunks(all, env, slug, source);
     }
 
-    statusEl.textContent = "";
-    out.style.display="block"; out.innerHTML="";
-    // Crude heading detection over a scanned document finds far more "sections" than really exist —
-    // repeated page headers, running heads, topics split across pages. The scan marks those, and they
-    // get folded back into the section before them so the list matches the document's real structure.
+    setStatus("");
+    // Crude heading detection over a scanned document finds far more "sections" than really exist
+    // (page headers, running heads, topics split across pages). The scan marks those, and they are
+    // folded back into the section before them.
     const kept = [];
-    sections.forEach((sec)=>{
-      const seg = segs[sec.i];
-      if(!seg) return;
+    sections.forEach(sec => {
+      const seg = segs[sec.i]; if(!seg) return;
       if(sec.continues_previous && kept.length){
         const prev = kept[kept.length-1];
         prev.seg = { title: prev.seg.title, text: prev.seg.text + "\n\n" + seg.text };
-        prev.folded = (prev.folded || 0) + 1;
         return;
       }
-      kept.push({ sec, seg, folded: 0 });
+      kept.push({ sec, seg });
     });
     const foldedTotal = sections.length - kept.length;
 
-    const box = el("div","rsec");
-    box.append(el("h3", null, `Choose what to clean — ${kept.length} sections`));
-    box.append(el("p","note", fromHeadings
-      ? "Uncheck anything that isn't participant-facing. Fund tables, legal boilerplate and glossaries start unchecked — the cleaner drops that material anyway, after you'd have paid to process it."
-      : "No clear headings were found, so the document was split by size. The labels describe what each part covers."));
-    if(foldedTotal > 0) box.append(el("p","note", `${foldedTotal} fragment${foldedTotal>1?"s were":" was"} folded into the section above it — scanned documents split badly, so page headers and continued topics are merged back.`));
-
+    const box = $("#v-scan"); box.innerHTML = "";
+    box.append(el("h1", null, "Choose what to clean."));
+    box.append(el("p", "sub", fromHeadings
+      ? `${kept.length} sections found. Fund tables, legal boilerplate and glossaries start unchecked: the cleaner drops that material anyway, after you would have paid to process it.`
+      : `${kept.length} parts. No clear headings were found, so the document was split by size. The labels describe what each part covers.`));
+    if(foldedTotal > 0) box.append(el("p", "note", `${foldedTotal} fragment${foldedTotal>1?"s were":" was"} folded into the section above it. Scanned documents split badly, so page headers and continued topics are merged back.`));
+    const list = el("div"); list.style.marginTop = "22px"; list.style.borderTop = "1px solid var(--ink)";
     const checks = [];
-    kept.forEach(({sec, seg})=>{
+    kept.forEach(({sec, seg}) => {
       const row = el("label","seg");
       const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = !!sec.recommend;
       cb.addEventListener("change", updateEstimate);
-      row.append(cb, el("span","seg-title", sec.title), el("span","seg-meta", `${Math.max(1,Math.round(seg.text.length/1000))}k · ${sec.reason}`));
-      box.append(row);
-      checks.push({ cb, seg });
+      row.append(cb, el("span","seg-title", sec.title), el("span","seg-meta", `${Math.max(1, Math.round(seg.text.length/1000))}k · ${sec.reason}`));
+      list.append(row); checks.push({ cb, seg });
     });
+    box.append(list);
+    const est = el("div","est");
+    const row = el("div","row");
+    const go = el("button","btn","Clean selected"); go.type = "button";
+    const bAll = el("button","lnk","Select all"); bAll.type = "button";
+    const bNone = el("button","lnk","Select none"); bNone.type = "button";
+    const bBack = el("button","lnk","Back"); bBack.type = "button";
+    row.append(go, bAll, bNone, bBack);
+    box.append(est, row);
+    setView("scan");
 
-    const est = el("div","note"); est.style.margin = "14px 0 2px";
-    const foot = el("div","cardfoot");
-    const go = el("button","run","Clean selected");
-    const bAll = el("button","ghost","Select all");
-    const bNone = el("button","ghost","Select none");
-    const bCancel = el("button","ghost","Cancel");
-    foot.append(go, bAll, bNone, bCancel);
-    box.append(est, foot);
-    out.append(box);
-
-    function passesFor(list){ return list.reduce((n,c)=> n + Math.max(1, Math.ceil(c.seg.text.length / CHUNK_MAX)), 0); }
+    const passesFor = (sel) => sel.reduce((n, c) => n + Math.max(1, Math.ceil(c.seg.text.length / CHUNK_MAX)), 0);
     function updateEstimate(){
-      const sel = checks.filter(c=>c.cb.checked);
-      const p = passesFor(sel), mins = Math.round(p*1.2);
+      const sel = checks.filter(c => c.cb.checked);
+      const p = passesFor(sel), mins = Math.round(p * 1.2);
       est.innerHTML = p
-        ? `<b>${sel.length}</b> of ${checks.length} sections · ~${p} pass${p>1?"es":""} · roughly ${mins}–${mins*2} min · about $${(p*COST_PER_PASS).toFixed(0)} (rough estimate)`
+        ? `<b>${sel.length}</b> of ${checks.length} sections · about ${p} pass${p>1?"es":""} · roughly ${mins} to ${mins*2} min · about $${(p*COST_PER_PASS).toFixed(0)} (rough estimate)`
         : "Nothing selected.";
       go.disabled = !p;
     }
-    bAll.onclick = ()=>{ checks.forEach(c=>c.cb.checked=true); updateEstimate(); };
-    bNone.onclick = ()=>{ checks.forEach(c=>c.cb.checked=false); updateEstimate(); };
-    bCancel.onclick = ()=>{ out.innerHTML=""; out.style.display="none"; runBtn.disabled=false; };
-    go.onclick = ()=>{
-      const sel = checks.filter(c=>c.cb.checked);
-      if(!sel.length) return;
-      const chunks = [];
-      sel.forEach(c=> splitSource(c.seg.text).forEach(x=>chunks.push(x)));
+    bAll.onclick = () => { checks.forEach(c => c.cb.checked = true); updateEstimate(); };
+    bNone.onclick = () => { checks.forEach(c => c.cb.checked = false); updateEstimate(); };
+    bBack.onclick = () => { $("#run").disabled = false; setView("source"); };
+    go.onclick = () => {
+      const sel = checks.filter(c => c.cb.checked); if(!sel.length) return;
+      const chunks = []; sel.forEach(c => splitSource(c.seg.text).forEach(x => chunks.push(x)));
       runChunks(chunks, env, slug, source);
     };
     updateEstimate();
   }
 
-  function rtable(head, rows){
-    const scroll = el("div", "rscroll"), t = el("table", "rtable");
-    t.innerHTML = `<thead><tr><th>${head[0]}</th><th>${head[1]}</th></tr></thead>`;
-    const tb = el("tbody");
-    rows.forEach(([a, b])=>{ const tr = el("tr"); tr.append(el("td", null, a), el("td", "reason", b)); tb.append(tr); });
-    t.append(tb); scroll.append(t); return scroll;
+  // ============================================================ review
+  // Groups: needs you (blocked first, then lowest score), clean, approved.
+  function rankOf(a){ return a.staged ? 3 : ({ blocked:0, attention:1, clean:2 })[triage(a)]; }
+  function orderedAnswers(){
+    return RUN.articles.slice().sort((x, y) => {
+      const r = rankOf(x) - rankOf(y); if(r) return r;
+      if(rankOf(x) === 3) return x._id - y._id;
+      return ((x.review && x.review.score) ?? 0) - ((y.review && y.review.score) ?? 0) || x._id - y._id;
+    });
+  }
+  const byId = (id) => RUN.articles.find(a => a._id === id);
+
+  function renderReview(){
+    const box = $("#v-review"); box.innerHTML = "";
+    const bar = el("div","subnav");
+    const tabs = [["answers", `Answers · ${RUN.articles.length}`], ["drop","Dropped"], ["coverage","Coverage"], ["questions","Questions"], ["reports","Reports"]];
+    tabs.forEach(([k, label]) => {
+      const b = el("button", k === TAB ? "on" : "", label); b.type = "button";
+      b.onclick = () => { TAB = k; renderReview(); }; bar.append(b);
+    });
+    if(RUN.running){ const p = el("span","prog"); p.innerHTML = `<span class="dots">${esc(RUN.progress)}</span>`; bar.append(p); }
+    box.append(bar);
+
+    if(TAB !== "answers"){
+      const wrap = el("div"); wrap.style.cssText = "border-top:1px solid var(--ink);margin-top:14px;padding-top:6px";
+      wrap.append(TAB === "drop" ? buildDrop() : TAB === "coverage" ? buildCoverage() : TAB === "questions" ? buildQuestions() : buildReports());
+      box.append(wrap); renderSpine(); renderDock(); return;
+    }
+
+    if(RUN.failed && RUN.failed.length) box.append(msg("warn", `${RUN.failed.length} section${RUN.failed.length>1?"s":""} failed and produced no answers: ${RUN.failed.map(esc).join("; ")}.`));
+    const dupes = [...new Set(RUN.notes)];
+    if(dupes.length) box.append(msg("warn", `${dupes.length} topic${dupes.length>1?"s":""} appeared in more than one section (${dupes.map(esc).join(", ")}). Approving one replaces the other, so pick the better version.`));
+    const rev = el("div","rev");
+    rev.append(buildIndex());
+    const rd = el("section","rd"); rd.id = "rd"; rev.append(rd);
+    box.append(rev);
+    paintReader();
+    renderSpine(); renderDock();
+  }
+  function msg(kind, html){ const m = el("div","msg " + kind); m.innerHTML = html; return m; }
+
+  function buildIndex(){
+    const idx = el("aside","idx"); idx.setAttribute("aria-label","Answers");
+    const all = orderedAnswers();
+    const needs = all.filter(a => rankOf(a) <= 1), clean = all.filter(a => rankOf(a) === 2), done = all.filter(a => rankOf(a) === 3);
+    const head = el("div","head");
+    head.append(el("span","lbl", `${all.length} answer${all.length===1?"":"s"}`));
+    const bulk = el("button","bulk", `Approve ${clean.length} clean`); bulk.type = "button";
+    bulk.hidden = !clean.length; bulk.disabled = RUN.running;
+    bulk.title = clean.length ? "Approves every answer with no flags and a 5 of 5, one at a time" : "Nothing is clean enough to approve in bulk";
+    const prog = el("div","bprog"); prog.id = "bprog";
+    bulk.onclick = () => bulkApprove(bulk, prog);
+    head.append(bulk); idx.append(head, prog);
+    const group = (label, list) => {
+      if(!list.length) return;
+      idx.append(el("div","grp", `${label} · ${list.length}`));
+      list.forEach(a => idx.append(indexItem(a)));
+    };
+    group("Needs you", needs); group("Clean", clean); group("Approved", done);
+    return idx;
+  }
+  function indexItem(a){
+    const t = triage(a);
+    const b = el("button","it" + (a._id === SEL ? " sel" : "")); b.type = "button"; b.dataset.id = a._id;
+    const dot = el("i", a.staged ? "d-done" : t === "blocked" ? "d-bad" : t === "attention" ? "d-warn" : "d-ok");
+    const meta = a.staged ? (a.live ? "live" : "✓") : t === "blocked" ? "PII" : (a.review && typeof a.review.score === "number") ? `${a.review.score}/5` : "?";
+    b.append(dot, el("span","t", a.title), el("span","n", meta));
+    b.onclick = () => { SEL = a._id; b.blur(); renderReview(); };
+    return b;
   }
 
-  function buildDrop(d){
-    const box = document.createElement("div");
-    const s1 = el("div", "rsec"); s1.append(el("h3", null, "Dropped from the source"));
-    if(d.dropped && d.dropped.length) s1.append(rtable(["Cut", "Reason"], d.dropped.map(x=>[x.content, x.reason])));
-    else s1.append(el("p", "muted", "Nothing dropped."));
+  function statusWords(a){
+    if(a.staged) return a.live ? "already live" : "approved";
+    return ({ blocked:"PII blocked", attention:"needs you", clean:"clean" })[triage(a)];
+  }
+
+  function paintReader(){
+    const rd = $("#rd"); if(!rd) return;
+    rd.innerHTML = ""; rd.classList.remove("cols");
+    const a = byId(SEL);
+    if(!a){
+      const e = el("div","empty");
+      if(RUN.running){ e.innerHTML = `<b>Cleaning<span class="dots"></span></b>Answers appear here as each section finishes. You can start reviewing the first ones while the rest run.`; }
+      else if(!RUN.articles.length){ e.innerHTML = `<b>Nothing came out of that document.</b>Open <i>Dropped</i> to see what the cleaner cut and why.`; }
+      else { e.innerHTML = `<b>Pick an answer.</b>Choose one from the list.`; }
+      rd.append(e); return;
+    }
+    rd.classList.add("cols");
+    const order = orderedAnswers(), pos = order.indexOf(a) + 1;
+    const main = el("div","main");
+    main.append(el("div","lbl", `Answer ${pos} of ${order.length} · ${statusWords(a)}`));
+    main.append(el("h2", null, a.title));
+
+    const fatal = a.findings.some(f => f.severity === "fatal");
+    if(a.findings.length || a._dupe){
+      const strip = el("div","strip");
+      a.findings.forEach(f => strip.append(el("div", f.severity, `${f.kind}: ${f.detail}`)));
+      if(a._dupe) strip.append(el("div","warn", "Same topic as another answer in this run. Approving one replaces the other."));
+      main.append(strip);
+    }
+    const ans = el("div","ans"); ans.id = "ans";
+    ans.innerHTML = md(a.md.replace(/^[^\n]*\n+/, "")); // the title line is the heading above
+    main.append(ans);
+    const actions = el("div","actions"); actions.id = "actions";
+    paintActions(a, actions, fatal);
+    main.append(actions);
+
+    const marg = el("aside","marg");
+    const v = el("div","verdict" + (triage(a) === "clean" || a.staged ? "" : " warn"), scoreLine(a.review)); v.title = scoreTitle(a.review);
+    marg.append(v);
+    if(a.review && a.review.issues && a.review.issues.length) a.review.issues.forEach(i => marg.append(el("div","mnote", i)));
+    const claims = a.review && Array.isArray(a.review.claims) ? a.review.claims : [];
+    const problems = claims.filter(c => c.verdict !== "supported"), good = claims.filter(c => c.verdict === "supported");
+    const omissions = (a.review && a.review.omissions) || [];
+    const MARK = { supported:"✓", unsupported:"○", contradicted:"✕" };
+    const claimLi = (c) => { const li = el("li","cl " + c.verdict); li.innerHTML = `<span class="v">${MARK[c.verdict] || "?"}</span><span class="ct">${esc(c.claim)}</span>` +
+        (c.source_quote ? `<span class="cq">“${esc(c.source_quote)}”</span>` : `<span class="cq none">no matching text in your document</span>`); return li; };
+    if(problems.length || omissions.length){
+      marg.append(el("div","mh","Check these"));
+      const ul = el("ul","clist");
+      problems.forEach(c => ul.append(claimLi(c)));
+      omissions.forEach(o => { const li = el("li","cl omitted"); li.innerHTML = `<span class="v">–</span><span class="ct">${esc(o.missing)}</span><span class="cq">“${esc(o.source_quote)}”</span>`; ul.append(li); });
+      marg.append(ul);
+    }
+    if(good.length){
+      const d = document.createElement("details"); d.className = "more";
+      d.append(el("summary", null, `${good.length} claim${good.length>1?"s":""} supported`));
+      const ul = el("ul","clist"); good.forEach(c => ul.append(claimLi(c))); d.append(ul); marg.append(d);
+    }
+    if(a.coverage_flags && a.coverage_flags.length){
+      marg.append(el("div","mh","Not covered by the source"));
+      const ul = el("ul","cov"); a.coverage_flags.forEach(f => ul.append(el("li", null, f))); marg.append(ul);
+    }
+    rd.append(main, marg);
+  }
+
+  function paintActions(a, box, fatal){
+    box.innerHTML = "";
+    const ap = el("button","btn", a.staged ? (a.live ? "Already live" : "Approved") : "Approve"); ap.type = "button"; ap.id = "approvebtn";
+    if(fatal){ ap.disabled = true; ap.title = "This answer has a PII flag. Edit it out first."; ap.textContent = "Fix PII to approve"; }
+    else if(a.staged && !a._stale){ ap.disabled = true; }
+    else ap.onclick = () => approveOne(a);
+    const ed = el("button","btn sec","Edit"); ed.type = "button"; ed.onclick = () => startEdit(a);
+    const rf = el("button","btn sec","Refine"); rf.type = "button"; rf.onclick = () => doRefine(a, rf);
+    const dl = el("button","lnk","↓ .md"); dl.type = "button"; dl.title = "Download " + a.slug + ".md"; dl.onclick = () => download(a.slug + ".md", a.md);
+    box.append(ap, ed, rf, dl, el("span","kbd","↑ ↓ move · Enter approve · E edit"));
+    if(a._stale) box.append(msg("warn", "Changed since you approved it. Approve again to update what will be published."));
+  }
+
+  async function approveOne(a){
+    const ap = $("#approvebtn"); if(ap){ ap.disabled = true; ap.textContent = "Approving…"; }
+    if(!(RUN.meta || {}).environment){ if(ap) ap.textContent = "No plan set"; return; }
+    try{
+      const d = await stageArticle(a);
+      const order = orderedAnswers(), at = order.indexOf(a);
+      a.staged = true; a._stale = false; a.live = !!d.already_published; if(d.staged && d.staged.id) a.rowId = d.staged.id;
+      saveRun();
+      const next = order.slice(at + 1).find(x => !x.staged) || order.find(x => !x.staged);
+      SEL = next ? next._id : a._id;
+      renderReview(); loadLibrary(true);
+    }catch(e){
+      paintActions(a, $("#actions"), false);
+      $("#actions").append(msg("bad", "Couldn't approve: " + esc(e.message)));
+    }
+  }
+
+  // Bulk approve: clean answers only, re-checked at click time so an answer you just edited or
+  // refined is judged on its current state.
+  async function bulkApprove(btn, prog){
+    const targets = RUN.articles.filter(a => triage(a) === "clean" && !a.staged);
+    if(!targets.length) return;
+    btn.disabled = true;
+    let ok = 0; const failed = [];
+    for(let i = 0; i < targets.length; i++){
+      prog.textContent = `Approving ${i+1} of ${targets.length}…`;
+      try{ const d = await stageArticle(targets[i]); targets[i].staged = true; targets[i]._stale = false; targets[i].live = !!d.already_published; if(d.staged && d.staged.id) targets[i].rowId = d.staged.id; ok++; }
+      catch(e){ failed.push(`${targets[i].slug} (${e.message})`); }
+    }
+    saveRun();
+    const cur = byId(SEL); if(cur && cur.staged){ const n = orderedAnswers().find(x => !x.staged); if(n) SEL = n._id; }
+    renderReview(); loadLibrary(true);
+    if(failed.length) $("#v-review").append(msg("warn", `Didn't approve: ${failed.map(esc).join("; ")}. Open each one and use Approve to retry.`));
+  }
+
+  function startEdit(a){
+    const ans = $("#ans"); if(!ans) return;
+    const ta = el("textarea"); ta.value = a.md; ta.setAttribute("aria-label","Answer text");
+    ans.replaceWith(ta);
+    const box = $("#actions"); box.innerHTML = "";
+    const err = el("div");
+    const save = el("button","btn","Save"); save.type = "button";
+    const cancel = el("button","btn sec","Cancel"); cancel.type = "button";
+    save.onclick = () => {
+      const body = ta.value.trim();
+      if(SSN_RE.test(body)){ err.innerHTML = ""; err.append(msg("bad", "That looks like it contains an SSN-shaped number. Remove it before saving.")); return; }
+      a.md = body; a.findings = a.findings.filter(f => f.severity !== "fatal"); // cleared PII by editing
+      if(a.staged){ a.staged = false; a._stale = true; }
+      saveRun(); renderReview();
+    };
+    cancel.onclick = () => renderReview();
+    box.append(save, cancel, err);
+    ta.focus();
+  }
+
+  async function doRefine(a, btn){
+    btn.disabled = true; btn.textContent = "Refining…";
+    const meta = RUN.meta || {};
+    const issues = ((a.review && a.review.issues) || []).concat(a.findings.filter(f => f.severity !== "fatal").map(f => f.detail));
+    try{
+      const res = await fetch("/api/refine", { method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ article: { slug:a.slug, title:a.title, environment: meta.environment || "", source: meta.source || null, body_md: a.md, issues } }) });
+      const d = await res.json().catch(() => ({error:"bad response"}));
+      if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
+      a.md = d.md || a.md;
+      a.findings = d.findings || a.findings;
+      if(d.review) a.review = d.review;
+      if(d.candidate_questions) a.candidate_questions = d.candidate_questions;
+      if(a.staged){ a.staged = false; a._stale = true; }
+      saveRun(); renderReview();
+    }catch(e){
+      paintActions(a, $("#actions"), a.findings.some(f => f.severity === "fatal"));
+      $("#actions").append(msg("warn", "Refine failed: " + esc(e.message)));
+    }
+  }
+
+  // Keyboard: arrows move, Enter approves, E edits. Never while typing or on a control.
+  document.addEventListener("keydown", (e) => {
+    if(VIEW !== "review" || TAB !== "answers" || e.metaKey || e.ctrlKey || e.altKey) return;
+    if(e.target.closest("button, a, input, textarea, select, summary, details")) return;
+    const order = orderedAnswers(); if(!order.length) return;
+    const i = Math.max(0, order.findIndex(a => a._id === SEL));
+    if(e.key === "ArrowDown" || e.key === "j"){ e.preventDefault(); SEL = order[Math.min(order.length-1, i+1)]._id; renderReview(); }
+    else if(e.key === "ArrowUp" || e.key === "k"){ e.preventDefault(); SEL = order[Math.max(0, i-1)]._id; renderReview(); }
+    else if(e.key === "Enter"){ const b = $("#approvebtn"); if(b && !b.disabled){ e.preventDefault(); b.click(); } }
+    else if(e.key === "e" || e.key === "E"){ const a = byId(SEL); if(a){ e.preventDefault(); startEdit(a); } }
+  });
+
+  // ============================================================ reports (what was dropped, what is covered, what to ask)
+  function rtable(head, rows){
+    const scroll = el("div","rscroll"), t = el("table","rtable");
+    t.innerHTML = `<thead><tr><th>${head[0]}</th><th>${head[1]}</th></tr></thead>`;
+    const tb = el("tbody");
+    rows.forEach(([a, b]) => { const tr = el("tr"); tr.append(el("td", null, a), el("td","reason", b)); tb.append(tr); });
+    t.append(tb); scroll.append(t); return scroll;
+  }
+  function buildDrop(){
+    const box = el("div");
+    const s1 = el("div","rsec"); s1.append(el("h3", null, "Dropped from the source"));
+    if(RUN.dropped.length) s1.append(rtable(["Cut","Reason"], RUN.dropped.map(x => [x.content, x.reason])));
+    else s1.append(el("p","muted","Nothing dropped."));
     box.append(s1);
-    const s2 = el("div", "rsec"); s2.append(el("h3", null, "Validation flags"));
-    const withF = d.articles.filter(a=>a.findings && a.findings.length);
-    if(withF.length) withF.forEach(a=>{
-      const g = el("div"); g.style.marginBottom = "8px"; g.append(el("div", "muted", a.title));
-      a.findings.forEach(f=>{ const fl = el("div", "flag " + f.severity, (f.severity==="fatal"?"⛔ ":"⚠ ") + f.kind + " — " + f.detail); fl.style.marginTop = "4px"; g.append(fl); });
-      s2.append(g);
-    }); else s2.append(el("p", "muted", "No flags."));
+    const s2 = el("div","rsec"); s2.append(el("h3", null, "Validation flags"));
+    const withF = RUN.articles.filter(a => a.findings && a.findings.length);
+    if(withF.length) withF.forEach(a => {
+      const g = el("div"); g.style.marginBottom = "12px"; g.append(el("div","muted", a.title));
+      const strip = el("div","strip"); a.findings.forEach(f => strip.append(el("div", f.severity, `${f.kind}: ${f.detail}`))); g.append(strip); s2.append(g);
+    }); else s2.append(el("p","muted","No flags."));
     box.append(s2);
-    if(d.terminology_notes && d.terminology_notes.length){
-      const s3 = el("div", "rsec"); s3.append(el("h3", null, "Terminology normalized"));
-      s3.append(rtable(["From", "To"], d.terminology_notes.map(x=>[x.from, x.to]))); box.append(s3);
+    if(RUN.terminology_notes.length){
+      const s3 = el("div","rsec"); s3.append(el("h3", null, "Terminology normalized"));
+      s3.append(rtable(["From","To"], RUN.terminology_notes.map(x => [x.from, x.to]))); box.append(s3);
     }
     return box;
   }
-
-  function buildCoverage(d){
-    const box = document.createElement("div");
-    const s1 = el("div", "rsec"); s1.append(el("h3", null, "Topics covered"));
-    const ul = el("ul", "rlist");
-    d.articles.forEach(a=>{
-      const li = el("li");
-      li.append(document.createTextNode(a.title));
-      li.append(el("span", "muted", "  " + a.slug + (a.review ? " · critic " + a.review.score + "/5" : "")));
-      if(a.coverage_flags && a.coverage_flags.length){
-        const sub = el("ul", "sub"); a.coverage_flags.forEach(cf=>sub.append(el("li", null, "not covered: " + cf))); li.append(sub);
-      }
+  function buildCoverage(){
+    const box = el("div");
+    const s1 = el("div","rsec"); s1.append(el("h3", null, "Topics covered"));
+    const ul = el("ul","rlist");
+    RUN.articles.forEach(a => {
+      const li = el("li"); li.append(document.createTextNode(a.title));
+      li.append(el("span","muted", "  " + a.slug + (a.review ? " · " + a.review.score + "/5" : "")));
+      if(a.coverage_flags && a.coverage_flags.length){ const sub = el("ul","sub2"); a.coverage_flags.forEach(cf => sub.append(el("li", null, "not covered: " + cf))); li.append(sub); }
       ul.append(li);
     });
     s1.append(ul); box.append(s1);
-    const s2 = el("div", "rsec"); s2.append(el("h3", null, "Source-level gaps"));
-    if(d.coverage_gaps && d.coverage_gaps.length){ const ul2 = el("ul", "rlist"); d.coverage_gaps.forEach(g=>ul2.append(el("li", null, g))); s2.append(ul2); }
-    else s2.append(el("p", "muted", "None flagged."));
+    const s2 = el("div","rsec"); s2.append(el("h3", null, "Source-level gaps"));
+    if(RUN.coverage_gaps.length){ const u = el("ul","rlist"); RUN.coverage_gaps.forEach(g => u.append(el("li", null, g))); s2.append(u); }
+    else s2.append(el("p","muted","None flagged."));
     box.append(s2);
     return box;
   }
-
-  function buildQuestions(d){
-    const box = document.createElement("div");
-    const all = d.articles.flatMap(a=>a.candidate_questions || []);
-    if(all.length){
-      const bar = el("div", "cardfoot"); bar.style.marginBottom = "12px";
-      const b = el("button", "send", `→ Test these ${all.length} questions in QA`);
-      b.addEventListener("click", ()=>testInQA(all));
-      bar.append(b);
-      bar.append(el("span", "note", "opens the QA tab prefilled — answered against Robin's live published knowledge"));
-      box.append(bar);
-    }
+  function buildQuestions(){
+    const box = el("div");
+    const all = RUN.articles.flatMap(a => a.candidate_questions || []);
+    const note = el("div","rsec");
+    note.append(el("p","muted", "Dry Run answers from what is published right now, so these are most useful once the answers are live."));
+    if(all.length){ const t = el("a","btn sm sec", `Open ${all.length} in Dry Run`); t.href = dryRunUrl(all); t.target = "_blank"; t.rel = "noopener"; note.append(t); }
+    box.append(note);
     let any = false;
-    d.articles.forEach(a=>{
+    RUN.articles.forEach(a => {
       if(!a.candidate_questions || !a.candidate_questions.length) return;
       any = true;
-      const g = el("div", "qgroup"); g.append(el("div", "qt", a.title));
-      const ul = el("ul", "rlist"); a.candidate_questions.forEach(q=>ul.append(el("li", null, q))); g.append(ul); box.append(g);
+      const g = el("div","qgroup"); g.append(el("div","qt", a.title));
+      const u = el("ul","rlist"); a.candidate_questions.forEach(q => u.append(el("li", null, q))); g.append(u); box.append(g);
     });
-    if(!any) box.append(el("p", "muted", "No candidate questions."));
+    if(!any) box.append(el("p","muted","No candidate questions."));
     return box;
   }
-
-  // Carry the cleaned articles' candidate questions into the QA tab (prefill via ?qs=) and switch to it.
-  function testInQA(questions){
-    const frame = $("#qaframe");
-    if(frame) frame.src = "https://voiceagents-seven.vercel.app/robin-q-tester?qs=" + encodeURIComponent(questions.join("\n"));
-    switchTab("qa");
-  }
-
-  // Triage bar + the article list. Cards are ordered worst-first (blocked, then needs-a-look,
-  // then clean) so the top of the page is always the work; the filter chips narrow it further,
-  // and "stage all clean" clears the bottom of the list in one action.
-  function buildTriage(articles){
-    const box = document.createElement("div");
-    const ordered = articles.slice().sort((x,y)=>{
-      const r = TRIAGE_RANK[triage(x)] - TRIAGE_RANK[triage(y)];
-      if(r) return r;
-      const sx = x.review?.score ?? 0, sy = y.review?.score ?? 0;
-      return sx - sy;                                     // within a bucket, lowest score first
+  function buildReports(){
+    const box = el("div","rsec");
+    box.append(el("h3", null, "Download"));
+    const d = el("div","dls");
+    [["drop-report.md","_drop-report.md",RUN.reports.drop],["coverage-map.md","_coverage-map.md",RUN.reports.coverage],["candidate-questions.md","_candidate-questions.md",RUN.reports.questions]].forEach(([label, file, text]) => {
+      const b = el("button","btn sm sec","↓ " + label); b.type = "button"; b.onclick = () => download(file, text); d.append(b);
     });
-    const counts = { all: ordered.length, blocked:0, attention:0, clean:0 };
-    ordered.forEach(a=>counts[triage(a)]++);
-
-    const bar = el("div", "triage");
-    const handoff = el("div", "handoff"); handoff.hidden = true;
-    const list = document.createElement("div");
-    const cards = ordered.map(a=>{ const c = articleCard(a); c._article = a; list.append(c); return c; });
-
-    const FILTERS = [
-      ["all",       `All ${counts.all}`],
-      ["blocked",   `⛔ PII blocked ${counts.blocked}`],
-      ["attention", `⚠ Needs a look ${counts.attention}`],
-      ["clean",     `✓ Clean 5/5 ${counts.clean}`],
-    ];
-    let active = "all";
-    const chips = FILTERS.map(([key,label])=>{
-      const b = el("button", "fchip " + key + (key===active?" on":""), label);
-      if(key!=="all" && !counts[key]) b.disabled = true;
-      b.onclick = ()=>{
-        active = key;
-        bar.querySelectorAll(".fchip").forEach(x=>x.classList.remove("on"));
-        b.classList.add("on");
-        applyFilter();
-      };
-      return b;
-    });
-    function applyFilter(){
-      cards.forEach(c=>{ c.hidden = active !== "all" && c.dataset.triage !== active; });
-      const shown = cards.filter(c=>!c.hidden).length;
-      empty.hidden = shown > 0;
-    }
-    bar.append(...chips);
-
-    // Bulk stage — clean cards only, and it re-checks triage at click time so an article you
-    // just edited or refined is judged on its current state, not the state at render.
-    const wrap = el("div", "bulk");
-    const btn = el("button", "stageall", `→ Send all clean (${counts.clean})`);
-    const prog = el("span", "note", "");
-    btn.disabled = !counts.clean;
-    btn.title = counts.clean ? "Stages every card with no flags and a 5/5 — one at a time" : "Nothing is clean enough to send in bulk yet";
-    btn.onclick = async ()=>{
-      const targets = cards.filter(c=>triage(c._article)==="clean" && !c._article.staged);
-      if(!targets.length){ prog.textContent = "Everything clean is already staged."; return; }
-      btn.disabled = true;
-      let ok = 0; const failed = [];
-      for(let i=0;i<targets.length;i++){
-        const a = targets[i]._article;
-        prog.textContent = `Staging ${i+1} of ${targets.length}…`;
-        try{ await stageArticle(a); a.staged = true; ok++; }
-        catch(e){ failed.push(`${a.slug} (${e.message})`); }
-        targets[i]._repaint && targets[i]._repaint();
-      }
-      prog.textContent = failed.length ? `${ok} staged · ${failed.length} failed` : `${ok} staged`;
-      btn.textContent = `→ Send all clean (${counts.clean})`;
-      btn.disabled = cards.every(c=>triage(c._article)!=="clean" || c._article.staged);
-      if(failed.length){
-        const err = el("div","flag warn","⚠ Didn't stage: "+failed.join("; ")+" — open the card and use “Send to Publish” to retry.");
-        err.style.marginTop="8px"; box.insertBefore(err, list);
-      }
-      if(ok) showHandoff(ok);
-    };
-    wrap.append(btn, prog);
-    bar.append(wrap);
-
-    function showHandoff(n){
-      handoff.hidden = false;
-      handoff.innerHTML = "";
-      handoff.append(el("span", null, `${n} article${n===1?"":"s"} staged. They're waiting in Step 3 — nothing is live until you publish there.`));
-      const go = el("button", null, "Go to Publish →");
-      go.onclick = ()=>{ switchTab("publish"); window.scrollTo({top:0,behavior:"smooth"}); };
-      handoff.append(go);
-    }
-
-    const empty = el("p", "muted", "Nothing in this filter."); empty.hidden = true;
-    box.append(bar, handoff,
-      el("p", "note", "Ordered worst-first. Clean cards are folded — click one to read it. “Send to Publish” stages an article for Step 3; nothing goes live until you publish it there."),
-      empty, list);
-    applyFilter();
-    return box;
+    box.append(d); return box;
   }
 
-  function render(d){
-    statusEl.textContent = "";
-    CURRENT_META = d.meta || null;
-    const s = d.summary;
-    const arts = document.createElement("div");
-    const sum = document.createElement("div"); sum.className="summary";
-    const tc = { blocked:0, attention:0, clean:0 }; d.articles.forEach(a=>tc[triage(a)]++);
-    sum.innerHTML = `<span class="chip">${s.articles} articles</span>`
-      + (s.fatal>0?`<span class="chip bad">⛔ ${s.fatal} PII — NOT safe to import</span>`:`<span class="chip good">✓ no PII</span>`)
-      + (tc.attention?`<span class="chip">${tc.attention} need a look</span>`:"")
-      + `<span class="chip good">${tc.clean} clean</span>`
-      + (s.criticAvg!=null?`<span class="chip">critic avg ${s.criticAvg.toFixed(1)}/5</span>`:"");
-    arts.append(sum);
-    arts.append(buildTriage(d.articles));
-
-    const dlAll = document.createElement("div"); dlAll.className="cardfoot"; dlAll.style.marginTop="4px";
-    const b1=el("button","dl","↓ drop-report.md"); b1.onclick=()=>download("_drop-report.md", d.reports.drop);
-    const b2=el("button","dl","↓ coverage-map.md"); b2.onclick=()=>download("_coverage-map.md", d.reports.coverage);
-    const b3=el("button","dl","↓ candidate-questions.md"); b3.onclick=()=>download("_candidate-questions.md", d.reports.questions);
-    dlAll.append(b1,b2,b3);
-
-    out.innerHTML = "";
-    out.append(tabs([
-      { label:`Articles (${d.articles.length})`, node: arts },
-      { label:"Drop report", node: buildDrop(d) },
-      { label:"Coverage map", node: buildCoverage(d) },
-      { label:"Candidate Q's", node: buildQuestions(d) },
-      { label:"Downloads", node: dlAll },
-    ]));
-    out.style.display="block";
-    saveRun(d);
-  }
-
-  // A clean pass is the expensive step in this app; losing it to a stray refresh or a closed tab
-  // means paying for it twice. Keep the last run in this browser (local only — it never leaves the
-  // machine) and offer it back for a day.
-  const RUN_KEY = "cleaner:lastrun";
-  const RUN_TTL = 24*60*60*1000;
-  function saveRun(d){
-    try{ localStorage.setItem(RUN_KEY, JSON.stringify({ at: Date.now(), d })); }
-    catch(_){ /* quota — a very large run just doesn't get cached */ }
+  // ============================================================ the last run survives a stray refresh
+  // A clean pass is the expensive step; losing it to a closed tab means paying twice. Kept in this
+  // browser only (it never leaves the machine) and offered back for a day.
+  const RUN_KEY = "cleaner:lastrun", RUN_TTL = 24*60*60*1000;
+  function saveRun(){
+    if(RUN.running) return;
+    const d = { meta:RUN.meta, articles:RUN.articles, dropped:RUN.dropped, coverage_gaps:RUN.coverage_gaps, terminology_notes:RUN.terminology_notes, reports:RUN.reports, summary:RUN.summary };
+    try{ localStorage.setItem(RUN_KEY, JSON.stringify({ at: Date.now(), d })); }catch(_){ /* a very large run just doesn't get cached */ }
   }
   function loadRun(){
-    try{
-      const v = JSON.parse(localStorage.getItem(RUN_KEY) || "null");
-      if(!v || !v.d || (Date.now() - v.at) > RUN_TTL) return null;
-      return v;
-    }catch(_){ return null; }
+    try{ const v = JSON.parse(localStorage.getItem(RUN_KEY) || "null"); if(!v || !v.d || (Date.now() - v.at) > RUN_TTL) return null; return v; }
+    catch(_){ return null; }
   }
   function offerRestore(){
     const v = loadRun(); if(!v) return;
-    const mins = Math.round((Date.now() - v.at)/60000);
+    const mins = Math.round((Date.now() - v.at) / 60000);
     const when = mins < 60 ? `${mins || 1} min ago` : `${Math.round(mins/60)}h ago`;
-    const bar = el("div", "handoff");
-    bar.append(el("span", null, `Your last clean run (${v.d.articles.length} articles, ${when}) is still here.`));
-    const go = el("button", null, "Restore it");
-    go.onclick = ()=>{ bar.remove(); render(v.d); out.scrollIntoView({behavior:"smooth", block:"start"}); };
-    const no = el("button", null, "Discard");
-    no.onclick = ()=>{ localStorage.removeItem(RUN_KEY); bar.remove(); };
-    bar.append(go, no);
-    out.parentNode.insertBefore(bar, out);
+    const m = msg("", `Your last run (${v.d.articles.length} answers, ${when}) is still here.`);
+    const row = el("div","row");
+    const go = el("button","btn sm","Restore it"); go.type = "button";
+    go.onclick = () => {
+      resetRun(); addResult(v.d); RUN.reports = v.d.reports || RUN.reports; RUN.summary = v.d.summary || null; RUN.meta = v.d.meta || RUN.meta;
+      m.remove(); afterRun(); setView("review"); renderReview();
+    };
+    const no = el("button","btn sm sec","Discard"); no.type = "button"; no.onclick = () => { store.del(RUN_KEY); m.remove(); };
+    row.append(go, no); m.append(row); $("#restore").append(m);
   }
-  offerRestore();
 
-  runBtn.addEventListener("click", run);
+  // ============================================================ library: what is live, and what is waiting
+  async function loadLibrary(quiet){
+    try{
+      const res = await fetch("/api/kb_list");
+      const d = await res.json().catch(() => ({error:"bad response"}));
+      if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
+      LIB.rows = d.rows || []; LIB.loaded = true; LIB.error = null;
+    }catch(e){ LIB.error = e.message; LIB.loaded = false; LIB.rows = []; }
+    const live = LIB.rows.filter(r => r.state === "published").length;
+    const waiting = allApproved().length;
+    $("#libbtn").textContent = LIB.loaded ? `Library · ${live} live` + (waiting ? ` · ${waiting} waiting` : "") : "Library";
+    renderDock();
+    if(VIEW === "library") renderLibrary();
+  }
 
-  // ---------- publish ----------
-  // Cheap semantic-duplicate check: two articles on the same topic under DIFFERENT slugs won't be
-  // deduped by (plan_id, slug), so warn when a staged article's title overlaps a live one's.
-  function titleTokens(t){ return new Set(String(t||"").toLowerCase().replace(/[^a-z0-9 ]/g," ").split(/\s+/).filter(w=>w.length>3)); }
+  // Cheap semantic-duplicate check: two answers on one topic under DIFFERENT slugs won't be deduped
+  // by (plan_id, slug), so warn when a staged title overlaps a live one.
+  function titleTokens(t){ return new Set(String(t||"").toLowerCase().replace(/[^a-z0-9 ]/g," ").split(/\s+/).filter(w => w.length > 3)); }
   function similarTitle(a, b){
     const A = titleTokens(a), B = titleTokens(b);
     if(!A.size || !B.size) return 0;
-    let inter = 0; A.forEach(x=>{ if(B.has(x)) inter++; });
-    return inter / (A.size + B.size - inter); // Jaccard
+    let inter = 0; A.forEach(x => { if(B.has(x)) inter++; });
+    return inter / (A.size + B.size - inter);
+  }
+
+  function renderLibrary(){
+    const box = $("#v-library"); box.innerHTML = "";
+    const head = el("div","lib-h");
+    head.append(el("h2","sec","Library"));
+    const rf = el("button","lnk","Refresh"); rf.type = "button"; rf.onclick = () => loadLibrary();
+    head.append(rf); box.append(head);
+    if(LIB.error){
+      box.append(msg("warn", `Publishing isn't configured yet: ${esc(LIB.error)}. Add SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ELEVENLABS_API_KEY and ELEVENLABS_AGENT_ID to this Vercel project, then Refresh.`));
+      return;
+    }
+    const approved = allApproved(), published = LIB.rows.filter(r => r.state === "published"), superseded = LIB.rows.filter(r => r.state === "superseded");
+    box.append(el("p","sub", `${published.length} live · ${approved.length} approved and waiting`));
+
+    const s1 = el("div","rsec"); s1.append(el("h3", null, "Ready to publish"));
+    if(approved.length){
+      approved.forEach(r => {
+        const similar = published.filter(p => p.slug !== r.slug && similarTitle(p.title, r.title) >= 0.5).map(p => p.title);
+        s1.append(pubCard(r, similar));
+      });
+    } else s1.append(el("p","muted","Nothing waiting. Approve answers in Review and they collect here."));
+    box.append(s1);
+
+    const s2 = el("div","rsec"); s2.append(el("h3", null, "Live in Robin's knowledge base"));
+    if(published.length) published.forEach(r => s2.append(pubCard(r, [])));
+    else s2.append(el("p","muted","Nothing published yet."));
+    box.append(s2);
+
+    if(superseded.length){
+      const det = document.createElement("details"); det.className = "more";
+      det.append(el("summary", null, `History · ${superseded.length} superseded`));
+      superseded.forEach(r => det.append(pubCard(r, [])));
+      box.append(det);
+    }
   }
 
   function pubCard(r, similar){
-    const live = r.state === "published";
-    const c = el("div", "pubrow" + (live ? " live" : ""));
-    const head = el("div", "pubhead");
-    head.append(el("span", "pubtitle", r.title));
-    head.append(el("span", "pill " + r.state, r.state));
+    const c = el("div","pub");
+    const head = el("div","pubhead");
+    head.append(el("span","pubtitle", r.title), el("span","state " + r.state, r.state === "published" ? "live" : r.state === "approved" ? "ready" : r.state));
     c.append(head);
     const doc = r.elevenlabs_document_id ? ` · doc ${String(r.elevenlabs_document_id).slice(0,8)}…` : "";
-    const idx = live ? (r.elevenlabs_rag_indexed ? " · indexed" : " · indexing…") : "";
-    c.append(el("div", "pubmeta", `${r.slug} · v${r.version}${doc}${idx}`));
-
-    if(r.state === "approved"){
-      if(similar && similar.length){
-        const w = el("div", "flag warn", `⚠ Looks similar to a live article: ${similar.join(", ")}. This has a different slug, so publishing won't replace it — publish anyway, or Unpublish the old one below.`);
-        w.style.marginTop = "8px"; c.append(w);
+    const idx = r.state === "published" ? (r.elevenlabs_rag_indexed ? " · indexed" : " · indexing…") : "";
+    const outside = r.state === "approved" && !inThisRun(r);
+    const origin = r.state === "approved" ? ` · plan ${r.plan_id} · approved ${dateOf(r.updated_at)}` : "";
+    c.append(el("div","pubmeta", `${r.slug} · v${r.version}${origin}${doc}${idx}`));
+    if(outside) c.append(msg("warn", RUN.meta ? "Not approved in the run on screen, so the Publish button on the Review screen will not touch it." : "Approved earlier and not part of any run on screen. Check it before you publish."));
+    if(r.state === "approved" && similar && similar.length)
+      c.append(msg("warn", `Looks similar to a live answer: ${esc(similar.join(", "))}. This has a different slug, so publishing won't replace it. Publish anyway, or unpublish the old one.`));
+    if(r.state === "approved" || r.state === "published"){
+      const act = el("div","pubact");
+      if(r.state === "approved"){
+        const b = el("button","btn sm go","Publish"); b.type = "button";
+        b.onclick = () => {
+          if(!outside){ b.disabled = true; publishRow(r.id); return; }
+          // An answer outside the run on screen gets an explicit second press, with where it came from.
+          const ask = el("span","note", `Approved ${dateOf(r.updated_at)} under plan ${r.plan_id}. Publish it to Robin?`);
+          const yes = el("button","btn sm go","Yes, publish"); yes.type = "button";
+          const no = el("button","lnk","Cancel"); no.type = "button";
+          const undo = () => { ask.remove(); yes.remove(); no.remove(); b.hidden = false; };
+          yes.onclick = () => { yes.disabled = true; publishRow(r.id); }; no.onclick = undo;
+          b.hidden = true; act.prepend(ask, yes, no);
+        };
+        act.append(b);
       }
-      const foot = el("div", "cardfoot");
-      const b = el("button", "run", "Publish to Robin");
-      b.addEventListener("click", ()=>publishRow(r.id, b, c));
-      const e = el("button", "ghost", "Edit");
-      e.addEventListener("click", ()=>openArticleEditor(r, c, e));
-      foot.append(b, e);
-      c.append(foot);
-    } else if(r.state === "published"){
-      const foot = el("div", "cardfoot");
-      const e = el("button", "ghost", "Edit");
-      e.addEventListener("click", ()=>openArticleEditor(r, c, e));
-      const u = el("button", "dl", "✕ Unpublish");
-      u.addEventListener("click", ()=>unpublishRow(r.id, u, c));
-      foot.append(e, u);
-      c.append(foot);
+      const e = el("button","btn sm sec","Edit"); e.type = "button"; e.onclick = () => openArticleEditor(r, c, e);
+      act.append(e);
+      if(r.state === "published"){
+        const u = el("button","lnk","Unpublish"); u.type = "button";
+        u.onclick = () => {
+          const ask = el("span","note","Remove it from Robin's knowledge base? ");
+          const yes = el("button","lnk","Remove"); yes.type = "button"; yes.onclick = () => unpublishRow(r.id, act, c);
+          const no = el("button","lnk","Keep"); no.type = "button"; no.onclick = () => { ask.remove(); yes.remove(); no.remove(); u.hidden = false; };
+          u.hidden = true; act.append(ask, yes, no);
+        };
+        act.append(u);
+      }
+      c.append(act);
     }
     return c;
   }
 
-  // Pull a live (or staged) article back into an editor, revise it, and push the revision to Robin.
-  // Saving routes through /api/approve — so the PII guard and version bump apply exactly as they do
-  // for a freshly cleaned article — then publishes, which supersedes the old ElevenLabs doc (same slug).
+  // Pull a live (or approved) answer back into an editor, revise it, push the revision to Robin.
+  // Saving routes through /api/approve, so the PII guard and version bump apply exactly as they do
+  // for a freshly cleaned answer, then publishes, which supersedes the old ElevenLabs doc.
   async function openArticleEditor(r, card, btn){
-    if(card.querySelector(".artedit")) return; // already open
+    if(card.querySelector(".artedit")) return;
     btn.disabled = true; const orig = btn.textContent; btn.textContent = "Loading…";
     let a;
     try{
       const res = await fetch("/api/kb_article?id=" + encodeURIComponent(r.id));
-      const d = await res.json().catch(()=>({error:"bad response"}));
+      const d = await res.json().catch(() => ({error:"bad response"}));
       if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
       a = d.article;
-    }catch(e){
-      btn.disabled=false; btn.textContent=orig;
-      const err = el("div","flag warn","⚠ Couldn't load the article: "+e.message);
-      err.style.marginTop="8px"; card.append(err); return;
-    }
-    btn.textContent = orig; // stays disabled while the editor is open
+    }catch(e){ btn.disabled = false; btn.textContent = orig; card.append(msg("warn", "Couldn't load the answer: " + esc(e.message))); return; }
+    btn.textContent = orig;
 
-    const wrap = el("div", "artedit");
-    wrap.style.marginTop = "10px";
-    const ta = document.createElement("textarea");
-    ta.value = a.body_md || "";
-    ta.style.minHeight = "260px";
-    wrap.append(el("label", "lbl", "Article text — edit, then save to push the revision to Robin"), ta);
-
-    const foot = el("div", "cardfoot");
-    const save = el("button", "run", "Save & republish");
-    const cancel = el("button", "ghost", "Cancel");
-    const note = el("span", "note", `${a.slug} · v${a.version} — saving publishes a new version and replaces the live one`);
-    foot.append(save, cancel, note);
-    wrap.append(foot);
-    card.append(wrap);
-    ta.focus();
-
-    cancel.addEventListener("click", ()=>{ wrap.remove(); btn.disabled=false; });
-
-    save.addEventListener("click", async ()=>{
+    const wrap = el("div","artedit");
+    const ta = document.createElement("textarea"); ta.value = a.body_md || ""; ta.setAttribute("aria-label","Answer text");
+    wrap.append(el("div","lbl","Edit, then save to push the revision to Robin"), ta);
+    const foot = el("div","pubact");
+    const save = el("button","btn sm","Save and republish"); save.type = "button";
+    const cancel = el("button","btn sm sec","Cancel"); cancel.type = "button";
+    foot.append(save, cancel, el("span","note", `${a.slug} · v${a.version}. Saving publishes a new version and replaces the live one`));
+    wrap.append(foot); card.append(wrap); ta.focus();
+    cancel.onclick = () => { wrap.remove(); btn.disabled = false; };
+    save.onclick = async () => {
       const body_md = ta.value.trim();
-      if(!body_md){ alert("The article can't be empty."); return; }
+      if(!body_md){ wrap.append(msg("bad","The answer can't be empty.")); return; }
       save.disabled = true; cancel.disabled = true; save.textContent = "Saving…";
       try{
-        const article = {
-          plan_id: a.plan_id, slug: a.slug, title: a.title, environment: a.environment,
-          body_md, source: a.source, coverage_flags: a.coverage_flags || [],
-          candidate_questions: a.candidate_questions || [],
-        };
+        const article = { plan_id: a.plan_id, slug: a.slug, title: a.title, environment: a.environment, body_md, source: a.source, coverage_flags: a.coverage_flags || [], candidate_questions: a.candidate_questions || [] };
         const res = await fetch("/api/approve", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ article }) });
-        const d = await res.json().catch(()=>({error:"bad response"}));
+        const d = await res.json().catch(() => ({error:"bad response"}));
         if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
-        if(d.already_published){
-          save.disabled=false; cancel.disabled=false; save.textContent="Save & republish";
-          const same = el("div","flag warn","No changes — this text is already live.");
-          same.style.marginTop="8px"; wrap.append(same); return;
-        }
+        if(d.already_published){ save.disabled = false; cancel.disabled = false; save.textContent = "Save and republish"; wrap.append(msg("warn","No changes. This text is already live.")); return; }
         const stagedId = d.staged && d.staged.id;
-        if(!stagedId) throw new Error("saved, but no staged article came back — check the Publish list");
-        wrap.remove();
-        publishRow(stagedId, null, card); // serialized queue; reloads the list when it drains
-      }catch(e){
-        save.disabled=false; cancel.disabled=false; save.textContent="Save & republish";
-        const err = el("div","flag warn","⚠ "+e.message);
-        err.style.marginTop="8px"; wrap.append(err);
-      }
-    });
+        if(!stagedId) throw new Error("saved, but no staged answer came back. Check the Library");
+        wrap.remove(); publishRow(stagedId);
+      }catch(e){ save.disabled = false; cancel.disabled = false; save.textContent = "Save and republish"; wrap.append(msg("bad", esc(e.message))); }
+    };
   }
 
   // Publishes are SERIALIZED through one chain. Each publish attaches its doc to the agent by
   // read-modify-write, so running them concurrently makes the last write win (only the last doc
   // attaches). The queue makes each publish see the previous one's result. Reload once when it drains.
-  let _pubChain = Promise.resolve();
-  let _pubActive = 0;
-  let _pubFails = [];
-
-  function publishRow(id, btn, card){
-    _pubActive++;
-    if(btn){ btn.disabled = true; btn.textContent = "Queued…"; }
-    _pubChain = _pubChain.then(async ()=>{
-      if(btn && document.body.contains(btn)) btn.textContent = "Publishing…";
+  let _pubChain = Promise.resolve(), _pubActive = 0;
+  function publishRow(id){
+    if(PUB.mode !== "publishing"){ Object.assign(PUB, { mode:"publishing", total:0, ok:0, fails:[] }); }
+    PUB.total++; _pubActive++; renderSpine(); renderDock();
+    _pubChain = _pubChain.then(async () => {
       try{
         const res = await fetch("/api/publish", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id }) });
-        const d = await res.json().catch(()=>({error:"bad response"}));
+        const d = await res.json().catch(() => ({error:"bad response"}));
         if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
-      }catch(e){ _pubFails.push(e.message); }
-    }).finally(()=>{
+        PUB.ok++;
+      }catch(e){ PUB.fails.push(e.message); }
+      renderDock();
+    }).finally(async () => {
       _pubActive--;
-      if(_pubActive === 0) drainPublish();
+      if(_pubActive === 0){
+        await loadLibrary(true);
+        PUB.mode = PUB.fails.length ? "failed" : "done";
+        // an answer that has left the approved queue went live; one still queued failed to publish
+        const waiting = new Set(approvedRows().map(r => r.slug));
+        RUN.articles.forEach(a => { if(a.staged && !a._stale && !waiting.has(a.slug)) a.live = true; });
+        renderSpine(); renderDock();
+        if(VIEW === "review") renderReview();
+      }
     });
   }
-
-  async function drainPublish(){
-    const fails = _pubFails.slice(); _pubFails = [];
-    await loadPublish();
-    if(fails.length){
-      const box = $("#pubout");
-      const b = el("div", "flag warn", `⚠ ${fails.length} publish${fails.length>1?"es":""} failed: ${fails.join("; ")}. Those stayed in “Ready to publish” — click Publish to retry.`);
-      b.style.marginBottom = "12px"; box.insertBefore(b, box.firstChild);
-    }
+  function publishAll(){
+    const rows = approvedRows();
+    if(!rows.length || staleCount()) return;
+    Object.assign(PUB, { mode:"publishing", total:0, ok:0, fails:[] });
+    rows.forEach(r => publishRow(r.id));
   }
 
-  async function unpublishRow(id, btn, card){
-    if(!confirm("Remove this article from Robin's knowledge base? It will be detached and deleted in ElevenLabs.")) return;
-    btn.disabled = true; const orig = btn.textContent; btn.textContent = "Removing…";
+  async function unpublishRow(id, act, card){
+    act.querySelectorAll("button").forEach(b => b.disabled = true);
     try{
       const res = await fetch("/api/unpublish", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id }) });
-      const d = await res.json().catch(()=>({error:"bad response"}));
+      const d = await res.json().catch(() => ({error:"bad response"}));
       if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
-      loadPublish();
-    }catch(e){
-      btn.disabled=false; btn.textContent=orig;
-      const err = el("div","flag warn","⚠ "+e.message); err.style.marginTop="8px"; card.append(err);
-    }
+      loadLibrary();
+    }catch(e){ act.querySelectorAll("button").forEach(b => b.disabled = false); card.append(msg("warn", esc(e.message))); }
   }
 
-  function renderPublish(rows){
-    const box = $("#pubout"); box.innerHTML = "";
-    const approved = rows.filter(r=>r.state==="approved");
-    const published = rows.filter(r=>r.state==="published");
-    const superseded = rows.filter(r=>r.state==="superseded");
-    $("#pubmeta").textContent = `${published.length} live · ${approved.length} staged`;
-
-    const s1 = el("div", "rsec"); s1.append(el("h3", null, "Ready to publish"));
-    if(approved.length){
-      const bar = el("div", "cardfoot"); bar.style.marginBottom = "10px";
-      const allBtn = el("button", "run", `Publish all ${approved.length}`);
-      allBtn.onclick = ()=>{ allBtn.disabled = true; allBtn.textContent = "Publishing all…"; approved.forEach(r=>publishRow(r.id, null, null)); };
-      bar.append(allBtn, el("span", "note", "published one at a time — safe to queue"));
-      s1.append(bar);
-      approved.forEach(r=>{
-        const similar = published.filter(p=>p.slug !== r.slug && similarTitle(p.title, r.title) >= 0.5).map(p=>p.title);
-        s1.append(pubCard(r, similar));
-      });
-    }
-    else s1.append(el("p", "muted", "Nothing staged. Clean a guide in Step 1, then “Send to Publish”."));
-    box.append(s1);
-
-    const s2 = el("div", "rsec"); s2.append(el("h3", null, "Live in Robin's knowledge base"));
-    if(published.length) published.forEach(r=>s2.append(pubCard(r, [])));
-    else s2.append(el("p", "muted", "No articles published yet."));
-    box.append(s2);
-
-    if(superseded.length){
-      const det = document.createElement("details");
-      det.append(el("summary", null, `History — ${superseded.length} superseded`));
-      superseded.forEach(r=>det.append(pubCard(r, [])));
-      box.append(det);
-    }
-  }
-
-  async function loadPublish(){
-    const box = $("#pubout"); box.innerHTML = `<p class="muted">Loading…</p>`; $("#pubmeta").textContent = "";
-    try{
-      const res = await fetch("/api/kb_list");
-      const d = await res.json().catch(()=>({error:"bad response"}));
-      if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
-      renderPublish(d.rows || []);
-    }catch(e){
-      box.innerHTML = "";
-      box.append(el("p","muted","Publish isn't configured yet — "+e.message+". Add SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ELEVENLABS_API_KEY and ELEVENLABS_AGENT_ID to this Vercel project, then Refresh."));
-    }
-  }
-  $("#pubrefresh").addEventListener("click", loadPublish);
+  // ============================================================ start
+  setView("source");
+  offerRestore();
+  loadLibrary(true);
 </script>
 </body>
 </html>
