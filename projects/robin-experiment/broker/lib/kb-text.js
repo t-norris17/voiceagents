@@ -13,8 +13,11 @@ const BASE = "https://api.elevenlabs.io";
 // The API returns the stored document as `extracted_inner_html`, which is HTML for documents
 // created from files and raw markdown for documents whose content was PATCHed as text. Either way
 // the grader wants plain text: tags stripped, block boundaries kept as newlines, entities decoded.
-export function htmlToText(html) {
+export function htmlToText(html, { headings = false } = {}) {
   let s = String(html || "");
+  // Utilization needs to know where sections start, so it asks for headings to survive as markdown
+  // ("## Title"). Everyone else gets plain text, exactly as before.
+  if (headings) s = s.replace(/<\s*h([1-6])\b[^>]*>/gi, (_, n) => "\n" + "#".repeat(Number(n)) + " ");
   s = s.replace(/<\s*(br|\/p|\/h[1-6]|\/li|\/div|\/tr)\b[^>]*>/gi, "\n");
   s = s.replace(/<[^>]+>/g, "");
   s = s
@@ -32,8 +35,7 @@ export function htmlToText(html) {
 // Returns { title, body_md } in the same shape as a kb_articles row, or null when the document
 // cannot be read (no key, not found, network). Never throws: a grading run must not die because
 // one document was unreadable — that answer grades `no_source` and the rest of the batch proceeds.
-export async function fetchElevenLabsDocument(documentId, { fetchImpl = fetch } = {}) {
-  const key = process.env.ELEVENLABS_API_KEY;
+export async function fetchElevenLabsDocument(documentId, { fetchImpl = fetch, key = process.env.ELEVENLABS_API_KEY, headings = false } = {}) {
   if (!key) return null;
   if (!/^[A-Za-z0-9_-]{6,80}$/.test(String(documentId || ""))) return null;
   try {
@@ -42,7 +44,7 @@ export async function fetchElevenLabsDocument(documentId, { fetchImpl = fetch } 
     });
     if (!res.ok) return null;
     const doc = await res.json();
-    const body = htmlToText(doc?.extracted_inner_html);
+    const body = htmlToText(doc?.extracted_inner_html, { headings });
     if (!body) return null;
     return { title: doc?.name || documentId, body_md: body };
   } catch {

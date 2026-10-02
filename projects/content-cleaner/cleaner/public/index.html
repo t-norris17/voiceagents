@@ -206,7 +206,7 @@
   .pubhead{ display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
   .pubtitle{ font-weight:700; font-size:1.02rem; }
   .state{ font:600 .62rem var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--faint); white-space:nowrap; }
-  .state.published{ color:var(--ok); } .state.approved{ color:var(--warn); }
+  .state.published{ color:var(--ok); } .state.approved{ color:var(--warn); } .state.na{ color:var(--warn); }
   .pubmeta{ font:.7rem var(--mono); color:var(--faint); margin-top:3px; }
   .pubact{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:12px; }
   .artedit{ margin-top:14px; max-width:70ch; }
@@ -366,7 +366,7 @@
   let SEL = null;        // selected answer _id
   let TAB = "answers";   // answers | drop | coverage | questions | reports
   let VIEW = "source";   // source | scan | review | library
-  const LIB = { rows:[], loaded:false, error:null };
+  const LIB = { rows:[], attached:[], attachedKnown:false, attachedError:null, loaded:false, error:null };
   const PUB = { mode:"idle", total:0, ok:0, fails:[] };   // idle | publishing | done | failed
 
   // ============================================================ chrome: views, spine, dock
@@ -1169,10 +1169,13 @@
       const d = await res.json().catch(() => ({error:"bad response"}));
       if(!res.ok || d.error) throw new Error(d.error || ("HTTP "+res.status));
       LIB.rows = d.rows || []; LIB.loaded = true; LIB.error = null;
-    }catch(e){ LIB.error = e.message; LIB.loaded = false; LIB.rows = []; }
-    const live = LIB.rows.filter(r => r.state === "published").length;
+      LIB.attached = d.attached || []; LIB.attachedKnown = !!d.attached_known; LIB.attachedError = d.attached_error || null;
+    }catch(e){ LIB.error = e.message; LIB.loaded = false; LIB.rows = []; LIB.attached = []; LIB.attachedKnown = false; }
+    // "Live" means attached to Robin, which is a fact about the agent, not a state in our table. When the
+    // agent could not be read the count says "published" and claims nothing more.
+    const live = LIB.attachedKnown ? LIB.attached.length : LIB.rows.filter(r => r.state === "published").length;
     const waiting = allApproved().length;
-    $("#libbtn").textContent = LIB.loaded ? `Library · ${live} live` + (waiting ? ` · ${waiting} waiting` : "") : "Library";
+    $("#libbtn").textContent = LIB.loaded ? `Library · ${live} ${LIB.attachedKnown ? "live" : "published"}` + (waiting ? ` · ${waiting} waiting` : "") : "Library";
     renderDock();
     if(VIEW === "library") renderLibrary();
   }
@@ -1198,7 +1201,8 @@
       return;
     }
     const approved = allApproved(), published = LIB.rows.filter(r => r.state === "published"), superseded = LIB.rows.filter(r => r.state === "superseded");
-    box.append(el("p","sub", `${published.length} live · ${approved.length} approved and waiting`));
+    const liveCount = LIB.attachedKnown ? LIB.attached.length : published.length;
+    box.append(el("p","sub", `${liveCount} ${LIB.attachedKnown ? "live" : "published"} · ${approved.length} approved and waiting`));
 
     const s1 = el("div","rsec"); s1.append(el("h3", null, "Ready to publish"));
     if(approved.length){
@@ -1209,10 +1213,35 @@
     } else s1.append(el("p","muted","Nothing waiting. Approve answers in Review and they collect here."));
     box.append(s1);
 
-    const s2 = el("div","rsec"); s2.append(el("h3", null, "Live in Robin's knowledge base"));
-    if(published.length) published.forEach(r => s2.append(pubCard(r, [])));
-    else s2.append(el("p","muted","Nothing published yet."));
-    box.append(s2);
+    if(LIB.attachedKnown){
+      // What Robin actually has: every document attached to her, whoever put it there. Ones published
+      // through the Factory get the full card; ones added in the ElevenLabs dashboard are shown, read only.
+      const byDoc = new Map(published.filter(r => r.elevenlabs_document_id).map(r => [r.elevenlabs_document_id, r]));
+      const s2 = el("div","rsec"); s2.append(el("h3", null, `Live in Robin's knowledge base · ${LIB.attached.length}`));
+      LIB.attached.forEach(d => {
+        const r = byDoc.get(d.id);
+        if(r) { s2.append(pubCard(r, [])); return; }
+        const c = el("div","pub");
+        const head = el("div","pubhead"); head.append(el("span","pubtitle", d.name), el("span","state published","live")); c.append(head);
+        c.append(el("div","pubmeta", `${d.type || "document"} · ${d.usage_mode || "auto"} · added in the ElevenLabs dashboard, so it is managed there`));
+        s2.append(c);
+      });
+      if(!LIB.attached.length) s2.append(el("p","muted","Nothing is attached to Robin."));
+      box.append(s2);
+      const orphans = published.filter(r => r.attached === false);
+      if(orphans.length){
+        const s3 = el("div","rsec"); s3.append(el("h3", null, `Published, but not attached to Robin · ${orphans.length}`));
+        s3.append(msg("warn", "These were published through the Factory, but they are no longer attached to Robin, so she does not use them. Unpublish to remove them, or leave them as a record."));
+        orphans.forEach(r => s3.append(pubCard(r, [])));
+        box.append(s3);
+      }
+    } else {
+      const s2 = el("div","rsec"); s2.append(el("h3", null, "Published through the Factory"));
+      s2.append(msg("warn", `Couldn't tell which documents are attached to Robin${LIB.attachedError ? " (" + esc(LIB.attachedError) + ")" : ""}, so these are shown as published, not live.`));
+      if(published.length) published.forEach(r => s2.append(pubCard(r, [])));
+      else s2.append(el("p","muted","Nothing published yet."));
+      box.append(s2);
+    }
 
     if(superseded.length){
       const det = document.createElement("details"); det.className = "more";
@@ -1225,7 +1254,7 @@
   function pubCard(r, similar){
     const c = el("div","pub");
     const head = el("div","pubhead");
-    head.append(el("span","pubtitle", r.title), el("span","state " + r.state, r.state === "published" ? "live" : r.state === "approved" ? "ready" : r.state));
+    head.append(el("span","pubtitle", r.title), el("span","state " + r.state + (r.state === "published" && r.attached === false ? " na" : ""), r.state === "published" ? (r.attached === true ? "live" : r.attached === false ? "not attached" : "published") : r.state === "approved" ? "ready" : r.state));
     c.append(head);
     const doc = r.elevenlabs_document_id ? ` · doc ${String(r.elevenlabs_document_id).slice(0,8)}…` : "";
     const idx = r.state === "published" ? (r.elevenlabs_rag_indexed ? " · indexed" : " · indexing…") : "";

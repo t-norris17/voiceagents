@@ -6,6 +6,65 @@
 
 ---
 
+
+
+## Session 2026-10-02 (later): Utilization
+
+`GET /api/utilization?days=30` measures how much of what Robin knows callers actually use. Read-only and
+free: it reads stored grades, never runs the grader (grading stays a manual, paid click on Accuracy).
+
+- **Denominator:** the H2 sections of the documents attached to her (`lib/robin-live.js`, headings kept as
+  `## Title`). Prompt-mode documents are left out: they are always in her prompt, not retrieved topics.
+- **Numerator:** sections that a graded answer CITED. The grader already stores, per claim, the verbatim
+  source span (`call_question_scores.evidence.claims[].source_quote`); locating the span in a document
+  finds the section she relied on (`lib/utilization.js`). Fragments under 12 characters are ignored.
+- **Not "retrieved":** she searches her knowledge on nearly every turn (2,130 retrieval turns in 90 days,
+  about 4 chunks each, even for "what is my balance"), so retrieval makes every document look used by
+  every call. ElevenLabs' own `used_chunk_ids` was non-empty on only 17% of those turns. Not the call
+  `topic` either: it is free text ("401k loan", "401K loan", "plan_question", empty).
+- **A floor, and it says so.** Only graded interactions have quotes, so below ~100% coverage the page reads
+  "At least N%" and shows how much of the window was graded. Real measurement, last 30 days: 170
+  interactions, 41 graded, 68 of 73 graded claims carry a quote; 12 of 33 topics used = 36% (Loans 6 of 8,
+  Rolling 5 of 6, Overview 1 of 8, Leaving 0 of 8, password KBA 0 of 3). I hand-mapped the quotes first, then
+  ran the real calculation on the real documents and quotes: same answer, 0 unmatched.
+- **Unmet demand** beside it: questions with `answered=false` and `fail_reason` of `no_content` or
+  `not_retrieved`. `guardrail` and `out_of_scope` are by-design refusals (personal catch-up advice) and are
+  excluded: they are not gaps.
+- Page: portal `/utilization` under Understand, plus a tile; the vertical gauge is a black-outlined tube
+  with an orange fill. Tests: broker `test/utilization.test.mjs` (10), portal `utilization-view.test.mjs` (6).
+
+**Not verified:** the endpoint against live Supabase and ElevenLabs together (the container reaches
+neither; each half was checked separately with real data). Needs the same broker env as Dry Run
+(`ELEVENLABS_API_KEY`, `ELEVENLABS_AGENT_ID`). Mapping depends on the grader quoting verbatim; a quote it
+paraphrases would count as unmatched, which the page does not yet surface (the endpoint returns the count).
+
+## Session 2026-10-02: Dry Run reads Robin, not a snapshot of her
+
+**Defect.** Dry Run (`broker/api/ask.js`) answered from `kb_articles` rows in state `published`, falling
+back to an embedded INTRUST knowledge base, under a persona prompt that said "NestEgg U assistant ...
+INTRUST 401(k) Plan" with INTRUST phone numbers. Live Robin is the Vertex agent: her attached documents
+are five Vertex files plus an "Online Portal" note (none INTRUST), and her prompt is 18k characters of her
+own. So Dry Run tested knowledge and a persona she does not have. Evidence: her agent configuration
+(`knowledge_base`, six entries), `dependent_agents: []` on all 29 INTRUST documents, and retrieval counts
+from stored calls (Vertex documents retrieved in 177 to 209 of 224 calls over 90 days, INTRUST documents in
+1 or 2).
+
+**Fix.** `lib/robin-live.js` reads the agent from ElevenLabs (prompt, temperature, attached documents and
+their text, cached a minute). `dryRunSystem` frames her real prompt as a text dry run (no verification, no
+tools) with her documents and restates those rules last. It NEVER falls back to other knowledge: missing
+config is a 503 that says what to set. `GET /api/ask` returns the attached document names at no model cost;
+the page shows "Answering from N documents attached to Robin: ...". The INTRUST answer key and "Load the
+25" are removed (they belonged to the INTRUST experiment). `api/questions.js` and `lib/kb.js` are now
+unused by the page and left in place.
+
+**Needs `ELEVENLABS_AGENT_ID` on the broker project** (production and preview) and a redeploy; the broker
+did not reference it anywhere before. Without it Dry Run refuses to run, by design. `ELEVENLABS_API_KEY`
+is also required (docs say it was set; unverified). Suite 99/99 (`test/robin-live.test.mjs`, 8; the endpoint case needs `npm install --no-package-lock` first, the broker has no lockfile, and is skipped without the SDK).
+
+**Not verified:** a real answer from the live prompt (the container cannot reach ElevenLabs or Anthropic);
+whether a long live prompt plus the dry-run frame makes Haiku skip the verification steps reliably. That
+needs one real run after the env var is set.
+
 ## Session log
 
 <!-- Add new sessions at the top, newest first -->
