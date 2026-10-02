@@ -57,3 +57,17 @@ export function parseGradeOutput(msg) {
   try { return JSON.parse(text.text); }
   catch (e) { throw new Error(`the review was not valid JSON (${String(e.message || e).slice(0, 80)}); nothing was written`); }
 }
+
+// Grading by id and re-grading are the parts of POST /api/grade that can overwrite and delete a grade. The
+// plain "grade the newest ungraded" call predates them and stays as it was (it is on the open list in
+// middleware.js on purpose); these two need the portal's internal secret, so a stranger who learns a
+// conversation id cannot rewrite its grade. Fails closed: with no secret configured, nobody is let in.
+import { timingSafeEqual } from "node:crypto";
+export const needsInternalAuth = (parsed) => !!(parsed && (parsed.ids || parsed.regrade));
+export function internalAuthorized(headers, env = process.env) {
+  const secret = String(env?.ROBIN_INTERNAL_SECRET || "");
+  const sent = String(headers?.["x-robin-internal"] || "");
+  if (!secret || !sent) return false;
+  const a = Buffer.from(secret), b = Buffer.from(sent);
+  return a.length === b.length && timingSafeEqual(a, b);
+}

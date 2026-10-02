@@ -20,6 +20,8 @@ const GATED = [
   "/dashboard", "/dashboard/",
   "/api/metrics", "/api/metrics?window=7d",
   "/api/survey-export", "/api/survey-call", "/api/survey-ask", "/api/survey-themes",
+  "/api/calls", "/api/call-scores",
+  "/api/utilization", "/api/channels", // new: read-only, built on interaction text, no reason to be open
 ];
 
 // Gating any of these does not hide a dashboard — it takes Robin off the phone. ElevenLabs calls

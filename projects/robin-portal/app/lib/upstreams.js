@@ -10,6 +10,7 @@ export const BROKER_PATHS = new Set([
   "survey-ask",
   "survey-themes",
   "calls",
+  "channels",
   "utilization",
   "call-scores",
   "grade",

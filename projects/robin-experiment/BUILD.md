@@ -47,6 +47,45 @@ The Accuracy page was driven in Chromium against a stateful stub shaped like the
 interactions, the 30 oldest graded): counts move after a run, the graded filter reaches rows the newest-100
 window hid, a failure is reported by id, re-grade posts nothing until confirmed, paging works.
 
+**Re-graded on live data (6 interactions, one at a time, each snapshotted first).** Old grade rows were
+heavily duplicated: the model invents a fresh topic key every run, so one question was stored under 2 to 5
+near-identical keys. After re-grading, 7 to 13 old rows collapsed to 3 to 6 checked ones per interaction
+(table: 265 -> 254 score rows, 350 -> 337 question rows after the other grading that day). Survey views
+unchanged (225 / 33), security flags unchanged (4). **This corrects a number I gave earlier:** the unmet
+demand "can I roll my loan into a new loan" (3) and "pay fees from another account" (2) were each ONE caller
+asking once, recorded under several keys. Treat any pre-re-grade per-topic count from the 27 no-source
+interactions as inflated.
+
+**Two defects found while re-grading, both fixed.**
+- The grader gave the model 8000 output tokens and the model's thinking draws from that, so a long
+  interaction (7+ answers) was cut off mid-JSON ("Unterminated string"). Nothing was written, but such an
+  interaction would fail on every click and, with newest-first runs, burn a paid slot each time. Now 16000,
+  and a cut-off reply is reported as that (`parseGradeOutput`). Not measured: cost per run.
+- The portal's proxy route had no `maxDuration`; a long grade (30 to 77 s measured) could outlast it. It is
+  now 120 s, matching the broker. A headless-Chromium run through this sandbox's egress proxy still showed
+  502s at about 25 s while the same request made by curl returned 200 after 77 s, and the broker log showed
+  the work finishing; the 502 is most likely the sandbox proxy, not Vercel. UNVERIFIED in a real browser.
+
+**Auth findings (the broker's gate is a fixed list: `middleware.js` matcher + PROTECTED).**
+- `/api/grade`, `/api/ask`, `/api/questions`, `/api/gap_request` are NOT gated, and `middleware.test.mjs`
+  lists them as "must stay open" (the README calls `/api/ask` an unauthenticated Phase-1 test tool). They
+  spend model money and `/api/ask` answers from Robin's documents. Left as they were: a recorded decision.
+  RECOMMENDATION: gate them, the portal already sends the internal header. Needs Tanner's yes.
+- New this session, and handled: `/api/utilization` and `/api/channels` are gated. Grading BY ID and
+  RE-GRADE (the only paths that overwrite or delete a grade) require the internal secret and fail closed;
+  the plain no-argument grade call is unchanged.
+
+**#8 (survey wording and channel).** Visible wording says "interaction" where it said "call" (Quality page,
+guide, slide); the literal-phone passages in the guide are unchanged, and `post-call` stays (it is an
+ElevenLabs term). `/api/survey-export?level=calls` is an API parameter and is unchanged. A channel pill
+(Phone / Web voice / Web chat) comes from the new read-only `/api/channels` (no phone numbers).
+**Identity was NOT changed, on purpose.** `survey_answers.person_key` = caller phone number + the name heard
+(+ the member ref only to separate people who share a number). In the wave, 70 phone surveys came from 33
+people but only 3 distinct member ids: testers share a few synthetic personas, so a member id is the
+PERSONA a tester verified as, not the human. A chat has no phone number, so it joins a person only by the
+name heard. Real members would make member id a true person key; for the wave it is not. Decision for
+Tanner when chat respondents matter: key chats on member id (right for real members, wrong for the wave).
+
 **Not verified.** Grading quality of the 10 interactions graded today (not read). The cost of a run (10
 Sonnet calls with adaptive thinking at high effort; unmeasured). Whether the grader's missing source before
 Sep 16 was the missing ELEVENLABS_API_KEY (the cutoff fits; the key's history is not visible from here).

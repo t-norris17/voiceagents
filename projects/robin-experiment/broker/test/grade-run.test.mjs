@@ -126,3 +126,20 @@ test("a good reply parses; a reply with no text or bad JSON fails with a plain m
   assert.throws(() => parseGradeOutput({ stop_reason: "end_turn", content: [] }), /no text block/);
   assert.throws(() => parseGradeOutput({ stop_reason: "end_turn", content: [{ type: "text", text: "{nope" }] }), /not valid JSON.*nothing was written/);
 });
+
+import { needsInternalAuth, internalAuthorized } from "../lib/grade-run.js";
+test("only grading by id and re-grading need the internal secret; the plain call is unchanged", () => {
+  assert.equal(needsInternalAuth(parseGradeRequest(undefined)), false, "the legacy no-argument call stays as it was");
+  assert.equal(needsInternalAuth(parseGradeRequest({})), false);
+  assert.equal(needsInternalAuth(parseGradeRequest({ conversation_ids: ["conv_abc1"] })), true);
+  assert.equal(needsInternalAuth(parseGradeRequest({ conversation_ids: ["conv_abc1"], regrade: true })), true);
+});
+test("the internal secret must be configured and must match; with none configured nobody gets in", () => {
+  const env = { ROBIN_INTERNAL_SECRET: "s3cret" };
+  assert.equal(internalAuthorized({ "x-robin-internal": "s3cret" }, env), true);
+  assert.equal(internalAuthorized({ "x-robin-internal": "wrong!" }, env), false);
+  assert.equal(internalAuthorized({ "x-robin-internal": "s3cre" }, env), false, "a different length is a different secret");
+  assert.equal(internalAuthorized({}, env), false);
+  assert.equal(internalAuthorized({ "x-robin-internal": "s3cret" }, {}), false, "no secret configured: fail closed");
+  assert.equal(internalAuthorized({ "x-robin-internal": "" }, { ROBIN_INTERNAL_SECRET: "" }), false, "an empty secret is not a match for an empty header");
+});

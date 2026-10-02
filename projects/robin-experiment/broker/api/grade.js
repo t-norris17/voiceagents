@@ -25,7 +25,7 @@ import { sb, sbAll } from "../lib/supabase.js";
 import { scoreAnswer } from "../lib/score.js";
 import { fetchElevenLabsDocument } from "../lib/kb-text.js";
 import { CHANNEL_COLS, channelOf, systemForChannel } from "../lib/channel.js";
-import { MAX_PER_RUN, parseGradeRequest, parseGradeOutput, inList } from "../lib/grade-run.js";
+import { MAX_PER_RUN, parseGradeRequest, parseGradeOutput, needsInternalAuth, internalAuthorized, inList } from "../lib/grade-run.js";
 import { writeGrade } from "../lib/grade-write.js";
 
 const client = new Anthropic(); // ANTHROPIC_API_KEY
@@ -360,6 +360,9 @@ export default async function handler(req, res) {
   try {
     const parsed = parseGradeRequest(req.method === "POST" ? req.body : null);
     if (parsed.error) return res.status(400).json({ error: parsed.error });
+    if (needsInternalAuth(parsed) && !internalAuthorized(req.headers)) {
+      return res.status(403).json({ error: "grading chosen interactions, and re-grading, need the portal's internal secret" });
+    }
     const { ids, regrade } = parsed;
 
     // Which interactions: by id when asked (ungraded ones, or the one graded one being re-graded),

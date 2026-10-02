@@ -339,6 +339,7 @@
   .dd .li:hover .nm{ text-decoration:underline; text-underline-offset:3px; }
   .dd .li:focus-visible{ outline:2px solid var(--accent); outline-offset:-2px; }
   .dd .li .nm{ font-weight:600; } .dd .li .m{ color:var(--sub); font-size:.72rem; white-space:nowrap; }
+  .chp{ font:600 .56rem var(--mono,monospace); letter-spacing:.1em; text-transform:uppercase; color:var(--sub); border:1px solid var(--line); padding:0 5px; margin-left:8px; vertical-align:1px; white-space:nowrap; font-weight:600 }
   .dd .li .sc{ font-weight:700; min-width:2.4ch; text-align:right; } .dd .li .sc.d{ color:var(--accent); }
   .dd .li .said{ grid-column:1/-1; font-size:.76rem; color:var(--sub); font-style:italic; margin-top:-2px; }
   .dd .sortrow{ display:flex; gap:14px; flex-wrap:wrap; margin:0 0 6px; }
@@ -419,13 +420,13 @@
   <div id="banner"></div>
 
   <div class="layout">
-    <aside class="rail" id="rail" aria-label="Which calls to look at"></aside>
+    <aside class="rail" id="rail" aria-label="Which interactions to look at"></aside>
 
     <main id="main">
       <div class="cap" id="cap"></div>
 
       <section id="simplesec">
-        <p class="sm-q">Asked at the end of a call: would you rather handle this with Robin, or hold for a person, even if it took longer?</p>
+        <p class="sm-q">Asked at the end of an interaction: would you rather handle this with Robin, or hold for a person, even if it took longer?</p>
         <div id="simple"></div>
       </section>
 
@@ -433,23 +434,23 @@
 
       <section class="adv" id="cumsec" hidden>
         <hr class="rule">
-        <div class="shead"><h2 class="sect-h">Confidence<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-cum">?</button><span class="tip-box" role="tooltip" id="tip-cum"><b>What it shows.</b> How often Robin actually asked the survey, and the headline share redrawn one response at a time with its 95% range. The chart appears at 20 responses.<br><br><b>How to read it.</b> The result is callable once the shaded band stops crossing 50%. At n=30 a 60/40 is noise. If Robin asked on fewer than 70% of eligible calls, every figure above rests on a biased slice.</span></span></h2></div>
-        <p class="svy-lede">How sure the headline is, as answers came in.<span class="tipw"><button type="button" class="tip" aria-label="How to read the chart" aria-describedby="tip-cum-story">?</button><span class="tip-box tip-story" role="tooltip" id="tip-cum-story"><b>Think of it as counting votes.</b> Ballots arrive one at a time, Robin against A Person. After one ballot you would never call it. After ten you are tempted but know the next ten could go either way. After fifty you feel it settle.<br><br>The chart is that feeling, drawn. The line is Robin's share after each ballot. The shaded band is your honest doubt: given what has been counted, the final result could land anywhere in it. It is wide at the start and narrows as ballots pile up. The rule at 50% is a majority.<br><br><b>Calling it</b> means the whole band is above 50, not just the line. If the bottom edge still dips under half, A Person could still win and you would be guessing. The page refuses to guess.<br><br>Nothing here is a new number. It is the headline share and its range from the top of the page, shown as they evolved instead of only as they stand today.</span></span></p>
+        <div class="shead"><h2 class="sect-h">Confidence<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-cum">?</button><span class="tip-box" role="tooltip" id="tip-cum"><b>What it shows.</b> How often Robin actually asked the survey, and the headline share redrawn one response at a time with its 95% range. The chart appears at 20 responses.<br><br><b>How to read it.</b> The result is callable once the shaded band stops crossing 50%. At n=30 a 60/40 is noise. If Robin asked on fewer than 70% of eligible interactions, every figure above rests on a biased slice.</span></span></h2></div>
+        <p class="svy-lede">How sure the headline is, as answers came in.<span class="tipw"><button type="button" class="tip" aria-label="How to read the chart" aria-describedby="tip-cum-story">?</button><span class="tip-box tip-story" role="tooltip" id="tip-cum-story"><b>Think of it as counting votes.</b> Ballots arrive one at a time, Robin against A Person. After one ballot you would never interaction it. After ten you are tempted but know the next ten could go either way. After fifty you feel it settle.<br><br>The chart is that feeling, drawn. The line is Robin's share after each ballot. The shaded band is your honest doubt: given what has been counted, the final result could land anywhere in it. It is wide at the start and narrows as ballots pile up. The rule at 50% is a majority.<br><br><b>Calling it</b> means the whole band is above 50, not just the line. If the bottom edge still dips under half, A Person could still win and you would be guessing. The page refuses to guess.<br><br>Nothing here is a new number. It is the headline share and its range from the top of the page, shown as they evolved instead of only as they stand today.</span></span></p>
         <div class="cum" id="cum"></div>
         <div id="dots"></div>
       </section>
 
       <section class="adv" id="clsec" hidden>
         <hr class="rule">
-        <div class="shead"><h2 class="sect-h">Every call<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-cl">?</button><span class="tip-box" role="tooltip" id="tip-cl"><b>What it shows.</b> Every answered call in the slice, newest first, repeats included, each opening to its transcript.<br><br><b>How to read it.</b> The audit trail. Anyone who answered differently on a later call is found here.</span></span></h2></div>
-        <p class="svy-lede">Click a call to read it.</p>
+        <div class="shead"><h2 class="sect-h">Every interaction<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-cl">?</button><span class="tip-box" role="tooltip" id="tip-cl"><b>What it shows.</b> Every answered interaction in the slice, newest first, repeats included, each opening to its transcript.<br><br><b>How to read it.</b> The audit trail. Anyone who answered differently on a later interaction is found here.</span></span></h2></div>
+        <p class="svy-lede">Click an interaction to read it.</p>
         <div class="srt" id="srt"></div>
         <div class="cl" id="cl"></div>
       </section>
 
       <section class="adv" id="dlsec" hidden>
         <hr class="rule">
-        <div class="shead"><h2 class="sect-h">Downloads<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-dl">?</button><span class="tip-box" role="tooltip" id="tip-dl"><b>What it shows.</b> The people file is one row per respondent in this slice and the basis of every figure on this page. The calls file includes repeats. Comments that tripped the personal-data scan are absent from both.<br><br><b>How to read it.</b> Start from the people file to check the page.</span></span></h2></div>
+        <div class="shead"><h2 class="sect-h">Downloads<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-dl">?</button><span class="tip-box" role="tooltip" id="tip-dl"><b>What it shows.</b> The people file is one row per respondent in this slice and the basis of every figure on this page. The interactions file includes repeats. Comments that tripped the personal-data scan are absent from both.<br><br><b>How to read it.</b> Start from the people file to check the page.</span></span></h2></div>
         <div class="dl" id="dl"></div>
         <p class="dl-note">Both files follow the slice in the rail, staff rule included.</p>
       </section>
@@ -471,9 +472,9 @@
 
 <!-- the transcript drawer -->
 <div class="drw" id="drw" hidden>
-  <div class="drw-p" role="dialog" aria-modal="true" aria-label="Call transcript">
+  <div class="drw-p" role="dialog" aria-modal="true" aria-label="Interaction transcript">
     <div class="drw-h">
-      <span class="t" id="drwt">Call</span>
+      <span class="t" id="drwt">Interaction</span>
       <button class="drw-x" id="drwx">Close</button>
     </div>
     <div id="drwbody"></div>
@@ -488,7 +489,7 @@
     <span class="t">Ask Robin</span>
     <button class="drw-x" id="askx" type="button">Close</button>
   </div>
-  <p class="askpanel-lede" id="asklede">Answers come only from the survey responses in the current slice, with the calls cited. If they can’t answer, it says so.</p>
+  <p class="askpanel-lede" id="asklede">Answers come only from the survey responses in the current slice, with the interactions cited. If they can’t answer, it says so.</p>
   <form class="ask-form" id="askform">
     <input id="askq" type="text" maxlength="500" autocomplete="off"
            placeholder="Did anyone who preferred a person say why?" aria-label="Ask a question about the survey data">
@@ -500,6 +501,11 @@
 
 <script>
   const esc=(s)=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  // Which channel each interaction came in on (phone, web voice, web chat). One small map from /api/channels,
+  // so the pill does not depend on every row shape carrying a new field. Unknown interactions get no pill.
+  const CH={}, CHL={phone:"Phone",web_voice:"Web voice",chat:"Web chat"};
+  const chanTag=(id)=>CH[id]&&CHL[CH[id]]?`<span class="chp">${CHL[CH[id]]}</span>`:"";
+  async function loadChannels(){ try{ const r=await fetch("/api/channels"); if(r.ok) Object.assign(CH,(await r.json()).channels||{}); }catch(e){} }
   const PRETTY={agent:"Robin",person:"a person",no_preference:"either",unclassified:"unclear"};
   const TZ="America/Chicago";
   const plural=(n,one,many)=>`${n} ${n===1?one:(many||one+"s")}`;
@@ -538,7 +544,7 @@
       document.getElementById("banner").innerHTML="";
       const s=DATA.survey||{}, sl=s.slice||{};
       if(sl.valid===false) document.getElementById("banner").innerHTML=`<div class="banner bad">That range was not understood (${esc(sl.error||"")}), so this is everything.</div>`;
-      document.title=`Robin — Quality: ${sl.label||"all calls"}`;
+      document.title=`Robin — Quality: ${sl.label||"all interactions"}`;
       renderRail(); renderCap(); renderSimple(); renderBoard(); renderCumulative(); renderDots(); renderCalls(); renderDownloads();
       stamp();
       loadThemes();   // separate endpoint: costs a model call, so it is not on the 60s refresh
@@ -582,7 +588,7 @@
         ${waves.filter(w=>!w.internal).map(waveBtn).join("")}
         <button type="button" class="opt soon" disabled><span>Second wave<span class="sub">dates to come</span></span></button>
         ${waves.filter(w=>w.internal).map(waveBtn).join("")}
-        ${preset("all","All calls")}
+        ${preset("all","All interactions")}
       </div>
       <div><span class="lbl">Range</span>
         ${preset("week","This week")}${preset("month","This month")}${preset("year","This year")}
@@ -594,7 +600,7 @@
         </form>
       </div>
       <div><span class="lbl">Show</span>
-        <button type="button" class="sw" id="staffsw" role="switch" aria-checked="${staffOn}"><i></i>Staff calls<small>${sl.staff_calls?`${sl.staff_calls} ${staffOn?"shown":"hidden"}`:"none here"}</small></button>
+        <button type="button" class="sw" id="staffsw" role="switch" aria-checked="${staffOn}"><i></i>Staff interactions<small>${sl.staff_calls?`${sl.staff_calls} ${staffOn?"shown":"hidden"}`:"none here"}</small></button>
         <button type="button" class="sw soon" role="switch" aria-checked="false" disabled><i></i>Compare to a wave<small>after wave 2</small></button>
       </div>
       <div class="railcap"><button type="button" class="copy" id="copylink">Copy link to this view</button></div>`;
@@ -626,12 +632,12 @@
   function renderCap(){
     const s=DATA.survey||{}, sl=s.slice||{}, f=s.funnel||{};
     const when=sl.when&&sl.when!==sl.label?sl.when:"";
-    const staff=S.staff==="show"?`Staff calls are <b>included</b>${sl.staff_calls?` (${sl.staff_calls})`:""}.`:`Staff calls are <b>hidden</b>${sl.staff_calls?` (${sl.staff_calls} in this range)`:""}; the switch in the rail shows them.`;
-    document.getElementById("cap").innerHTML=`<b>${esc(sl.label||"All calls")}</b><span>${esc(when)}</span>`+
-      `<span><b>${s.people??0}</b> ${s.people===1?"person":"people"}</span><span><b>${s.surveyed??0}</b> surveyed ${s.surveyed===1?"call":"calls"}</span>`+
-      `<span><b>${f.in_range??0}</b> calls in range</span>`+
+    const staff=S.staff==="show"?`Staff interactions are <b>included</b>${sl.staff_calls?` (${sl.staff_calls})`:""}.`:`Staff interactions are <b>hidden</b>${sl.staff_calls?` (${sl.staff_calls} in this range)`:""}; the switch in the rail shows them.`;
+    document.getElementById("cap").innerHTML=`<b>${esc(sl.label||"All interactions")}</b><span>${esc(when)}</span>`+
+      `<span><b>${s.people??0}</b> ${s.people===1?"person":"people"}</span><span><b>${s.surveyed??0}</b> surveyed ${s.surveyed===1?"interaction":"interactions"}</span>`+
+      `<span><b>${f.in_range??0}</b> interactions in range</span>`+
       `<span class="soft">updated <span id="gen2"></span></span>`+
-      `<span class="tipw"><button type="button" class="tip" aria-label="About this line" aria-describedby="tip-cap">?</button><span class="tip-box" role="tooltip" id="tip-cap"><b>What it shows.</b> The slice every number on this page comes from. <b>People</b> is distinct callers who answered the survey; <b>surveyed calls</b> is the calls Robin asked on, repeats included; <b>calls in range</b> is every call Robin took in the window, asked or not. Dates run midnight to midnight, Central time.<br><br>${staff} The page refreshes itself every minute.</span></span>`;
+      `<span class="tipw"><button type="button" class="tip" aria-label="About this line" aria-describedby="tip-cap">?</button><span class="tip-box" role="tooltip" id="tip-cap"><b>What it shows.</b> The slice every number on this page comes from. <b>People</b> is distinct callers who answered the survey; <b>surveyed interactions</b> is the interactions Robin asked on, repeats included; <b>interactions in range</b> is every interaction Robin took in the window, asked or not. Dates run midnight to midnight, Central time.<br><br>${staff} The page refreshes itself every minute.</span></span>`;
   }
 
   // ---- Simple: the slide. The answer for the slice in the rail, reflowed for sharing. Every
@@ -661,8 +667,8 @@
           const c=THEMES&&THEMES.have!=null?`themes appear at ${THEMES.need} comments, ${THEMES.have} so far`:THEMES&&THEMES.error?esc(THEMES.error):"finding the top theme…";
           return `<a class="sm-m" ${go("saidcard")}><div class="v txt soft">—</div><div class="c">${c}</div></a>`; })()}
       </div>
-      ${rev.n?`<a class="sm-m flag" ${go("revcard")} style="margin-top:14px;border-top:0"><div class="c"><b>${plural(rev.n,"call")} need${rev.n===1?"s":""} a listen.</b> Read ${rev.n===1?"it":"them"} first.</div></a>`:""}
-      <div class="sm-foot"><span>${esc(sl.label||"All calls")}${sl.when&&sl.when!==sl.label?`, ${esc(sl.when)}`:""} · staff ${S.staff==="show"?"included":"excluded"}. ${a.pct!=null?`Robin asked on ${a.pct}% of eligible calls.`:""}</span><span>${plural(s.surveyed??0,"surveyed call")}</span></div>
+      ${rev.n?`<a class="sm-m flag" ${go("revcard")} style="margin-top:14px;border-top:0"><div class="c"><b>${plural(rev.n,"interaction")} need${rev.n===1?"s":""} a listen.</b> Read ${rev.n===1?"it":"them"} first.</div></a>`:""}
+      <div class="sm-foot"><span>${esc(sl.label||"All interactions")}${sl.when&&sl.when!==sl.label?`, ${esc(sl.when)}`:""} · staff ${S.staff==="show"?"included":"excluded"}. ${a.pct!=null?`Robin asked on ${a.pct}% of eligible interactions.`:""}</span><span>${plural(s.surveyed??0,"surveyed interaction")}</span></div>
       <a class="sm-more" ${go("board")}>Everything, in detail &rarr;</a>`;
   }
   // Any link into the board switches to Advanced and scrolls there. Delegated, because the slide,
@@ -677,7 +683,7 @@
   function renderBoard(){
     const s=DATA.survey, el=document.getElementById("board");
     if(!s || s.awaiting_first_call || !s.funnel || !s.funnel.in_range){
-      el.innerHTML=`<div class="c12 empty">No calls in this slice yet.</div>`; return;
+      el.innerHTML=`<div class="c12 empty">No interactions in this slice yet.</div>`; return;
     }
     const p=s.preference||{}, ci=p.ci, a=s.adherence||{}, nps=s.nps||{}, voice=s.voice||{}, f=s.funnel||{}, rev=s.review||{};
     const nTot=nps.n||0, seg=(c)=>nTot?`flex:${c} 0 0%`:"flex:0";
@@ -692,7 +698,7 @@
         <div class="note">${nTot?`<b>${nTot}</b> of ${s.surveyed} gave a number${nTot<10?` · <span class="accent">provisional</span>`:""}`:"Nobody has given a number yet"}</div>
       </button>
       <button type="button" class="tile" data-drill="prefer">
-        <span class="lbl">Prefer Robin to a person&nbsp;<span class="tipw"><span class="tip" aria-hidden="true">?</span><span class="tip-box">Asked at the end of the call: next time, would you rather handle this with Robin or hold for a person? The bar is the 95% range for the true share at this sample size.</span></span></span>
+        <span class="lbl">Prefer Robin to a person&nbsp;<span class="tipw"><span class="tip" aria-hidden="true">?</span><span class="tip-box">Asked at the end of the interaction: next time, would you rather handle this with Robin or hold for a person? The bar is the 95% range for the true share at this sample size.</span></span></span>
         <div class="fig">${ci?ci.pct:"—"}<span class="un">%</span></div>
         ${ci?`<div class="rng" role="img" aria-label="likely between ${ci.lo} and ${ci.hi} percent"><b style="left:${ci.lo}%;width:${Math.max(1,ci.hi-ci.lo)}%"></b><i style="left:${ci.pct}%"></i></div>
         <div class="legend"><span>likely ${ci.lo} to ${ci.hi}% at this sample${settled?"":" · <b>still spans 50%</b>"}</span></div>`:""}
@@ -705,10 +711,10 @@
         <div class="note">${voice.n?`<b>${voice.n}</b> of ${s.surveyed} rated the voice${voice.unparsed?` · ${voice.unparsed} in words`:""}`:"No voice ratings yet"}</div>
       </button>
       <button type="button" class="tile" data-drill="asked">
-        <span class="lbl">Survey offer rate&nbsp;<span class="tipw"><span class="tip" aria-hidden="true">?</span><span class="tip-box">Of the calls where the survey was due, the share Robin actually asked on. Transferred calls and failed verifications are not due. Below 70%, every number on this board comes from a biased slice. Counts all callers, staff included.</span></span></span>
+        <span class="lbl">Survey offer rate&nbsp;<span class="tipw"><span class="tip" aria-hidden="true">?</span><span class="tip-box">Of the interactions where the survey was due, the share Robin actually asked on. Transferred interactions and failed verifications are not due. Below 70%, every number on this board comes from a biased slice. Counts all callers, staff included.</span></span></span>
         <div class="fig">${a.pct!=null?a.pct:"—"}<span class="un">%</span></div>
         ${a.eligible?`<div class="rng"><b class="solid${warn?" accent":""}" style="left:0;width:${a.pct}%${warn?";background:var(--accent)":""}"></b></div>`:""}
-        <div class="note">${a.eligible?`${a.asked_when_eligible} of ${a.eligible} eligible calls, all callers${a.eligible-a.asked_when_eligible?` · <b>${a.eligible-a.asked_when_eligible} miss${a.eligible-a.asked_when_eligible===1?"":"es"}</b> listed inside`:""}${warn?` · <span class="accent">below 70%</span>`:""}`:"No eligible calls yet"}</div>
+        <div class="note">${a.eligible?`${a.asked_when_eligible} of ${a.eligible} eligible interactions, all callers${a.eligible-a.asked_when_eligible?` · <b>${a.eligible-a.asked_when_eligible} miss${a.eligible-a.asked_when_eligible===1?"":"es"}</b> listed inside`:""}${warn?` · <span class="accent">below 70%</span>`:""}`:"No eligible interactions yet"}</div>
       </button>`;
 
     // The cross-tab as a heat grid: shade by count, the two decision cells outlined.
@@ -721,37 +727,37 @@
     const hbp=s.promoter_but_prefers_person||0, dbp=s.detractor_but_prefers_agent||0;
     const xt=rows.length?`
       <div class="card c7" id="xtcard">
-        <div class="chead"><h2>Score against choice<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-mx">?</button><span class="tip-box" role="tooltip" id="tip-mx"><b>What it shows.</b> The 0–10 score someone gave against what they said they would choose next time. One count per call.<br><br><b>How to read it.</b> A promoter who still wants a person: trust isn't there yet. A detractor who would still use Robin: convenience beats the flaws. Click a cell for its calls.</span></span></h2><span class="q">one count per call · outlined cells are the exceptions</span></div>
+        <div class="chead"><h2>Score against choice<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-mx">?</button><span class="tip-box" role="tooltip" id="tip-mx"><b>What it shows.</b> The 0–10 score someone gave against what they said they would choose next time. One count per interaction.<br><br><b>How to read it.</b> A promoter who still wants a person: trust isn't there yet. A detractor who would still use Robin: convenience beats the flaws. Click a cell for its interactions.</span></span></h2><span class="q">one count per interaction · outlined cells are the exceptions</span></div>
         <div class="xt${anyUnclear?" four":""}" role="table" aria-label="Score given against stated preference">
           <div class="h">Score they gave</div><div class="h">Robin</div><div class="h">A person</div><div class="h">Either</div>${anyUnclear?`<div class="h">Unclear</div>`:""}
           ${rows.map(r=>{ const total=r.agent+r.person+r.no_preference+r.unclassified;
             return `<div class="r"><b>${bandName[r.band]}</b>${r.range}</div>${cell(r,"agent",total,r.band==="detractor")}${cell(r,"person",total,r.band==="promoter")}${cell(r,"no_preference",total,false)}${anyUnclear?cell(r,"unclassified",total,false):""}`; }).join("")}
         </div>
         ${hbp?`<p class="finding alarm"><b>${plural(hbp,"person","people")} scored Robin 9 or 10 and still want a person next time.</b> Report both figures together; the score alone hides this.</p>`
-             :`<p class="finding"><b>Nobody rated her 9 or 10 and still wanted a person.</b>${dbp?` ${plural(dbp,"detractor")} would still use her over holding.`:""}${s.changed_mind?` ${plural(s.changed_mind,"person","people")} gave a different answer on a later call.`:""}</p>`}
+             :`<p class="finding"><b>Nobody rated her 9 or 10 and still wanted a person.</b>${dbp?` ${plural(dbp,"detractor")} would still use her over holding.`:""}${s.changed_mind?` ${plural(s.changed_mind,"person","people")} gave a different answer on a later interaction.`:""}</p>`}
       </div>`:"";
 
     const fbar=(n,cls)=>`<div class="bar"><span class="${cls||""}" style="width:${f.in_range?Math.round(n/f.in_range*100):0}%"></span></div>`;
     const funnel=`
       <div class="card c5" id="funcard">
-        <div class="chead"><h2>What the slice excludes<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-fun">?</button><span class="tip-box" role="tooltip" id="tip-fun"><b>What it shows.</b> Every call Robin took in this range, and how many of them reached the survey. Robin only asks at the end of a call that ends with her, so a call she handed to a person, or one the caller hung up on, was never asked. Those calls are not lost and not failures; they are just not opinions.<br><br><b>How to read it.</b> The top bar is every call. <b>Surveyed</b> is the calls Robin asked, and every number on this board comes from those. <b>Answered</b> gave at least one rating. The bars below are why the rest were never asked; click one to see its calls. All callers count here, staff included, because this measures Robin's reach rather than anyone's opinion.</span></span></h2><span class="q">all callers</span></div>
+        <div class="chead"><h2>What the slice excludes<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-fun">?</button><span class="tip-box" role="tooltip" id="tip-fun"><b>What it shows.</b> Every interaction Robin took in this range, and how many of them reached the survey. Robin only asks at the end of an interaction that ends with her, so an interaction she handed to a person, or one the caller hung up on, was never asked. Those interactions are not lost and not failures; they are just not opinions.<br><br><b>How to read it.</b> The top bar is every interaction. <b>Surveyed</b> is the interactions Robin asked, and every number on this board comes from those. <b>Answered</b> gave at least one rating. The bars below are why the rest were never asked; click one to see its interactions. All callers count here, staff included, because this measures Robin's reach rather than anyone's opinion.</span></span></h2><span class="q">all callers</span></div>
         <div class="fun">
-          <div class="row static"><span class="k"><b>Calls in range</b>everything Robin took</span>${fbar(f.in_range)}<span class="v">${f.in_range}</span></div>
+          <div class="row static"><span class="k"><b>Interactions in range</b>everything Robin took</span>${fbar(f.in_range)}<span class="v">${f.in_range}</span></div>
           <div class="row static"><span class="k"><b>Surveyed</b>Robin asked at the end</span>${fbar(f.surveyed)}<span class="v">${f.surveyed}</span></div>
           <div class="row static"><span class="k"><b>Answered</b>gave at least one rating</span>${fbar(f.answered)}<span class="v">${f.answered}</span></div>
           <button type="button" class="row" data-drill="excluded:transferred"><span class="k"><b>Transferred</b>handed to a person, never asked</span>${fbar(f.transferred,"acc")}<span class="v">${f.transferred}</span></button>
           <button type="button" class="row" data-drill="excluded:abandoned"><span class="k"><b>Ended early</b>hung up before there was anything to rate</span>${fbar(f.abandoned,"mid")}<span class="v">${f.abandoned}</span></button>
           ${f.other?`<button type="button" class="row" data-drill="excluded:other"><span class="k"><b>Other</b>not asked: failed verification, too short</span>${fbar(f.other,"mid")}<span class="v">${f.other}</span></button>`:""}
         </div>
-        <p class="finding">Every number on this board comes from the <b>${s.surveyed}</b> surveyed calls${S.staff!=="show"&&(s.slice||{}).staff_calls?` (${(s.slice||{}).staff_calls} staff ${(s.slice||{}).staff_calls===1?"call":"calls"} hidden)`:""}.${(f.in_range-f.surveyed)>0?` <b>${f.in_range-f.surveyed}</b> calls were never asked; click a row to see which and why.`:" Every call in the range was asked."}</p>
+        <p class="finding">Every number on this board comes from the <b>${s.surveyed}</b> surveyed interactions${S.staff!=="show"&&(s.slice||{}).staff_calls?` (${(s.slice||{}).staff_calls} staff ${(s.slice||{}).staff_calls===1?"interaction":"interactions"} hidden)`:""}.${(f.in_range-f.surveyed)>0?` <b>${f.in_range-f.surveyed}</b> interactions were never asked; click a row to see which and why.`:" Every interaction in the range was asked."}</p>
       </div>`;
 
-    const said=`<div class="card c6" id="saidcard"><div class="chead"><h2>Survey themes<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-said">?</button><span class="tip-box" role="tooltip" id="tip-said"><b>What it shows.</b> What callers said in their own words, verbatim, one line per call. The survey ends with “anything else?”, and a plain “no” is counted but never listed as a comment. Once there are enough real comments a model groups everything callers said, their reasons on the choice question included, into themes: a label, one sentence, one quote, and the calls behind it. Personal details are scrubbed before any of this.<br><br><b>How to read it.</b> The five themes said by the most people are on the card; <b>See all</b> has every theme, every comment and the “no” pile. A theme is an index, not a finding: open it and read the comments, which are the evidence. Two comments is two people.</span></span></h2><span class="q" id="saidq"></span></div><div id="said"></div></div>`;
-    const listen=`<div class="card c6" id="revcard"><div class="chead"><h2>Calls for review<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-rev">?</button><span class="tip-box" role="tooltip" id="tip-rev"><b>What it shows.</b> Calls with negative sentiment or a score of 6 or below, each opening to its transcript.<br><br><b>How to read it.</b> Each row says why it is here. An empty list on a small sample means nothing.</span></span></h2><span class="q">${rev.n?plural(rev.n,"call"):"none"}</span></div><div id="rev"></div></div>`;
+    const said=`<div class="card c6" id="saidcard"><div class="chead"><h2>Survey themes<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-said">?</button><span class="tip-box" role="tooltip" id="tip-said"><b>What it shows.</b> What callers said in their own words, verbatim, one line per interaction. The survey ends with “anything else?”, and a plain “no” is counted but never listed as a comment. Once there are enough real comments a model groups everything callers said, their reasons on the choice question included, into themes: a label, one sentence, one quote, and the interactions behind it. Personal details are scrubbed before any of this.<br><br><b>How to read it.</b> The five themes said by the most people are on the card; <b>See all</b> has every theme, every comment and the “no” pile. A theme is an index, not a finding: open it and read the comments, which are the evidence. Two comments is two people.</span></span></h2><span class="q" id="saidq"></span></div><div id="said"></div></div>`;
+    const listen=`<div class="card c6" id="revcard"><div class="chead"><h2>Interactions for review<span class="tipw"><button type="button" class="tip" aria-label="About this section" aria-describedby="tip-rev">?</button><span class="tip-box" role="tooltip" id="tip-rev"><b>What it shows.</b> Interactions with negative sentiment or a score of 6 or below, each opening to its transcript.<br><br><b>How to read it.</b> Each row says why it is here. An empty list on a small sample means nothing.</span></span></h2><span class="q">${rev.n?plural(rev.n,"interaction"):"none"}</span></div><div id="rev"></div></div>`;
 
     el.innerHTML=tiles+xt+funnel+said+listen;
     renderReview(); renderSaid();
-    if(s.leaked_pre_transfer) el.insertAdjacentHTML("beforeend",`<div class="c12 banner bad">${plural(s.leaked_pre_transfer,"call")} surveyed on the way into a transfer. The agent is instructed never to do this. Review those calls.</div>`);
+    if(s.leaked_pre_transfer) el.insertAdjacentHTML("beforeend",`<div class="c12 banner bad">${plural(s.leaked_pre_transfer,"interaction")} surveyed on the way into a transfer. The agent is instructed never to do this. Review those interactions.</div>`);
   }
 
   function renderReview(){
@@ -761,7 +767,7 @@
     el.innerHTML=(r.calls||[]).map(c=>{
       const why=[c.sentiment==="negative"?"sounded unhappy":"", c.preference==="person"?"prefers a person":"", c.satisfaction_score!=null&&c.satisfaction_score<=2?`rated ${c.satisfaction_score}/5`:""].filter(Boolean).join(" · ");
       return `<div class="rv" role="button" tabindex="0" data-id="${esc(c.conversation_id)}" data-who="${esc(c.respondent||"")}">
-        <span class="who">${esc(c.respondent||"Respondent")}${c.response_seq>1?` · call ${c.response_seq}`:""}</span>
+        <span class="who">${esc(c.respondent||"Respondent")}${chanTag(c.conversation_id)}${c.response_seq>1?` · interaction ${c.response_seq}`:""}</span>
         <span>${c.nps_score!=null?`<span class="badge">NPS ${c.nps_score}</span>`:c.satisfaction_score!=null?`<span class="badge">${c.satisfaction_score}/5</span>`:`<span class="badge">flagged</span>`}</span>
         <span class="why">${c.comment?`<q>${esc(c.comment.length>110?c.comment.slice(0,108)+"…":c.comment)}</q>`:""}${why?`${c.comment?" · ":""}${esc(why)}`:""}${!why&&!c.comment?esc(c.topic||""):""}</span>
       </div>`;}).join("");
@@ -783,7 +789,7 @@
       q.textContent=""; return; }
     q.textContent=`${plural(saidN,"comment")} from ${plural(peopleN,"person","people")}`;
     const cmt=(c)=>`<div class="svy-cmt">“${esc(c.text)}”
-      <button class="cid" data-id="${esc(c.conversation_id)}" style="margin-left:8px">${esc(c.respondent||"open call")}${c.response_seq>1?`, call ${c.response_seq}`:""}</button></div>`;
+      <button class="cid" data-id="${esc(c.conversation_id)}" style="margin-left:8px">${esc(c.respondent||"open interaction")}${c.response_seq>1?`, interaction ${c.response_seq}`:""}</button></div>`;
     const bits=[];
     if(nothing) bits.push(`${nothing} more said “no” to anything else`);
     if(com.redacted) bits.push(`<span class="accent">${com.redacted} withheld for personal details</span>`);
@@ -803,7 +809,7 @@
         return `<details class="thm-i"><summary><div class="thm-top"><span class="thm-lab">${esc(th.label)}</span>
             <span class="thm-n">${plural(th.people,"person","people")}${th.mentions>th.people?` · ${th.mentions} mentions`:""} · ${esc(th.sentiment)}</span></div>
             <div class="thm-sum">${esc(th.summary)}</div><div class="thm-q ${esc(th.sentiment)}">“${esc(th.quote)}”</div></summary>
-          <div class="thm-body">${mine.length?mine.map(cmt).join(""):`<div class="svy-cmt redacted">Said on the choice or rating question rather than as a comment. Open the theme in See all for the calls.</div>`}</div></details>`;}).join("")}</div>`;
+          <div class="thm-body">${mine.length?mine.map(cmt).join(""):`<div class="svy-cmt redacted">Said on the choice or rating question rather than as a comment. Open the theme in See all for the interactions.</div>`}</div></details>`;}).join("")}</div>`;
       const more=ranked.length-TOP;
       body+=`<button type="button" class="more" data-drill="comments">See all ${plural(saidN,"comment")}${more>0?` and ${plural(more,"more theme")}`:""}</button>`;
     }else{
@@ -834,7 +840,7 @@
 
   function renderDownloads(){
     const s=DATA.survey||{}; document.getElementById("dlsec").hidden=!(s.funnel&&s.funnel.in_range);
-    document.getElementById("dl").innerHTML=`<a href="/api/survey-export${qs({level:"people"})}">Download responses (CSV)</a><a class="sec" href="/api/survey-export${qs({level:"calls"})}">Every call (CSV)</a><a class="sec" href="/survey/slide/${qs()}">Presentation slide</a><a class="sec" href="/survey/guide/">Judgement guide</a>`;
+    document.getElementById("dl").innerHTML=`<a href="/api/survey-export${qs({level:"people"})}">Download responses (CSV)</a><a class="sec" href="/api/survey-export${qs({level:"calls"})}">Every interaction (CSV)</a><a class="sec" href="/survey/slide/${qs()}">Presentation slide</a><a class="sec" href="/survey/guide/">Judgement guide</a>`;
   }
 
   // ---- The drill-down drawer: the rows behind a number ---------------------------------------
@@ -857,21 +863,21 @@
       const scoreOf=opts.score||((r)=>r.nps_score);
       return `<div class="sortrow" data-sortrow>${allowed.map(k=>`<button type="button" data-sort="${k}" aria-pressed="${k===srt}">by ${k}</button>`).join("")}</div>
         <div class="list">${sorted.map(r=>{ const sc=scoreOf(r); return `<button type="button" class="li" data-id="${esc(r.conversation_id)}" data-who="${esc(r.respondent||"")}">
-          <span class="nm">${esc(r.respondent||"Respondent")}${r.is_staff?" · staff":""}</span><span class="m">call ${r.response_seq||1} · ${esc(PRETTY[r.preference]||"unclear")}</span><span class="m">${esc(whenC(r.started_at))}</span><span class="sc${sc!=null&&sc<=6?" d":""}">${sc??"–"}</span>
+          <span class="nm">${esc(r.respondent||"Respondent")}${r.is_staff?" · staff":""}${chanTag(r.conversation_id)}</span><span class="m">interaction ${r.response_seq||1} · ${esc(PRETTY[r.preference]||"unclear")}</span><span class="m">${esc(whenC(r.started_at))}</span><span class="sc${sc!=null&&sc<=6?" d":""}">${sc??"–"}</span>
           ${opts.said&&opts.said(r)?`<span class="said">“${esc(opts.said(r))}”</span>`:""}</button>`; }).join("")||`<div class="empty">Nothing here.</div>`}</div>`;
     };
     const hist=(rows,key,bandCls)=>{ const c=Array.from({length:11},()=>0); rows.forEach(r=>{ const v=r[key]; if(v!=null&&v>=0&&v<=10) c[v]++; }); const m=Math.max(1,...c);
       return `<div class="hist" role="img" aria-label="${c.map((n,i)=>`${n} gave ${i}`).join(", ")}">${c.map((n,i)=>`<div class="${bandCls(i)}" style="height:${Math.max(2,Math.round(n/m*100))}%">${n?`<span>${n}</span>`:""}<em>${i}</em></div>`).join("")}</div>`; };
     const byDay=(rows,fn,label)=>{ const days=[...new Set(rows.map(r=>dayC(r.started_at)))].sort();
       return `<div class="byday">${days.map(d=>{ const rs=rows.filter(r=>dayC(r.started_at)===d), v=fn(rs); return `<span>${esc(dayLabel(d))}</span><div class="b"><i></i>${v.bar}</div><span class="n"><b>${v.text}</b> <span>${v.n}</span></span>`; }).join("")}</div>`; };
-    const take=(rows,file)=>`<h4>Take it with you</h4><div class="take"><a href="/api/survey-export${qs({level:"calls"})}">Download the calls in this slice (CSV)</a><button type="button" data-copy="${esc(location.origin+location.pathname+qs({open:what}))}">Copy link to this drawer</button></div>`;
+    const take=(rows,file)=>`<h4>Take it with you</h4><div class="take"><a href="/api/survey-export${qs({level:"calls"})}">Download the interactions in this slice (CSV)</a><button type="button" data-copy="${esc(location.origin+location.pathname+qs({open:what}))}">Copy link to this drawer</button></div>`;
 
     let html="", t="Detail";
     if(kind==="nps"){
       const n=s.nps||{}, rows=V.filter(r=>r.nps_score!=null);
       t=`Net Promoter Score · ${sign(n.score)}`;
       const eights=rows.filter(r=>r.nps_score===8).length;
-      html=`<div class="formula"><b>${n.promoters}</b> promoters − <b>${n.detractors}</b> detractors, over <b>${n.n}</b> who gave a number = <b>${sign(n.score)}</b>. ${n.passives} passives count in the denominator only. ${s.surveyed-n.n} surveyed ${s.surveyed-n.n===1?"call":"calls"} gave no number.</div>
+      html=`<div class="formula"><b>${n.promoters}</b> promoters − <b>${n.detractors}</b> detractors, over <b>${n.n}</b> who gave a number = <b>${sign(n.score)}</b>. ${n.passives} passives count in the denominator only. ${s.surveyed-n.n} surveyed ${s.surveyed-n.n===1?"interaction":"interactions"} gave no number.</div>
         <h4>Every score given, 0 to 10</h4>${hist(rows,"nps_score",(i)=>i>=9?"p":i<=6?"d":"pa")}
         ${eights>=n.n*.3?`<p class="finding" style="margin-top:0">The passive pile is mostly one score: <b>${eights} eights</b>. Under a threshold of 8 they would all be promoters. The standard split is used, but that is where the number lives.</p>`:""}
         <h4>By day, Central</h4>${byDay(rows,(rs)=>{ const p=rs.filter(r=>r.nps_band==="promoter").length,d=rs.filter(r=>r.nps_band==="detractor").length, sc=Math.round((p-d)/rs.length*100); return {text:sign(sc),n:`n ${rs.length}`,bar:`<b class="${sc<0?"neg":""}" style="left:${sc>=0?50:50+sc/2}%;width:${Math.abs(sc)/2}%"></b>`}; })}
@@ -883,7 +889,7 @@
       html=`<div class="formula"><b>${p.agent}</b> chose Robin, <b>${p.person}</b> a person, <b>${p.no_preference}</b> either, of <b>${p.decided}</b> who chose${p.unclassified?`; <b>${p.unclassified}</b> could not be classified and are left out of the share`:""}. ${ci?`With ${p.decided} answers the true share is likely between <b>${ci.lo}% and ${ci.hi}%</b> (95% Wilson interval)${ci.lo>50?", which clears 50%.":", which still spans 50%."}`:""}</div>
         <h4>What they actually said</h4>
         <div class="split">${["agent","person","no_preference","unclassified"].map(k=>{ const n=grp(k).length; return n?`<span>${esc(PRETTY[k])}</span><div class="b"><span style="width:${Math.round(n/rows.length*100)}%;background:${k==="person"?"var(--accent)":k==="agent"?"var(--ink)":"var(--faint)"}"></span></div><span class="tnum"><b>${n}</b></span>`:""; }).join("")}</div>
-        ${["person","no_preference","unclassified"].map(k=>grp(k).length?`<h4>${esc(PRETTY[k])} · ${grp(k).length}</h4><div class="list">${grp(k).map(r=>`<button type="button" class="li" data-id="${esc(r.conversation_id)}" data-who="${esc(r.respondent||"")}"><span class="nm">${esc(r.respondent||"Respondent")}</span><span class="m">call ${r.response_seq||1}</span><span class="m">${esc(whenC(r.started_at))}</span><span class="sc${r.nps_score!=null&&r.nps_score<=6?" d":""}">${r.nps_score??"–"}</span><span class="said">“${esc(r.prefer_agent)}”</span></button>`).join("")}</div>`:"").join("")}
+        ${["person","no_preference","unclassified"].map(k=>grp(k).length?`<h4>${esc(PRETTY[k])} · ${grp(k).length}</h4><div class="list">${grp(k).map(r=>`<button type="button" class="li" data-id="${esc(r.conversation_id)}" data-who="${esc(r.respondent||"")}"><span class="nm">${esc(r.respondent||"Respondent")}${chanTag(r.conversation_id)}</span><span class="m">interaction ${r.response_seq||1}</span><span class="m">${esc(whenC(r.started_at))}</span><span class="sc${r.nps_score!=null&&r.nps_score<=6?" d":""}">${r.nps_score??"–"}</span><span class="said">“${esc(r.prefer_agent)}”</span></button>`).join("")}</div>`:"").join("")}
         <h4>Chose Robin · ${grp("agent").length}</h4>${list(grp("agent"),{said:(r)=>r.prefer_agent})}${take(rows)}`;
     }else if(kind==="voice"){
       const v=s.voice||{}, rows=V.filter(r=>r.voice_score!=null);
@@ -896,11 +902,11 @@
     }else if(kind==="asked"){
       const a=s.adherence||{}, f=s.funnel||{}, misses=a.misses||[];
       t=`Survey offer rate · ${a.pct!=null?a.pct+"%":"—"}`;
-      html=`<div class="formula">Robin asked on <b>${a.asked_when_eligible}</b> of <b>${a.eligible}</b> eligible calls. Eligibility is the agent's own post-call judgement: a call is not eligible if it was transferred, failed verification or had no real exchange (<b>${a.ineligible}</b> such calls in range). All callers count, staff included, because this measures Robin.</div>
+      html=`<div class="formula">Robin asked on <b>${a.asked_when_eligible}</b> of <b>${a.eligible}</b> eligible interactions. Eligibility is the agent's own post-call judgement: an interaction is not eligible if it was transferred, failed verification or had no real exchange (<b>${a.ineligible}</b> such interactions in range). All callers count, staff included, because this measures Robin.</div>
         <h4>The misses · ${misses.length}</h4>
         <div class="list">${misses.map(m=>`<button type="button" class="li" data-id="${esc(m.conversation_id)}" data-who="${esc(m.respondent||"")}"><span class="nm">${esc(m.respondent||"Caller")}</span><span class="m">${esc(m.outcome||"")}</span><span class="m">${esc(whenC(m.started_at))}</span><span class="sc">–</span>${m.topic?`<span class="said">${esc(m.topic)}</span>`:""}</button>`).join("")||`<div class="empty">No misses in this slice.</div>`}</div>
         <h4>The funnel</h4>
-        <div class="split"><span>Calls in range</span><div class="b"><span style="width:100%;background:var(--ink)"></span></div><span class="tnum"><b>${f.in_range}</b></span>
+        <div class="split"><span>Interactions in range</span><div class="b"><span style="width:100%;background:var(--ink)"></span></div><span class="tnum"><b>${f.in_range}</b></span>
           <span>Surveyed</span><div class="b"><span style="width:${Math.round(f.surveyed/f.in_range*100)}%;background:var(--ink)"></span></div><span class="tnum"><b>${f.surveyed}</b></span>
           <span>Answered</span><div class="b"><span style="width:${Math.round(f.answered/f.in_range*100)}%;background:var(--ink)"></span></div><span class="tnum"><b>${f.answered}</b></span>
           <span>Transferred</span><div class="b"><span style="width:${Math.round(f.transferred/f.in_range*100)}%;background:var(--accent)"></span></div><span class="tnum"><b>${f.transferred}</b></span>
@@ -910,24 +916,24 @@
       const band=a1, pref=a2, rows=V.filter(r=>r.nps_band===band&&(pref==="unclassified"?(r.preference==="unclassified"||!r.preference):r.preference===pref));
       const bn={promoter:"Promoters (9–10)",passive:"Passives (7–8)",detractor:"Detractors (0–6)"}[band]||band;
       t=`${bn} who chose ${PRETTY[pref]||pref} · ${rows.length}`;
-      html=`<div class="formula">${rows.length} ${rows.length===1?"call":"calls"} where the caller scored Robin ${band==="promoter"?"9 or 10":band==="passive"?"7 or 8":"6 or below"} and said they would choose <b>${esc(PRETTY[pref]||pref)}</b> next time.${band==="promoter"&&pref==="person"?" These are the people the score alone would hide.":""}${band==="detractor"&&pref==="agent"?" Even disappointed, they would still pick her over holding.":""}</div>
-        <h4>The calls</h4>${list(rows,{said:(r)=>r.prefer_agent})}${take(rows)}`;
+      html=`<div class="formula">${rows.length} ${rows.length===1?"interaction":"interactions"} where the caller scored Robin ${band==="promoter"?"9 or 10":band==="passive"?"7 or 8":"6 or below"} and said they would choose <b>${esc(PRETTY[pref]||pref)}</b> next time.${band==="promoter"&&pref==="person"?" These are the people the score alone would hide.":""}${band==="detractor"&&pref==="agent"?" Even disappointed, they would still pick her over holding.":""}</div>
+        <h4>The interactions</h4>${list(rows,{said:(r)=>r.prefer_agent})}${take(rows)}`;
     }else if(kind==="excluded"){
       const f=s.funnel||{}, all=f.excluded||[];
       const rows=a1==="transferred"?all.filter(x=>x.outcome==="transferred"):a1==="abandoned"?all.filter(x=>x.outcome==="abandoned"):all.filter(x=>x.outcome!=="transferred"&&x.outcome!=="abandoned");
       t=`${a1==="transferred"?"Transferred":a1==="abandoned"?"Ended early":"Not surveyed, other"} · ${rows.length}`;
       html=`<div class="formula">${a1==="transferred"
-          ?"Robin handed these calls to a person before the end, and she is told never to run the survey on the way into a transfer, so nobody here was asked. That is by design: someone waiting to be connected is not in a fair place to rate anything. How the handoff felt still matters; it is just not in the opinions above. For it, open the call."
+          ?"Robin handed these interactions to a person before the end, and she is told never to run the survey on the way into a transfer, so nobody here was asked. That is by design: someone waiting to be connected is not in a fair place to rate anything. How the handoff felt still matters; it is just not in the opinions above. For it, open the interaction."
           :a1==="abandoned"
-          ?"These callers hung up before there was an exchange to rate: a wrong number, a dropped line, a change of mind in the first seconds. Nothing was asked because nothing happened. A handful is normal on any phone line; a share that grows against the calls in range is worth a look."
-          :"Calls the survey never reached for another reason: the caller could not be verified, the call was too short to rate, or Robin judged it was not the moment. Each row says which. Worth a skim, because a failed verification is Robin's problem, not the caller's."}</div>
-        <h4>The calls</h4><div class="list">${rows.map(m=>`<button type="button" class="li" data-id="${esc(m.conversation_id)}" data-who="${esc(m.respondent||"")}"><span class="nm">${esc(m.respondent||"Caller")}</span><span class="m">${esc(m.outcome||"")}${m.verdict?` · ${esc(m.verdict)}`:""}</span><span class="m">${esc(whenC(m.started_at))}</span><span class="sc">–</span>${m.topic?`<span class="said">${esc(m.topic)}</span>`:""}</button>`).join("")||`<div class="empty">None in this slice.</div>`}</div>`;
+          ?"These callers hung up before there was an exchange to rate: a wrong number, a dropped line, a change of mind in the first seconds. Nothing was asked because nothing happened. A handful is normal on any phone line; a share that grows against the interactions in range is worth a look."
+          :"Interactions the survey never reached for another reason: the caller could not be verified, the interaction was too short to rate, or Robin judged it was not the moment. Each row says which. Worth a skim, because a failed verification is Robin's problem, not the caller's."}</div>
+        <h4>The interactions</h4><div class="list">${rows.map(m=>`<button type="button" class="li" data-id="${esc(m.conversation_id)}" data-who="${esc(m.respondent||"")}"><span class="nm">${esc(m.respondent||"Caller")}</span><span class="m">${esc(m.outcome||"")}${m.verdict?` · ${esc(m.verdict)}`:""}</span><span class="m">${esc(whenC(m.started_at))}</span><span class="sc">–</span>${m.topic?`<span class="said">${esc(m.topic)}</span>`:""}</button>`).join("")||`<div class="empty">None in this slice.</div>`}</div>`;
     }else if(kind==="comments"){
       // Every comment, grouped under every theme (not just the five on the board), then the rest,
       // then the declines folded away at the bottom so "24 said no" can be checked.
       const com=s.comments||{}, all=com.recent||[], rows=all.filter(c=>c.more!==false), declines=all.filter(c=>c.more===false);
       t=`Every comment · ${rows.length}`;
-      const row=(c)=>`<button type="button" class="li" data-id="${esc(c.conversation_id)}" data-who="${esc(c.respondent||"")}"><span class="nm">${esc(c.respondent||"Respondent")}</span><span class="m">call ${c.response_seq||1}${c.via?` · ${esc(c.via)}`:""}</span><span class="m">${esc(whenC(c.started_at))}</span><span class="sc"></span><span class="said">“${esc(c.text)}”</span></button>`;
+      const row=(c)=>`<button type="button" class="li" data-id="${esc(c.conversation_id)}" data-who="${esc(c.respondent||"")}"><span class="nm">${esc(c.respondent||"Respondent")}${chanTag(c.conversation_id)}</span><span class="m">interaction ${c.response_seq||1}${c.via?` · ${esc(c.via)}`:""}</span><span class="m">${esc(whenC(c.started_at))}</span><span class="sc"></span><span class="said">“${esc(c.text)}”</span></button>`;
       if(THEMES&&THEMES.ready&&(THEMES.themes||[]).length){
         const placed=new Set();
         const ranked=THEMES.themes.slice().sort((a,b)=>(b.people-a.people)||(b.mentions-a.mentions));
@@ -970,7 +976,7 @@
     const a=s.adherence||{}, r=s.response||{};
     const warn = a.pct!=null && a.pct<70;
     const adherence = a.eligible ? `
-      <p class="cum-note${warn?" alarm":""}">Robin asked the survey on <b>${a.pct}%</b> of eligible calls (${a.asked_when_eligible} of ${a.eligible})${
+      <p class="cum-note${warn?" alarm":""}">Robin asked the survey on <b>${a.pct}%</b> of eligible interactions (${a.asked_when_eligible} of ${a.eligible})${
         r.rate_pct!=null?`; <b>${r.rate_pct}%</b> of those asked answered${r.declined?`, ${r.declined} declined`:""}`:""}.
         ${warn?`<b class="accent">Below 70%: every figure above rests on a biased slice.</b>`:""}</p>` : "";
     if(pts.length<20){
@@ -1018,10 +1024,10 @@
     const chose=(rs)=>new Set(rs.map(r=>r.preference).filter(x=>x in cls));
     const people=[...by.entries()].sort((a,b)=>(b[1].length-a[1].length)||a[0].localeCompare(b[0]));
     const repeat=people.filter(([,rs])=>rs.length>1).length, mixed=people.filter(([,rs])=>chose(rs).size>1).length;
-    el.innerHTML=`<h3 class="pp-h">Calls per person</h3>
-      <p class="svy-lede">One dot per call, in order, coloured by the choice made. ${plural(people.length,"person","people")}, ${plural(rows.length,"answered call")}; ${repeat} called more than once${mixed?`, and <b>${mixed}</b> chose differently on a later call`:""}. Click a dot to open the call.</p>
+    el.innerHTML=`<h3 class="pp-h">Interactions per person</h3>
+      <p class="svy-lede">One dot per interaction, in order, coloured by the choice made. ${plural(people.length,"person","people")}, ${plural(rows.length,"answered interaction")}; ${repeat} called more than once${mixed?`, and <b>${mixed}</b> chose differently on a later interaction`:""}. Click a dot to open the interaction.</p>
       <div class="pp">${people.map(([name,rs])=>`<div class="p${chose(rs).size>1?" mixed":""}"><span class="nm">${esc(name)}${rs.some(r=>r.is_staff)?" · staff":""}</span><span class="dl">${
-        rs.map(r=>`<button type="button" class="dg ${cls[r.preference]||"dg-unclear"}" data-id="${esc(r.conversation_id)}" data-who="${esc(name)}" title="call ${r.response_seq||1} · chose ${word[r.preference]||"unclear"} · ${esc(whenC(r.started_at))}" aria-label="${esc(name)}, call ${r.response_seq||1}, chose ${word[r.preference]||"unclear"}"></button>`).join("")}</span></div>`).join("")}</div>
+        rs.map(r=>`<button type="button" class="dg ${cls[r.preference]||"dg-unclear"}" data-id="${esc(r.conversation_id)}" data-who="${esc(name)}" title="interaction ${r.response_seq||1} · chose ${word[r.preference]||"unclear"} · ${esc(whenC(r.started_at))}" aria-label="${esc(name)}, interaction ${r.response_seq||1}, chose ${word[r.preference]||"unclear"}"></button>`).join("")}</span></div>`).join("")}</div>
       <div class="key"><span><i class="c-agent"></i>${p.agent} chose Robin</span><span><i class="c-none"></i>${p.no_preference} either</span><span><i class="c-person"></i>${p.person} chose a person</span></div>`;
   }
   const norm10=(v)=>v.nps_score!=null?v.nps_score:v.satisfaction_score!=null?Math.round(((v.satisfaction_score-1)/4)*10):null;
@@ -1041,12 +1047,12 @@
     document.getElementById("srt").innerHTML=Object.entries(SORTS).map(([k,v])=>`<button data-s="${k}" aria-pressed="${k===SORT}">${esc(v.label)}</button>`).join("");
     const sorted=rows.slice().sort(SORTS[SORT].fn);
     const list=CALLS_ALL?sorted:sorted.slice(0,CALLS_FOLD);
-    const fold=sorted.length>CALLS_FOLD?`<button type="button" class="more" id="clmore">${CALLS_ALL?`Show the first ${CALLS_FOLD}`:`Show all ${plural(sorted.length,"call")}`}</button>`:"";
+    const fold=sorted.length>CALLS_FOLD?`<button type="button" class="more" id="clmore">${CALLS_ALL?`Show the first ${CALLS_FOLD}`:`Show all ${plural(sorted.length,"interaction")}`}</button>`:"";
     document.getElementById("cl").innerHTML=list.map(v=>`
       <div class="cl-row" role="button" tabindex="0" data-id="${esc(v.conversation_id)}" data-who="${esc(v.respondent||"")}">
         <div>
           <div class="cl-said">${v.prefer_agent?`<span class="lead">“</span>${esc(v.prefer_agent)}<span class="lead">”</span>`:`<span class="lead">— no answer to the preference question —</span>`}</div>
-          <div class="cl-sub">${esc(v.respondent||"")}${v.respondent?" · ":""}${esc(whenC(v.started_at))}${v.topic?` · ${esc(v.topic)}`:""}${v.response_seq>1?` · <span class="rpt">call ${v.response_seq} by this person</span>`:""}${v.is_staff?` · staff`:""}${v.comments_redacted?` · comment withheld`:""}${v.needs_review?` · <span class="flag">needs a listen</span>`:""}</div>
+          <div class="cl-sub">${esc(v.respondent||"")}${v.respondent?" · ":""}${esc(whenC(v.started_at))}${v.topic?` · ${esc(v.topic)}`:""}${v.response_seq>1?` · <span class="rpt">interaction ${v.response_seq} by this person</span>`:""}${v.is_staff?` · staff`:""}${v.comments_redacted?` · comment withheld`:""}${v.needs_review?` · <span class="flag">needs a listen</span>`:""}</div>
         </div>
         <div class="cl-meta"><span class="tagp ${esc(v.preference||"")}">${esc(PRETTY[v.preference]||"unclear")}</span><br>${v.nps_score!=null?`${v.nps_score}/10`:v.satisfaction_score!=null?`${v.satisfaction_score}/5`:v.nps?esc(v.nps):v.satisfaction?esc(v.satisfaction):"—"}</div>
       </div>`).join("")+fold;
@@ -1055,7 +1061,7 @@
   document.getElementById("cl").addEventListener("click",(e)=>{ if(!e.target.closest("#clmore")) return; CALLS_ALL=!CALLS_ALL; renderCalls(); if(!CALLS_ALL) document.getElementById("clsec").scrollIntoView({block:"start"}); });
 
   // ---- Ask Robin -----------------------------------------------------------------------------
-  const EXAMPLES=["Did anyone who preferred a person say why?","What did the lowest raters actually say?","Is there a topic where people wanted a human?","Did anyone change their mind between calls?"];
+  const EXAMPLES=["Did anyone who preferred a person say why?","What did the lowest raters actually say?","Is there a topic where people wanted a human?","Did anyone change their mind between interactions?"];
   // Robin's face on the panel follows the exchange: listening while you type, thinking while the
   // rows are read, helpful once there is an answer, and back to happy otherwise. The five heads
   // are preloaded so the switch never flickers.
@@ -1082,7 +1088,7 @@
         const r=await fetch("/api/survey-ask"+qs(),{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({question:q})});
         const a=await r.json();
         if(!r.ok) throw new Error(a.error||("HTTP "+r.status));
-        out.innerHTML=`<div class="ask-out"><p>${esc(a.answer)}</p>${a.caveat?`<div class="ask-cav">${esc(a.caveat)}</div>`:""}${(a.cited||[]).length?`<div class="ask-cite"><span class="lbl">From these calls</span>${a.cited.map(id=>`<button class="cid" data-id="${esc(id)}">${esc(String(id).slice(-8))}</button>`).join("")}</div>`:""}</div>`;
+        out.innerHTML=`<div class="ask-out"><p>${esc(a.answer)}</p>${a.caveat?`<div class="ask-cav">${esc(a.caveat)}</div>`:""}${(a.cited||[]).length?`<div class="ask-cite"><span class="lbl">From these interactions</span>${a.cited.map(id=>`<button class="cid" data-id="${esc(id)}">${esc(String(id).slice(-8))}</button>`).join("")}</div>`:""}</div>`;
         face("helpful");
       }catch(err){ face("happy"); out.innerHTML=`<div class="ask-out"><p class="soft">${esc(err.message)}</p></div>`; }
       finally{ btn.disabled=false; }
@@ -1093,17 +1099,17 @@
   const drw=document.getElementById("drw");
   async function openCall(id, who){
     drw.hidden=false;
-    document.getElementById("drwt").textContent="Call";
+    document.getElementById("drwt").textContent="Interaction";
     document.getElementById("drwbody").innerHTML=`<p class="soft" style="margin-top:20px">Loading transcript…</p>`;
     try{
       const r=await fetch(`/api/survey-call?id=${encodeURIComponent(id)}`,{cache:"no-store"});
       const d=await r.json();
       if(!r.ok) throw new Error(d.error||("HTTP "+r.status));
       const c=d.call, sv=c.survey||{};
-      document.getElementById("drwt").textContent=String(id).slice(-8);
+      document.getElementById("drwt").textContent=String(id).slice(-8)+(CH[id]&&CHL[CH[id]]?" · "+CHL[CH[id]]:"");
       const mins=c.duration_seconds!=null?`${Math.floor(c.duration_seconds/60)}m ${c.duration_seconds%60}s`:"—";
       document.getElementById("drwbody").innerHTML=`
-        <div class="drw-meta"><b>${esc(whenC(c.started_at,{year:"numeric"}))}</b> Central · ${mins} · ${esc(c.outcome||"—")} · verification ${esc(c.auth_outcome||"—")}${who?`<br><b>${esc(who)}</b>${sv.response_seq>1?` · their call #${sv.response_seq}`:""}`:""}</div>
+        <div class="drw-meta"><b>${esc(whenC(c.started_at,{year:"numeric"}))}</b> Central · ${mins} · ${esc(c.outcome||"—")} · verification ${esc(c.auth_outcome||"—")}${who?`<br><b>${esc(who)}</b>${sv.response_seq>1?` · their interaction #${sv.response_seq}`:""}`:""}</div>
         ${d.summary&&(d.summary.text||d.summary.title)?`<div class="drw-svy"><div class="lbl">Summary</div><div style="font-size:.86rem;line-height:1.5">${d.summary.title?`<b>${esc(d.summary.title)}</b>${d.summary.text?" · ":""}`:""}${esc(d.summary.text||"")}</div></div>`:""}
         ${sv.nps||sv.voice||sv.satisfaction_raw||sv.prefer_agent_raw?`
         <div class="drw-svy"><div class="lbl">Their answers</div><dl class="drw-a">
@@ -1115,9 +1121,9 @@
             ${sv.open_comments?`<dt>Anything else</dt><dd>“${esc(sv.open_comments)}”</dd>`:""}
             ${sv.comments_redacted?`<dt>Anything else</dt><dd class="soft">Withheld — contained something personal.</dd>`:""}
         </dl></div>`:""}
-        <div style="margin-top:22px">${(d.transcript||[]).map(t=>`<div class="turn ${esc(t.role)}"><div class="who">${t.role==="agent"?"Robin":"Caller"}</div><div class="said">${esc(t.text)}</div></div>`).join("") || `<p class="soft">No transcript stored for this call.</p>`}</div>`;
+        <div style="margin-top:22px">${(d.transcript||[]).map(t=>`<div class="turn ${esc(t.role)}"><div class="who">${t.role==="agent"?"Robin":"Caller"}</div><div class="said">${esc(t.text)}</div></div>`).join("") || `<p class="soft">No transcript stored for this interaction.</p>`}</div>`;
     }catch(e){
-      document.getElementById("drwbody").innerHTML=`<p class="soft" style="margin-top:20px">Couldn't load that call: ${esc(e.message)}</p>`;
+      document.getElementById("drwbody").innerHTML=`<p class="soft" style="margin-top:20px">Couldn't load that interaction: ${esc(e.message)}</p>`;
     }
   }
   function closeDrawer(){ drw.hidden=true; }
@@ -1154,43 +1160,43 @@
       onStart:()=>{ modeBefore=document.body.dataset.mode||"simple"; setMode("advanced",false); },
       onStop:()=>setMode(modeBefore,false),
       welcome:{ title:"Would they rather use Robin?", body:[
-        "This page answers that question for the calls you choose, and every number on it opens to the calls behind it.",
+        "This page answers that question for the interactions you choose, and every number on it opens to the interactions behind it.",
         "This tour walks through each section in about two minutes. You can bring it back any time from <b>Help</b> at the bottom of the page." ] },
       steps:[
         { target:".modes", placement:"bottom", title:"Simple and Advanced", body:[
-          "<b>Simple</b> is the slide: the answer for the slice you chose, on one screen, made for sharing. <b>Advanced</b> is the full board, where every number opens to the calls behind it.",
+          "<b>Simple</b> is the slide: the answer for the slice you chose, on one screen, made for sharing. <b>Advanced</b> is the full board, where every number opens to the interactions behind it.",
           "The rest of this tour runs on the board." ] },
         { target:"#rail > div:nth-child(1)", placement:"right", title:"Pick a wave", body:[
-          "Each wave is one round of testers. The count beside it is surveyed calls. <b>Internal testing</b> is the build team before the first wave, and <b>All calls</b> is everything.",
+          "Each wave is one round of testers. The count beside it is surveyed interactions. <b>Internal testing</b> is the build team before the first wave, and <b>All interactions</b> is everything.",
           "Whatever you pick here, every number, comment and download on the page follows." ] },
         { target:"#rail > div:nth-child(2)", placement:"right", title:"Or a range of dates", body:[
           "This week, this month, this year, or two dates of your own. Days run midnight to midnight in <b>Central time</b>, and both ends of a custom range are included." ] },
-        { target:"#staffsw", placement:"right", title:"Staff calls", body:[
-          "The people who build Robin call her to check things. Their <b>opinions are hidden</b> unless you switch this on, so a rating from the team never counts as a tester's.",
+        { target:"#staffsw", placement:"right", title:"Staff interactions", body:[
+          "The people who build Robin interaction her to check things. Their <b>opinions are hidden</b> unless you switch this on, so a rating from the team never counts as a tester's.",
           "Operational numbers, like whether Robin asked the survey, always count every caller." ] },
         { target:"#cap", placement:"bottom", title:"Read this line first", body:[
-          "It says exactly what you are looking at: which slice, how many people, how many surveyed calls, and how many calls came in. Its <b>?</b> explains each figure and whether staff calls are in. A screenshot without it is a number without a denominator." ] },
+          "It says exactly what you are looking at: which slice, how many people, how many surveyed interactions, and how many interactions came in. Its <b>?</b> explains each figure and whether staff interactions are in. A screenshot without it is a number without a denominator." ] },
         { target:()=>document.querySelector('#board .tile[data-drill="nps"]'), placement:"bottom", title:"The four numbers", body:[
           "In the order the judgement guide reads them: <b>Net Promoter Score</b>, the share who prefer Robin to a person, the voice naturalness score, and the survey offer rate (how often Robin asked when the survey was due).",
           "Each tile shows its sample size and, where it has one, its likely range. <b>Every tile opens.</b>" ] },
         { target:"#dd .drw-p", placement:"left", title:"Behind every number", before:()=>openDrill("nps"), after:()=>closeDrill(), body:[
-          "The formula in words with the real counts, every score given, the same number cut by day, and every underlying response. Each row opens the call itself: transcript, answers, what Robin was told.",
+          "The formula in words with the real counts, every score given, the same number cut by day, and every underlying response. Each row opens the interaction itself: transcript, answers, what Robin was told.",
           "Cross-tab cells, funnel rows and the comments link open this same drawer. Nothing on the board is a dead end." ] },
         { target:"#xtcard", placement:"top", title:"Score against choice", body:[
           "The score someone gave against what they said they would choose next time. The two <b>outlined cells</b> are the exceptions worth reading: promoters who still want a person, and detractors who would still pick Robin.",
-          "Click any cell for its calls." ] },
+          "Click any cell for its interactions." ] },
         { target:"#funcard", placement:"left", title:"What the slice excludes", body:[
-          "Every call in the range, and how many reached the survey. Robin only asks at the end of a call that ends with her, so transferred calls and hang-ups were never asked.",
-          "Every number on this board comes from the <b>surveyed</b> row. Click a lower row to see the calls it holds and why." ] },
+          "Every interaction in the range, and how many reached the survey. Robin only asks at the end of an interaction that ends with her, so transferred interactions and hang-ups were never asked.",
+          "Every number on this board comes from the <b>surveyed</b> row. Click a lower row to see the interactions it holds and why." ] },
         { target:"#saidcard", placement:"top", title:"Survey themes", body:[
           "Callers' own words. The five themes said by the most people, each opening to the comments behind it; <b>See all</b> lists every theme and every comment. A plain “no” to “anything else?” is counted, not listed.",
           "Two comments is two people, so a theme is an index; the comments are the evidence." ] },
-        { target:"#revcard", placement:"left", title:"Calls for review", body:[
-          "Calls that scored 6 or below or sounded unhappy, each one click from its transcript. An empty list on a small sample means nothing." ] },
+        { target:"#revcard", placement:"left", title:"Interactions for review", body:[
+          "Interactions that scored 6 or below or sounded unhappy, each one click from its transcript. An empty list on a small sample means nothing." ] },
         { target:"#askfab", placement:"left", title:"Ask Robin", body:[
-          "Click Robin to open the chat. Plain questions, answered only from the rows in the current slice, with the calls cited. If the rows cannot answer, it says so." ] },
+          "Click Robin to open the chat. Plain questions, answered only from the rows in the current slice, with the interactions cited. If the rows cannot answer, it says so." ] },
         { target:"#cumsec", placement:"top", title:"The deeper sections", body:[
-          "Under the board: the <b>Confidence</b> chart, calls per person (one dot per call, so repeat callers and changed minds show), the full call browser and the downloads. The chart shows the headline share with its 95% band as answers arrived; the result is settled once the band clears 50%." ] },
+          "Under the board: the <b>Confidence</b> chart, interactions per person (one dot per interaction, so repeat callers and changed minds show), the full interaction browser and the downloads. The chart shows the headline share with its 95% band as answers arrived; the result is settled once the band clears 50%." ] },
         { target:".rt-help", placement:"top", title:"Help lives here", body:[
           "This tour only runs when you ask for it: click <b>Help</b> at the bottom of the page. The <b>judgement guide</b>, linked at the top, is the one-page version for your notes." ] },
       ],
@@ -1200,7 +1206,7 @@
   }
 
   initAsk();
-  load();
+  loadChannels().finally(load);
   setInterval(load, 60000);
 </script>
 <script src="/robin-tour.js" defer></script>

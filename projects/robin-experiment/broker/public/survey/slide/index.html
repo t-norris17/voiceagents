@@ -130,9 +130,9 @@
     b.innerHTML=`
       <div class="b-top">
         <h1>Robin · viability survey</h1>
-        <div class="n">${s.people} ${s.people===1?"respondent":"respondents"} · ${s.calls} call${s.calls===1?"":"s"} · ${new Date().toLocaleDateString([], {month:"short",day:"numeric",year:"numeric"})}</div>
+        <div class="n">${s.people} ${s.people===1?"respondent":"respondents"} · ${s.calls} interaction${s.calls===1?"":"s"} · ${new Date().toLocaleDateString([], {month:"short",day:"numeric",year:"numeric"})}</div>
       </div>
-      <p class="b-q">Asked at the end of a call: would you rather handle this with Robin, or hold for a person, even if it took longer?</p>
+      <p class="b-q">Asked at the end of an interaction: would you rather handle this with Robin, or hold for a person, even if it took longer?</p>
       <div class="b-hero">
         <div class="fig">${ci?ci.pct:"—"}<span class="un">%</span></div>
         <div class="ci">chose <b>Robin</b><br>${ci?`95% confidence: <b>${ci.lo}–${ci.hi}%</b>`:""}
@@ -156,7 +156,7 @@
         <div class="b-m" id="b-theme"><div class="v txt soft">—</div><div class="c">finding the top theme…</div></div>
       </div>
       <div class="b-foot">
-        <span>One response per person. ${a.pct!=null?`Asked on ${a.pct}% of eligible calls.`:""}</span>
+        <span>One response per person. ${a.pct!=null?`Asked on ${a.pct}% of eligible interactions.`:""}</span>
         <span>Internal test cohort — not customers.</span>
       </div>`;
   }
