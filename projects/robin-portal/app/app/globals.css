@@ -242,3 +242,4 @@ footer { margin-top: 52px; padding-top: 14px; border-top: 1px solid var(--line);
 .ab-conf { display: grid; grid-template-columns: 170px 1fr; gap: 0; margin: 4px 0 0; }
 .ab-conf dt, .ab-conf dd { padding: 11px 0; border-bottom: 1px solid var(--hair); margin: 0; font-size: .9rem; }
 .ab-conf dt { font: 600 .66rem var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--sub); padding-top: 14px; }
+.ab-cols > .u-sec { margin-top: 0; }
