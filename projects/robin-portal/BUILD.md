@@ -22,6 +22,17 @@ topics; each topic opens to what it says and what cited it or why nothing did, a
 often Robin read it and used it. The reason text is deliberately modest: a retrieval record places a read
 on a document, not a section.
 
+**Design pass, batch 2 (About, Dry Run, Quality).** All three now use the shared page language (mono kicker,
+plain 2.1rem heading, lede, square controls). About is a stat row (phone, live version, interactions) over
+two plain lists and a short "how she is set up" block; "Calls" is "Interactions". Dry Run drops the
+uppercase heading and the rounded pills for the portal's square button; its logic is untouched. Quality
+reads at the portal's 1120px in Simple and widens to 1400px only in Advanced, and the masthead follows
+through `--rp-w` (set on the page's `body[data-mode="advanced"]`), so the wordmark stays put across pages.
+The caption strip's tooltip is right-anchored (narrowing the sheet pushed it past the viewport edge).
+Checked against the live survey metrics: no horizontal overflow in Simple from 390px to 1440px.
+**Pre-existing, not fixed:** in Advanced the page scrolls sideways at 1440px and 1280px because hidden
+tooltip boxes spill past the right edge (identical before this pass: scroll width 1705 at 1440px).
+
 **Known and left:** the portal preview still talks to the PRODUCTION cleaner (no `CLEANER_PREVIEW_URL`
 override), so the Knowledge Factory Library's attached/published split only shows after a merge. Dry Run,
 Quality and About still carry their old body styling.

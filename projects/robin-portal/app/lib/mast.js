@@ -47,7 +47,7 @@ export function mastHtml(current) {
 export function mastCss(width = 1120) {
   return `
 .rp-mast{background:var(--paper,#f2f0ea);border-bottom:2px solid var(--ink,#17181c);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
-.rp-in{max-width:${width}px;margin:0 auto;padding:14px 36px 12px;display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap}
+.rp-in{max-width:var(--rp-w,${width}px);margin:0 auto;padding:14px 36px 12px;display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap}
 .rp-wm{display:flex;flex-direction:column;gap:4px;text-decoration:none;color:var(--ink,#17181c);padding-bottom:2px}
 .rp-wmt{font-size:1.2rem;font-weight:800;letter-spacing:.03em;text-transform:uppercase;line-height:1}
 .rp-tag{font:600 .5rem/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--faint,#a29e95)}

@@ -103,7 +103,7 @@ ${mastCss(width)}
 `;
 
 const pages = [
-  ["survey/index.html", "/survey/", 1400],
+  ["survey/index.html", "/survey/", 1120], // the page widens its own --rp-w in Advanced
   ["robin-q-tester/index.html", "/robin-q-tester/", 1120],
   ["factory/index.html", "/factory/", 1120],
   ["survey/guide/index.html", "/survey/", 1120],

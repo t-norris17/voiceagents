@@ -229,3 +229,16 @@ footer { margin-top: 52px; padding-top: 14px; border-top: 1px solid var(--line);
 .u-unm { margin: 12px 0 0; font-size: .82rem; color: var(--sub); max-width: 78ch; }
 .u-unm a { color: var(--ink); border-bottom: 1px solid var(--ink); text-decoration: none; }
 @media (max-width: 640px) { .u-topic > summary { grid-template-columns: 1fr auto; } .u-topic .w { grid-column: 1 / -1; } .u-body { padding-left: 0; } }
+
+/* About: the same page language as the rest (kicker, heading, stat row), then two plain lists and a
+   short configuration block. */
+.ab-phone { font-size: 1.7rem; }
+.ab-note { margin: 12px 0 0; font-size: .85rem; color: var(--sub); max-width: 66ch; }
+.ab-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 56px; margin-top: 26px; }
+@media (max-width: 760px) { .ab-cols { grid-template-columns: 1fr; } }
+.ab-list { list-style: none; margin: 4px 0 0; padding: 0; }
+.ab-list li { display: flex; flex-direction: column; gap: 2px; padding: 11px 0; border-bottom: 1px solid var(--hair); font-size: .94rem; }
+.ab-list .raw { font: .68rem var(--mono); letter-spacing: .02em; color: var(--faint); }
+.ab-conf { display: grid; grid-template-columns: 170px 1fr; gap: 0; margin: 4px 0 0; }
+.ab-conf dt, .ab-conf dd { padding: 11px 0; border-bottom: 1px solid var(--hair); margin: 0; font-size: .9rem; }
+.ab-conf dt { font: 600 .66rem var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--sub); padding-top: 14px; }
