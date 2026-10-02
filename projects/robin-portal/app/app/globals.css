@@ -243,3 +243,5 @@ footer { margin-top: 52px; padding-top: 14px; border-top: 1px solid var(--line);
 .ab-conf dt, .ab-conf dd { padding: 11px 0; border-bottom: 1px solid var(--hair); margin: 0; font-size: .9rem; }
 .ab-conf dt { font: 600 .66rem var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--sub); padding-top: 14px; }
 .ab-cols > .u-sec { margin-top: 0; }
+
+.u-ask .also { display: block; margin-top: 3px; font: .72rem var(--mono); color: var(--faint); }

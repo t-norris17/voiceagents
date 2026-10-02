@@ -103,12 +103,17 @@ export function compute({ docs, quotes, interactions, graded, measured = null, u
   const used = out.reduce((n, d) => n + d.used, 0);
 
   // Demand with no answer: what callers asked that Robin had nothing for, grouped by topic.
+  // Grouped by topic key. Since stable topics several different questions can share one key (the section that
+  // WOULD answer them), so each group keeps a few example questions rather than only the first.
   const byTopic = new Map();
   for (const u of unmet) {
     const key = u.canonical_key || norm(u.asked_text);
     if (!key) continue;
-    const e = byTopic.get(key) || { question: u.canonical_question || u.asked_text, count: 0, reason: u.fail_reason };
-    e.count++; byTopic.set(key, e);
+    const text = String(u.canonical_question || u.asked_text || "").trim();
+    const e = byTopic.get(key) || { question: text, count: 0, reason: u.fail_reason, also: [] };
+    e.count++;
+    if (text && text !== e.question && !e.also.includes(text) && e.also.length < 3) e.also.push(text);
+    byTopic.set(key, e);
   }
 
   // `measured` = interactions graded against a source. Older callers that pass only `graded` keep working.

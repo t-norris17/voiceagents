@@ -28,6 +28,8 @@ import { CHANNEL_COLS, channelOf, systemForChannel } from "../lib/channel.js";
 import { MAX_PER_RUN, parseGradeRequest, parseGradeOutput, needsInternalAuth, internalAuthorized, inList } from "../lib/grade-run.js";
 import { writeGrade } from "../lib/grade-write.js";
 import { claimUngraded, claimRegrade, releaseClaim } from "../lib/grade-claim.js";
+import { liveRobin } from "../lib/robin-live.js";
+import { buildMenu, menuPrompt, schemaWithMenu, normalize, groupOf } from "../lib/topics.js";
 
 const client = new Anthropic(); // ANTHROPIC_API_KEY
 const q = (s) => encodeURIComponent(s); // MAX_PER_RUN (10) bounds latency and cost per invocation
@@ -244,7 +246,7 @@ async function upsertScores(rows) {
   }
 }
 
-async function gradeCall(call, sourceCache) {
+async function gradeCall(call, sourceCache, menu) {
   const convText = serializeTranscript(call.transcript);
   if (!convText) return { conversation_id: call.conversation_id, rows: [], askedRows: [], security_flag: false, security_detail: null, empty: true };
 
@@ -267,19 +269,22 @@ ${convText}
 
 RETRIEVAL TRACE (what the knowledge base was queried for, and whether a chunk was used):
 ${trace || "(none recorded)"}
-
+${menu ? `\n${menuPrompt(menu)}\n` : ""}
 Review this call per your instructions. Return ONLY the structured JSON.`;
 
   const msg = await client.messages.create({
     model: "claude-sonnet-5",
     max_tokens: 16000, // was 8000: thinking draws from this too, and a long call ran out mid-JSON (stays under the SDK's non-streaming limit)
     thinking: { type: "adaptive" },
-    output_config: { effort: "high", format: { type: "json_schema", schema: SCHEMA } },
+    output_config: { effort: "high", format: { type: "json_schema", schema: menu ? schemaWithMenu(SCHEMA, menu) : SCHEMA } },
     // A typed chat gets the channel-adapted prompt; every other channel gets SYSTEM untouched.
     system: systemForChannel(SYSTEM, channelOf(call)),
     messages: [{ role: "user", content: user }],
   });
-  const out = parseGradeOutput(msg);
+  // With a topic menu the reply is held to it and collapsed to one entry per topic (lib/topics.js); without one
+  // (Robin's documents could not be read) the free-form keys of before are used and grading carries on.
+  const raw = parseGradeOutput(msg);
+  const out = menu ? normalize(raw, menu) : raw;
 
   const docTitles = docs.map((d) => d.title).filter(Boolean);
 
@@ -288,7 +293,7 @@ Review this call per your instructions. Return ONLY the structured JSON.`;
   const seenScore = new Set();
   const rows = [];
   for (const a of out.answers || []) {
-    const key = slugKey(a.canonical_key || a.question_text);
+    const key = menu ? a.canonical_key : slugKey(a.canonical_key || a.question_text);
     if (!key || seenScore.has(key)) continue;
     seenScore.add(key);
     const s = scoreAnswer(a, hasSource);
@@ -331,7 +336,7 @@ Review this call per your instructions. Return ONLY the structured JSON.`;
   const seen = new Set();
   const askedRows = [];
   for (const a of out.all_questions || []) {
-    const key = slugKey(a.canonical_key || a.canonical_question);
+    const key = menu ? a.canonical_key : slugKey(a.canonical_key || a.canonical_question);
     if (!key || seen.has(key)) continue;
     seen.add(key);
     const answered = !!a.answered;
@@ -340,7 +345,7 @@ Review this call per your instructions. Return ONLY the structured JSON.`;
       asked_text: String(a.asked_text || "").trim() || null,
       canonical_key: key,
       canonical_question: String(a.canonical_question || "").trim() || key,
-      category: String(a.category || "").trim().toLowerCase() || null,
+      category: menu ? groupOf(menu, key) : (String(a.category || "").trim().toLowerCase() || null),
       matched_question_key: seenScore.has(key) ? key : null,
       answered,
       fail_reason: answered ? null : (FAIL_REASONS.has(a.fail_reason) ? a.fail_reason : "no_content"),
@@ -416,8 +421,14 @@ export default async function handler(req, res) {
       catch (e) { console.error("grade: could not release the claim on", call.conversation_id, String(e?.message || e)); }
     };
 
+    // The topic menu is Robin's own section titles, read live. If they cannot be read, grade with free-form keys
+    // as before rather than stop: a missing menu must not cost a grading run.
+    let menu = null;
+    try { menu = buildMenu((await liveRobin()).docs); }
+    catch (e) { console.error("grade: no topic menu, using free-form keys:", String(e?.message || e)); }
+
     const sourceCache = new Map(); // document_id -> {title, body_md} | null, shared across the batch
-    const settled = await Promise.allSettled(held.map((c) => gradeCall(c, sourceCache)));
+    const settled = await Promise.allSettled(held.map((c) => gradeCall(c, sourceCache, menu)));
 
     let graded = 0, scoredRows = 0, askedTotal = 0, noSource = 0;
     const results = [], failed = [];

@@ -108,7 +108,7 @@ export default function UtilizationPage() {
                 <div className="lbl">Asked, with no answer · {data.unmet.length}</div>
                 {data.unmet.length === 0 && <p className="empty">Nothing asked went unanswered.</p>}
                 {data.unmet.map((u, i) => (
-                  <div className="u-ask" key={i}><span>{u.question}</span><span className="n">{u.count} {u.count === 1 ? "time" : "times"}</span></div>
+                  <div className="u-ask" key={i}><span>{u.question}{u.also?.length > 0 && <span className="also">Also: {u.also.join(" · ")}</span>}</span><span className="n">{u.count} {u.count === 1 ? "time" : "times"}</span></div>
                 ))}
               </section>
             </div>

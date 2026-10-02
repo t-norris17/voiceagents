@@ -108,9 +108,21 @@ Utilization gauge, which counts quoted sections and never uses keys.)
 - Tests: `grade-claim` (stub that changes each row once), `grade-handler` (the whole handler against a stub
   database and model: two overlapping runs make ONE model call per interaction and leave one row each;
   checked by mutation: with the claim disabled that test fails), `grade-run`. Broker 155, portal 35.
-- NOT DONE YET (steps 3 to 5 of the plan): stable topics (the model picks from the knowledge base's section
-  titles plus "other" instead of inventing keys), cost on the button, re-grading the 21 old duplicated
-  interactions (about $0.65).
+- **Stable topics (step 3).** `lib/topics.js`: the grader files each question under a FIXED menu instead of a
+  label it invents. The menu is the section titles of the documents attached to Robin (read live through
+  `liveRobin`, so it follows her knowledge), minus "Common questions" lists (they restate other sections),
+  plus `account-figures` (the caller's own balance, vested amount, loan on file: answered from tools) and
+  `other`. The model is held to it by an ENUM in the response schema; `normalize()` still maps anything
+  off-menu to `other`. Row keys: a menu topic is its own key (`loans--terms-and-cost`), so an interaction has at
+  most ONE row per topic (several questions on a topic are merged: claims joined, judgments ANDed, answered
+  only if every question was); `other` keeps one row per distinct question (`other~<question slug>`).
+  `category` now holds the document slug (`loans`, `leaving`, `account`, `other`). If Robin's documents cannot
+  be read the grader falls back to free-form keys and carries on. No schema change. Utilization's unmet list
+  groups by topic and shows up to three example questions per group.
+  CAVEATS: existing rows keep their old keys until re-graded, so per-topic counts mix old and new until then;
+  the menu follows the knowledge base, so counts across a knowledge-base change are not perfectly comparable;
+  the menu adds roughly 1,500 input tokens per interaction (not measured against the bill).
+- NOT DONE YET: cost on the button, and re-grading the 21 old duplicated interactions (about $0.65).
 
 **Not verified.** Grading quality of the 10 interactions graded today (not read). The cost of a run (10
 Sonnet calls with adaptive thinking at high effort; unmeasured). Whether the grader's missing source before

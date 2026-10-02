@@ -174,3 +174,19 @@ test("compute attaches read_in and used_in to each document, zero when there are
   const r = compute({ docs, quotes: [], interactions: 2, graded: 0, retrieval: new Map([["A", { read_in: 5, used_in: 2 }]]) });
   assert.deepEqual([r.documents[0].read_in, r.documents[0].used_in, r.documents[1].read_in, r.documents[1].used_in], [5, 2, 0, 0]);
 });
+
+test("unmet demand groups by topic key and keeps a few example questions from the group", () => {
+  const docs = [{ id: "d", name: "Loans", usage_mode: "auto", body: LOANS_MD }];
+  const T = "loans--terms-and-cost";
+  const r = compute({ docs, quotes: [], interactions: 5, graded: 3, unmet: [
+    { canonical_key: T, canonical_question: "Can fees come from another account?", fail_reason: "no_content" },
+    { canonical_key: T, canonical_question: "Is there a fee to refinance?", fail_reason: "no_content" },
+    { canonical_key: T, canonical_question: "Is there a fee to refinance?", fail_reason: "no_content" },
+    { canonical_key: "other~roll-my-loan", canonical_question: "Can I roll my loan?", fail_reason: "no_content" },
+  ] });
+  assert.equal(r.unmet.length, 2);
+  const g = r.unmet.find((u) => u.question === "Can fees come from another account?");
+  assert.equal(g.count, 3, "three unanswered asks on the topic");
+  assert.deepEqual(g.also, ["Is there a fee to refinance?"], "the other question shows once");
+  assert.deepEqual(r.unmet.find((u) => u.question === "Can I roll my loan?").also, []);
+});

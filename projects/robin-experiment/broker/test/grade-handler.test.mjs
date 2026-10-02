@@ -21,7 +21,7 @@ process.env.ROBIN_INTERNAL_SECRET = "s3cret";
 delete process.env.ELEVENLABS_API_KEY;
 
 // ---- an in-memory PostgREST that understands the filters this handler uses ------------------------------
-const state = { events: [], scores: [], questions: [], modelCalls: 0, keyCounter: 0, modelFails: false };
+const state = { events: [], scores: [], questions: [], modelCalls: 0, keyCounter: 0, modelFails: false, lastRequest: null };
 const TABLES = { ai_call_events: "events", call_question_scores: "scores", call_questions: "questions" };
 function match(row, url) {
   for (const [k, v] of url.searchParams) {
@@ -37,16 +37,26 @@ const json = (body, status = 200) => new Response(body == null ? null : JSON.str
 
 globalThis.fetch = async (input, init = {}) => {
   const href = String(input?.url || input);
+  if (href.includes("api.elevenlabs.io/v1/convai/agents/")) {
+    return json({ conversation_config: { agent: { prompt: { prompt: "You are Robin.", temperature: 0.4, knowledge_base: [{ id: "docloans01", name: "Vertex Manufacturing 401(k) — Loans...", usage_mode: "auto" }] } } } });
+  }
+  if (href.includes("api.elevenlabs.io/v1/convai/knowledge-base/")) {
+    return json({ name: "Loans", extracted_inner_html: "<h1>Loans</h1><h2>Can I take a loan?</h2><p>Yes.</p><h2>Terms and cost</h2><p>Up to 5 years. A $75 fee.</p>" });
+  }
   if (href.includes("api.anthropic.com")) {
     state.modelCalls += 1;
+    const req = JSON.parse(init.body || "{}");
+    state.lastRequest = req;
     await new Promise((r) => setTimeout(r, 25)); // a real call takes seconds; this lets overlapping runs interleave
     if (state.modelFails) return json({ type: "error", error: { type: "invalid_request_error", message: "rejected" } }, 400); // 400: the SDK does not retry it
-    const n = ++state.keyCounter; // a NEW topic key every call, like the real model
-    const out = {
-      answers: [{ canonical_key: `loan-fees-${n}`, question_text: "What does a loan cost?", answer_text: "A $75 fee.", claims: [], answered_the_question: true, complete: true, appropriately_routed: true, sentiment: "neutral", sentiment_score: 0, note: "" }],
-      all_questions: [{ canonical_key: `loan-fees-${n}`, canonical_question: "What does a loan cost?", asked_text: "what does it cost", category: "loans", answered: true, fail_reason: "" }],
-      security_flag: false, security_detail: "",
-    };
+    const n = ++state.keyCounter; // without a menu: a NEW topic key every call, like the real model before this change
+    const menu = req?.output_config?.format?.schema?.properties?.answers?.items?.properties?.canonical_key?.enum;
+    const ans = (key, q) => ({ canonical_key: key, question_text: q, answer_text: "A $75 fee.", claims: [], answered_the_question: true, complete: true, appropriately_routed: true, sentiment: "neutral", sentiment_score: 0, note: "" });
+    const qst = (key, q) => ({ canonical_key: key, canonical_question: q, asked_text: q.toLowerCase(), category: "loans", answered: true, fail_reason: "" });
+    const out = menu
+      // with a menu: two questions on ONE topic, as the real model did four ways before
+      ? { answers: [ans(menu[1], "What does a loan cost?"), ans(menu[1], "What are the fees?")], all_questions: [qst(menu[1], "What does a loan cost?"), qst(menu[1], "What are the fees?")], security_flag: false, security_detail: "" }
+      : { answers: [ans(`loan-fees-${n}`, "What does a loan cost?")], all_questions: [qst(`loan-fees-${n}`, "What does a loan cost?")], security_flag: false, security_detail: "" };
     return json({ id: "msg_1", type: "message", role: "assistant", model: "m", stop_reason: "end_turn", stop_sequence: null, content: [{ type: "text", text: JSON.stringify(out) }], usage: { input_tokens: 1, output_tokens: 1 } });
   }
   if (!href.startsWith("http://db.test/rest/v1/")) return json({ error: "unexpected " + href }, 500);
@@ -154,4 +164,33 @@ test("grading by id and re-grading are refused without the internal secret, and 
   seed(1);
   const r = await run({ conversation_ids: [state.events[0].conversation_id] });
   assert.equal(r.code, 403); assert.equal(state.modelCalls, 0); assert.equal(state.events[0].scored_at, null);
+});
+
+test("with Robin's documents readable, the grader holds the model to a topic menu and leaves ONE row per topic", { skip }, async () => {
+  seed(1);
+  process.env.ELEVENLABS_API_KEY = "k"; process.env.ELEVENLABS_AGENT_ID = "agent_test";
+  try {
+    const r = await run(undefined);
+    assert.equal(r.body.graded, 1, JSON.stringify(r.body));
+    const schemaIds = state.lastRequest.output_config.format.schema.properties.answers.items.properties.canonical_key.enum;
+    assert.ok(schemaIds.includes("loans--terms-and-cost") && schemaIds.includes("account-figures") && schemaIds.includes("other"), "the menu is Robin's sections plus the two fixed entries");
+    assert.ok(!schemaIds.some((i) => /common/.test(i)));
+    assert.match(state.lastRequest.messages[0].content, /TOPIC MENU/);
+    assert.equal(state.scores.length, 1, "two answers on one topic are one row");
+    assert.equal(state.questions.length, 1);
+    assert.equal(state.scores[0].question_key, "loans--terms-and-cost", "the key is the topic itself");
+    assert.equal(state.questions[0].canonical_key, "loans--terms-and-cost");
+    assert.equal(state.questions[0].category, "loans");
+    assert.match(state.questions[0].canonical_question, /What does a loan cost\? \/ What are the fees\?/, "both questions are kept in the text");
+  } finally { delete process.env.ELEVENLABS_API_KEY; delete process.env.ELEVENLABS_AGENT_ID; }
+});
+
+test("if Robin's documents cannot be read, grading carries on with free-form keys instead of stopping", { skip }, async () => {
+  seed(1);
+  state.lastRequest = null;
+  // no ELEVENLABS_API_KEY: liveRobin throws, and the grader must not
+  const r = await run(undefined);
+  assert.equal(r.body.graded, 1);
+  assert.equal(state.lastRequest.output_config.format.schema.properties.answers.items.properties.canonical_key.enum, undefined, "no menu, no enum");
+  assert.match(state.scores[0].question_key, /^loan-fees-/);
 });
