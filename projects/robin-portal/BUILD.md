@@ -9,9 +9,9 @@
 
 ## Re-grade of the old no-source interactions (2026-10-02, night)
 
-20 of the 21 interactions graded before the source check existed were re-graded one at a time through the portal, each guarded (the target had to still be in the no-source list). Database totals before and after: score rows 252 to 203, question rows 336 to 274, no duplicate (interaction, key) pairs left; survey answers 226, survey people 33, security flags 4, gap requests 2 and graded interactions 115 all unchanged. Interactions with only no-source rows: 21 to 1.
+All 21 interactions graded before the source check existed were re-graded one at a time through the portal, each guarded (the target had to still be in the no-source list). Database totals before and after: score rows 252 to 203, question rows 336 to 274, no duplicate (interaction, key) pairs left; survey answers 226, survey people 33, security flags 4, gap requests 2 and graded interactions 115 all unchanged. Interactions with only no-source rows: 21 to 0.
 
-**Left as it was:** `conv_2601kzbhe2tre1xbsazqz018rg83` (a 366 s call, 19 questions). Its re-grade ran past the 120 s limit (`maxDuration` on both `api/grade.js` in the broker's `vercel.json` and the portal's proxy route), the portal returned 504, nothing was written, and its old rows are intact (11 scores, 19 questions); only its `scored_at` stamp moved. Both limits were then raised to 300 s (broker `vercel.json` and the portal proxy route) on the owner's say-so; the plan's ceiling was not independently verified, so the proof is that the preview deployments build and that this interaction re-grades.
+**The long one:** `conv_2601kzbhe2tre1xbsazqz018rg83` (a 366 s call, 19 questions) first hit the 120 s limit (portal 504, nothing written, old rows intact). After both limits were raised to 300 s it re-graded in 92 s (11 rows to 4, 14,662 in / 9,830 out tokens). Final totals: score rows 196, question rows 259, no duplicate keys, interactions with only no-source rows 0; survey answers 226, people 33, flags 4, gaps 2, graded 115 unchanged. That run took 92 s, under the old limit too, so the 504 means run time varies; 300 s is headroom, not a fix for a fixed cost.
 
 **Real usage, two re-grades:** 14,342 in / 6,388 out tokens, and 12,542 in / 2,420 out. Price per token was not looked up, so the 3-cent estimate on the buttons is still the bill-derived figure.
 
