@@ -14,7 +14,7 @@ const BASE = "https://api.elevenlabs.io";
 const TTL_MS = 60 * 1000;
 let _cache = { at: 0, key: "", value: null };
 
-// { prompt, temperature, documents: [{ id, name, usage_mode }], unreadable: [name], kbText }
+// { prompt, temperature, documents: [{ id, name, usage_mode }], docs: [{ id, name, usage_mode, body }], unreadable: [name], kbText }
 export async function liveRobin({ fetchImpl = fetch, env = process.env, now = Date.now, ttl = TTL_MS } = {}) {
   const key = env.ELEVENLABS_API_KEY, agentId = env.ELEVENLABS_AGENT_ID;
   if (!key) throw new Error("ELEVENLABS_API_KEY is not set on the broker, so Dry Run cannot read Robin's knowledge.");
@@ -31,7 +31,7 @@ export async function liveRobin({ fetchImpl = fetch, env = process.env, now = Da
   if (!prompt) throw new Error("Robin's live prompt came back empty.");
   if (!attached.length) throw new Error("No knowledge-base documents are attached to Robin.");
 
-  const read = await Promise.all(attached.map(async (d) => ({ d, doc: await fetchElevenLabsDocument(d.id, { fetchImpl, key }) })));
+  const read = await Promise.all(attached.map(async (d) => ({ d, doc: await fetchElevenLabsDocument(d.id, { fetchImpl, key, headings: true }) })));
   const readable = read.filter((x) => x.doc);
   if (!readable.length) throw new Error(`None of the ${attached.length} documents attached to Robin could be read from ElevenLabs.`);
 
@@ -40,6 +40,8 @@ export async function liveRobin({ fetchImpl = fetch, env = process.env, now = Da
     temperature: Number.isFinite(Number(p.temperature)) ? Number(p.temperature) : 0.5,
     documents: attached.map((d) => ({ id: d.id, name: d.name, usage_mode: d.usage_mode })),
     unreadable: read.filter((x) => !x.doc).map((x) => x.d.name),
+    // each readable document with its text (headings kept as "## Title"), for Utilization
+    docs: readable.map((x) => ({ id: x.d.id, name: x.d.name, usage_mode: x.d.usage_mode, body: x.doc.body_md })),
     kbText: readable.map((x) => `--- DOCUMENT: ${x.d.name} ---\n${x.doc.body_md}`).join("\n\n"),
   };
   if (ttl) _cache = { at: now(), key: cacheKey, value };

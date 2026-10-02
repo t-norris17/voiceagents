@@ -40,6 +40,9 @@ The wordmark is now **Birdnest** with the tagline "all your eggs in one place" i
 way-back pill reads "← Birdnest". Robin stays the name of the agent: the home page, About and the footer
 about her still say Robin. Trademark and domain availability for "Birdnest" are unverified.
 
+**Utilization** (`/utilization`, under Understand): the gauge, by document, never used, and asked-with-no-answer.
+Design, method and the real numbers are in `robin-experiment/BUILD.md` (Session 2026-10-02, later).
+
 **Not done yet.** Dry Run, Quality and About bodies still carry their old styling (pill buttons, uppercase
 titles). That is the next batch.
 

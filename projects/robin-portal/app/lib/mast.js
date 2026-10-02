@@ -11,7 +11,10 @@ import { CONTROL_HTML } from "./theme.js";
 
 export const GROUPS = [
   { label: "Listen", items: [{ href: "/calls", label: "Interactions" }] },
-  { label: "Understand", items: [{ href: "/survey/", label: "Quality" }] },
+  { label: "Understand", items: [
+    { href: "/survey/", label: "Quality" },
+    { href: "/utilization", label: "Utilization" },
+  ] },
   { label: "Improve", items: [
     { href: "/grader", label: "Accuracy" },
     { href: "/factory/", label: "Knowledge Factory" },

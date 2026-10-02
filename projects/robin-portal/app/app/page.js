@@ -30,10 +30,11 @@ export default async function Home() {
   const doors = [
     { href: "/survey/", t: "Quality", d: "Would they rather use Robin than wait for a person? What callers said, and every number opens to the call behind it.", n: responses, un: "responses" },
     { href: "/grader", t: "Accuracy", d: "Was what Robin said true to the documents she read in each interaction? Grade new ones and read the evidence.", n: summary?.ungraded_in_window ?? null, un: "ungraded, 7 days" },
+    { href: "/utilization", t: "Utilization", d: "How much of what Robin knows callers actually use, and what they asked that she had nothing for.", n: null, un: null },
     { href: "/factory/", t: "Knowledge Factory", d: "Turn a messy source into answers Robin can give. Review each one, publish them to her Knowledge Base, then try them.", n: null, un: null },
-    { href: "/robin-q-tester/", t: "Dry Run", d: "Ask a question the way a caller would and see what Robin's published knowledge answers.", n: null, un: null },
+    { href: "/robin-q-tester/", t: "Dry Run", d: "Ask a question the way a caller would and see how Robin answers, from her live prompt and the documents attached to her.", n: null, un: null },
     { href: "/calls", t: "Interactions", d: "Every recent conversation, by phone or chat: who verified, what they asked, how it ended, and the transcript.", n: summary?.last_24h ?? null, un: "interactions, 24 h" },
-    { href: "/demo-website/", t: "Demo Website", d: "A realistic employer site with Robin as the chat and voice widget in the corner. Try her the way a team member would; the tester guide has the personas and the script.", n: null, un: null, newTab: true },
+    { href: "/demo-website/", t: "Demo Website", d: "A realistic employer site with Robin as the chat and voice widget in the corner. Try her the way a team member would; the tester guide has the personas and the script.", n: null, un: null, newTab: true, full: true },
   ];
 
   return (
@@ -59,7 +60,7 @@ export default async function Home() {
 
       <section className="doors" aria-label="Sections">
         {doors.map((d) => (
-          <a className="door" href={d.href} key={d.href} {...(d.newTab ? { target: "_blank", rel: "noopener" } : {})}>
+          <a className={"door" + (d.full ? " full" : "")} href={d.href} key={d.href} {...(d.newTab ? { target: "_blank", rel: "noopener" } : {})}>
             <span className="t">{d.t}</span>
             <span className="d">{d.d}</span>
             {d.n != null ? (
