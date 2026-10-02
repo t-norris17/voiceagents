@@ -21,14 +21,15 @@
 // ELEVENLABS_API_KEY is set on this deployment. Without the key those answers still grade as
 // `no_source` — visible, not silently scored.
 import Anthropic from "@anthropic-ai/sdk";
-import { sb } from "../lib/supabase.js";
+import { sb, sbAll } from "../lib/supabase.js";
 import { scoreAnswer } from "../lib/score.js";
 import { fetchElevenLabsDocument } from "../lib/kb-text.js";
 import { CHANNEL_COLS, channelOf, systemForChannel } from "../lib/channel.js";
+import { MAX_PER_RUN, parseGradeRequest, inList } from "../lib/grade-run.js";
+import { writeGrade } from "../lib/grade-write.js";
 
 const client = new Anthropic(); // ANTHROPIC_API_KEY
-const MAX_PER_RUN = 10; // bound latency/cost per invocation; later polls catch up the rest
-const q = (s) => encodeURIComponent(s);
+const q = (s) => encodeURIComponent(s); // MAX_PER_RUN (10) bounds latency and cost per invocation
 
 const SCHEMA = {
   type: "object",
@@ -359,58 +360,72 @@ Review this call per your instructions. Return ONLY the structured JSON.`;
 export default async function handler(req, res) {
   if (req.method !== "POST" && req.method !== "GET") return res.status(405).json({ error: "POST only" });
   try {
+    const parsed = parseGradeRequest(req.method === "POST" ? req.body : null);
+    if (parsed.error) return res.status(400).json({ error: parsed.error });
+    const { ids, regrade } = parsed;
+
+    // Which interactions: by id when asked (ungraded ones, or the one graded one being re-graded),
+    // otherwise the NEWEST ungraded ones, the same order the Accuracy page lists them in.
+    const which = !ids ? "scored_at=is.null"
+      : regrade ? `conversation_id=eq.${q(ids[0])}&scored_at=not.is.null`
+      : `conversation_id=in.${q(inList(ids))}&scored_at=is.null`;
+    const order = ids ? "" : "&order=started_at.desc.nullslast";
     const pendingPath = (cols) =>
-      `ai_call_events?provider=eq.elevenlabs&scored_at=is.null&transcript=not.is.null` +
-      `&select=${cols}&order=created_at.asc&limit=${MAX_PER_RUN}`;
+      `ai_call_events?provider=eq.elevenlabs&${which}&transcript=not.is.null` +
+      `&select=${cols}${order}&limit=${MAX_PER_RUN}`;
     let pending;
     try {
-      pending = await sb(pendingPath(`conversation_id,transcript,${CHANNEL_COLS}`));
+      pending = await sb(pendingPath(`conversation_id,transcript,security_flag,security_detail,${CHANNEL_COLS}`));
     } catch (e) {
       // The channel select is an addition; if the database rejects it, grade as before (a chat then
       // gets the call wording) and say so, rather than stop grading.
       console.error("grade: channel select failed, grading without channel:", String(e?.message || e));
-      pending = await sb(pendingPath("conversation_id,transcript"));
-    }
-
-    if (!pending.length) return res.status(200).json({ ok: true, graded: 0, scored_rows: 0, asked_rows: 0 });
-
-    const sourceCache = new Map(); // document_id -> {title, body_md} | null, shared across the batch
-    const results = await Promise.allSettled(pending.map((c) => gradeCall(c, sourceCache)));
-
-    let graded = 0, scoredRows = 0, askedTotal = 0, noSource = 0;
-    for (const r of results) {
-      if (r.status !== "fulfilled") { console.error("grade failed:", String(r.reason?.message || r.reason)); continue; }
-      const { conversation_id, rows, askedRows, security_flag, security_detail } = r.value;
-      try {
-        if (rows.length) {
-          if (rows.every((x) => x.grounding === "no_source")) noSource += 1;
-          await upsertScores(rows);
-          scoredRows += rows.length;
-        }
-        if (askedRows && askedRows.length) {
-          await sb("call_questions?on_conflict=conversation_id,canonical_key", {
-            method: "POST",
-            prefer: "resolution=merge-duplicates,return=minimal",
-            body: askedRows,
-          });
-          askedTotal += askedRows.length;
-        }
-        // Stamp the call so it isn't re-graded, and carry the security verdict onto the call row.
-        await sb(`ai_call_events?conversation_id=eq.${q(conversation_id)}`, {
-          method: "PATCH",
-          prefer: "return=minimal",
-          body: { scored_at: new Date().toISOString(), security_flag, security_detail },
-        });
-        graded += 1;
-      } catch (e) {
-        console.error("grade write failed:", conversation_id, String(e.message || e));
-      }
+      pending = await sb(pendingPath("conversation_id,transcript,security_flag,security_detail"));
     }
 
     res.setHeader("Cache-Control", "no-store");
+    if (!pending.length) {
+      return res.status(200).json({
+        ok: true, graded: 0, scored_rows: 0, asked_rows: 0, results: [], failed: [],
+        ...(ids ? { note: regrade ? "that interaction has no grade yet, or was not found" : "those interactions are already graded, or were not found" } : {}),
+      });
+    }
+
+    const sourceCache = new Map(); // document_id -> {title, body_md} | null, shared across the batch
+    const settled = await Promise.allSettled(pending.map((c) => gradeCall(c, sourceCache)));
+
+    let graded = 0, scoredRows = 0, askedTotal = 0, noSource = 0;
+    const results = [], failed = [];
+    for (let i = 0; i < settled.length; i++) {
+      const r = settled[i], call = pending[i];
+      if (r.status !== "fulfilled") {
+        const error = String(r.reason?.message || r.reason);
+        console.error("grade failed:", call.conversation_id, error);
+        failed.push({ conversation_id: call.conversation_id, error });
+        continue;
+      }
+      try {
+        const out = await writeGrade(call, r.value, regrade, { sb, upsertScores });
+        if (r.value.rows.length && r.value.rows.every((x) => x.grounding === "no_source")) noSource += 1;
+        scoredRows += out.scored_rows; askedTotal += out.asked_rows; graded += 1;
+        results.push(out);
+      } catch (e) {
+        const error = String(e.message || e);
+        console.error("grade write failed:", call.conversation_id, error);
+        failed.push({ conversation_id: call.conversation_id, error });
+      }
+    }
+
+    // How many interactions are still waiting, so the page can say so without guessing.
+    let ungraded_total = null;
+    try {
+      const left = await sbAll(`ai_call_events?provider=eq.elevenlabs&scored_at=is.null&transcript=not.is.null&select=conversation_id&order=conversation_id.asc`);
+      ungraded_total = left.length;
+    } catch (_) { /* the grade itself succeeded; the count is a courtesy */ }
+
     return res.status(200).json({
       ok: true, graded, scored_rows: scoredRows, asked_rows: askedTotal,
-      calls_without_source: noSource, pending: pending.length,
+      calls_without_source: noSource, pending: pending.length, ungraded_total, results, failed,
     });
   } catch (e) {
     return res.status(500).json({ error: String(e.message || e) });

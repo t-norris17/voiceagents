@@ -192,3 +192,40 @@ footer { margin-top: 52px; padding-top: 14px; border-top: 1px solid var(--line);
 .more { background: none; border: 0; border-bottom: 1px solid var(--line); padding: 0; margin-top: 10px; font: 600 .66rem var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--sub); cursor: pointer; }
 .more:hover { color: var(--ink); border-bottom-color: var(--ink); }
 .door.full { grid-column: 1 / -1; min-height: 0; }
+
+/* Accuracy: the manual grading controls. Rows keep the shared .row look; the leading cell holds the
+   pick box, and the trailing cell holds the per-row action. */
+.btn.sm { padding: 6px 11px; font-size: .62rem; letter-spacing: .1em; }
+.g-row { grid-template-columns: 22px 14px 1fr auto; align-items: center; }
+.g-row .dot { transform: none; }
+.g-pick { width: 15px; height: 15px; accent-color: var(--ink); cursor: pointer; margin: 0; }
+.g-open { background: none; border: 0; padding: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.g-open:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.g-meta { display: flex; align-items: center; gap: 12px; }
+.g-confirm { grid-column: 2 / -1; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; margin-top: 6px; border-left: 2px solid var(--warn); font-size: .8rem; color: var(--sub); }
+.g-confirm span { flex: 1 1 320px; }
+.g-bar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin: 14px 0 0; padding: 12px 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--hair); font: .72rem var(--mono); color: var(--sub); }
+.g-hint { margin: 12px 0 0; color: var(--sub); font-size: .85rem; max-width: 66ch; }
+.g-fails { margin: 6px 0 0; padding-left: 18px; }
+.g-fails code { font: .72rem var(--mono); }
+.drw-a { margin-left: auto; margin-right: 10px; display: inline-flex; align-items: center; }
+.g-conf { display: inline-flex; align-items: center; gap: 8px; font-size: .72rem; color: var(--sub); }
+.g-open:hover { text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+
+/* Utilization: topics that open to say what they contain and what cited them (or why nothing did). */
+.u-docd > summary { list-style: none; cursor: pointer; } .u-docd > summary::-webkit-details-marker { display: none; }
+.u-docd > summary .rd { display: block; font: .66rem var(--mono); letter-spacing: .04em; color: var(--faint); font-weight: 400; margin-top: 3px; }
+.u-docd[open] > summary { border-bottom-color: var(--ink); }
+.u-secs { padding: 4px 0 8px 14px; border-bottom: 1px solid var(--hair); }
+.u-topic > summary { display: grid; grid-template-columns: 150px 1fr auto; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--hair); font-size: .92rem; cursor: pointer; list-style: none; }
+.u-topic > summary::-webkit-details-marker { display: none; }
+.u-topic > summary:hover .tt { text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+.u-topic > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.u-topic .w { font: .66rem var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--faint); padding-top: 3px; }
+.u-topic .n { font: .72rem var(--mono); color: var(--accent); }
+.u-body { padding: 8px 0 12px 162px; max-width: 78ch; }
+.u-body .pv { margin: 0 0 8px; color: var(--ink); font-size: .88rem; line-height: 1.5; }
+.u-body .nt { margin: 0; color: var(--sub); font-size: .8rem; line-height: 1.5; }
+.u-unm { margin: 12px 0 0; font-size: .82rem; color: var(--sub); max-width: 78ch; }
+.u-unm a { color: var(--ink); border-bottom: 1px solid var(--ink); text-decoration: none; }
+@media (max-width: 640px) { .u-topic > summary { grid-template-columns: 1fr auto; } .u-topic .w { grid-column: 1 / -1; } .u-body { padding-left: 0; } }

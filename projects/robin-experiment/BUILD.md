@@ -8,6 +8,52 @@
 
 
 
+## Session 2026-10-02 (evening): grader controls, a re-grade, and Utilization made honest
+
+**The symptom.** "Grade new interactions" appeared to do nothing. It did run: 10 interactions were stamped
+graded that day. But `api/grade.js` took the 10 OLDEST ungraded (`order=created_at.asc`) while
+`api/calls.js` listed the NEWEST 100, and all of the newest 100 were ungraded (225 calls, 106 graded, 119
+not), so grading could never change anything the page showed. A seam between two files, not a broken grader.
+
+**What changed.**
+- `api/grade.js` grades newest first, and now also takes `{ conversation_ids: [...] }` (exactly those, up to
+  10) and `{ conversation_ids: [id], regrade: true }` (one already-graded interaction). It returns a result
+  per interaction and every failure by id (it used to log failures and say nothing), plus `ungraded_total`.
+  The write path is `lib/grade-write.js`; the request rules are `lib/grade-run.js`.
+- **Re-grade is the only path that deletes, and it is ordered so a failure loses nothing.** Read the old
+  rows, write the new rows, then delete only the OLD rows whose key the new grade did not write again
+  (the model invents a new topic key each run, so an overwrite alone would leave old rows beside new ones
+  and double-count them). A re-grade with an empty result deletes nothing. It never clears a security flag.
+  It touches `call_question_scores`, `call_questions` and the `scored_at`/`security_*` columns of one
+  `ai_call_events` row. It does not touch `survey_answers` / `survey_people`: those are views that reference
+  neither grader table nor `scored_at` (checked in the live database), and there are no foreign keys or
+  triggers on the grader tables.
+- `api/calls.js` takes `filter` (all, ungraded, graded, no_source) and `offset`, and returns whole-table
+  `totals` and a per-call `source_status`. `no_source` = graded, but every score row is `no_source`: the
+  grader could not read the documents (it only reads dashboard-uploaded documents when ELEVENLABS_API_KEY is
+  set; all 148 such rows were written Sep 8 to 15). Those interactions were counted "graded" but nothing in
+  them was checked.
+- `lib/supabase.js` gained `sbAll`: Supabase returns at most 1000 rows per request whatever `limit` says, so
+  the `&limit=5000` reads in the new and old endpoints would have silently stopped at 1000. They page now.
+- **Utilization** counts only interactions graded WITH a source ("measured") and reports the rest as
+  `unmeasurable` (about 26 of the 41 "graded" in the window). Each document reports `read_in` and `used_in`
+  from the retrieval records stored with every interaction, graded or not (`used_chunk_ids` is populated in
+  150 of 213 interactions that retrieved anything). Exact per document; NOT placeable on a section, because
+  the stored records hold chunk ids, not chunk text. Each section carries a `preview` and the questions that
+  cited it.
+
+**Verified.** Broker 133/133 (new: `grade-run`, `calls-filter`, utilization detail, `sbAll`). Portal 34/34.
+The Accuracy page was driven in Chromium against a stateful stub shaped like the live data (150
+interactions, the 30 oldest graded): counts move after a run, the graded filter reaches rows the newest-100
+window hid, a failure is reported by id, re-grade posts nothing until confirmed, paging works.
+
+**Not verified.** Grading quality of the 10 interactions graded today (not read). The cost of a run (10
+Sonnet calls with adaptive thinking at high effort; unmeasured). Whether the grader's missing source before
+Sep 16 was the missing ELEVENLABS_API_KEY (the cutoff fits; the key's history is not visible from here).
+A live re-grade, until the first one is run and its before/after read.
+
+---
+
 ## Session 2026-10-02 (later): Utilization
 
 `GET /api/utilization?days=30` measures how much of what Robin knows callers actually use. Read-only and

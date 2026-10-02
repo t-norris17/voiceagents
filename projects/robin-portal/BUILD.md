@@ -7,6 +7,27 @@
 ---
 
 
+## Session 2026-10-02 (evening): Accuracy gets manual controls; Utilization shows its working
+
+**Accuracy** now lists from the whole table, not the newest 100: filter tabs (All, Not graded, Graded, and
+Graded, no source when there are any) with whole-table counts, "Show more" paging, a main button that names
+what it will do ("Grade the newest 10 not graded"), pick boxes plus "Grade N selected" (max 10), a Grade
+button on each ungraded row and in the open interaction, and a one-at-a-time Re-grade with a confirm for
+interactions graded without a source. Failures are listed by id. Words around the paid actions live in
+`lib/grader-view.js` (tested). `/grader?filter=no_source` deep-links the re-grade list.
+
+**Utilization** says how many interactions were measured (graded against a source) and names the ones
+graded before their documents could be read, with a link to re-grade them. Each document opens to its
+topics; each topic opens to what it says and what cited it or why nothing did, and each document says how
+often Robin read it and used it. The reason text is deliberately modest: a retrieval record places a read
+on a document, not a section.
+
+**Known and left:** the portal preview still talks to the PRODUCTION cleaner (no `CLEANER_PREVIEW_URL`
+override), so the Knowledge Factory Library's attached/published split only shows after a merge. Dry Run,
+Quality and About still carry their old body styling.
+
+---
+
 ## Session 2026-10-01 (design pass, batch 1): one masthead, Interactions and Accuracy
 
 **What changed.** The nav now lives in ONE file, `lib/mast.js` (groups, secondary links, markup and CSS),

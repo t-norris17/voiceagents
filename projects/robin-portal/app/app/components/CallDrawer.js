@@ -50,7 +50,7 @@ function actionsFor(rows, questions) {
   return { fix, wins };
 }
 
-export default function CallDrawer({ id, withScores = false, onClose }) {
+export default function CallDrawer({ id, withScores = false, onClose, actions = null, reload = 0 }) {
   const [call, setCall] = useState(null);
   const [scores, setScores] = useState(null);
   const [err, setErr] = useState(null);
@@ -73,7 +73,7 @@ export default function CallDrawer({ id, withScores = false, onClose }) {
       } catch (e) { if (e.name !== "AbortError") setErr(String(e.message || e)); }
     })();
     return () => ctl.abort();
-  }, [id, withScores]);
+  }, [id, withScores, reload]);
 
   useEffect(() => {
     const onKey = (e) => { if (e.key === "Escape") onClose(); };
@@ -95,6 +95,7 @@ export default function CallDrawer({ id, withScores = false, onClose }) {
       <div className="drw-p" role="dialog" aria-modal="true" aria-label="Interaction">
         <div className="drw-h">
           <span className="t">{String(id).slice(-8)}</span>
+          {actions && <span className="drw-a">{actions}</span>}
           <button className="drw-x" type="button" onClick={onClose}>Close</button>
         </div>
         {err && <p className="empty">Couldn't load that interaction: {err}</p>}
