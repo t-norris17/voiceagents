@@ -38,6 +38,7 @@ export function gradeSummary(g) {
   const parts = [];
   if (g.note) parts.push(g.note);
   else parts.push(`Graded ${plural(g.graded ?? 0, "interaction", "interactions")}`);
+  if (g.skipped > 0 && !g.note) parts.push(`${g.skipped} ${g.skipped === 1 ? "was" : "were"} already being graded by another run, so nothing was spent on ${g.skipped === 1 ? "it" : "them"}`);
   if (g.calls_without_source) parts.push(`${g.calls_without_source} could not be checked against a source`);
   if (g.ungraded_total != null) parts.push(`${g.ungraded_total} not graded now`);
   const failed = (g.failed || []).map((f) => ({ id: f.conversation_id, error: f.error }));

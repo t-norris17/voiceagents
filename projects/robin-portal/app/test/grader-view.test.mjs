@@ -46,3 +46,10 @@ test("only ungraded rows can be picked, and a graded row says what it rests on",
   assert.equal(sourceTag({ scored_at: null, source_status: "ungraded" }), null);
   assert.equal(isFilter("graded"), true); assert.equal(isFilter("drop"), false);
 });
+
+test("a run that skipped interactions another run held says so, and that nothing was spent on them", () => {
+  assert.equal(gradeSummary({ graded: 6, skipped: 4, ungraded_total: 100 }).text, "Graded 6 interactions, 4 were already being graded by another run, so nothing was spent on them, 100 not graded now.");
+  assert.match(gradeSummary({ graded: 3, skipped: 1 }).text, /1 was already being graded by another run, so nothing was spent on it/);
+  assert.equal(gradeSummary({ graded: 0, skipped: 3, note: "another run already has these interactions, so nothing was graded and nothing was spent" }).text, "another run already has these interactions, so nothing was graded and nothing was spent.");
+  assert.equal(gradeSummary({ graded: 2, skipped: 0 }).text, "Graded 2 interactions.", "no skip, no extra words");
+});

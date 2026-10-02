@@ -65,12 +65,34 @@ const graded = (over = {}) => ({
 });
 const order = (calls) => calls.map((c) => `${c.method} ${c.path.split("?")[0]}`);
 
-test("a normal grade writes and stamps; it never reads old rows or deletes", async () => {
+test("a first grade on a clean interaction writes and stamps, and has nothing to delete", async () => {
   const s = stub();
   const out = await writeGrade({ conversation_id: "conv_abc1" }, graded(), false, s);
   assert.equal(out.status, "graded"); assert.equal(out.sourced, true);
-  assert.ok(!s.calls.some((c) => c.method === "DELETE" || c.method === "GET"));
+  assert.ok(!s.calls.some((c) => c.method === "DELETE"), "nothing to replace, nothing deleted");
+  assert.deepEqual(out.cleaned, { score_keys: 0, question_keys: 0 });
   assert.equal(s.calls.at(-1).method, "PATCH");
+  assert.equal(out.replaced, undefined, "only a re-grade reports before and after");
+});
+
+test("a SECOND pass over the same interaction replaces the first pass's rows instead of adding beside them", async () => {
+  // The Sep 8 / Sep 15 shape: pass one wrote keys with one wording, pass two writes the same questions under
+  // new keys. After pass two the interaction must hold pass two's rows only.
+  const s = stub({ oldScores: [{ question_key: "loan-fees-a" }, { question_key: "loan-fees-b" }, { question_key: "loan-fees" }], oldQs: [{ canonical_key: "fee-a" }, { canonical_key: "loan-fees" }] });
+  const out = await writeGrade({ conversation_id: "conv_abc1" }, graded(), false, s);
+  const o = order(s.calls);
+  assert.ok(o.indexOf("UPSERT call_question_scores") < o.indexOf("DELETE call_question_scores"), "write first, then delete");
+  const del = s.calls.filter((c) => c.method === "DELETE");
+  assert.match(del[0].path, /question_key=in\.\("loan-fees-a","loan-fees-b"\)/);
+  assert.ok(!/"loan-fees"/.test(del[0].path), "the key this grade wrote is kept");
+  assert.match(del[1].path, /canonical_key=in\.\("fee-a"\)/);
+  assert.deepEqual(out.cleaned, { score_keys: 2, question_keys: 1 });
+});
+
+test("a first grade that finds nothing never deletes the rows already there", async () => {
+  const s = stub({ oldScores: [{ question_key: "keep" }], oldQs: [{ canonical_key: "keep" }] });
+  await writeGrade({ conversation_id: "conv_abc1" }, graded({ rows: [], askedRows: [] }), false, s);
+  assert.ok(!s.calls.some((c) => c.method === "DELETE"), "an empty grade is not a licence to delete");
 });
 
 test("a re-grade writes the new rows BEFORE it deletes, and deletes only the replaced keys", async () => {

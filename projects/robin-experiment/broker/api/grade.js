@@ -27,6 +27,7 @@ import { fetchElevenLabsDocument } from "../lib/kb-text.js";
 import { CHANNEL_COLS, channelOf, systemForChannel } from "../lib/channel.js";
 import { MAX_PER_RUN, parseGradeRequest, parseGradeOutput, needsInternalAuth, internalAuthorized, inList } from "../lib/grade-run.js";
 import { writeGrade } from "../lib/grade-write.js";
+import { claimUngraded, claimRegrade, releaseClaim } from "../lib/grade-claim.js";
 
 const client = new Anthropic(); // ANTHROPIC_API_KEY
 const q = (s) => encodeURIComponent(s); // MAX_PER_RUN (10) bounds latency and cost per invocation
@@ -376,12 +377,12 @@ export default async function handler(req, res) {
       `&select=${cols}${order}&limit=${MAX_PER_RUN}`;
     let pending;
     try {
-      pending = await sb(pendingPath(`conversation_id,transcript,security_flag,security_detail,${CHANNEL_COLS}`));
+      pending = await sb(pendingPath(`conversation_id,transcript,scored_at,security_flag,security_detail,${CHANNEL_COLS}`));
     } catch (e) {
       // The channel select is an addition; if the database rejects it, grade as before (a chat then
       // gets the call wording) and say so, rather than stop grading.
       console.error("grade: channel select failed, grading without channel:", String(e?.message || e));
-      pending = await sb(pendingPath("conversation_id,transcript,security_flag,security_detail"));
+      pending = await sb(pendingPath("conversation_id,transcript,scored_at,security_flag,security_detail"));
     }
 
     res.setHeader("Cache-Control", "no-store");
@@ -392,17 +393,41 @@ export default async function handler(req, res) {
       });
     }
 
+    // CLAIM before spending anything (lib/grade-claim.js): one conditional update, arbitrated by the database,
+    // so a second run that chose the same interactions gets none of them and pays for none of them.
+    const stamp = new Date().toISOString();
+    let held;
+    if (regrade) {
+      held = (await claimRegrade(pending[0].conversation_id, pending[0].scored_at, stamp, { sb })) ? pending : [];
+    } else {
+      const got = await claimUngraded(pending.map((c) => c.conversation_id), stamp, { sb });
+      held = pending.filter((c) => got.has(c.conversation_id));
+    }
+    const skipped = pending.length - held.length;
+    if (!held.length) {
+      return res.status(200).json({
+        ok: true, graded: 0, scored_rows: 0, asked_rows: 0, results: [], failed: [], skipped,
+        note: "another run already has these interactions, so nothing was graded and nothing was spent",
+      });
+    }
+    // Give a claim back if its grading failed, so the interaction is not left looking graded.
+    const giveBack = async (call) => {
+      try { await releaseClaim(call.conversation_id, stamp, regrade ? call.scored_at : null, { sb }); }
+      catch (e) { console.error("grade: could not release the claim on", call.conversation_id, String(e?.message || e)); }
+    };
+
     const sourceCache = new Map(); // document_id -> {title, body_md} | null, shared across the batch
-    const settled = await Promise.allSettled(pending.map((c) => gradeCall(c, sourceCache)));
+    const settled = await Promise.allSettled(held.map((c) => gradeCall(c, sourceCache)));
 
     let graded = 0, scoredRows = 0, askedTotal = 0, noSource = 0;
     const results = [], failed = [];
-    for (let i = 0; i < settled.length; i++) {
-      const r = settled[i], call = pending[i];
+    for (let i = 0; i < settled.length; i++) { // settled[i] belongs to held[i]
+      const r = settled[i], call = held[i];
       if (r.status !== "fulfilled") {
         const error = String(r.reason?.message || r.reason);
         console.error("grade failed:", call.conversation_id, error);
         failed.push({ conversation_id: call.conversation_id, error });
+        await giveBack(call);
         continue;
       }
       try {
@@ -414,6 +439,7 @@ export default async function handler(req, res) {
         const error = String(e.message || e);
         console.error("grade write failed:", call.conversation_id, error);
         failed.push({ conversation_id: call.conversation_id, error });
+        await giveBack(call);
       }
     }
 
@@ -426,7 +452,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       ok: true, graded, scored_rows: scoredRows, asked_rows: askedTotal,
-      calls_without_source: noSource, pending: pending.length, ungraded_total, results, failed,
+      calls_without_source: noSource, pending: held.length, skipped, ungraded_total, results, failed,
     });
   } catch (e) {
     return res.status(500).json({ error: String(e.message || e) });

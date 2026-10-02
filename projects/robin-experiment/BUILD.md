@@ -86,6 +86,32 @@ PERSONA a tester verified as, not the human. A chat has no phone number, so it j
 name heard. Real members would make member id a true person key; for the wave it is not. Decision for
 Tanner when chat respondents matter: key chats on member id (right for real members, wrong for the wave).
 
+**Grader integrity: claim before grading, replace on every write (2026-10-02, evening).**
+Measured on the live tables: 21 interactions still hold old no-source grades with 130 demand rows, 38% of
+them near-duplicates (up to 19 rows per interaction); the 55 interactions graded with a source hold 186 rows,
+2.7% near-duplicates. Every interaction graded on Sep 8 (13 of 13) and most on Sep 15 (5 of 7) was written in
+TWO passes 25 to 50 s apart; since Sep 16, none. LIKELY cause (unproven; the Sep 8 request logs are not
+visible): two overlapping runs chose the same interactions, because an interaction was only marked graded
+after the model finished. Separately, 222 of 260 distinct topic keys appear in ONE interaction only: the model
+invents a new key per interaction, so per-topic counts on Quality and Utilization are fragmented across
+interactions as well as inflated within one. (Not affected: survey scores, NPS, security flags, the
+Utilization gauge, which counts quoted sections and never uses keys.)
+- `lib/grade-claim.js`: an interaction is CLAIMED first by one conditional UPDATE (`scored_at` is the claim;
+  `WHERE scored_at IS NULL ... RETURNING`), arbitrated by Postgres, so two runs get disjoint sets and only the
+  holder pays. A re-grade claims by compare-and-swap on the `scored_at` it read. A failed grade releases its
+  claim (only while the row still carries OUR stamp). If the function is killed before releasing (a platform
+  timeout), the interaction stays stamped with no scores: the Accuracy page tags it "no answers found" and it
+  can be re-graded. No schema change.
+- `lib/grade-write.js`: every grade REPLACES the interaction's rows. "Stale" is read from the database AFTER
+  the write, so rows left by an earlier pass or an interleaved run are removed, whatever the interleaving.
+  An empty new grade never deletes.
+- Tests: `grade-claim` (stub that changes each row once), `grade-handler` (the whole handler against a stub
+  database and model: two overlapping runs make ONE model call per interaction and leave one row each;
+  checked by mutation: with the claim disabled that test fails), `grade-run`. Broker 155, portal 35.
+- NOT DONE YET (steps 3 to 5 of the plan): stable topics (the model picks from the knowledge base's section
+  titles plus "other" instead of inventing keys), cost on the button, re-grading the 21 old duplicated
+  interactions (about $0.65).
+
 **Not verified.** Grading quality of the 10 interactions graded today (not read). The cost of a run (10
 Sonnet calls with adaptive thinking at high effort; unmeasured). Whether the grader's missing source before
 Sep 16 was the missing ELEVENLABS_API_KEY (the cutoff fits; the key's history is not visible from here).
