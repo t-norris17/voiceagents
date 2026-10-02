@@ -66,3 +66,14 @@ ${kbText}
 === REMINDER ===
 This is a dry run: no verification, no tools, answer only from the documents above, and if they don't cover it, say so the way Robin's prompt says to.`;
 }
+
+// An instruction to "treat the participant as verified" was not enough: asked "what happens to my loan if I
+// leave?", the model still answered "first I need to verify your identity", because Robin's own prompt has a
+// strong verification rule for loan topics. So the dry run also starts from the state a live call is in once
+// verification has passed: a short exchange in which Robin has already verified the caller. The tester's
+// question is then the first real thing the caller says. (Nothing here is sent anywhere but the model.)
+export const VERIFIED_OPENING = [
+  { role: "user", content: "Member ID 90002, date of birth September 30th, 1998." },
+  { role: "assistant", content: "Thanks, you're verified, and I have you on the Vertex Manufacturing 401(k). What can I help you with today?" },
+];
+export const dryRunMessages = (question) => [...VERIFIED_OPENING, { role: "user", content: String(question) }];

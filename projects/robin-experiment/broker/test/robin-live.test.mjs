@@ -101,3 +101,13 @@ test("/api/ask refuses with a 503 that names the missing setting, on GET and on 
   const post = await call({ method: "POST", body: { question: "Can I take a loan?" } });
   assert.equal(post.code, 503); assert.match(post.body.error, /ELEVENLABS_API_KEY/);
 });
+
+import { dryRunMessages, VERIFIED_OPENING } from "../lib/robin-live.js";
+test("a dry run starts from a verified caller, and the tester's question is the last, real turn", () => {
+  const m = dryRunMessages("What happens to my loan if I leave?");
+  assert.equal(m.length, 3);
+  assert.deepEqual(m.map((x) => x.role), ["user", "assistant", "user"], "alternating, ending on the caller");
+  assert.match(m[1].content, /you're verified/);
+  assert.equal(m[2].content, "What happens to my loan if I leave?");
+  assert.ok(!/\d{3}-\d{2}-\d{4}/.test(JSON.stringify(VERIFIED_OPENING)), "synthetic identifiers only: no SSN-shaped value");
+});

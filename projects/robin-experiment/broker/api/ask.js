@@ -6,7 +6,7 @@
 // temperature as her agent configuration. If Robin's configuration cannot be read it says so; it never
 // falls back to some other knowledge.
 import Anthropic from "@anthropic-ai/sdk";
-import { liveRobin, dryRunSystem } from "../lib/robin-live.js";
+import { liveRobin, dryRunSystem, dryRunMessages } from "../lib/robin-live.js";
 
 const client = new Anthropic(); // ANTHROPIC_API_KEY
 
@@ -32,7 +32,7 @@ export default async function handler(req, res) {
       max_tokens: 512,
       temperature: Math.min(1, Math.max(0, live.temperature)), // her configured temperature, so resend varies as she does
       system: dryRunSystem(live),
-      messages: [{ role: "user", content: q }],
+      messages: dryRunMessages(q), // starts from a verified caller: see lib/robin-live.js
     });
 
     const answer = msg.content
