@@ -8,6 +8,7 @@
 // worked through the oldest, and grading changed nothing the page showed.
 import { useCallback, useEffect, useRef, useState } from "react";
 import CallDrawer from "../components/CallDrawer.js";
+import NestLoader from "../components/NestLoader.js";
 import { CHANNEL_LABEL } from "../../lib/channel-label.js";
 import { topicOf } from "../../lib/interaction-state.js";
 import { PAGE, RUN_MAX, tabsFor, isFilter, runLabel, selectedLabel, gradeSummary, regradeSummary, pickable, sourceTag } from "../../lib/grader-view.js";
@@ -153,7 +154,7 @@ export default function GraderPage() {
       )}
 
       <div className="list">
-        {!data && !err && <p className="empty">Loading…</p>}
+        {!data && !err && <NestLoader size={130} label="Loading interactions" />}
         {data && calls.length === 0 && <p className="empty">{filter === "ungraded" ? "Everything is graded." : filter === "graded" ? "Nothing has been graded yet." : filter === "no_source" ? "Nothing graded without a source." : "No interactions."}</p>}
         {calls.map((c) => {
           const id = c.conversation_id, ungraded = pickable(c), tag = sourceTag(c);

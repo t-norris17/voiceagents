@@ -181,6 +181,9 @@ What happens to my plan if I leave?"></textarea>
     list.appendChild(wrap);
   }
 
+  // The portal's nest loader when this page runs inside the portal (window.rpLoader is injected there); the old dots otherwise.
+  const thinking = () => typeof window.rpLoader === "function" ? window.rpLoader({ size: 56, label: "Thinking" }) : `<span class="spin dots">Thinking</span>`;
+
   function makeCard(n, question){
     const card = document.createElement("div");
     card.className = "card";
@@ -190,7 +193,7 @@ What happens to my plan if I leave?"></textarea>
     card.innerHTML = `
       <div class="q"><span class="n">${String(n).padStart(2,"0")}</span><span class="qtext"></span></div>
       <div class="answers"></div>
-      <div class="cardfoot"><span class="spin dots">Thinking</span></div>`;
+      <div class="cardfoot">${thinking()}</div>`;
     $(".qtext", card).textContent = question;
     results.appendChild(card);
     return card;
@@ -198,7 +201,7 @@ What happens to my plan if I leave?"></textarea>
 
   async function runQuestion(card){
     const foot = $(".cardfoot", card);
-    foot.innerHTML = `<span class="spin dots">Thinking</span>`;
+    foot.innerHTML = thinking();
     const t0 = performance.now();
     try{
       const answer = await ask(card.dataset.q);

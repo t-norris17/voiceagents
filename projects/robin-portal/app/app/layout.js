@@ -17,6 +17,7 @@ export default function RootLayout({ children }) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: PRE_PAINT }} />
         <style dangerouslySetInnerHTML={{ __html: mastCss(1120) }} />
+        <link rel="stylesheet" href="/loader/loader.css" />
       </head>
       <body>
         <Masthead />

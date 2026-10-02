@@ -2,6 +2,7 @@
 // Utilization: how much of what Robin knows callers actually use, over the last 30 days. It reads grades
 // that already exist and never grades anything itself (that is the manual, paid click on Accuracy).
 import { useCallback, useEffect, useState } from "react";
+import NestLoader from "../components/NestLoader.js";
 import { gaugeView, coverageView, readLine, sectionNote, when, visible, docLabel } from "../../lib/utilization-view.js";
 
 export default function UtilizationPage() {
@@ -115,7 +116,7 @@ export default function UtilizationPage() {
           </div>
         </>
       )}
-      {!data && !err && <p className="empty">Measuring…</p>}
+      {!data && !err && <NestLoader size={150} label="Measuring" />}
     </>
   );
 }

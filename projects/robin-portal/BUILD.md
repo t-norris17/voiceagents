@@ -7,6 +7,16 @@
 ---
 
 
+## Session 2026-10-02 (night): the nest loader and the masthead logo
+
+The supplied nest animation (a nest, three eggs, a bob) is now the portal's loading state, and the nest logo sits beside "Birdnest" in the masthead (`lib/mast.js`, `public/brand/nest-logo.*`; checked light, dark and at 390px, no horizontal overflow).
+
+The loader is one function, `lib/loader.js` `loaderHtml({size,label,dots})`, with its stylesheet at `public/loader/loader.css` and four web-sized images (about 97 KB in all). The Next.js pages render it through `components/NestLoader.js` (Accuracy, Utilization, Interactions) and `app/loading.js` (every server page). The copied module pages get the SAME function: `scripts/copy-modules.mjs` injects its source as `window.rpLoader` plus the stylesheet, so the markup cannot drift. Every use in the module pages is guarded (`typeof window.rpLoader === "function"`), so the standalone broker and cleaner deployments are unchanged. `test/loader.test.mjs` checks the function is self-contained, escapes its label, and that the injection is in the copy script.
+
+Where it shows: Quality, first paint ("Loading waves" in the rail, a loader in the main column) and a veil over the page whenever a wave or range changes (the rail is dimmed and inert while it loads); the 60-second refresh stays silent. Dry Run, the "Thinking" state on each question. Factory, "Cleaning" and the Library (which previously showed nothing until the list arrived: opening it now renders the loader straight away).
+
+**Verified:** local Chromium against the built `public/`, with the metrics API delayed 2.5 s: loader present at 0.9 s, gone at 4 s, veil present and rail dimmed 0.7 s after clicking a wave, removed after the data arrived; Dry Run loader present while the answer was pending and removed after; Library loader present on open. **Not verified:** the preview deployment (this is local), and a real slow network.
+
 ## Session 2026-10-02 (evening): Accuracy gets manual controls; Utilization shows its working
 
 **Accuracy** now lists from the whole table, not the newest 100: filter tabs (All, Not graded, Graded, and

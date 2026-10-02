@@ -390,7 +390,7 @@
     if(b.dataset.s === "source") setView("source");
     if(b.dataset.s === "review"){ setView("review"); renderReview(); }
   });
-  $("#libbtn").addEventListener("click", () => { setView("library"); loadLibrary(); });
+  $("#libbtn").addEventListener("click", () => { setView("library"); renderLibrary(); loadLibrary(); });
   (function(){
     const btn = $("#learnbtn"), panel = $("#learn");
     btn.addEventListener("click", () => {
@@ -908,7 +908,7 @@
     const a = byId(SEL);
     if(!a){
       const e = el("div","empty");
-      if(RUN.running){ e.innerHTML = `<b>Cleaning<span class="dots"></span></b>Answers appear here as each section finishes. You can start reviewing the first ones while the rest run.`; }
+      if(RUN.running){ e.innerHTML = (typeof window.rpLoader === "function" ? window.rpLoader({ size: 130, label: "Cleaning" }) : `<b>Cleaning<span class="dots"></span></b>`) + `Answers appear here as each section finishes. You can start reviewing the first ones while the rest run.`; }
       else if(!RUN.articles.length){ e.innerHTML = `<b>Nothing came out of that document.</b>Open <i>Dropped</i> to see what the cleaner cut and why.`; }
       else { e.innerHTML = `<b>Pick an answer.</b>Choose one from the list.`; }
       rd.append(e); return;
@@ -1196,6 +1196,7 @@
     head.append(el("h2","sec","Library"));
     const rf = el("button","lnk","Refresh"); rf.type = "button"; rf.onclick = () => loadLibrary();
     head.append(rf); box.append(head);
+    if(!LIB.loaded && !LIB.error && typeof window.rpLoader === "function"){ const w = el("div"); w.innerHTML = window.rpLoader({ size: 130, label: "Loading the library" }); box.append(w); return; }
     if(LIB.error){
       box.append(msg("warn", `Publishing isn't configured yet: ${esc(LIB.error)}. Add SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ELEVENLABS_API_KEY and ELEVENLABS_AGENT_ID to this Vercel project, then Refresh.`));
       return;

@@ -3,6 +3,7 @@
 // What the Experiment Monitor was for, without its grading grid.
 import { useCallback, useEffect, useState } from "react";
 import CallDrawer from "../components/CallDrawer.js";
+import NestLoader from "../components/NestLoader.js";
 import { CHANNEL_LABEL } from "../../lib/channel-label.js";
 import { dotOf, needsLook, FILTERS, topicOf } from "../../lib/interaction-state.js";
 
@@ -56,6 +57,7 @@ export default function InteractionsPage() {
         ))}
       </div>
       <div className="list">
+        {!data && !err && <NestLoader size={130} label="Loading interactions" />}
         {data && calls.length === 0 && <p className="empty">No interactions recorded yet.</p>}
         {data && calls.length > 0 && shown.length === 0 && <p className="empty">Nothing in this filter.</p>}
         {shown.map((c) => (

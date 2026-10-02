@@ -53,4 +53,5 @@ test("the wordmark is Birdnest with its tagline, and it links home", () => {
   const html = mastHtml("/calls");
   assert.match(html, /<a class="rp-wm" href="\/"[^>]*>.*Birdnest.*all your eggs.*in one place/s);
   assert.ok(!/class="rp-wm"[^>]*>Robin</.test(html), "the old Robin wordmark is gone");
+  assert.match(html, /<a class="rp-wm"[^>]*><img class="rp-logo" src="\/brand\/nest-logo\.webp" alt=""/, "the nest sits beside the name, and is decorative (the link already says Birdnest)");
 });
