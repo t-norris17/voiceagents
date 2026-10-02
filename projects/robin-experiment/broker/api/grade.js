@@ -25,7 +25,7 @@ import { sb, sbAll } from "../lib/supabase.js";
 import { scoreAnswer } from "../lib/score.js";
 import { fetchElevenLabsDocument } from "../lib/kb-text.js";
 import { CHANNEL_COLS, channelOf, systemForChannel } from "../lib/channel.js";
-import { MAX_PER_RUN, parseGradeRequest, inList } from "../lib/grade-run.js";
+import { MAX_PER_RUN, parseGradeRequest, parseGradeOutput, inList } from "../lib/grade-run.js";
 import { writeGrade } from "../lib/grade-write.js";
 
 const client = new Anthropic(); // ANTHROPIC_API_KEY
@@ -271,16 +271,14 @@ Review this call per your instructions. Return ONLY the structured JSON.`;
 
   const msg = await client.messages.create({
     model: "claude-sonnet-5",
-    max_tokens: 8000,
+    max_tokens: 16000, // was 8000: thinking draws from this too, and a long call ran out mid-JSON (stays under the SDK's non-streaming limit)
     thinking: { type: "adaptive" },
     output_config: { effort: "high", format: { type: "json_schema", schema: SCHEMA } },
     // A typed chat gets the channel-adapted prompt; every other channel gets SYSTEM untouched.
     system: systemForChannel(SYSTEM, channelOf(call)),
     messages: [{ role: "user", content: user }],
   });
-  const text = msg.content.find((b) => b.type === "text");
-  if (!text) throw new Error("grade returned no text block");
-  const out = JSON.parse(text.text);
+  const out = parseGradeOutput(msg);
 
   const docTitles = docs.map((d) => d.title).filter(Boolean);
 

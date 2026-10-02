@@ -114,3 +114,15 @@ test("the demand record is replaced only when the new run produced one", async (
   assert.deepEqual(out.replaced.removed_question_keys, []);
   assert.ok(!s.calls.some((c) => c.method === "DELETE" && /call_questions/.test(c.path)));
 });
+
+import { parseGradeOutput } from "../lib/grade-run.js";
+test("a reply cut off at the token limit is reported as that, not as a JSON error", () => {
+  const cut = { stop_reason: "max_tokens", content: [{ type: "text", text: '{"answers":[{"canonical_key":"a","question_text":"unterminated' }] };
+  assert.throws(() => parseGradeOutput(cut), /cut off at the model's output limit, so nothing was written/);
+});
+test("a good reply parses; a reply with no text or bad JSON fails with a plain message", () => {
+  const ok = { stop_reason: "end_turn", content: [{ type: "thinking", thinking: "…" }, { type: "text", text: '{"answers":[],"all_questions":[]}' }] };
+  assert.deepEqual(parseGradeOutput(ok), { answers: [], all_questions: [] });
+  assert.throws(() => parseGradeOutput({ stop_reason: "end_turn", content: [] }), /no text block/);
+  assert.throws(() => parseGradeOutput({ stop_reason: "end_turn", content: [{ type: "text", text: "{nope" }] }), /not valid JSON.*nothing was written/);
+});

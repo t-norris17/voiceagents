@@ -67,11 +67,14 @@ export default function GraderPage() {
     try {
       const r = await fetch("/api/grade", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
       const g = await r.json().catch(() => null);
-      if (!r.ok) throw new Error(g?.error || `HTTP ${r.status}`);
-      setLast({ kind, g }); setPicked(new Set()); setReload((n) => n + 1);
-      await load(filter, data?.calls?.length || PAGE);
+      if (!r.ok) throw new Error(g?.error || `the portal stopped waiting (HTTP ${r.status}); the grader may still be working, so the list below is reloaded and shows what it has done so far`);
+      setLast({ kind, g }); setPicked(new Set());
     } catch (e) { setLast({ kind, g: { error: String(e.message || e) } }); }
-    finally { setBusy(null); }
+    // Reload either way: after a dropped connection the work may have finished anyway, and the page
+    // should show the database, not the last thing the browser heard.
+    setReload((n) => n + 1);
+    await load(filter, data?.calls?.length || PAGE);
+    setBusy(null);
   }
   const gradeRun = () => post({}, "run", "grade");
   const gradePicked = () => post({ conversation_ids: [...picked] }, "picked", "grade");

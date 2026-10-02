@@ -44,3 +44,16 @@ export function mergeSecurity(prev, next) {
 
 // PostgREST list literal for a set of keys (ids and slugs only; callers pass already-validated values).
 export const inList = (keys) => `(${keys.map((k) => `"${String(k).replace(/"/g, "")}"`).join(",")})`;
+
+// The model's reply, parsed. A reply that stopped at the token limit is cut mid-JSON; say so plainly
+// instead of surfacing "Unterminated string in JSON at position 7947". (The budget pays for the model's
+// thinking as well as the answer, so a long interaction with many questions can run out.)
+export function parseGradeOutput(msg) {
+  const text = (msg?.content || []).find((b) => b?.type === "text");
+  if (msg?.stop_reason === "max_tokens") {
+    throw new Error("the review was cut off at the model's output limit, so nothing was written; this interaction is too long to grade in one pass");
+  }
+  if (!text) throw new Error("grade returned no text block");
+  try { return JSON.parse(text.text); }
+  catch (e) { throw new Error(`the review was not valid JSON (${String(e.message || e).slice(0, 80)}); nothing was written`); }
+}
