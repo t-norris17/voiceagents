@@ -356,6 +356,7 @@ Review this call per your instructions. Return ONLY the structured JSON.`;
     conversation_id: call.conversation_id,
     rows,
     askedRows,
+    usage: { input_tokens: Number(msg.usage?.input_tokens) || 0, output_tokens: Number(msg.usage?.output_tokens) || 0 }, // what the model reported, for the cost line on the page
     security_flag: !!out.security_flag,
     security_detail: String(out.security_detail || "").trim() || null,
   };
@@ -431,9 +432,11 @@ export default async function handler(req, res) {
     const settled = await Promise.allSettled(held.map((c) => gradeCall(c, sourceCache, menu)));
 
     let graded = 0, scoredRows = 0, askedTotal = 0, noSource = 0;
+    const usage = { input_tokens: 0, output_tokens: 0 }; // only model calls that returned: one that failed before a reply reports nothing
     const results = [], failed = [];
     for (let i = 0; i < settled.length; i++) { // settled[i] belongs to held[i]
       const r = settled[i], call = held[i];
+      if (r.status === "fulfilled" && r.value.usage) { usage.input_tokens += r.value.usage.input_tokens; usage.output_tokens += r.value.usage.output_tokens; }
       if (r.status !== "fulfilled") {
         const error = String(r.reason?.message || r.reason);
         console.error("grade failed:", call.conversation_id, error);
@@ -463,7 +466,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       ok: true, graded, scored_rows: scoredRows, asked_rows: askedTotal,
-      calls_without_source: noSource, pending: held.length, skipped, ungraded_total, results, failed,
+      calls_without_source: noSource, pending: held.length, skipped, ungraded_total, usage, results, failed,
     });
   } catch (e) {
     return res.status(500).json({ error: String(e.message || e) });

@@ -11,7 +11,7 @@ import CallDrawer from "../components/CallDrawer.js";
 import NestLoader from "../components/NestLoader.js";
 import { CHANNEL_LABEL } from "../../lib/channel-label.js";
 import { topicOf } from "../../lib/interaction-state.js";
-import { PAGE, RUN_MAX, tabsFor, isFilter, runLabel, selectedLabel, gradeSummary, regradeSummary, pickable, sourceTag } from "../../lib/grader-view.js";
+import { PAGE, RUN_MAX, tabsFor, isFilter, runLabel, selectedLabel, gradeSummary, regradeSummary, pickable, sourceTag, oneCost } from "../../lib/grader-view.js";
 
 const when = (iso) => (iso ? String(iso).slice(0, 16).replace("T", " ") : "—");
 
@@ -100,9 +100,9 @@ export default function GraderPage() {
   // The grade / re-grade control for the interaction open in the drawer.
   const drawerAction = opened && (
     pickable(opened)
-      ? <button className="btn sec sm" type="button" disabled={working} onClick={() => gradeOne(opened.conversation_id)}>{busy === opened.conversation_id ? "Grading…" : "Grade this one"}</button>
+      ? <button className="btn sec sm" type="button" disabled={working} onClick={() => gradeOne(opened.conversation_id)}>{busy === opened.conversation_id ? "Grading…" : `Grade this one · ${oneCost()}`}</button>
       : confirm === opened.conversation_id
-        ? <span className="g-conf"><span>Replaces this grade.</span><button className="btn sm" type="button" disabled={working} onClick={() => regrade(opened.conversation_id)}>Confirm</button><button className="btn sec sm" type="button" onClick={() => setConfirm(null)}>Cancel</button></span>
+        ? <span className="g-conf"><span>Replaces this grade. Costs {oneCost()}.</span><button className="btn sm" type="button" disabled={working} onClick={() => regrade(opened.conversation_id)}>Confirm</button><button className="btn sec sm" type="button" onClick={() => setConfirm(null)}>Cancel</button></span>
         : <button className="btn sec sm" type="button" disabled={working} onClick={() => setConfirm(opened.conversation_id)}>{busy === opened.conversation_id ? "Grading…" : "Re-grade"}</button>
   );
 
@@ -177,12 +177,12 @@ export default function GraderPage() {
               </div>
               <div className="meta g-meta g-act">
                 <span>{c.scored_at ? `graded ${when(c.scored_at)}` : "not graded"}</span>
-                {ungraded && <button className="btn sec sm" type="button" disabled={working} onClick={() => gradeOne(id)}>{busy === id ? "Grading…" : "Grade"}</button>}
+                {ungraded && <button className="btn sec sm" type="button" disabled={working} title={`Grade this interaction, ${oneCost()}`} onClick={() => gradeOne(id)}>{busy === id ? "Grading…" : "Grade"}</button>}
                 {c.source_status === "no_source" && confirm !== id && <button className="btn sec sm" type="button" disabled={working} onClick={() => setConfirm(id)}>Re-grade</button>}
               </div>
               {confirm === id && !ungraded && (
                 <div className="g-confirm g-act">
-                  <span>Re-grading replaces this interaction's grade. The new rows are written first, and only the old rows they replace are removed. Survey answers and the call record are not touched.</span>
+                  <span>Re-grading replaces this interaction's grade. The new rows are written first, and only the old rows they replace are removed. Survey answers and the call record are not touched. Costs {oneCost()}.</span>
                   <button className="btn sm" type="button" disabled={working} onClick={() => regrade(id)}>{busy === id ? "Grading…" : "Re-grade"}</button>
                   <button className="btn sec sm" type="button" onClick={() => setConfirm(null)}>Cancel</button>
                 </div>

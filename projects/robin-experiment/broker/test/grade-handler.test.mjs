@@ -113,6 +113,7 @@ test("one run grades what it holds: one model call each, one row each, all stamp
   const r = await run(undefined);
   assert.equal(r.code, 200);
   assert.equal(r.body.graded, 4); assert.equal(r.body.skipped, 0); assert.equal(state.modelCalls, 4);
+  assert.deepEqual(r.body.usage, { input_tokens: 4, output_tokens: 4 }, "the run reports what the model said it used, summed over its calls");
   assert.ok(state.events.every((e) => e.scored_at), "every interaction is stamped");
   assert.deepEqual([...perConv(state.scores).values()], [1, 1, 1, 1]);
 });
