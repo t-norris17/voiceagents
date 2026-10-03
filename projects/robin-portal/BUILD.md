@@ -7,6 +7,45 @@
 ---
 
 
+## Session 2026-10-03: after-hours requests designed (no code), call audio scoped
+
+**Design only, nothing built.** The Rangly pattern (a voice call becomes a pending request a person
+acts on) applied to Robin, scoped to after hours: Robin cannot transfer, so she files a callback
+request, speaks a server-computed deadline (next open plus 8 business hours, a placeholder SLA), and
+the call center works a queue in Birdnest that replaces their sticky notes. Spec and approved mocks:
+[`requests/SPEC.md`](./requests/SPEC.md), `requests/mocks/`. Pointers added to SCOPE (feature key
+`requests`) and SPEC.
+
+**Grounding, from live data:** 226 interactions; 45 transferred, all with a `transfer_reason`, most of
+them requests ("ready to request a 401(k) loan and needs specialist to process"). Robin's post-call
+webhook already reaches the broker, so the safety net needs no new webhook.
+
+**Found while specifying:**
+- `members` has **no phone column**, so "callback to the number on file" has nothing to read. Open
+  question in the spec; recommendation is caller ID for the experiment.
+- Robin's tool endpoints are open by design; a tool that writes rows needs a shared-secret header.
+- Adding Requests to the full masthead wrapped it to three rows. A rep role sees only its grants,
+  which makes v1 auth a visible requirement, not only a security one.
+
+**Call audio (asked, not specced).** Every stored interaction has `has_audio: true`; live privacy
+settings are `record_voice: true`, `retention_days: -1`, `delete_audio: false`; the post-call webhook
+has `send_audio: false`. Recommended shape: on first play, the portal fetches the conversation audio
+from ElevenLabs server-side, stores it in a private Supabase Storage bucket, and plays from a
+short-lived signed URL (seeking works, no function response-size question), with a "who listened"
+audit row per play. Transcript turns carry `time_in_call_secs` (224 of 226), so click-a-line-to-seek
+is possible. **Compliance flag:** Robin's live first message does not say the call is recorded; the
+player widens who can hear recordings, so that question goes to compliance before it ships. (This is
+not the settled virtual-assistant disclosure.) **Unverified:** the exact ElevenLabs audio endpoint
+and format (docs blocked from this sandbox), and what `retention_days: -1` means.
+
+**Next session**
+> Nothing here is built. Before any requests code: v1 auth (accounts, roles, grants, audit) is the
+> prerequisite. Then answer the spec's open questions with the business (callback number source, SLA
+> clock, hours, inbox). Audio: decide whether to spec it now; put the recording-disclosure question to
+> compliance either way.
+
+---
+
 ## Re-grade of the old no-source interactions (2026-10-02, night)
 
 All 21 interactions graded before the source check existed were re-graded one at a time through the portal, each guarded (the target had to still be in the no-source list). Database totals before and after: score rows 252 to 203, question rows 336 to 274, no duplicate (interaction, key) pairs left; survey answers 226, survey people 33, security flags 4, gap requests 2 and graded interactions 115 all unchanged. Interactions with only no-source rows: 21 to 0.

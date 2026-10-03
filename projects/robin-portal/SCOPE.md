@@ -104,6 +104,7 @@ A feature is a key in code, toggled per organisation in Admin. First cut, in ord
 | `artifacts` | Handouts, call cards, answer key, KB article sources | repo `demo/`, `kb/vertex/` |
 | `robin_status` | Live agent version, KB docs, tools, phone number | ElevenLabs API, read-only |
 | `admin` | The Admin page itself | new |
+| `requests` | After-hours callback requests: the call center's queue. Spec: [`requests/SPEC.md`](./requests/SPEC.md) | new (broker tools + tables) |
 
 ## Open questions
 
