@@ -8,6 +8,129 @@
 
 
 
+## Session 2026-10-02 (evening): grader controls, a re-grade, and Utilization made honest
+
+**The symptom.** "Grade new interactions" appeared to do nothing. It did run: 10 interactions were stamped
+graded that day. But `api/grade.js` took the 10 OLDEST ungraded (`order=created_at.asc`) while
+`api/calls.js` listed the NEWEST 100, and all of the newest 100 were ungraded (225 calls, 106 graded, 119
+not), so grading could never change anything the page showed. A seam between two files, not a broken grader.
+
+**What changed.**
+- `api/grade.js` grades newest first, and now also takes `{ conversation_ids: [...] }` (exactly those, up to
+  10) and `{ conversation_ids: [id], regrade: true }` (one already-graded interaction). It returns a result
+  per interaction and every failure by id (it used to log failures and say nothing), plus `ungraded_total`.
+  The write path is `lib/grade-write.js`; the request rules are `lib/grade-run.js`.
+- **Re-grade is the only path that deletes, and it is ordered so a failure loses nothing.** Read the old
+  rows, write the new rows, then delete only the OLD rows whose key the new grade did not write again
+  (the model invents a new topic key each run, so an overwrite alone would leave old rows beside new ones
+  and double-count them). A re-grade with an empty result deletes nothing. It never clears a security flag.
+  It touches `call_question_scores`, `call_questions` and the `scored_at`/`security_*` columns of one
+  `ai_call_events` row. It does not touch `survey_answers` / `survey_people`: those are views that reference
+  neither grader table nor `scored_at` (checked in the live database), and there are no foreign keys or
+  triggers on the grader tables.
+- `api/calls.js` takes `filter` (all, ungraded, graded, no_source) and `offset`, and returns whole-table
+  `totals` and a per-call `source_status`. `no_source` = graded, but every score row is `no_source`: the
+  grader could not read the documents (it only reads dashboard-uploaded documents when ELEVENLABS_API_KEY is
+  set; all 148 such rows were written Sep 8 to 15). Those interactions were counted "graded" but nothing in
+  them was checked.
+- `lib/supabase.js` gained `sbAll`: Supabase returns at most 1000 rows per request whatever `limit` says, so
+  the `&limit=5000` reads in the new and old endpoints would have silently stopped at 1000. They page now.
+- **Utilization** counts only interactions graded WITH a source ("measured") and reports the rest as
+  `unmeasurable` (about 26 of the 41 "graded" in the window). Each document reports `read_in` and `used_in`
+  from the retrieval records stored with every interaction, graded or not (`used_chunk_ids` is populated in
+  150 of 213 interactions that retrieved anything). Exact per document; NOT placeable on a section, because
+  the stored records hold chunk ids, not chunk text. Each section carries a `preview` and the questions that
+  cited it.
+
+**Verified.** Broker 133/133 (new: `grade-run`, `calls-filter`, utilization detail, `sbAll`). Portal 34/34.
+The Accuracy page was driven in Chromium against a stateful stub shaped like the live data (150
+interactions, the 30 oldest graded): counts move after a run, the graded filter reaches rows the newest-100
+window hid, a failure is reported by id, re-grade posts nothing until confirmed, paging works.
+
+**Re-graded on live data (6 interactions, one at a time, each snapshotted first).** Old grade rows were
+heavily duplicated: the model invents a fresh topic key every run, so one question was stored under 2 to 5
+near-identical keys. After re-grading, 7 to 13 old rows collapsed to 3 to 6 checked ones per interaction
+(table: 265 -> 254 score rows, 350 -> 337 question rows after the other grading that day). Survey views
+unchanged (225 / 33), security flags unchanged (4). **This corrects a number I gave earlier:** the unmet
+demand "can I roll my loan into a new loan" (3) and "pay fees from another account" (2) were each ONE caller
+asking once, recorded under several keys. Treat any pre-re-grade per-topic count from the 27 no-source
+interactions as inflated.
+
+**Two defects found while re-grading, both fixed.**
+- The grader gave the model 8000 output tokens and the model's thinking draws from that, so a long
+  interaction (7+ answers) was cut off mid-JSON ("Unterminated string"). Nothing was written, but such an
+  interaction would fail on every click and, with newest-first runs, burn a paid slot each time. Now 16000,
+  and a cut-off reply is reported as that (`parseGradeOutput`). Not measured: cost per run.
+- The portal's proxy route had no `maxDuration`; a long grade (30 to 77 s measured) could outlast it. It is
+  now 120 s, matching the broker. A headless-Chromium run through this sandbox's egress proxy still showed
+  502s at about 25 s while the same request made by curl returned 200 after 77 s, and the broker log showed
+  the work finishing; the 502 is most likely the sandbox proxy, not Vercel. UNVERIFIED in a real browser.
+
+**Auth findings (the broker's gate is a fixed list: `middleware.js` matcher + PROTECTED).**
+- `/api/grade`, `/api/ask`, `/api/questions`, `/api/gap_request` are NOT gated, and `middleware.test.mjs`
+  lists them as "must stay open" (the README calls `/api/ask` an unauthenticated Phase-1 test tool). They
+  spend model money and `/api/ask` answers from Robin's documents. Left as they were: a recorded decision.
+  RECOMMENDATION: gate them, the portal already sends the internal header. Needs Tanner's yes.
+- New this session, and handled: `/api/utilization` and `/api/channels` are gated. Grading BY ID and
+  RE-GRADE (the only paths that overwrite or delete a grade) require the internal secret and fail closed;
+  the plain no-argument grade call is unchanged.
+
+**#8 (survey wording and channel).** Visible wording says "interaction" where it said "call" (Quality page,
+guide, slide); the literal-phone passages in the guide are unchanged, and `post-call` stays (it is an
+ElevenLabs term). `/api/survey-export?level=calls` is an API parameter and is unchanged. A channel pill
+(Phone / Web voice / Web chat) comes from the new read-only `/api/channels` (no phone numbers).
+**Identity was NOT changed, on purpose.** `survey_answers.person_key` = caller phone number + the name heard
+(+ the member ref only to separate people who share a number). In the wave, 70 phone surveys came from 33
+people but only 3 distinct member ids: testers share a few synthetic personas, so a member id is the
+PERSONA a tester verified as, not the human. A chat has no phone number, so it joins a person only by the
+name heard. Real members would make member id a true person key; for the wave it is not. Decision for
+Tanner when chat respondents matter: key chats on member id (right for real members, wrong for the wave).
+
+**Grader integrity: claim before grading, replace on every write (2026-10-02, evening).**
+Measured on the live tables: 21 interactions still hold old no-source grades with 130 demand rows, 38% of
+them near-duplicates (up to 19 rows per interaction); the 55 interactions graded with a source hold 186 rows,
+2.7% near-duplicates. Every interaction graded on Sep 8 (13 of 13) and most on Sep 15 (5 of 7) was written in
+TWO passes 25 to 50 s apart; since Sep 16, none. LIKELY cause (unproven; the Sep 8 request logs are not
+visible): two overlapping runs chose the same interactions, because an interaction was only marked graded
+after the model finished. Separately, 222 of 260 distinct topic keys appear in ONE interaction only: the model
+invents a new key per interaction, so per-topic counts on Quality and Utilization are fragmented across
+interactions as well as inflated within one. (Not affected: survey scores, NPS, security flags, the
+Utilization gauge, which counts quoted sections and never uses keys.)
+- `lib/grade-claim.js`: an interaction is CLAIMED first by one conditional UPDATE (`scored_at` is the claim;
+  `WHERE scored_at IS NULL ... RETURNING`), arbitrated by Postgres, so two runs get disjoint sets and only the
+  holder pays. A re-grade claims by compare-and-swap on the `scored_at` it read. A failed grade releases its
+  claim (only while the row still carries OUR stamp). If the function is killed before releasing (a platform
+  timeout), the interaction stays stamped with no scores: the Accuracy page tags it "no answers found" and it
+  can be re-graded. No schema change.
+- `lib/grade-write.js`: every grade REPLACES the interaction's rows. "Stale" is read from the database AFTER
+  the write, so rows left by an earlier pass or an interleaved run are removed, whatever the interleaving.
+  An empty new grade never deletes.
+- Tests: `grade-claim` (stub that changes each row once), `grade-handler` (the whole handler against a stub
+  database and model: two overlapping runs make ONE model call per interaction and leave one row each;
+  checked by mutation: with the claim disabled that test fails), `grade-run`. Broker 155, portal 35.
+- **Stable topics (step 3).** `lib/topics.js`: the grader files each question under a FIXED menu instead of a
+  label it invents. The menu is the section titles of the documents attached to Robin (read live through
+  `liveRobin`, so it follows her knowledge), minus "Common questions" lists (they restate other sections),
+  plus `account-figures` (the caller's own balance, vested amount, loan on file: answered from tools) and
+  `other`. The model is held to it by an ENUM in the response schema; `normalize()` still maps anything
+  off-menu to `other`. Row keys: a menu topic is its own key (`loans--terms-and-cost`), so an interaction has at
+  most ONE row per topic (several questions on a topic are merged: claims joined, judgments ANDed, answered
+  only if every question was); `other` keeps one row per distinct question (`other~<question slug>`).
+  `category` now holds the document slug (`loans`, `leaving`, `account`, `other`). If Robin's documents cannot
+  be read the grader falls back to free-form keys and carries on. No schema change. Utilization's unmet list
+  groups by topic and shows up to three example questions per group.
+  CAVEATS: existing rows keep their old keys until re-graded, so per-topic counts mix old and new until then;
+  the menu follows the knowledge base, so counts across a knowledge-base change are not perfectly comparable;
+  the menu adds roughly 1,500 input tokens per interaction (not measured against the bill).
+- NOT DONE YET: cost on the button, and re-grading the 21 old duplicated interactions (about $0.65).
+
+**Not verified.** Grading quality of the 10 interactions graded today (not read). The cost of a run (10
+Sonnet calls with adaptive thinking at high effort; unmeasured). Whether the grader's missing source before
+Sep 16 was the missing ELEVENLABS_API_KEY (the cutoff fits; the key's history is not visible from here).
+A live re-grade, until the first one is run and its before/after read.
+
+---
+
 ## Session 2026-10-02 (later): Utilization
 
 `GET /api/utilization?days=30` measures how much of what Robin knows callers actually use. Read-only and

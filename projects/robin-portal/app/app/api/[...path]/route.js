@@ -5,6 +5,10 @@
 import { upstreamFor } from "../../../lib/upstreams.js";
 
 export const dynamic = "force-dynamic";
+// A grading run waits on a paid model for up to the broker's own limit (300 s, broker vercel.json; a 366 s call with 19 questions outran 120 s). Without
+// this the portal gave up first, the broker kept going and finished, and the page showed Vercel's error
+// page for work that had in fact succeeded.
+export const maxDuration = 300;
 
 async function proxy(request, { params }) {
   const { path = [] } = await params;

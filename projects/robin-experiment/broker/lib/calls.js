@@ -27,3 +27,51 @@ export function summarize(rows, now = Date.now()) {
   }
   return { last_24h, last_7d, ungraded_in_window: ungraded };
 }
+
+// ---- Accuracy page: filter, page, and say what each grade rests on ------------------------------------
+// The grader stamps scored_at on a call when it is graded. Whether that grade had a source to check
+// against is a property of its score rows: every row `no_source` means Robin's answers could not be
+// checked (the grader could not read the documents), which is what makes an interaction worth re-grading.
+export const FILTERS = new Set(["all", "ungraded", "graded", "no_source"]);
+export const parseFilter = (raw) => (FILTERS.has(String(raw)) ? String(raw) : "all");
+export function parseOffset(raw, max = 5000) {
+  const n = Number.parseInt(String(raw ?? ""), 10);
+  return Number.isFinite(n) && n > 0 ? Math.min(n, max) : 0;
+}
+
+// conversation_id -> "sourced" (at least one answer was checked against a document) | "no_source" (it
+// has score rows and none could be). A graded call missing from the map has no score rows at all.
+export function sourceStatusByCall(scoreRows) {
+  const m = new Map();
+  for (const r of scoreRows || []) {
+    const id = r?.conversation_id; if (!id) continue;
+    const sourced = !!r.grounding && r.grounding !== "no_source";
+    if (sourced) m.set(id, "sourced");
+    else if (!m.has(id)) m.set(id, "no_source");
+  }
+  return m;
+}
+
+export const statusOf = (row, map) => (row?.scored_at ? (map.get(row.conversation_id) || "no_answers") : "ungraded");
+
+// `rows` are every call, newest first; returns the ids a filter keeps, in that order.
+export function selectIds(rows, filter, map) {
+  const keep = {
+    all: () => true,
+    ungraded: (r) => !r.scored_at,
+    graded: (r) => !!r.scored_at,
+    no_source: (r) => !!r.scored_at && map.get(r.conversation_id) === "no_source",
+  }[parseFilter(filter)];
+  return (rows || []).filter(keep).map((r) => r.conversation_id);
+}
+
+// Counts over the WHOLE table, so the page's numbers do not depend on how many rows it has loaded.
+export function totals(rows, map) {
+  let graded = 0, withoutSource = 0;
+  for (const r of rows || []) {
+    if (!r.scored_at) continue;
+    graded += 1;
+    if (map.get(r.conversation_id) === "no_source") withoutSource += 1;
+  }
+  return { total: (rows || []).length, graded, ungraded: (rows || []).length - graded, graded_without_source: withoutSource };
+}

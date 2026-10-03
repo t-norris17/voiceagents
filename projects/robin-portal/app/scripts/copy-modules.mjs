@@ -19,6 +19,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PRE_PAINT, CONTROL_JS } from "../lib/theme.js";
 import { mastHtml, mastCss } from "../lib/mast.js";
+import { loaderHtml } from "../lib/loader.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const app = resolve(here, "..");
@@ -100,10 +101,12 @@ ${mastCss(width)}
 .rp-hide-tag .tag,.rp-hide-tag .pg-theme{display:none}
 </style>
 <script>${CONTROL_JS}</script>
+<link rel="stylesheet" href="/loader/loader.css">
+<script>window.rpLoader=${loaderHtml.toString()}</script>
 `;
 
 const pages = [
-  ["survey/index.html", "/survey/", 1400],
+  ["survey/index.html", "/survey/", 1120], // the page widens its own --rp-w in Advanced
   ["robin-q-tester/index.html", "/robin-q-tester/", 1120],
   ["factory/index.html", "/factory/", 1120],
   ["survey/guide/index.html", "/survey/", 1120],

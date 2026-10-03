@@ -4,7 +4,7 @@
     { "source": "/", "destination": "https://robin-portal-dusky.vercel.app/", "permanent": false }
   ],
   "functions": {
-    "api/grade.js": { "maxDuration": 120 },
+    "api/grade.js": { "maxDuration": 300 },
     "api/survey-themes.js": { "maxDuration": 60 }
   }
 }

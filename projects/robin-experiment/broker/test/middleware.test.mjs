@@ -20,6 +20,11 @@ const GATED = [
   "/dashboard", "/dashboard/",
   "/api/metrics", "/api/metrics?window=7d",
   "/api/survey-export", "/api/survey-call", "/api/survey-ask", "/api/survey-themes",
+  "/api/calls", "/api/call-scores",
+  "/api/utilization", "/api/channels", // new: read-only, built on interaction text, no reason to be open
+  // Gated on 2026-10-02 at Tanner's request. They spend model money (/api/ask, /api/grade) or write
+  // grades and gap requests; none is called by Robin mid-call. The portal sends the internal header.
+  "/api/ask", "/api/grade", "/api/questions", "/api/gap_request",
 ];
 
 // Gating any of these does not hide a dashboard — it takes Robin off the phone. ElevenLabs calls
@@ -27,8 +32,7 @@ const GATED = [
 // authenticates with ELEVENLABS_WEBHOOK_SECRET instead).
 const MUST_STAY_OPEN = [
   "/api/postcall", "/api/verify_caller", "/api/get_balance",
-  "/api/ask", "/api/grade", "/api/questions", "/api/gap_request",
-  "/", "/robin-q-tester/",
+  "/", "/robin-q-tester/", // the Dry Run PAGE is static and open; the API it calls is behind the password
 ];
 
 // Sibling routes that merely start with the same letters. A bare startsWith() would sweep these in.

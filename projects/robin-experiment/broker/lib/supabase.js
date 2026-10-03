@@ -23,3 +23,18 @@ export async function sb(path, { method = "GET", body, prefer } = {}) {
   const text = await res.text();
   return text ? JSON.parse(text) : null;
 }
+
+// Every row of a query, a page at a time. PostgREST (Supabase) returns at most 1000 rows per request
+// whatever `limit` says, so a single `&limit=5000` quietly stops at 1000 once a table grows past that.
+// `path` must not carry its own limit or offset; give it a stable `order=` so pages do not overlap.
+export async function sbAll(path, { pageSize = 1000, max = 50000, fetcher = sb } = {}) {
+  const out = [];
+  const sep = path.includes("?") ? "&" : "?";
+  for (let offset = 0; offset < max; offset += pageSize) {
+    const page = await fetcher(`${path}${sep}limit=${pageSize}&offset=${offset}`);
+    if (!Array.isArray(page)) break;
+    out.push(...page);
+    if (page.length < pageSize) break;
+  }
+  return out;
+}

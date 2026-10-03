@@ -8,7 +8,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { htmlToText } from "../lib/kb-text.js";
-import { norm, splitSections, fragmentsOf, compute } from "../lib/utilization.js";
+import { norm, splitSections, fragmentsOf, compute, previewOf, retrievalByDocument } from "../lib/utilization.js";
 
 const LOANS_MD = `# Vertex Manufacturing 401(k) — Loans From Your Account
 
@@ -122,4 +122,71 @@ test("questions nothing answered are grouped by topic and ranked", () => {
 
 test("norm treats markdown and case as noise but keeps the document's own dashes", () => {
   assert.equal(norm("**Yes — the Vertex plan** allows loans"), "yes — the vertex plan allows loans");
+});
+
+// ---- detail, honest coverage, and retrieval records ------------------------------------------------------
+test("a section carries a preview and the questions whose answers cited it", () => {
+  const docs = [{ id: "d1", name: "Loans", usage_mode: "auto", body: LOANS_MD }];
+  const r = compute({
+    docs, interactions: 10, graded: 4, measured: 2, unmeasurable: 2,
+    quotes: [
+      { quote: "the lesser of $50,000 or 50% of your vested account balance", question: "How much can I borrow?" },
+      { quote: "lesser of $50,000 or 50% of your vested account balance", question: "How much can I borrow?" },
+      { quote: "the lesser of $50,000 or 50% of your vested account balance", question: "Can I borrow half my balance?" },
+    ],
+  });
+  const s = r.documents[0].sections.find((x) => x.title === "How much you can borrow");
+  assert.equal(s.count, 3);
+  assert.deepEqual(s.questions, ["How much can I borrow?", "Can I borrow half my balance?"], "each question once");
+  assert.match(s.preview, /^Minimum: \$1,000\./);
+  const unused = r.documents[0].sections.find((x) => !x.used);
+  assert.ok(unused.preview.length > 0 && unused.questions.length === 0);
+});
+
+test("coverage counts interactions measured against a source, not interactions merely stamped graded", () => {
+  const docs = [{ id: "d1", name: "Loans", usage_mode: "auto", body: LOANS_MD }];
+  const r = compute({ docs, quotes: [], interactions: 100, graded: 80, measured: 15, unmeasurable: 65 });
+  assert.equal(r.graded, 80); assert.equal(r.measured, 15); assert.equal(r.unmeasurable, 65);
+  assert.equal(r.coverage, 0.15);
+  // a caller that passes only `graded` (the old shape) is unchanged
+  assert.equal(compute({ docs, quotes: [], interactions: 100, graded: 40 }).coverage, 0.4);
+});
+
+test("previewOf strips markup, collapses spacing and trims on a word", () => {
+  assert.equal(previewOf("**Bold** and <b>html</b>\n\nline"), "Bold and html line");
+  const long = previewOf("word ".repeat(100), 30);
+  assert.ok(long.endsWith("…") && long.length <= 31 && !/\swo…$/.test(long));
+});
+
+test("read-in and used-in count interactions once per document, with used resolved through the chunk", () => {
+  const turn = (chunks, used = []) => ({ rag_retrieval_info: { chunks: chunks.map(([c, d]) => ({ chunk_id: c, document_id: d })), used_chunk_ids: used } });
+  const t1 = [turn([["c1", "A"], ["c2", "B"]], ["c1"]), turn([["c3", "A"]], [])]; // A read twice but one interaction
+  const t2 = [turn([["c4", "B"]], ["c4"])];
+  const t3 = [{ role: "user", message: "hi" }, { rag_retrieval_info: null }];
+  const m = retrievalByDocument([t1, t2, t3, null]);
+  assert.deepEqual(m.get("A"), { read_in: 1, used_in: 1 });
+  assert.deepEqual(m.get("B"), { read_in: 2, used_in: 1 });
+  assert.equal(m.get("C"), undefined);
+});
+
+test("compute attaches read_in and used_in to each document, zero when there are no records", () => {
+  const docs = [{ id: "A", name: "Loans", usage_mode: "auto", body: LOANS_MD }, { id: "B", name: "Other", usage_mode: "auto", body: "# T\n\n## S\n\ntext here" }];
+  const r = compute({ docs, quotes: [], interactions: 2, graded: 0, retrieval: new Map([["A", { read_in: 5, used_in: 2 }]]) });
+  assert.deepEqual([r.documents[0].read_in, r.documents[0].used_in, r.documents[1].read_in, r.documents[1].used_in], [5, 2, 0, 0]);
+});
+
+test("unmet demand groups by topic key and keeps a few example questions from the group", () => {
+  const docs = [{ id: "d", name: "Loans", usage_mode: "auto", body: LOANS_MD }];
+  const T = "loans--terms-and-cost";
+  const r = compute({ docs, quotes: [], interactions: 5, graded: 3, unmet: [
+    { canonical_key: T, canonical_question: "Can fees come from another account?", fail_reason: "no_content" },
+    { canonical_key: T, canonical_question: "Is there a fee to refinance?", fail_reason: "no_content" },
+    { canonical_key: T, canonical_question: "Is there a fee to refinance?", fail_reason: "no_content" },
+    { canonical_key: "other~roll-my-loan", canonical_question: "Can I roll my loan?", fail_reason: "no_content" },
+  ] });
+  assert.equal(r.unmet.length, 2);
+  const g = r.unmet.find((u) => u.question === "Can fees come from another account?");
+  assert.equal(g.count, 3, "three unanswered asks on the topic");
+  assert.deepEqual(g.also, ["Is there a fee to refinance?"], "the other question shows once");
+  assert.deepEqual(r.unmet.find((u) => u.question === "Can I roll my loan?").also, []);
 });

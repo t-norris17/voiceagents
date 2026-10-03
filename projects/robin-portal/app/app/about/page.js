@@ -20,47 +20,64 @@ export default async function About() {
   const summary = calls?.summary || null;
 
   return (
-    <section className="about">
-      <div>
-        <h1>About {s?.name || "Robin"}</h1>
-        <p className="lede">
-          The 401(k) voice agent for the Vertex Manufacturing plan. She answers plan questions from her
-          Knowledge Base and looks up a verified caller's own figures. Built on ElevenLabs; everything
-          on this page is read from her live configuration, not from a document.
-        </p>
-        {s?.phone && <div className="phone tnum">{s.phone}</div>}
-        {!s && <div className="warn">Live status unavailable: {status?.reason || "unknown"}.</div>}
+    <>
+      <div className="kicker">Robin</div>
+      <div className="page-h">
+        <div>
+          <h1>About {s?.name || "Robin"}</h1>
+          <p>
+            The 401(k) voice agent for the Vertex Manufacturing plan. She answers plan questions from her
+            Knowledge Base and looks up a verified caller's own figures. Built on ElevenLabs; everything
+            on this page is read from her live configuration, not from a document.
+          </p>
+        </div>
       </div>
+      {!s && <div className="banner">Live status unavailable: {status?.reason || "unknown"}.</div>}
       {s && (
-        <dl className="facts">
-          <dt>Version</dt>
-          <dd>
-            {s.version_seq != null ? `v${s.version_seq}` : s.version_id}
-            {s.version_description ? <> · {s.version_description}</> : null}
-            {s.version_committed_at ? <span className="muted"> · {when(s.version_committed_at)}</span> : null}
-          </dd>
-          <dt>Model</dt>
-          <dd>{s.llm || "—"}<span className="muted"> · voice {s.tts_model || "—"}</span></dd>
-          <dt>Knowledge</dt>
-          <dd>
-            <div className="kl">
-              <div className="kl-h">She can answer questions about</div>
-              <ul>{describeKnowledge(s.knowledge_base).map((k) => (
-                <li key={k.label}>{k.label}<span className="raw"> · {k.raw.join(", ")}</span></li>
-              ))}</ul>
-              <div className="kl-h">She can</div>
-              <ul>{describeAbilities(s.tools).map((k) => (
-                <li key={k.raw}>{k.label}<span className="raw"> · {k.raw}</span></li>
-              ))}</ul>
+        <>
+          <div className="stat-row">
+            {s.phone && <div className="stat"><div className="n tnum ab-phone">{s.phone}</div><div className="k">phone number</div></div>}
+            <div className="stat">
+              <div className="n">{s.version_seq != null ? `v${s.version_seq}` : s.version_id}</div>
+              <div className="k">live version{s.version_committed_at ? ` · ${when(s.version_committed_at)}` : ""}</div>
             </div>
-          </dd>
-          {s.procedures.length > 0 && (<><dt>Procedures</dt><dd>{s.procedures.join(" · ")}</dd></>)}
-          <dt>Calls</dt>
-          <dd>{summary ? <>{summary.last_7d} in the last 7 days · {summary.last_24h} in the last 24 hours</> : <span className="muted">unavailable</span>}</dd>
-          <dt>Read</dt>
-          <dd className="muted">{when(s.fetched_at)}</dd>
-        </dl>
+            <div className="stat">
+              <div className="n">{summary ? summary.last_7d : "–"}</div>
+              <div className="k">interactions, last 7 days{summary ? ` · ${summary.last_24h} in the last 24 hours` : ""}</div>
+            </div>
+          </div>
+          {s.version_description && <p className="ab-note">{s.version_description}</p>}
+
+          <div className="ab-cols">
+            <section className="u-sec">
+              <div className="lbl">She can answer questions about</div>
+              <ul className="ab-list">
+                {describeKnowledge(s.knowledge_base).map((k) => (
+                  <li key={k.label}>{k.label}<span className="raw">{k.raw.join(", ")}</span></li>
+                ))}
+              </ul>
+            </section>
+            <section className="u-sec">
+              <div className="lbl">She can</div>
+              <ul className="ab-list">
+                {describeAbilities(s.tools).map((k) => (
+                  <li key={k.raw}>{k.label}<span className="raw">{k.raw}</span></li>
+                ))}
+              </ul>
+            </section>
+          </div>
+
+          <section className="u-sec">
+            <div className="lbl">How she is set up</div>
+            <dl className="ab-conf">
+              <dt>Model</dt><dd>{s.llm || "—"}</dd>
+              <dt>Voice</dt><dd>{s.tts_model || "—"}</dd>
+              {s.procedures.length > 0 && (<><dt>Procedures</dt><dd>{s.procedures.join(" · ")}</dd></>)}
+              <dt>Read from ElevenLabs</dt><dd className="muted">{when(s.fetched_at)}</dd>
+            </dl>
+          </section>
+        </>
       )}
-    </section>
+    </>
   );
 }

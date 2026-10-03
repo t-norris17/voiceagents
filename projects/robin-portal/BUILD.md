@@ -7,6 +7,58 @@
 ---
 
 
+## Re-grade of the old no-source interactions (2026-10-02, night)
+
+All 21 interactions graded before the source check existed were re-graded one at a time through the portal, each guarded (the target had to still be in the no-source list). Database totals before and after: score rows 252 to 203, question rows 336 to 274, no duplicate (interaction, key) pairs left; survey answers 226, survey people 33, security flags 4, gap requests 2 and graded interactions 115 all unchanged. Interactions with only no-source rows: 21 to 0.
+
+**The long one:** `conv_2601kzbhe2tre1xbsazqz018rg83` (a 366 s call, 19 questions) first hit the 120 s limit (portal 504, nothing written, old rows intact). After both limits were raised to 300 s it re-graded in 92 s (11 rows to 4, 14,662 in / 9,830 out tokens). Final totals: score rows 196, question rows 259, no duplicate keys, interactions with only no-source rows 0; survey answers 226, people 33, flags 4, gaps 2, graded 115 unchanged. That run took 92 s, under the old limit too, so the 504 means run time varies; 300 s is headroom, not a fix for a fixed cost.
+
+**Real usage, two re-grades:** 14,342 in / 6,388 out tokens, and 12,542 in / 2,420 out. Price per token was not looked up, so the 3-cent estimate on the buttons is still the bill-derived figure.
+
+**Tooling note:** the guard's list lookup from this sandbox failed twice with an empty reply (it refuses rather than guesses); both times the endpoint was fine a minute later.
+
+## Session 2026-10-02 (night): the nest loader and the masthead logo
+
+The supplied nest animation (a nest, three eggs, a bob) is now the portal's loading state, and the nest logo sits beside "Birdnest" in the masthead (`lib/mast.js`, `public/brand/nest-logo.*`; checked light, dark and at 390px, no horizontal overflow).
+
+The loader is one function, `lib/loader.js` `loaderHtml({size,label,dots})`, with its stylesheet at `public/loader/loader.css` and four web-sized images (about 97 KB in all). The Next.js pages render it through `components/NestLoader.js` (Accuracy, Utilization, Interactions) and `app/loading.js` (every server page). The copied module pages get the SAME function: `scripts/copy-modules.mjs` injects its source as `window.rpLoader` plus the stylesheet, so the markup cannot drift. Every use in the module pages is guarded (`typeof window.rpLoader === "function"`), so the standalone broker and cleaner deployments are unchanged. `test/loader.test.mjs` checks the function is self-contained, escapes its label, and that the injection is in the copy script.
+
+Where it shows: Quality, one dark translucent layer over the whole screen (below the masthead, so navigation stays usable) with a single nest floating in it, on first load and whenever a wave or range changes; the 60-second refresh stays silent and cannot remove a layer it did not raise. (First version had a nest in the rail, one in the main column and a light veil on top; replaced because several nests at once read as unprofessional.) Dry Run, the "Thinking" state on each question. Factory, "Cleaning" and the Library (which previously showed nothing until the list arrived: opening it now renders the loader straight away).
+
+**Verified:** local Chromium against the built `public/`, with the metrics API delayed 2.5 s: loader present at 0.9 s, gone at 4 s, veil present and rail dimmed 0.7 s after clicking a wave, removed after the data arrived; Dry Run loader present while the answer was pending and removed after; Library loader present on open. **Not verified:** the preview deployment (this is local), and a real slow network.
+
+## Session 2026-10-02 (evening): Accuracy gets manual controls; Utilization shows its working
+
+**Accuracy** now lists from the whole table, not the newest 100: filter tabs (All, Not graded, Graded, and
+Graded, no source when there are any) with whole-table counts, "Show more" paging, a main button that names
+what it will do ("Grade the newest 10 not graded"), pick boxes plus "Grade N selected" (max 10), a Grade
+button on each ungraded row and in the open interaction, and a one-at-a-time Re-grade with a confirm for
+interactions graded without a source. Failures are listed by id. Words around the paid actions live in
+`lib/grader-view.js` (tested). `/grader?filter=no_source` deep-links the re-grade list.
+
+**Utilization** says how many interactions were measured (graded against a source) and names the ones
+graded before their documents could be read, with a link to re-grade them. Each document opens to its
+topics; each topic opens to what it says and what cited it or why nothing did, and each document says how
+often Robin read it and used it. The reason text is deliberately modest: a retrieval record places a read
+on a document, not a section.
+
+**Design pass, batch 2 (About, Dry Run, Quality).** All three now use the shared page language (mono kicker,
+plain 2.1rem heading, lede, square controls). About is a stat row (phone, live version, interactions) over
+two plain lists and a short "how she is set up" block; "Calls" is "Interactions". Dry Run drops the
+uppercase heading and the rounded pills for the portal's square button; its logic is untouched. Quality
+reads at the portal's 1120px in Simple and widens to 1400px only in Advanced, and the masthead follows
+through `--rp-w` (set on the page's `body[data-mode="advanced"]`), so the wordmark stays put across pages.
+The caption strip's tooltip is right-anchored (narrowing the sheet pushed it past the viewport edge).
+Checked against the live survey metrics: no horizontal overflow in Simple from 390px to 1440px.
+**Pre-existing, not fixed:** in Advanced the page scrolls sideways at 1440px and 1280px because hidden
+tooltip boxes spill past the right edge (identical before this pass: scroll width 1705 at 1440px).
+
+**Known and left:** the portal preview still talks to the PRODUCTION cleaner (no `CLEANER_PREVIEW_URL`
+override), so the Knowledge Factory Library's attached/published split only shows after a merge. Dry Run,
+Quality and About still carry their old body styling.
+
+---
+
 ## Session 2026-10-01 (design pass, batch 1): one masthead, Interactions and Accuracy
 
 **What changed.** The nav now lives in ONE file, `lib/mast.js` (groups, secondary links, markup and CSS),

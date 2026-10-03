@@ -42,13 +42,16 @@ test("no page is marked current on the landing page", () => {
   assert.ok(!mastHtml("/").includes("aria-current"));
 });
 
-test("the css takes the page's own width", () => {
-  assert.match(mastCss(1400), /max-width:1400px/);
-  assert.match(mastCss(), /max-width:1120px/);
+test("the css takes the page's own width, and a page can widen it with --rp-w", () => {
+  assert.match(mastCss(1400), /max-width:var\(--rp-w,1400px\)/);
+  assert.match(mastCss(), /max-width:var\(--rp-w,1120px\)/, "the default is the portal's width");
+  // Quality reads at 1120 and widens only in Advanced by setting --rp-w, so the wordmark stays put
+  // across pages and moves only when someone asks for the wide board.
 });
 
 test("the wordmark is Birdnest with its tagline, and it links home", () => {
   const html = mastHtml("/calls");
   assert.match(html, /<a class="rp-wm" href="\/"[^>]*>.*Birdnest.*all your eggs.*in one place/s);
   assert.ok(!/class="rp-wm"[^>]*>Robin</.test(html), "the old Robin wordmark is gone");
+  assert.match(html, /<a class="rp-wm"[^>]*><img class="rp-logo" src="\/brand\/nest-logo\.webp" alt=""/, "the nest sits beside the name, and is decorative (the link already says Birdnest)");
 });

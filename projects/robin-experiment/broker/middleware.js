@@ -43,12 +43,18 @@ export const config = {
     "/api/survey-themes",
     "/api/calls",
     "/api/call-scores",
+    "/api/utilization",
+    "/api/channels",
+    "/api/ask",
+    "/api/grade",
+    "/api/questions",
+    "/api/gap_request",
   ],
 };
 
 // Everything the survey publishes: the pages, and every endpoint that carries their data —
 // aggregate results, per-call transcripts, verbatim comments, the CSV export.
-const PROTECTED = ["/survey", "/dashboard", "/api/metrics", "/api/survey-", "/api/calls", "/api/call-scores"];
+const PROTECTED = ["/survey", "/dashboard", "/api/metrics", "/api/survey-", "/api/calls", "/api/call-scores", "/api/utilization", "/api/channels", "/api/ask", "/api/grade", "/api/questions", "/api/gap_request"];
 
 // Robin's own endpoints and the post-call webhook are deliberately NOT in that list. ElevenLabs
 // calls verify_caller and get_balance mid-call and posts to /api/postcall unauthenticated (it
