@@ -345,9 +345,6 @@
   .dd .li:focus-visible{ outline:2px solid var(--accent); outline-offset:-2px; }
   .dd .li .nm{ font-weight:600; } .dd .li .m{ color:var(--sub); font-size:.72rem; white-space:nowrap; }
   #main{ position:relative; }
-  #boot{ display:flex; justify-content:center; padding:36px 0 8px; }
-  #boot:empty{ display:none; }
-  body.busy #rail{ pointer-events:none; opacity:.55; transition:opacity .15s; }
   .chp{ font:600 .56rem var(--mono,monospace); letter-spacing:.1em; text-transform:uppercase; color:var(--sub); border:1px solid var(--line); padding:0 5px; margin-left:8px; vertical-align:1px; white-space:nowrap; font-weight:600 }
   .dd .li .sc{ font-weight:700; min-width:2.4ch; text-align:right; } .dd .li .sc.d{ color:var(--accent); }
   .dd .li .said{ grid-column:1/-1; font-size:.76rem; color:var(--sub); font-style:italic; margin-top:-2px; }
@@ -436,7 +433,6 @@
     <aside class="rail" id="rail" aria-label="Which interactions to look at"></aside>
 
     <main id="main">
-      <div id="boot" role="status"></div>
       <div class="cap" id="cap"></div>
 
       <section id="simplesec">
@@ -523,10 +519,15 @@
   // shows nothing extra: every use below is guarded on it.
   const LOADER=()=>typeof window.rpLoader==="function";
   const nest=(o)=>window.rpLoader(o);
-  function showVeil(){ if(!LOADER()||document.getElementById("veil")) return; document.getElementById("main").insertAdjacentHTML("beforeend",`<div class="nest-veil" id="veil">${nest({size:130,label:"Loading"})}</div>`); document.body.classList.add("busy"); }
+  // One dark, translucent layer over the screen with a single nest in it, for the first load and for every filter someone
+  // just chose. It starts below the masthead so the navigation stays usable.
+  function showVeil(){
+    if(!LOADER()||document.getElementById("veil")) return;
+    const m=document.querySelector(".rp-mast"), top=m?Math.max(0,Math.round(m.getBoundingClientRect().bottom)):0;
+    document.body.insertAdjacentHTML("beforeend",`<div class="nest-veil" id="veil" style="--veil-top:${top}px">${nest({size:150,label:"Loading"})}</div>`);
+    document.body.classList.add("busy");
+  }
   function hideVeil(){ const v=document.getElementById("veil"); if(v) v.remove(); document.body.classList.remove("busy"); }
-  function showBoot(){ if(!LOADER()) return; document.getElementById("rail").innerHTML=nest({size:84,label:"Loading waves"}); const b=document.getElementById("boot"); if(b) b.innerHTML=nest({size:130,label:"Loading"}); }
-  function clearBoot(){ const b=document.getElementById("boot"); if(b) b.remove(); }
   async function loadChannels(){ try{ const r=await fetch("/api/channels"); if(r.ok) Object.assign(CH,(await r.json()).channels||{}); }catch(e){} }
   const PRETTY={agent:"Robin",person:"a person",no_preference:"either",unclassified:"unclear"};
   const TZ="America/Chicago";
@@ -560,12 +561,12 @@
 
   // opts.veil: cover the board while a filter someone just chose is fetched. The 60 s refresh passes nothing and stays silent.
   async function load(opts){
+    const covered=!DATA||!!(opts&&opts.veil);   // the first load and a chosen filter own the veil; a silent refresh must not remove it
     if(opts&&opts.veil) showVeil();
     try{
       const r=await fetch("/api/metrics"+qs(),{cache:"no-store"});
       if(!r.ok) throw new Error("HTTP "+r.status);
       DATA=await r.json();
-      clearBoot();
       document.getElementById("banner").innerHTML="";
       const s=DATA.survey||{}, sl=s.slice||{};
       if(sl.valid===false) document.getElementById("banner").innerHTML=`<div class="banner bad">That range was not understood (${esc(sl.error||"")}), so this is everything.</div>`;
@@ -576,9 +577,8 @@
       if(S.open){ const o=S.open; S.open=""; openDrill(o); }
       registerTour();  // once the board exists, so the tour has things to point at
     }catch(e){
-      clearBoot(); if(!DATA&&LOADER()) document.getElementById("rail").innerHTML="";
       document.getElementById("banner").innerHTML=`<div class="banner">Couldn't load live data: ${esc(e.message)}. Retrying…</div>`;
-    }finally{ hideVeil(); }
+    }finally{ if(covered) hideVeil(); }
   }
   function stamp(){
     const t=new Date().toLocaleTimeString([], {hour:"numeric", minute:"2-digit"});
@@ -1232,7 +1232,7 @@
   }
 
   initAsk();
-  showBoot();
+  showVeil();
   loadChannels().finally(load);
   setInterval(load, 60000);
 </script>

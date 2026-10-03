@@ -23,4 +23,9 @@
 
 /* a loader standing on its own in a page, and one laid over content that is being replaced */
 .nest-block{display:flex;justify-content:center;padding:56px 0}
-.nest-veil{position:absolute;inset:0;z-index:30;display:flex;align-items:flex-start;justify-content:center;padding-top:90px;background:color-mix(in srgb,var(--paper,#f2f0ea) 84%,transparent);backdrop-filter:blur(1.5px)}
+/* One dark, translucent layer over a whole screen with a single nest floating in it (Quality). Fixed to the viewport;
+   the page sets --veil-top to the bottom of the masthead so the navigation stays usable. */
+.nest-veil{position:fixed;left:0;right:0;bottom:0;top:var(--veil-top,0);z-index:40;display:flex;align-items:center;justify-content:center;background:rgba(14,15,18,.64);color:#f4f2ec;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);animation:nest-veil-in .18s ease-out}
+.nest-veil .nest-label{opacity:.85}
+@keyframes nest-veil-in{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.nest-veil{animation:none}}
