@@ -25,7 +25,7 @@
 .nest-block{display:flex;justify-content:center;padding:56px 0}
 /* One dark, translucent layer over a whole screen with a single nest floating in it (Quality). Fixed to the viewport;
    the page sets --veil-top to the bottom of the masthead so the navigation stays usable. */
-.nest-veil{position:fixed;left:0;right:0;bottom:0;top:var(--veil-top,0);z-index:40;display:flex;align-items:center;justify-content:center;background:rgba(14,15,18,.64);color:#f4f2ec;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);animation:nest-veil-in .18s ease-out}
+.nest-veil{position:fixed;left:0;right:0;bottom:0;top:var(--veil-top,0);z-index:40;display:flex;align-items:center;justify-content:center;background:rgba(14,15,18,.70);color:#f4f2ec;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);animation:nest-veil-in .18s ease-out}
 .nest-veil .nest-label{opacity:.85}
 @keyframes nest-veil-in{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){.nest-veil{animation:none}}
