@@ -27,7 +27,7 @@ webhook already reaches the broker, so the safety net needs no new webhook.
 - Adding Requests to the full masthead wrapped it to three rows. A rep role sees only its grants,
   which makes v1 auth a visible requirement, not only a security one.
 
-**Call audio (asked, not specced).** Every stored interaction has `has_audio: true`; live privacy
+**Call audio (specced 2026-10-04: [`audio/SPEC.md`](./audio/SPEC.md), mocks in `audio/mocks/`).** Every stored interaction has `has_audio: true`; live privacy
 settings are `record_voice: true`, `retention_days: -1`, `delete_audio: false`; the post-call webhook
 has `send_audio: false`. Recommended shape: on first play, the portal fetches the conversation audio
 from ElevenLabs server-side, stores it in a private Supabase Storage bucket, and plays from a
@@ -41,8 +41,10 @@ and format (docs blocked from this sandbox), and what `retention_days: -1` means
 **Next session**
 > Nothing here is built. Before any requests code: v1 auth (accounts, roles, grants, audit) is the
 > prerequisite. Then answer the spec's open questions with the business (callback number source, SLA
-> clock, hours, inbox). Audio: decide whether to spec it now; put the recording-disclosure question to
-> compliance either way.
+> clock, hours, inbox). Audio: the first build step is one request to confirm the ElevenLabs audio
+> endpoint; before anyone else can listen, compliance answers recording disclosure and who holds
+> `call_audio`. Separately, a small fix worth doing now: the transcript scrub misses spoken dates of
+> birth (159 of 226 conversations); see `audio/SPEC.md`, Pre-existing finding.
 
 ---
 
