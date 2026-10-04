@@ -2,7 +2,7 @@
 
 **Slug:** robin-portal / requests
 **Status:** draft (design approved 2026-10-03, not built)
-**Last updated:** 2026-10-03
+**Last updated:** 2026-10-04 (validity pass)
 
 > When a member calls after hours and needs a person, Robin cannot transfer them. Instead she files a
 > callback request, tells the caller exactly when to expect the call, and the call center works the
@@ -12,7 +12,8 @@
 
 **Mocks:** [`mocks/queue.png`](./mocks/queue.png) (the queue), [`mocks/drawer.png`](./mocks/drawer.png)
 (one request opened), [`mocks/queue-dark.png`](./mocks/queue-dark.png). Rendered from the portal's real
-`globals.css` and `lib/mast.js`, synthetic members, Monday 2:10 PM.
+`globals.css` and `lib/mast.js`, synthetic members, Monday 2:10 PM. The stat row's numbers and the
+history are illustrative; the hours and the 8-hour promise are placeholders and the page says so.
 
 ---
 
@@ -21,6 +22,10 @@
 **In:** after-hours only. Robin checks whether the call center is open; if it is not, she files a
 request instead of transferring. A morning email tells the call center how many are waiting. Reps
 call back in Talkdesk and log the outcome in Birdnest.
+
+**Phone only.** Web voice and web chat come from a different agent, `Robin (web demo)`
+(`agent_0101m3sjqvfyejsa9kn127ez26mm`, 13 of 226 stored interactions), and a web caller has no phone
+number to call back. v1 changes the phone agent only (`Robin`, `agent_8301kwj5qa8ve1atremxxwjjp9f8`).
 
 **Out (until they actually show up):** in-hours cases where a transfer fails, the queue is full, or a
 type of work is never taken live. Robin's in-hours behavior does not change. No Talkdesk
@@ -37,6 +42,24 @@ integration. No Rangly dependency.
       request, not by menu).
 - [ ] The morning email arrives at open with the right count, and does not send on a day with zero.
 
+## What is true today (checked 2026-10-04)
+
+- **Volume.** 226 stored interactions, latest 2026-10-02. 45 transferred: 32 to get a task done (loan,
+  contribution change, beneficiary, distribution, access), 10 asking for a person with no task named,
+  3 after failed verification. With the placeholder hours (weekdays 8 AM to 5 PM Central), **16 of 226
+  calls were after hours and 1 of those transferred**, so "rare" holds, though testers called when
+  asked to, which is not real traffic.
+- **The post-call path works for both agents.** Both use the same post-call webhook
+  (`4deed01a…`, `send_audio: false`), and each agent's latest call has a row in `ai_call_events`.
+- **Robin's webhook tools carry no request headers today** (`verify_caller`, `get_balance` and two
+  NestEgg-era tools, `send_reset_email` and `document_resolution`, all `request_headers: {}`). No tool
+  uses a `system__` dynamic variable yet, so that mechanism is unproven on this agent.
+- **Data Collection already has `caller_name` and `subject_ref`.** The request can take the caller's
+  name from there instead of a new field.
+- **`members` has no phone column**, and member ids are 5-digit numbers. Testers use shared synthetic
+  personas (no real account data in `members`).
+- **Birdnest is still on one shared password** (`app/middleware.js`, `PORTAL_PASSWORD`).
+
 ## Stack
 
 | Layer | Choice | Rationale |
@@ -45,8 +68,8 @@ integration. No Rangly dependency.
 | Runtime | Broker (`voiceagents`) for the two tools and storage; portal (Next.js) for the page | Robin's call path already lives on the broker; the portal only reads and proxies |
 | Key libraries | None new | |
 | Storage | Supabase `rlhybqslnqhggbykjrqg`: two new tables | Same database as `ai_call_events` |
-| Scheduler / trigger | Vercel cron, hourly on weekdays; sends only in the hour the call center opens (local time) | Cron is UTC; checking local time inside the job survives daylight saving |
-| Outputs / delivery | Birdnest `/requests`; one email to a shared call center inbox via Resend | Resend is already in this account's stack (nestegg-u-demo), so not a new vendor |
+| Scheduler / trigger | Two daily Vercel crons (13:00 and 14:00 UTC); each sends only if it is the opening hour in Central time | Cron is UTC, so one of the two lands on 8 AM Central in each half of the year. Daily-only schedules work on any Vercel plan; the account's plan could not be read |
+| Outputs / delivery | Birdnest `/requests`; one email to a shared call center inbox via Resend | Resend is already used in this account (nestegg-u-demo's README, key in the "Lumio Retirement" project); whether that key is live is unverified |
 
 ## Architecture
 
@@ -97,7 +120,7 @@ facts stay in `ai_call_events`; the request and its history live in their own ta
 `service_requests`: one row per conversation.
 `id`, `conversation_id` (unique), `source` (`tool` | `postcall`), `request_type` (loan, distribution,
 contribution_change, beneficiary, account_access, speak_to_person, other), `request_detail`,
-`subject_ref` (null if unverified), `verified` bool, `callback_number`, `callback_number_source`
+`subject_ref` (null if unverified), `caller_name` (from Data Collection), `verified` bool, `callback_number`, `callback_number_source`
 (`on_file` | `caller_id`), `callback_window` (free text, "mornings"), `promised_text` (the sentence
 Robin read), `filed_at`, `due_at`, `status` (`open` | `closed`), `closed_at`, `closed_by`, `plan_id`.
 
@@ -129,8 +152,10 @@ stops at the first attempt (see open questions).
   with what they need, what Robin promised (verbatim), the callback number, the verify warning,
   Reached / Left voicemail / No answer, a note, Close, history, call summary and transcript link.
 - Feature key `requests`, granted to a call center role. A rep's masthead shows only what they are
-  granted (Requests, About; the mock also shows Interactions, which this spec drops per the next point); the full nav wrapped to three rows in the mock, and a rep should not see
-  Accuracy or the Factory anyway.
+  granted: Requests and About. Measured with the real `mast.js`: the full bar has no room for a
+  fifth link (with Requests added, the nav drops below the wordmark at 1440 and 1280 px, in the
+  sandbox's fonts), and a rep should not see Accuracy or the Factory anyway. The admin's full bar
+  needs a layout decision when Requests lands (build step).
 - Transcript access for reps: only for conversations that filed a request, through the drawer link.
   Not the full Interactions list (narrower than the `call_transcripts` grant).
 
@@ -182,7 +207,7 @@ robin-portal/
 
 - [ ] **Where does the callback number come from?** `members` has no phone column (checked in the live
       database: id, member_id, dob, first_name, plan_name, balances, loan, deferral, consent). The
-      mock's "number on file" does not exist yet. Options: caller ID from the call metadata (labelled
+      mock uses the caller-ID option. Options: caller ID from the call metadata (labelled
       "number they called from", always available), or a phone column on `members` (real tester PII,
       a schema change). Recommendation: caller ID for the experiment, the recordkeeper's number in
       production.
@@ -212,4 +237,4 @@ robin-portal/
 
 ---
 
-*Spec last updated: 2026-10-03*
+*Spec last updated: 2026-10-04*

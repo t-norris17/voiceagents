@@ -7,6 +7,25 @@
 ---
 
 
+## Session 2026-10-04: validity pass on both specs and mocks; implementation plan
+
+Re-checked every claim in `requests/SPEC.md`, `audio/SPEC.md`, the mocks and what was said in chat
+against the live database, both agents' live config, the code and the Supabase docs. 17 corrections,
+all listed with before/after in [`IMPLEMENTATION-PLAN.md`](./IMPLEMENTATION-PLAN.md) (Validity pass);
+mocks re-rendered. The ones that change the design: web voice and chat come from a separate agent
+(`Robin (web demo)`, 13 of 226) and have no number to call back, so requests are phone-only; the
+transcript scrub does not remove member ids (5 digits; it needs 7+) or spoken dates of birth (168 and
+159 of 226 conversations; only 4 had anything redacted), synthetic personas so not a real-data leak,
+queued as its own task; Supabase's CDN can serve a signed URL past its expiry, so the audio cache uses
+a short cache lifetime and delete-to-revoke. Grounding added: 16 of 226 calls were after the
+placeholder hours, 1 transferred.
+
+**Next session**
+> Get approval on `IMPLEMENTATION-PLAN.md`. Then Phase 0: the decisions table to the business and
+> compliance, and the five premise checks, each result recorded here with its artifact.
+
+---
+
 ## Session 2026-10-03: after-hours requests designed (no code), call audio scoped
 
 **Design only, nothing built.** The Rangly pattern (a voice call becomes a pending request a person

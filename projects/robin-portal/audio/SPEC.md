@@ -2,7 +2,7 @@
 
 **Slug:** robin-portal / audio
 **Status:** draft (design written 2026-10-04, not built)
-**Last updated:** 2026-10-04
+**Last updated:** 2026-10-04 (validity pass)
 
 > Press play on any voice interaction in Birdnest and hear the call, with the transcript following
 > along: the line being spoken is highlighted, and clicking any line jumps the audio there. No trip to
@@ -11,7 +11,9 @@
 
 **Mocks:** [`mocks/player.png`](./mocks/player.png), [`mocks/player-dark.png`](./mocks/player-dark.png).
 The existing Interactions drawer (`app/components/CallDrawer.js`), rendered with the portal's real
-stylesheet, with the player added. Synthetic call.
+stylesheet, with the player added. Synthetic call; the greeting is Robin's live first message verbatim,
+and the member id shows in the transcript because today's scrub does not remove it (see Pre-existing
+finding).
 
 ---
 
@@ -30,34 +32,40 @@ segment, playback on the Requests page (a later decision; see open questions).
 - [ ] Clicking a transcript line seeks to that line's `time_in_call_secs`, and the highlighted line
       tracks playback.
 - [ ] A user without `call_audio` gets a 404 from the audio route by request (not just a hidden
-      button), and a user with it gets a URL that stops working after it expires.
+      button), and a user with it gets a URL that stops working after it expires, tested past both the
+      token expiry and the object's cache lifetime (see the CDN note below).
 - [ ] Every play writes one audit row naming the user, the conversation and the time.
 - [ ] Web chat interactions show no player.
 
 ## What is true today (checked 2026-10-03/04)
 
-- **The audio exists.** Robin's live privacy settings: `record_voice: true`, `retention_days: -1`,
-  `delete_audio: false`, `zero_retention_mode: false`. Every one of the 226 stored interactions reports
+- **The audio exists, from two agents.** Phone calls come from `Robin` (213 stored interactions); web
+  voice and web chat come from `Robin (web demo)` (13). Both have `record_voice: true`,
+  `retention_days: -1`, `delete_audio: false`, `zero_retention_mode: false`. Every one of the 226 stored interactions reports
   `has_audio`, `has_user_audio` and `has_response_audio` true.
 - **`has_audio` is not a reliable "is there audio" signal.** The 7 web-chat interactions
   (`metadata.text_only = true`) also report `has_audio: true`. The player is shown by **channel**
   (`broker/lib/channel.js`: phone 213, web voice 6, chat 7), not by that flag.
 - **The drawer already gets timestamps.** `/api/survey-call` returns each turn's `at` from
-  `time_in_call_secs`, present in 224 of 226 transcripts. Transcript sync is front-end work only.
+  `time_in_call_secs`. All 4,378 spoken turns across the 224 conversations that have speech carry it
+  (the other 2 have no spoken turns). Transcript sync is front-end work only.
 - **The post-call webhook does not send audio** (`send_audio: false` on the agent's webhook override).
 - **The broker already calls the ElevenLabs API** with `ELEVENLABS_API_KEY` and the `xi-api-key`
-  header (`broker/lib/kb-text.js`, `broker/lib/robin-live.js`).
+  header (`broker/lib/kb-text.js`, `broker/lib/robin-live.js`). That the key is set in production is
+  inferred (the grader read dashboard documents on 2026-10-02, which needs it); the project's env vars
+  could not be listed (403).
 - **No Supabase Storage bucket exists yet** in project `rlhybqslnqhggbykjrqg`. This would be the first.
 - **Calls are capped at 600 s** (`max_duration_seconds`); median 188 s.
 
 ## Why audio needs its own permission
 
-The transcript in the drawer is scrubbed: `broker/api/survey-call.js` removes digit runs from what the
-caller said (member ids, SSNs, phone and card numbers) because "storing it in a transcript that a dozen
-people will open in a browser is not" acceptable. **Audio cannot be scrubbed.** The caller reading
-their member id and date of birth aloud is in every verified call. So audio is strictly more sensitive
-than the transcript, and it gets its own feature key, **`call_audio`, default off**, granted
-separately from `call_transcripts`.
+The transcript is meant to be scrubbed: `broker/api/survey-call.js` removes digit runs from what the
+caller said because "storing it in a transcript that a dozen people will open in a browser is not"
+acceptable. **Today that scrub mostly misses** (see Pre-existing finding): member ids and spoken dates
+of birth pass through. But a transcript scrub can be fixed; **audio cannot be scrubbed at all.** Every
+verified call has the caller reading their member id and date of birth aloud, and the caller's own
+voice and name are real even where the account data is synthetic. So audio gets its own feature key,
+**`call_audio`, default off**, granted separately from `call_transcripts`.
 
 ## Architecture
 
@@ -81,8 +89,14 @@ drawer <audio src=url> ◄──────┘   plays straight from Supabase S
 in a private bucket; later plays skip ElevenLabs. Nothing is copied for calls nobody opens, and nothing
 is added to the call path.
 
-**The route returns a link, not the audio.** The browser plays from a short-lived signed Storage URL,
-which serves byte ranges, so the scrubber can jump anywhere. Passing the file through a serverless
+**The route returns a link, not the audio.** The browser plays from a short-lived signed Storage URL.
+That Storage serves byte ranges (which seeking needs) is expected but **unverified**: the Supabase docs
+search did not cover it, so it is checked in the first build step.
+
+**CDN note (from the Supabase docs).** With Smart CDN, a cached response to a signed URL can keep being
+served after the token expires, until the object's cache lifetime ends; "if you need to cut off access
+to an asset, delete the object." So the cache objects are uploaded with a short `cacheControl`
+(60 seconds), and revoking access means deleting the object, not waiting for the token. Passing the file through a serverless
 function would have to rebuild that, and runs into the function response size limit (I could not
 confirm Vercel's current figure; the design does not depend on it).
 
@@ -161,7 +175,9 @@ robin-portal/
 
 ## Compliance gate (before anyone but the builder can listen)
 
-- **Recording disclosure.** Robin's live first message does not tell callers the call is recorded. The
+- **Recording disclosure.** Neither agent's live first message tells callers the call is recorded
+  (phone: "Thank you for calling NestEgg U support — this is Robin…"; web: "Hi, this is Robin with the
+  Vertex Manufacturing 401(k) help desk…"), and neither prompt instructs a notice. The
   recording already exists; the player widens who can hear it. This question goes to INTRUST
   compliance before the grant is given to anyone else. It is separate from the settled
   virtual-assistant decision in the repo `CLAUDE.md`, which this spec does not revisit. Unknown:
@@ -170,15 +186,23 @@ robin-portal/
 
 ## Pre-existing finding (not part of this feature)
 
-The transcript scrub misses dates of birth said as words. Its patterns (`survey-call.js`, the `PII`
-list) only match digit runs. In the live table, **159 of 226 conversations (171 caller turns) contain a
-date-of-birth-like phrase** ("March 3rd, 1981" style in 150 turns, numeric dates in 22) that passes
-through to the drawer today. Whether those are testers' real dates of birth or synthetic ones
-from `members` is unverified. Worth a one-line fix (add spoken and numeric date patterns) on its own,
-independent of audio.
+The transcript scrub removes almost nothing from what callers say. Its patterns (`survey-call.js`,
+the `PII` list) catch SSN-shaped numbers, runs of **7 or more** digits, phone and card numbers. Member
+ids are **5 digits**, and dates of birth are spoken as words. Applying the scrub's own patterns to the
+live table: **168 of 226 conversations still show a valid member id** in the caller's words, **159
+show a date-of-birth-like phrase**, and only **4 conversations had anything redacted at all**. The
+Interactions page tells readers "The caller's personal details are scrubbed from the transcript",
+which is not true today.
+
+Severity, measured: the identities are the synthetic personas from the tester call cards (`members`
+holds no real account data, per `robin-experiment/BUILD.md`), so this is not a leak of real member
+data today. It becomes one the moment real members call. Fix: add the member id format and spoken
+and numeric dates to the scrub, with a test per pattern, and re-run the count above. Small, separate
+from audio, and worth doing before any production traffic.
 
 ## Open questions
 
+- [ ] **Does Supabase Storage serve byte ranges on signed URLs?** Needed for seeking; unverified.
 - [ ] **The ElevenLabs audio endpoint and format.** Believed to be `GET /v1/convai/conversations/{id}/audio`
       returning MP3, from memory; the docs were unreachable from the build sandbox. One request with the
       broker's key settles it, and it is the first step of the build.
