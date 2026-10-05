@@ -1,7 +1,7 @@
 # SPEC — After-hours requests (Birdnest feature)
 
 **Slug:** robin-portal / requests
-**Status:** draft (design approved 2026-10-03, not built)
+**Status:** backend and page built 2026-10-05; not yet on any agent (Phase 5); morning email not built
 **Last updated:** 2026-10-04 (validity pass)
 
 > When a member calls after hours and needs a person, Robin cannot transfer them. Instead she files a
@@ -14,6 +14,29 @@
 (one request opened), [`mocks/queue-dark.png`](./mocks/queue-dark.png). Rendered from the portal's real
 `globals.css` and `lib/mast.js`, synthetic members, Monday 2:10 PM. The stat row's numbers and the
 history are illustrative; the hours and the 8-hour promise are placeholders and the page says so.
+
+## As built (2026-10-05): where the build differs from this spec
+
+- **No accounts.** Actions are recorded with actor `birdnest` (the shared password cannot say who). No
+  rep names in history, no role, no grant. Anyone with the Birdnest password sees the page.
+- **`callback_number_source` is `caller_id` | `stated`**, not `on_file`: `members` has no phone column,
+  so the only other source is a number the caller asks to be called on.
+- **`plan_id` dropped.** `members` carries `plan_name`; the queue joins it by `subject_ref`.
+- **`is_test` added.** Rows filed by a test agent (`REQUESTS_TEST_AGENT_IDS`) or a preview broker are
+  hidden from the queue, the stats and the home tile unless the page is opened with `?test=1`.
+- **`promised_text` is what the broker gave Robin to read**, not a transcript of what she said. The
+  drawer labels it that way and points at the transcript.
+- **Safety-net rows are never `verified`.** Data Collection's `subject_ref` is the model's reading of
+  the call, not a tool result; it is kept for the rep, but the row says unverified.
+- **`file_request` refuses during open hours** (returns `mode: "transfer"`), so in-hours behavior cannot
+  change even if the prompt calls the tool by mistake.
+- **Time to first callback is measured in open hours**, the clock the promise runs on. Wall-clock time
+  made a Saturday-night request answered Monday at 9:05 read as 35 hours.
+- **History kinds** gained `linked` (the webhook attached a tool-filed request to its call) and
+  `reopened`. Close and reopen run in one transaction with their history row (`service_request_act`).
+- **Not built:** the morning email (waits on the inbox and `RESEND_API_KEY`); the per-caller rate limit
+  on `file_request` (the tool secret is the only guard); a record of every `get_handoff_option` call
+  (ElevenLabs' `tool_results` already hold it).
 
 ---
 

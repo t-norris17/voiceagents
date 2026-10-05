@@ -141,6 +141,9 @@ Safe to build in parallel with Phase 3: nothing here is reachable by Robin yet.
 1. **Built 2026-10-05:** `lib/hours.js` with 13 tests (`test/hours.test.mjs`): every case in the
    mocks (Thu 9:14 PM is due Fri 4:00 PM, Sat 9:42 PM is due Mon 4:00 PM), Friday 7 PM due Mon 4:00 PM, daylight saving on both transitions, a listed holiday, a call at 4:59 PM and at
    8:00 AM exactly.
+**Steps 2 to 5 built 2026-10-05** (see BUILD.md). Migration 023 applied to live Supabase (additive,
+empty tables). Nothing calls the two tools until Phase 5.
+
 2. Migration: `service_requests`, `service_request_events`.
 3. `api/handoff_option.js` and `api/file_request.js`, both requiring a shared-secret header.
    `file_request` takes the caller's name from Data Collection's existing `caller_name` and computes
@@ -172,6 +175,10 @@ the post-call webhook, confirm exactly one row; log attempts; close.
 ---
 
 ## Phase 6. Requests page, rep role, morning email (M)
+
+**Step 1 built 2026-10-05** without the role and grant (accounts shelved): everyone with the Birdnest
+password sees the page. Step 2 is dropped with the accounts. Step 3 (morning email) waits on the inbox
+and `RESEND_API_KEY`.
 
 1. `/requests` page and drawer as in `requests/mocks/`, under Listen, behind the `requests` grant.
 2. Call center role: Requests and About only; transcript access limited to conversations that filed a
