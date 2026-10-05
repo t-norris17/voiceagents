@@ -15,7 +15,7 @@ test("every destination is unique", () => {
 
 test("every destination is a room the portal actually serves", () => {
   // Next.js pages by their own route; module pages through the middleware rewrite.
-  const nextPages = new Set(["/calls", "/grader", "/utilization", "/about"]);
+  const nextPages = new Set(["/calls", "/requests", "/grader", "/utilization", "/about"]);
   for (const { href, label } of all) {
     assert.ok(nextPages.has(href) || moduleRewrite(href.replace(/\/$/, "")), `${label} (${href}) is not a served route`);
   }
