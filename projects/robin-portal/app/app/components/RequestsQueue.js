@@ -53,7 +53,7 @@ export default function RequestsQueue() {
 
   return (
     <>
-      <div className="kicker">Listen · after-hours requests</div>
+      <div className="kicker">Intake · after-hours requests</div>
       <div className="page-h">
         <div>
           <h1>Requests</h1>
