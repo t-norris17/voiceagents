@@ -35,7 +35,7 @@ export default function UtilizationPage() {
   );
   return (
     <>
-      <div className="kicker">Understand</div>
+      <div className="kicker">Measure</div>
       <div className="page-h">
         <div>
           <h1>Utilization</h1>

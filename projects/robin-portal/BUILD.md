@@ -7,6 +7,22 @@
 ---
 
 
+## Session 2026-10-05 (after merge): Requests verified live; masthead becomes section menus
+
+**Verified live (PR #88, `76fabfa`):** the Requests page loaded through the real broker and database
+(screenshot from Tanner: 0 open, empty state), so the PostgREST queries that could not be tested from
+the sandbox work. `handoff_option` moved from 503 to 401 after `REQUESTS_TOOL_SECRET` was set, so the
+broker has the secret.
+
+**Masthead:** the bar shows four section names, each opening a menu on click (not hover):
+**Intake** (Interactions, Requests), **Measure** (Quality, Utilization; was Understand), **Improve**,
+**Robin**. Requests needed a place in the bar and the inline links had no room left. Page kickers
+follow the new names. Checked in a browser: open, switch, outside click and Escape close, focus returns
+to the section, Tab in and out, works on the copied Quality page, one row at 1440 and 390 px, the right
+menu opens leftward on a phone, both themes.
+
+---
+
 ## Session 2026-10-05 (late night): Requests built end to end, not on any agent yet
 
 **Next session, read this first.** Requests works from the database to the page. Nothing files a

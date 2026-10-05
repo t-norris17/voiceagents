@@ -18,7 +18,7 @@ import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, write
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PRE_PAINT, CONTROL_JS } from "../lib/theme.js";
-import { mastHtml, mastCss } from "../lib/mast.js";
+import { mastHtml, mastCss, MAST_JS } from "../lib/mast.js";
 import { loaderHtml } from "../lib/loader.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -101,6 +101,7 @@ ${mastCss(width)}
 .rp-hide-tag .tag,.rp-hide-tag .pg-theme{display:none}
 </style>
 <script>${CONTROL_JS}</script>
+<script>${MAST_JS}</script>
 <link rel="stylesheet" href="/loader/loader.css">
 <script>window.rpLoader=${loaderHtml.toString()}</script>
 `;

@@ -33,7 +33,7 @@ export default function InteractionsPage() {
   const flagged = calls.filter(needsLook).length;
   return (
     <>
-      <div className="kicker">Listen</div>
+      <div className="kicker">Intake</div>
       <div className="page-h">
         <div>
           <h1>Interactions</h1>

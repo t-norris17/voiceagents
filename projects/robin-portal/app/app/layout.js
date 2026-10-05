@@ -2,7 +2,7 @@ import "./globals.css";
 import HomeLink from "./components/HomeLink.js";
 import Masthead from "./components/Masthead.js";
 import { PRE_PAINT, CONTROL_JS } from "../lib/theme.js";
-import { mastCss } from "../lib/mast.js";
+import { mastCss, MAST_JS } from "../lib/mast.js";
 
 export const metadata = {
   title: "Birdnest · all your eggs in one place",
@@ -30,6 +30,7 @@ export default function RootLayout({ children }) {
           </footer>
         </div>
         <script dangerouslySetInnerHTML={{ __html: CONTROL_JS }} />
+        <script dangerouslySetInnerHTML={{ __html: MAST_JS }} />
         {/* The guided-tour engine (copied from the broker by scripts/copy-modules.mjs). A page
             with no steps registered gets nothing from it; Quality registers its own. */}
         <script src="/robin-tour.js" defer />

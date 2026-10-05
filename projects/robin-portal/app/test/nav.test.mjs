@@ -30,12 +30,37 @@ test("labels are the names agreed for the portal, routes are the old ones", () =
   assert.ok(!("Calls" in by) && !("Question Tester" in by), "the old names must be gone");
 });
 
-test("groups render with their label above the links, and the current page is marked", () => {
+test("the bar shows only the four sections, each a button that controls its own menu", () => {
+  assert.deepEqual(GROUPS.map((g) => g.label), ["Intake", "Measure", "Improve", "Robin"]);
   const html = mastHtml("/grader");
-  for (const g of GROUPS) assert.ok(html.includes(`>${g.label}<`), `group ${g.label}`);
+  for (const g of GROUPS) {
+    const id = `rp-m-${g.label.toLowerCase()}`;
+    assert.ok(html.includes(`aria-controls="${id}">${g.label}<`), `section ${g.label} is a button for ${id}`);
+    assert.ok(html.includes(`<div class="rp-menu" id="${id}">`), `menu ${id} exists`);
+  }
+  assert.equal((html.match(/aria-expanded="false"/g) || []).length, GROUPS.length, "every menu starts closed");
   assert.equal((html.match(/aria-current="page"/g) || []).length, 1);
   assert.match(html, /href="\/grader" aria-current="page">Accuracy</);
   assert.match(html, /target="_blank" rel="noopener">Demo Website</);
+});
+
+test("the section holding the current page is marked, and only that one", () => {
+  const html = mastHtml("/requests");
+  assert.equal((html.match(/rp-grp rp-here/g) || []).length, 1);
+  assert.match(html, /rp-grp rp-here"><button[^>]*>Intake</);
+  assert.ok(!mastHtml("/").includes("rp-here"), "nothing is marked on the landing page");
+});
+
+test("Intake holds Interactions and Requests; Measure holds the two reports", () => {
+  const by = Object.fromEntries(GROUPS.map((g) => [g.label, g.items.map((i) => i.label)]));
+  assert.deepEqual(by.Intake, ["Interactions", "Requests"]);
+  assert.deepEqual(by.Measure, ["Quality", "Utilization"]);
+});
+
+test("the menu script is guarded, so a page that carries it twice binds it once", async () => {
+  const { MAST_JS } = await import("../lib/mast.js");
+  assert.match(MAST_JS, /if\(window\.__robinMast\) return; window\.__robinMast=1;/);
+  new Function(MAST_JS.replace(/^\(function\(\)\{/, "return;(function(){")); // parses
 });
 
 test("no page is marked current on the landing page", () => {
