@@ -5,6 +5,7 @@
 // said. Cached for 30 seconds so an unauthenticated loop cannot spend upstream calls.
 import { getRobinStatus } from "../../../lib/elevenlabs.js";
 import { brokerBase } from "../../../lib/upstreams.js";
+import { cleanerVerdict } from "../../../lib/cleaner-health.js";
 
 export const dynamic = "force-dynamic";
 
@@ -28,15 +29,34 @@ async function probeBroker() {
   }
 }
 
+// Probes the cleaner (the Knowledge Factory's service) twice, with and without the internal secret, on a
+// path that answers before reading any data (lib/cleaner-health.js). Reports whether the Factory inside
+// Birdnest works and whether the cleaner is closed to everyone else. Does not change `ok`.
+async function probeCleaner() {
+  const base = (process.env.CLEANER_URL || "").replace(/\/$/, "");
+  if (!base) return { configured: false };
+  const url = `${base}/api/kb_article`;
+  try {
+    const [withSecret, withoutSecret] = await Promise.all([
+      fetch(url, { headers: { "x-robin-internal": process.env.ROBIN_INTERNAL_SECRET || "" }, cache: "no-store" }),
+      fetch(url, { cache: "no-store" }),
+    ]);
+    return { configured: true, base, reachable: true, ...cleanerVerdict(withSecret.status, withoutSecret.status) };
+  } catch (e) {
+    return { configured: true, base, reachable: false, error: String(e?.message || e) };
+  }
+}
+
 export async function GET() {
   if (Date.now() - cache.at < TTL_MS && cache.value) {
     return Response.json(cache.value, { headers: { "cache-control": "no-store" } });
   }
-  const [broker, robin] = await Promise.all([probeBroker(), getRobinStatus()]);
+  const [broker, robin, cleaner] = await Promise.all([probeBroker(), getRobinStatus(), probeCleaner()]);
   const value = {
     ok: broker.secret_accepted === true && robin.ok === true,
     deployed: (process.env.VERCEL_GIT_COMMIT_SHA || "").slice(0, 7) || null,
     broker,
+    cleaner,
     elevenlabs: robin.ok
       ? { key_accepted: true, version_seq: robin.version_seq }
       : { key_accepted: false, reason: robin.reason },
