@@ -7,6 +7,148 @@
 ---
 
 
+## Session 2026-10-05 (night): accounts shelved; cleaner gated (Step 0); Requests tile
+
+**Decision (Tanner):** no accounts and no extra passwords. Four people use Birdnest as a proof of concept;
+the shared Vercel password stays and everyone sees everything. `v1-accounts/SPEC.md` is shelved, not deleted.
+
+**Step 0, built, not deployed:** `content-cleaner/cleaner/middleware.js` admits only the portal's
+`x-robin-internal` secret (fails closed if unset), 4 tests. Before it reaches production,
+`ROBIN_INTERNAL_SECRET` must be set on the `voiceagents-qewy` project (same value as the portal), or the
+Factory inside Birdnest goes dark. Verify after deploy from outside: `GET /api/kb_list` must answer 401.
+
+**Requests tile, built:** full-width tile on the home page above Demo Website (a seventh grid tile left it
+stranded alone; both layouts were rendered before choosing), linking to a new `/requests` page with an
+honest empty state (no sample rows). Verified locally on the production build: portal tests 41/41, build
+lists `/requests`, both pages 401 without the password and 200 with it, no horizontal scroll at 390 px.
+**Not verified:** the deployed preview.
+
+**Next session**
+> Set `ROBIN_INTERNAL_SECRET` on `voiceagents-qewy`, then merge to deploy the cleaner gate and the tile;
+> check `kb_list` is 401 from outside and the Factory still loads in Birdnest.
+
+---
+
+## Session 2026-10-05 (evening): Phase 1 design checkpoint (v1 accounts)
+
+Design written to [`v1-accounts/SPEC.md`](./v1-accounts/SPEC.md); nothing built. Grounded in: the portal's
+`middleware.js`, proxy and route map; which API each page calls (grep of every module page); Supabase
+(0 auth users, RLS on with no policies on all 14 tables, Pro plan).
+
+**Security finding, live:** the content cleaner (`voiceagents-qewy`) has no gate. An unauthenticated
+`GET /api/kb_list` returned 200 with 32 KB, and by the code `publish`, `unpublish` and `clean` are equally
+open; those were not called. Proposed as Step 0 (gate it with the broker's `x-robin-internal` pattern),
+needing its own approval because it is a live deploy. The broker and the portal both answered 401.
+
+**Next session**
+> Waiting on the four decisions at the end of `v1-accounts/SPEC.md`, Step 0 first.
+
+---
+
+## Session 2026-10-05 (later): hours confirmed; Phase 4 step 1 built (`lib/hours.js`)
+
+**Hours (from Tanner, for the call center):** Monday to Friday 8 AM to 6 PM Central; Saturday and Sunday
+closed, callbacks on Monday; closed on all federal holidays. Volume re-checked against these hours: 16
+of 226 stored calls after hours, 1 transferred.
+
+**Built:** `robin-experiment/broker/lib/hours.js` (open/closed, next opening, the callback deadline, the
+sentence Robin reads, observed federal holidays) and `test/hours.test.mjs`. Not wired to anything: no
+endpoint, no agent, no database. Holidays follow the Federal Reserve (bank) calendar by default; the
+federal-employee calendar is a setting. **Verified:** 13/13 under the sandbox clock, `TZ=UTC` and
+`TZ=Asia/Tokyo` (so the server's time zone cannot change an answer); broker suite 172 pass, 0 fail, 9
+skipped (pre-existing grader tests that need the Anthropic SDK, not installed here). Every expected time
+in the tests is a literal Central timestamp with its offset, and the calendar facts behind them (holiday
+weekdays, DST dates) were checked against the system calendar, not recalled. Mock footers re-rendered
+with the real hours; all four mock deadlines are unchanged.
+
+**Next session**
+> Phase 1 (v1 accounts) is next on the critical path. Phase 4 continues in parallel: the migration and
+> the two tool endpoints, still unconnected to any agent.
+
+---
+
+## Session 2026-10-05: Phase 0 of the implementation plan
+
+Plan approved 2026-10-04. Results are in [`IMPLEMENTATION-PLAN.md`](./IMPLEMENTATION-PLAN.md) (Phase 0
+results). Settled: the caller's number is in every phone call's post-call payload (213 of 213), so the
+callback number needs no tool variable; `retention_days: -1` means no retention limit; tool headers
+can carry a workspace secret; ElevenLabs redaction covers audio (a new option for compliance).
+Corrected: the web widget does ask for recording consent, so the disclosure gap is phone-only.
+
+**Not run, on purpose:** the `system__` variable probe. The test agent shares the production post-call
+webhook, so a test call would have written into the live `ai_call_events`, which the approval did not
+cover. The design no longer needs it (the webhook links the request from the transcript's tool result),
+and `/api/postcall` gets an agent allowlist before any test agent gets new tools. **Blocked by the
+sandbox network:** Supabase Storage and Resend; so the throwaway bucket was not created. Those checks,
+and the ElevenLabs audio endpoint (no key here), move to the first step of Phases 3 and 6, run from a
+deployed preview. No live system was changed this session.
+
+**Next session**
+> Waiting on: the decisions table (business and compliance) and one look at the Vercel plan. Then
+> Phase 1 (v1 accounts) can start; Phase 4's `lib/hours.js` can start on placeholders in parallel.
+
+---
+
+## Session 2026-10-04: validity pass on both specs and mocks; implementation plan
+
+Re-checked every claim in `requests/SPEC.md`, `audio/SPEC.md`, the mocks and what was said in chat
+against the live database, both agents' live config, the code and the Supabase docs. 17 corrections,
+all listed with before/after in [`IMPLEMENTATION-PLAN.md`](./IMPLEMENTATION-PLAN.md) (Validity pass);
+mocks re-rendered. The ones that change the design: web voice and chat come from a separate agent
+(`Robin (web demo)`, 13 of 226) and have no number to call back, so requests are phone-only; the
+transcript scrub does not remove member ids (5 digits; it needs 7+) or spoken dates of birth (168 and
+159 of 226 conversations; only 4 had anything redacted), synthetic personas so not a real-data leak,
+queued as its own task; Supabase's CDN can serve a signed URL past its expiry, so the audio cache uses
+a short cache lifetime and delete-to-revoke. Grounding added: 16 of 226 calls were after the
+placeholder hours, 1 transferred.
+
+**Next session**
+> Get approval on `IMPLEMENTATION-PLAN.md`. Then Phase 0: the decisions table to the business and
+> compliance, and the five premise checks, each result recorded here with its artifact.
+
+---
+
+## Session 2026-10-03: after-hours requests designed (no code), call audio scoped
+
+**Design only, nothing built.** The Rangly pattern (a voice call becomes a pending request a person
+acts on) applied to Robin, scoped to after hours: Robin cannot transfer, so she files a callback
+request, speaks a server-computed deadline (next open plus 8 business hours, a placeholder SLA), and
+the call center works a queue in Birdnest that replaces their sticky notes. Spec and approved mocks:
+[`requests/SPEC.md`](./requests/SPEC.md), `requests/mocks/`. Pointers added to SCOPE (feature key
+`requests`) and SPEC.
+
+**Grounding, from live data:** 226 interactions; 45 transferred, all with a `transfer_reason`, most of
+them requests ("ready to request a 401(k) loan and needs specialist to process"). Robin's post-call
+webhook already reaches the broker, so the safety net needs no new webhook.
+
+**Found while specifying:**
+- `members` has **no phone column**, so "callback to the number on file" has nothing to read. Open
+  question in the spec; recommendation is caller ID for the experiment.
+- Robin's tool endpoints are open by design; a tool that writes rows needs a shared-secret header.
+- Adding Requests to the full masthead wrapped it to three rows. A rep role sees only its grants,
+  which makes v1 auth a visible requirement, not only a security one.
+
+**Call audio (specced 2026-10-04: [`audio/SPEC.md`](./audio/SPEC.md), mocks in `audio/mocks/`).** Every stored interaction has `has_audio: true`; live privacy
+settings are `record_voice: true`, `retention_days: -1`, `delete_audio: false`; the post-call webhook
+has `send_audio: false`. Recommended shape: on first play, the portal fetches the conversation audio
+from ElevenLabs server-side, stores it in a private Supabase Storage bucket, and plays from a
+short-lived signed URL (seeking works, no function response-size question), with a "who listened"
+audit row per play. Transcript turns carry `time_in_call_secs` (224 of 226), so click-a-line-to-seek
+is possible. **Compliance flag:** Robin's live first message does not say the call is recorded; the
+player widens who can hear recordings, so that question goes to compliance before it ships. (This is
+not the settled virtual-assistant disclosure.) **Unverified:** the exact ElevenLabs audio endpoint
+and format (docs blocked from this sandbox), and what `retention_days: -1` means.
+
+**Next session**
+> Nothing here is built. Before any requests code: v1 auth (accounts, roles, grants, audit) is the
+> prerequisite. Then answer the spec's open questions with the business (callback number source, SLA
+> clock, hours, inbox). Audio: the first build step is one request to confirm the ElevenLabs audio
+> endpoint; before anyone else can listen, compliance answers recording disclosure and who holds
+> `call_audio`. Separately, a small fix worth doing now: the transcript scrub misses spoken dates of
+> birth (159 of 226 conversations); see `audio/SPEC.md`, Pre-existing finding.
+
+---
+
 ## Re-grade of the old no-source interactions (2026-10-02, night)
 
 All 21 interactions graded before the source check existed were re-graded one at a time through the portal, each guarded (the target had to still be in the no-source list). Database totals before and after: score rows 252 to 203, question rows 336 to 274, no duplicate (interaction, key) pairs left; survey answers 226, survey people 33, security flags 4, gap requests 2 and graded interactions 115 all unchanged. Interactions with only no-source rows: 21 to 0.

@@ -11,6 +11,10 @@
 > per-organisation features, per `SCOPE.md`. The architecture is the same for both; v1 adds a table
 > and a middleware.
 
+**Feature specs:** [`requests/SPEC.md`](./requests/SPEC.md), after-hours callback requests (design
+approved 2026-10-03, not built; needs v1 auth first)); [`audio/SPEC.md`](./audio/SPEC.md), call audio in the
+interaction drawer (written 2026-10-04, not built; needs v1 auth and a compliance answer first).
+
 ---
 
 ## Stack

@@ -95,7 +95,8 @@ A feature is a key in code, toggled per organisation in Admin. First cut, in ord
 | Key | What it gates | Module today |
 |---|---|---|
 | `survey_dashboard` | "Would they rather use her?" page, slide, metrics API | broker `/survey`, `/api/metrics`, `/api/survey-*` |
-| `call_transcripts` | Per-call drill-down and audio links | broker `/api/survey-call` |
+| `call_transcripts` | Per-call drill-down (caller side scrubbed) | broker `/api/survey-call` |
+| `call_audio` | Call recordings in the drawer. Separate from transcripts because a voice cannot be scrubbed. Spec: [`audio/SPEC.md`](./audio/SPEC.md) | new (broker route + Storage cache) |
 | `survey_export` | CSV export | broker `/api/survey-export` |
 | `monitor` | Experiment Monitor: outcomes, security scan, grading | broker `/dashboard`, `/api/grade`. **The grader scores against the documents Robin retrieved, but only documents published through the Knowledge Factory have text on our side; the five live Vertex documents were uploaded straight to ElevenLabs, so recent calls grade `no_source`. Fetching KB text from ElevenLabs is the prerequisite. Grading runs only when someone opens the page.** |
 | `q_tester` | Ask Robin's published KB a question | broker `/robin-q-tester`, `/api/ask` |
@@ -104,6 +105,7 @@ A feature is a key in code, toggled per organisation in Admin. First cut, in ord
 | `artifacts` | Handouts, call cards, answer key, KB article sources | repo `demo/`, `kb/vertex/` |
 | `robin_status` | Live agent version, KB docs, tools, phone number | ElevenLabs API, read-only |
 | `admin` | The Admin page itself | new |
+| `requests` | After-hours callback requests: the call center's queue. Spec: [`requests/SPEC.md`](./requests/SPEC.md) | new (broker tools + tables) |
 
 ## Open questions
 
