@@ -44,12 +44,12 @@ export default async function Home() {
     <>
       <section className="info">
         <div>
-          <h1>{s?.name || "Robin"}, the 401(k) voice agent</h1>
+          <h1>Birdnest</h1>
           <p className="lede">
-            Answers plan questions and looks up a verified caller's own figures over the phone, for the
-            Vertex Manufacturing 401(k). Built on ElevenLabs.
+            One place to keep an eye on {s?.name || "Robin"}, our 401(k) voice agent. Listen to her calls,
+            check her answers, improve what she knows, and call back members who reached her after hours.
           </p>
-          {s?.phone && <div className="phone tnum">{s.phone}</div>}
+          {s?.phone && <><div className="lbl info-lbl">{s?.name || "Robin"}&rsquo;s line</div><div className="phone tnum">{s.phone}</div></>}
           {!s && <div className="warn">Live status unavailable: {status?.reason || "unknown"}. The doors still work.</div>}
         </div>
         {s && (

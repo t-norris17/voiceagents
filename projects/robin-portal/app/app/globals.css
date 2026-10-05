@@ -40,6 +40,8 @@ a { color: inherit; }
 .about .facts dd + dt, .about .facts dd + dt + dd { padding-top: 6px; border-top: 1px solid var(--hair); }
 .info h1 { font-size: clamp(1.8rem, 4.5vw, 2.6rem); font-weight: 800; letter-spacing: -.025em; line-height: 1.05; margin: 0; }
 .info .lede { margin: 12px 0 0; color: var(--sub); max-width: 52ch; }
+.info .info-lbl { margin-top: 18px; }
+.info .info-lbl + .phone { margin-top: 2px; }
 .info .phone { margin-top: 18px; font-size: 1.35rem; font-weight: 700; letter-spacing: -.01em; }
 .facts { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; align-items: baseline; font-size: .84rem; }
 .facts dt { color: var(--sub); font-size: .66rem; text-transform: uppercase; letter-spacing: .14em; font-weight: 600; padding-top: 3px; white-space: nowrap; }
