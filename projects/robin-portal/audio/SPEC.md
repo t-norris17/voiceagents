@@ -175,7 +175,9 @@ robin-portal/
 
 ## Compliance gate (before anyone but the builder can listen)
 
-- **Recording disclosure.** Neither agent's live first message tells callers the call is recorded
+- **Recording disclosure (phone).** The web widget asks for recording consent before a conversation
+  ("By clicking Agree… I consent to the recording, storage, and sharing of my communications"), so
+  the gap is the phone line. Neither agent's live first message tells callers the call is recorded
   (phone: "Thank you for calling NestEgg U support — this is Robin…"; web: "Hi, this is Robin with the
   Vertex Manufacturing 401(k) help desk…"), and neither prompt instructs a notice. The
   recording already exists; the player widens who can hear it. This question goes to INTRUST
@@ -206,14 +208,18 @@ from audio, and worth doing before any production traffic.
 - [ ] **The ElevenLabs audio endpoint and format.** Believed to be `GET /v1/convai/conversations/{id}/audio`
       returning MP3, from memory; the docs were unreachable from the build sandbox. One request with the
       broker's key settles it, and it is the first step of the build.
-- [ ] **What `retention_days: -1` means**: keep forever, or the workspace default? If ElevenLabs can
-      delete before our cache expires, "fetch again" stops working for old calls.
+- [x] **`retention_days: -1`** means no retention limit (ElevenLabs API schema). Audio stays until
+      deleted, so "fetch again" works for old calls.
 - [ ] **Web-voice audio.** The 6 web-voice interactions report audio; confirm the endpoint returns it
       for widget conversations, not only phone.
 - [ ] **Should reps hear the call behind a request** on the Requests page? Useful before a callback,
       but it means granting `call_audio` to the call center role. Compliance decision.
-- [ ] **Does ElevenLabs' own redaction cover audio?** The agent has `conversation_history_redaction`
-      (off). If it can redact entities in audio, it would change the sensitivity argument. Unverified.
+- [ ] **Turn on ElevenLabs redaction?** Per the API schema, `conversation_history_redaction` applies
+      to "the conversation transcript, audio and analysis", with `dob` and account-number entity
+      types. It is off on both agents. It would make audio far less sensitive, but it also changes
+      what the grader, Birdnest and the post-call payload receive (the webhook has separate
+      `unredacted_*` events). What redacted audio sounds like is unverified. Test on the test agent
+      with the allowlist in place; decide with compliance.
 - [ ] **Recording disclosure** (above).
 
 ## Risks

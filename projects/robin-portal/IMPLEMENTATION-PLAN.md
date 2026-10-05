@@ -1,6 +1,6 @@
 # Implementation plan: after-hours requests and call audio
 
-**Status:** awaiting approval
+**Status:** approved 2026-10-04; Phase 0 in progress (results below)
 **Written:** 2026-10-04, after a validity pass on both specs and all mocks
 **Specs:** [`requests/SPEC.md`](./requests/SPEC.md) · [`audio/SPEC.md`](./audio/SPEC.md)
 
@@ -31,8 +31,9 @@ Nothing in this plan changes the live Robin agent before Phase 5, and that phase
 
 | Decision | Who | Recommendation | Blocks |
 |---|---|---|---|
-| Is a recording notice required, and where (greeting, carrier, IVR)? Neither agent's greeting gives one. | Compliance | Ask before anyone but the builder can listen | Audio rollout (3) |
+| Is a recording notice required on the **phone** line, and where (greeting, carrier, IVR)? The web widget already asks for recording consent; the phone greeting does not. | Compliance | Ask before anyone but the builder can listen | Audio rollout (3) |
 | Who holds `call_audio`? | Compliance + you | A short named list | Audio rollout (3) |
+| Turn on ElevenLabs redaction (date of birth, account numbers) for transcript **and audio**? It would also redact what our grader and Birdnest read | Compliance + you | Test on the test agent first; decide with compliance | Audio (3), scrub task |
 | Call center hours and holiday calendar | Call center | Placeholder weekdays 8 to 5 Central until answered | Requests (4) |
 | Callback promise | Business | 8 business hours placeholder | Requests (4) |
 | SLA clock stops at first attempt or first contact? | Business | First attempt | Requests page (6) |
@@ -52,6 +53,32 @@ Nothing in this plan changes the live Robin agent before Phase 5, and that phase
 
 **Done when:** every check above has a recorded result, and the decisions table has an answer or an
 explicit "proceed on placeholder".
+
+### Phase 0 results (2026-10-05)
+
+| Check | Result | Evidence |
+|---|---|---|
+| Callback number available | **Settled, no tool needed.** Every stored phone call carries the caller's number in the post-call payload | `metadata.phone_call.external_number` present in 213 of 213 phone rows |
+| `system__` variables on tools | **Not run, and no longer needed.** The test agent shares the production post-call webhook (`4deed01a…`), so a test call would write into the live `ai_call_events`; the approval did not cover that. Design changed instead (below) | `Robin — survey test` config, `workspace_overrides.webhooks` |
+| `retention_days: -1` meaning | **Settled: no retention limit** | ElevenLabs API schema, `PrivacyConfig.retention_days`: "-1 indicates there is no retention limit" |
+| ElevenLabs redaction and audio | **New option:** redaction applies to "the conversation transcript, audio and analysis", entity types include `dob` and account numbers | ElevenLabs API schema, `ConversationHistoryRedactionConfig.entities` |
+| Tool secret headers | **Supported:** request headers can reference a workspace secret | API schema, `request_headers` accepts `ConvAISecretLocator` |
+| ElevenLabs audio endpoint | **Open.** API host reachable from the sandbox (401 without a key), but no key is available here | `curl` → 401 |
+| Storage byte ranges | **Open.** Supabase Storage host is blocked by the sandbox's network policy, so the throwaway bucket was not created (a write with no way to read the result) | `curl` → blocked |
+| Resend key live | **Open.** `api.resend.com` blocked from the sandbox | `curl` → blocked |
+| Vercel plan | **Open.** API returns 403/404 for this session | `get_auth_user` 404, env list 403 |
+| Recording notice | **Narrowed:** the web widget shows a recording consent before the conversation; the phone greeting has none | web agent `widget.terms_text`; phone `first_message` |
+
+**Design changes from Phase 0**
+- `file_request` returns its own `request_id`; the post-call webhook links the request to the call by
+  reading that tool result from the transcript, and fills `callback_number` from
+  `phone_call.external_number`. Nothing depends on `system__` variables.
+- The broker's `/api/postcall` gets an **agent allowlist** (Rangly's adapter already does this) so a
+  test agent sharing the workspace webhook can never write into the live table. This is now a
+  prerequisite for Phase 5's test-agent step.
+- The three open checks move to the first step of the phase that needs them, run from a deployed
+  preview (which has the keys and the network), not from this sandbox: audio endpoint and byte ranges
+  to Phase 3 step 1, Resend to Phase 6 step 3. The Vercel plan is one look in the dashboard.
 
 ---
 
@@ -111,7 +138,7 @@ Safe to build in parallel with Phase 3: nothing here is reachable by Robin yet.
 3. `api/handoff_option.js` and `api/file_request.js`, both requiring a shared-secret header.
    `file_request` takes the caller's name from Data Collection's existing `caller_name` and computes
    `due_at` itself.
-4. `api/postcall.js` safety net: after the existing upsert, insert-if-absent for phone calls with a
+4. `api/postcall.js`: an agent allowlist first (only `Robin` and `Robin (web demo)` write rows), then the safety net: after the existing upsert, insert-if-absent for phone calls with a
    `request_type`, never failing the call record.
 5. `api/requests.js` (list, log attempt, close; portal-only).
 

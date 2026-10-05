@@ -56,6 +56,10 @@ integration. No Rangly dependency.
   uses a `system__` dynamic variable yet, so that mechanism is unproven on this agent.
 - **Data Collection already has `caller_name` and `subject_ref`.** The request can take the caller's
   name from there instead of a new field.
+- **The caller's number is in every phone call's post-call payload** (`phone_call.external_number`,
+  213 of 213 phone rows), so the callback number does not depend on a tool variable.
+- **The test agent shares the production post-call webhook**, so `/api/postcall` needs an agent
+  allowlist before any test agent gets these tools.
 - **`members` has no phone column**, and member ids are 5-digit numbers. Testers use shared synthetic
   personas (no real account data in `members`).
 - **Birdnest is still on one shared password** (`app/middleware.js`, `PORTAL_PASSWORD`).
@@ -221,9 +225,9 @@ robin-portal/
       `verify_caller`. A server-side check that the same conversation actually verified that member
       would stop a model mistake from attaching a request to the wrong person. Needs a record of
       verify_caller results by conversation, which does not exist today.
-- [ ] **Unverified:** that ElevenLabs passes `system__conversation_id` and the caller's number to
-      webhook tools as system dynamic variables. Not in `docs/elevenlabs-reference.md`; confirm
-      against the live docs before building on it.
+- [x] ~~`system__` variables on tools~~ No longer needed (Phase 0): `file_request` returns a
+      `request_id`, and the post-call webhook links it to the conversation from the transcript's tool
+      result and fills the callback number from `phone_call.external_number`.
 
 ## Risks
 

@@ -7,6 +7,28 @@
 ---
 
 
+## Session 2026-10-05: Phase 0 of the implementation plan
+
+Plan approved 2026-10-04. Results are in [`IMPLEMENTATION-PLAN.md`](./IMPLEMENTATION-PLAN.md) (Phase 0
+results). Settled: the caller's number is in every phone call's post-call payload (213 of 213), so the
+callback number needs no tool variable; `retention_days: -1` means no retention limit; tool headers
+can carry a workspace secret; ElevenLabs redaction covers audio (a new option for compliance).
+Corrected: the web widget does ask for recording consent, so the disclosure gap is phone-only.
+
+**Not run, on purpose:** the `system__` variable probe. The test agent shares the production post-call
+webhook, so a test call would have written into the live `ai_call_events`, which the approval did not
+cover. The design no longer needs it (the webhook links the request from the transcript's tool result),
+and `/api/postcall` gets an agent allowlist before any test agent gets new tools. **Blocked by the
+sandbox network:** Supabase Storage and Resend; so the throwaway bucket was not created. Those checks,
+and the ElevenLabs audio endpoint (no key here), move to the first step of Phases 3 and 6, run from a
+deployed preview. No live system was changed this session.
+
+**Next session**
+> Waiting on: the decisions table (business and compliance) and one look at the Vercel plan. Then
+> Phase 1 (v1 accounts) can start; Phase 4's `lib/hours.js` can start on placeholders in parallel.
+
+---
+
 ## Session 2026-10-04: validity pass on both specs and mocks; implementation plan
 
 Re-checked every claim in `requests/SPEC.md`, `audio/SPEC.md`, the mocks and what was said in chat
