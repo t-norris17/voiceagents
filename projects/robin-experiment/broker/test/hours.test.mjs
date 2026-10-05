@@ -107,3 +107,22 @@ test("config is the only source of hours: a test config with Saturday open chang
   same(callbackDue(at("2026-10-02T19:00:00-05:00"), withSaturday), "2026-10-05T12:00:00-05:00",
     "Fri 7 PM -> Mon 12 PM when Saturday 8-12 counts");
 });
+
+test("the hours in plain words come from the same config", async () => {
+  const { hoursText } = await import("../lib/hours.js");
+  assert.equal(hoursText(), "Mon to Fri 8 AM to 6 PM Central, closed weekends and federal holidays");
+  const withSaturday = { ...HOURS, week: { ...HOURS.week, 6: [8 * 60, 12 * 60] } };
+  assert.equal(hoursText(withSaturday), "Mon to Fri 8 AM to 6 PM, Sat 8 AM to 12 PM Central, closed federal holidays");
+});
+
+test("open minutes between two instants: the clock the promise runs on", async () => {
+  const { openMinutesBetween } = await import("../lib/hours.js");
+  assert.equal(openMinutesBetween(at("2026-10-03T21:42:00-05:00"), at("2026-10-05T09:05:00-05:00")), 65, "Sat night -> Mon 9:05 AM");
+  assert.equal(openMinutesBetween(at("2026-10-05T10:00:00-05:00"), at("2026-10-05T11:30:00-05:00")), 90, "same day, in hours");
+  assert.equal(openMinutesBetween(at("2026-10-01T19:05:00-05:00"), at("2026-10-02T09:12:00-05:00")), 72, "evening -> next morning");
+  assert.equal(openMinutesBetween(at("2026-10-09T19:00:00-05:00"), at("2026-10-13T08:30:00-05:00")), 30, "over Columbus Day weekend");
+  assert.equal(openMinutesBetween(at("2026-10-05T11:00:00-05:00"), at("2026-10-05T10:00:00-05:00")), 0, "backwards is zero");
+  // Agrees with callbackDue: the deadline is exactly the promised budget of open minutes away.
+  const start = at("2026-10-03T21:42:00-05:00");
+  assert.equal(openMinutesBetween(start, callbackDue(start)), HOURS.callbackBusinessMinutes);
+});

@@ -18,14 +18,16 @@ function age(iso) {
 }
 
 export default async function Home() {
-  const [status, calls, metrics] = await Promise.all([
+  const [status, calls, metrics, requests] = await Promise.all([
     getRobinStatus(),
     brokerJson("/api/calls?limit=1"),
     brokerJson("/api/metrics", { revalidate: 60 }),
+    brokerJson("/api/requests?view=stats"),
   ]);
   const s = status?.ok ? status : null;
   const summary = calls?.summary || null;
   const responses = metrics?.survey?.responses ?? null;
+  const rq = requests?.stats || null;
 
   const doors = [
     { href: "/survey/", t: "Quality", d: "Would they rather use Robin than wait for a person? What callers said, and every number opens to the call behind it.", n: responses, un: "responses" },
@@ -34,7 +36,7 @@ export default async function Home() {
     { href: "/factory/", t: "Knowledge Factory", d: "Turn a messy source into answers Robin can give. Review each one, publish them to her Knowledge Base, then try them.", n: null, un: null },
     { href: "/robin-q-tester/", t: "Dry Run", d: "Ask a question the way a caller would and see how Robin answers, from her live prompt and the documents attached to her.", n: null, un: null },
     { href: "/calls", t: "Interactions", d: "Every recent conversation, by phone or chat: who verified, what they asked, how it ended, and the transcript.", n: summary?.last_24h ?? null, un: "interactions, 24 h" },
-    { href: "/requests", t: "Requests", d: "Members who called after hours and need a person. Call them back, then log what happened.", n: null, un: null, full: true },
+    { href: "/requests", t: "Requests", d: "Members who called after hours and need a person. Call them back, then log what happened.", n: rq?.open ?? null, un: rq ? (rq.overdue ? `open, ${rq.overdue} overdue` : "open") : null, full: true },
     { href: "/demo-website/", t: "Demo Website", d: "A realistic employer site with Robin as the chat and voice widget in the corner. Try her the way a team member would; the tester guide has the personas and the script.", n: null, un: null, newTab: true, full: true },
   ];
 

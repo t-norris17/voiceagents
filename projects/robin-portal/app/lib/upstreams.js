@@ -17,6 +17,7 @@ export const BROKER_PATHS = new Set([
   "ask",
   "questions",
   "gap_request",
+  "requests",
 ]);
 
 export const CLEANER_PATHS = new Set([
