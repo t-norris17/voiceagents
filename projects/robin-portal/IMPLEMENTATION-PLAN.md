@@ -84,6 +84,10 @@ explicit "proceed on placeholder".
 
 ## Phase 1. v1 accounts (prerequisite for both) (L)
 
+**Design checkpoint written 2026-10-05:** [`v1-accounts/SPEC.md`](./v1-accounts/SPEC.md). Found while
+designing: the content cleaner is open to the internet, including `publish`/`unpublish`; gating it is
+Step 0 there, with its own approval.
+
 Already scoped in `SPEC.md` ("v1 additions"); this plan only sequences it.
 
 - Supabase Auth with magic link; tables `organisations`, `memberships(user, org, role)`,

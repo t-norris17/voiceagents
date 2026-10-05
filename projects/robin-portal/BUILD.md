@@ -7,6 +7,22 @@
 ---
 
 
+## Session 2026-10-05 (evening): Phase 1 design checkpoint (v1 accounts)
+
+Design written to [`v1-accounts/SPEC.md`](./v1-accounts/SPEC.md); nothing built. Grounded in: the portal's
+`middleware.js`, proxy and route map; which API each page calls (grep of every module page); Supabase
+(0 auth users, RLS on with no policies on all 14 tables, Pro plan).
+
+**Security finding, live:** the content cleaner (`voiceagents-qewy`) has no gate. An unauthenticated
+`GET /api/kb_list` returned 200 with 32 KB, and by the code `publish`, `unpublish` and `clean` are equally
+open; those were not called. Proposed as Step 0 (gate it with the broker's `x-robin-internal` pattern),
+needing its own approval because it is a live deploy. The broker and the portal both answered 401.
+
+**Next session**
+> Waiting on the four decisions at the end of `v1-accounts/SPEC.md`, Step 0 first.
+
+---
+
 ## Session 2026-10-05 (later): hours confirmed; Phase 4 step 1 built (`lib/hours.js`)
 
 **Hours (from Tanner, for the call center):** Monday to Friday 8 AM to 6 PM Central; Saturday and Sunday
