@@ -11,7 +11,10 @@ once `ELEVENLABS_WEBHOOK_SECRET` is set (see `../elevenlabs-experiment-setup.md`
 |---|---|---|
 | `/api/verify_caller` | POST | `{ member_id, dob }` → `{ verified, subject_ref, first_name, consented }` |
 | `/api/get_balance` | POST | `{ subject_ref }` → `{ found, plan_name, balance, vested_balance, fully_vested, outstanding_loan, deferral_pct }` |
-| `/api/postcall` | POST | ElevenLabs post-call webhook (HMAC-verified) → upsert `ai_call_events` |
+| `/api/postcall` | POST | ElevenLabs post-call webhook (HMAC-verified) → upsert `ai_call_events` (Robin's two agents only), then link or file an after-hours request |
+| `/api/handoff_option` | POST | Robin's `get_handoff_option` tool, `x-robin-tool-secret` required → `{ mode: "transfer" }` or `{ mode: "request", next_open, due_at, callback_by_text }` |
+| `/api/file_request` | POST | Robin's `file_request` tool, `x-robin-tool-secret` required: `{ request_type, request_detail, subject_ref?, caller_name?, callback_window?, callback_number? }` → `{ ok, request_id, due_at, callback_by_text }`; refuses during open hours |
+| `/api/requests` | GET, POST | Birdnest's after-hours queue (gated like the survey paths): list + stats, and reached / voicemail / no_answer / note / close / reopen |
 | `/api/ask` | POST | `{ question }` → Robin-style answer grounded in the embedded KB (Phase-1 Q&A test tool) |
 | `/api/questions` | GET | `{ questions:[{n,key,category,q,ideal}] }` — the 25 curated questions + answer key (from `lib/questions.js`) |
 | `/` (static) | GET | The Phase-1 Q&A test page (`public/index.html`) — paste questions, get answers, resend for variation |
@@ -52,6 +55,10 @@ writeFileSync('../broker/lib/kb.js','export const KB = '+JSON.stringify(f.map(x=
 - `get_balance` intentionally omits any loan limit — the guide has none, so Robin routes
   loan-amount questions to a specialist instead of quoting a figure.
 - `postcall` **rejects unsigned/mis-signed** payloads (HMAC-SHA256 over `t.rawBody`).
+- `postcall` stores calls only from Robin's two agents (phone and web demo); the webhook is set once
+  for the whole ElevenLabs workspace, so any other agent's call is answered 200 and dropped.
+- The two request tools **write**, so unlike `verify_caller` they require `REQUESTS_TOOL_SECRET` and
+  fail closed without it. Hours, holidays and the callback deadline live in `lib/hours.js`.
 
 ## Verification model
 

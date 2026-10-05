@@ -25,6 +25,8 @@ const GATED = [
   // Gated on 2026-10-02 at Tanner's request. They spend model money (/api/ask, /api/grade) or write
   // grades and gap requests; none is called by Robin mid-call. The portal sends the internal header.
   "/api/ask", "/api/grade", "/api/questions", "/api/gap_request",
+  // The call center's after-hours queue: names, callback numbers, what members asked for.
+  "/api/requests", "/api/requests?view=all",
 ];
 
 // Gating any of these does not hide a dashboard — it takes Robin off the phone. ElevenLabs calls
@@ -32,6 +34,9 @@ const GATED = [
 // authenticates with ELEVENLABS_WEBHOOK_SECRET instead).
 const MUST_STAY_OPEN = [
   "/api/postcall", "/api/verify_caller", "/api/get_balance",
+  // Robin's after-hours tools, called mid-call. They authenticate with their own header
+  // (REQUESTS_TOOL_SECRET, lib/tool-secret.js), not the portal's.
+  "/api/handoff_option", "/api/file_request",
   "/", "/robin-q-tester/", // the Dry Run PAGE is static and open; the API it calls is behind the password
 ];
 
@@ -128,5 +133,22 @@ test("every matcher route is one isProtected actually denies", async () => {
   for (const route of config.matcher) {
     const concrete = route.replace("/:path*", "/something");
     assert.equal(isProtected(concrete), true, `matcher lists ${route} but isProtected says it is open`);
+  }
+});
+
+// Every endpoint file is either gated or deliberately open. A new file that is in neither list fails
+// here, so an endpoint cannot ship ungated by being forgotten (the failure the survey test above guards
+// for one prefix, made general).
+test("every endpoint on disk is either gated or listed as open on purpose", async () => {
+  const { readdirSync } = await import("node:fs");
+  const { fileURLToPath } = await import("node:url");
+  const { dirname, join } = await import("node:path");
+  const here = dirname(fileURLToPath(import.meta.url));
+  const { config } = await import("../middleware.js");
+  const routes = readdirSync(join(here, "..", "api")).filter((f) => f.endsWith(".js")).map((f) => `/api/${f.replace(/\.js$/, "")}`);
+  for (const route of routes) {
+    if (MUST_STAY_OPEN.includes(route)) { assert.equal(isProtected(route), false, `${route} must stay open`); continue; }
+    assert.ok(config.matcher.includes(route), `${route} is neither gated (matcher) nor listed in MUST_STAY_OPEN`);
+    assert.equal(isProtected(route), true, `${route} is in the matcher but isProtected waves it through`);
   }
 });

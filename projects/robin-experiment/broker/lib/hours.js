@@ -185,3 +185,46 @@ export function handoffOption(now = new Date(), cfg = HOURS) {
     callback_by_text: callbackByText(due, cfg),
   };
 }
+
+// The hours in plain words, for the Birdnest Requests page footer, so the page never carries its own
+// copy of the hours: "Mon to Fri 8 AM to 6 PM Central, closed weekends and federal holidays".
+const SHORT = ["", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+function clock(min) {
+  const h24 = Math.floor(min / 60), m = min % 60, h12 = h24 % 12 || 12, ap = h24 < 12 ? "AM" : "PM";
+  return m ? `${h12}:${String(m).padStart(2, "0")} ${ap}` : `${h12} ${ap}`;
+}
+export function hoursText(cfg = HOURS) {
+  const runs = [];
+  for (let d = 1; d <= 7; d++) {
+    const w = cfg.week[d];
+    const last = runs[runs.length - 1];
+    if (w && last && last.to === d - 1 && last.w[0] === w[0] && last.w[1] === w[1]) last.to = d;
+    else if (w) runs.push({ from: d, to: d, w });
+  }
+  const open = runs.map((r) => `${SHORT[r.from]}${r.to > r.from ? ` to ${SHORT[r.to]}` : ""} ${clock(r.w[0])} to ${clock(r.w[1])}`).join(", ");
+  const closedWeekend = !cfg.week[6] && !cfg.week[7];
+  return `${open} ${cfg.zoneLabel}, closed ${closedWeekend ? "weekends and " : ""}federal holidays`;
+}
+
+// Open minutes between two instants: the same clock the callback promise runs on. A request filed
+// Saturday night and called back Monday at 9:05 AM took 65 open minutes, not 35 hours.
+export function openMinutesBetween(from, to, cfg = HOURS) {
+  if (!(to > from)) return 0;
+  let { y, m, d, minutes: cursor } = localParts(from, cfg.timeZone);
+  const end = localParts(to, cfg.timeZone);
+  const endKey = key(end.y, end.m, end.d);
+  let total = 0;
+  for (let i = 0; i < 400; i++) {
+    const w = openWindow(y, m, d, cfg);
+    const last = key(y, m, d) === endKey;
+    if (w) {
+      const a = Math.max(cursor, w[0]);
+      const b = last ? Math.min(end.minutes, w[1]) : w[1];
+      if (b > a) total += b - a;
+    }
+    if (last) return total;
+    ({ y, m, d } = addDays(y, m, d, 1));
+    cursor = 0;
+  }
+  return total;
+}

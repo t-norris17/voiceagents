@@ -7,6 +7,52 @@
 ---
 
 
+## Session 2026-10-05 (late night): Requests built end to end, not on any agent yet
+
+**Next session, read this first.** Requests works from the database to the page. Nothing files a
+request yet: Robin has neither tool. Next is Phase 5 (its own stop): register the two tools and the two
+Data Collection fields on the **test agent** first, against the preview broker with
+`REQUESTS_FORCE_CLOSED=1`, then live Robin one change at a time. Then audio (Phase 3).
+
+**Live now:** migration 023 on Supabase `rlhybqslnqhggbykjrqg` (applied 2026-10-05, additive, both
+tables empty). Checked on live: RLS on, 0 policies; anon and authenticated cannot execute
+`service_request_act`, service_role can; a rolled-back probe showed a duplicate post-call insert is
+ignored on `conversation_id`, close works, and an UPDATE on the history is refused by the trigger.
+Tables back to 0 rows after the probe.
+
+**Built, goes live on merge (branch `claude/bird-nest-voice-intake-design-uqmom7`):**
+- Broker `api/handoff_option.js`, `api/file_request.js` (both need `REQUESTS_TOOL_SECRET`, 503 without
+  it), `api/requests.js` (queue, stats, actions; gated in `middleware.js`), `lib/requests.js`,
+  `lib/request-link.js`, `lib/tool-secret.js`, `hoursText` and `openMinutesBetween` in `lib/hours.js`.
+- **`api/postcall.js` changes on merge, and it is on the live call path.** It now drops calls from any
+  agent other than Robin (phone) and Robin (web demo), the only two with rows in `ai_call_events`
+  (213 and 13, checked by query). After the call record is stored it links or files a request; that
+  step's failure is logged and never returned (tested: request writes failing still gives 200).
+- Portal: `/requests` queue and drawer to the mocks, home tile shows open (and overdue) count,
+  `/api/requests` added to the proxy map.
+
+**Verified:** broker 191 tests pass under UTC and Asia/Tokyo clocks (16 new in `requests.test.mjs`, a
+completeness test that every broker endpoint is either gated or deliberately open, open-minutes and
+hours-text tests); portal 50 pass, `next build` clean. The real `api/requests.js` handler ran behind a
+faked database with the built portal in front of it: queue, drawer, Reached + note, Close, Reopen state,
+transcript drawer and back, dark mode, 390 px with no horizontal scroll, zero console errors.
+
+**Not verified, and why:**
+- The broker's PostgREST queries against real PostgREST. The sandbox cannot reach Supabase's REST host
+  (proxy 403), so filters were checked against the patterns already in production (`grade.js` `in.()`,
+  `utilization.js` `gte.`), not run. First real check: `/api/requests?view=stats` through the portal
+  after merge.
+- The post-call link on a real payload. The transcript `tool_results` shape was read from live rows,
+  but no live call has called `file_request`. Phase 5's test calls are that check.
+- Whether ElevenLabs passes `phone_call.external_number` for the test agent the same way (only Robin's
+  phone rows were checked: 213 of 213).
+
+**Privacy note:** `callback_number` copies the caller's number (already stored in
+`ai_call_events.raw_payload`) into a column shown on the Requests page. Testers call from their own
+phones, so this is a real number of a real tester, behind the Birdnest password.
+
+---
+
 ## Session 2026-10-05 (night): accounts shelved; cleaner gated (Step 0); Requests tile
 
 **Decision (Tanner):** no accounts and no extra passwords. Four people use Birdnest as a proof of concept;
