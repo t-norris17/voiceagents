@@ -7,6 +7,28 @@
 ---
 
 
+## Session 2026-10-05 (later): hours confirmed; Phase 4 step 1 built (`lib/hours.js`)
+
+**Hours (from Tanner, for the call center):** Monday to Friday 8 AM to 6 PM Central; Saturday and Sunday
+closed, callbacks on Monday; closed on all federal holidays. Volume re-checked against these hours: 16
+of 226 stored calls after hours, 1 transferred.
+
+**Built:** `robin-experiment/broker/lib/hours.js` (open/closed, next opening, the callback deadline, the
+sentence Robin reads, observed federal holidays) and `test/hours.test.mjs`. Not wired to anything: no
+endpoint, no agent, no database. Holidays follow the Federal Reserve (bank) calendar by default; the
+federal-employee calendar is a setting. **Verified:** 13/13 under the sandbox clock, `TZ=UTC` and
+`TZ=Asia/Tokyo` (so the server's time zone cannot change an answer); broker suite 172 pass, 0 fail, 9
+skipped (pre-existing grader tests that need the Anthropic SDK, not installed here). Every expected time
+in the tests is a literal Central timestamp with its offset, and the calendar facts behind them (holiday
+weekdays, DST dates) were checked against the system calendar, not recalled. Mock footers re-rendered
+with the real hours; all four mock deadlines are unchanged.
+
+**Next session**
+> Phase 1 (v1 accounts) is next on the critical path. Phase 4 continues in parallel: the migration and
+> the two tool endpoints, still unconnected to any agent.
+
+---
+
 ## Session 2026-10-05: Phase 0 of the implementation plan
 
 Plan approved 2026-10-04. Results are in [`IMPLEMENTATION-PLAN.md`](./IMPLEMENTATION-PLAN.md) (Phase 0

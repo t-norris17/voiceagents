@@ -44,9 +44,9 @@ integration. No Rangly dependency.
 
 ## What is true today (checked 2026-10-04)
 
-- **Volume.** 226 stored interactions, latest 2026-10-02. (Re-checked against the real hours on 2026-10-05: same 16 after hours, 1 transferred.) 45 transferred: 32 to get a task done (loan,
+- **Volume.** 226 stored interactions, latest 2026-10-02. 45 transferred: 32 to get a task done (loan,
   contribution change, beneficiary, distribution, access), 10 asking for a person with no task named,
-  3 after failed verification. With the placeholder hours (weekdays 8 AM to 5 PM Central), **16 of 226
+  3 after failed verification. With the confirmed hours (weekdays 8 AM to 6 PM Central), **16 of 226
   calls were after hours and 1 of those transferred**, so "rare" holds, though testers called when
   asked to, which is not real traffic.
 - **The post-call path works for both agents.** Both use the same post-call webhook
@@ -72,7 +72,7 @@ integration. No Rangly dependency.
 | Runtime | Broker (`voiceagents`) for the two tools and storage; portal (Next.js) for the page | Robin's call path already lives on the broker; the portal only reads and proxies |
 | Key libraries | None new | |
 | Storage | Supabase `rlhybqslnqhggbykjrqg`: two new tables | Same database as `ai_call_events` |
-| Scheduler / trigger | Two daily Vercel crons (13:00 and 14:00 UTC); each sends only if it is the opening hour in Central time, Monday to Saturday | Cron is UTC, so one of the two lands on 8 AM Central in each half of the year. Daily-only schedules work on any Vercel plan; the account's plan could not be read |
+| Scheduler / trigger | Two daily Vercel crons (13:00 and 14:00 UTC); each sends only if it is the opening hour in Central time on a business day | Cron is UTC, so one of the two lands on 8 AM Central in each half of the year. Daily-only schedules work on any Vercel plan; the account's plan could not be read |
 | Outputs / delivery | Birdnest `/requests`; one email to a shared call center inbox via Resend | Resend is already used in this account (nestegg-u-demo's README, key in the "Lumio Retirement" project); whether that key is live is unverified |
 
 ## Architecture
@@ -217,13 +217,12 @@ robin-portal/
       production.
 - [ ] **When does the SLA clock stop: first attempt or first contact?** Recommended first attempt; a
       business decision. It changes the green dot.
-- [x] **Business hours** (from the call center, 2026-10-05): Mon to Fri 8 AM to 6 PM, Sat 8 AM to
-      noon, Sun closed. Timezone assumed Central (not stated). With these hours 16 of 226 stored calls
-      were after hours, 1 transferred.
-- [ ] **Holiday calendar.** Still needed.
-- [ ] **Does Saturday count toward the callback clock?** As specified it does, so a Friday 7 PM
-      caller is promised Monday 12:00 PM, not 4:00 PM. If Saturday staff do not work callbacks,
-      Saturday should be excluded from the clock (one config flag).
+- [x] **Business hours** (confirmed 2026-10-05): Monday to Friday, 8 AM to 6 PM **Central**; Saturday
+      and Sunday closed (callbacks on Monday). With these hours 16 of 226 stored calls were after
+      hours, 1 transferred. Built as config in `broker/lib/hours.js`.
+- [x] **Holidays:** closed on all federal holidays. Built with the Federal Reserve (bank) calendar:
+      a Sunday holiday moves to Monday, a Saturday holiday does not close the Friday before. The
+      federal-employee calendar (which does) is one setting away. Inauguration Day is not included.
 - [ ] **Callback SLA.** 8 business hours is a placeholder until the business sets it.
 - [ ] **Which inbox gets the morning email?**
 - [ ] **Binding `subject_ref` to the call.** `file_request` takes the `subject_ref` Robin got from
