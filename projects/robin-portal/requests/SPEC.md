@@ -155,7 +155,10 @@ stops at the first attempt (see open questions).
   Median to first callback), filters (Open, Unverified, Done, All), rows sorted by `due_at`, a drawer
   with what they need, what Robin promised (verbatim), the callback number, the verify warning,
   Reached / Left voicemail / No answer, a note, Close, history, call summary and transcript link.
-- Feature key `requests`, granted to a call center role. A rep's masthead shows only what they are
+- **Access (decided 2026-10-05):** anyone who can open Birdnest, behind the one shared password. The
+  home page has a full-width Requests tile; `/requests` exists with an honest empty state until Robin
+  files requests. The role and grant design below is shelved with v1 accounts.
+- (Shelved) Feature key `requests`, granted to a call center role. A rep's masthead shows only what they are
   granted: Requests and About. Measured with the real `mast.js`: the full bar has no room for a
   fifth link (with Requests added, the nav drops below the wordmark at 1440 and 1280 px, in the
   sandbox's fonts), and a rep should not see Accuracy or the Factory anyway. The admin's full bar

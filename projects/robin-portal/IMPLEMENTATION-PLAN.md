@@ -84,7 +84,10 @@ explicit "proceed on placeholder".
 
 ## Phase 1. v1 accounts (prerequisite for both) (L)
 
-**Design checkpoint written 2026-10-05:** [`v1-accounts/SPEC.md`](./v1-accounts/SPEC.md). Found while
+**Shelved 2026-10-05.** Four people use Birdnest as a proof of concept; the shared Vercel password
+stays, everyone sees every page including Requests, and nothing waits on accounts any more. What that
+costs, stated once: request history and the audio listen log record times, not names, and a shared
+password cannot keep anyone out of transcripts. Design kept at [`v1-accounts/SPEC.md`](./v1-accounts/SPEC.md). Found while
 designing: the content cleaner is open to the internet, including `publish`/`unpublish`; gating it is
 Step 0 there, with its own approval.
 

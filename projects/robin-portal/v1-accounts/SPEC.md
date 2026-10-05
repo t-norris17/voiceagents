@@ -1,7 +1,9 @@
 # SPEC — v1 accounts for Birdnest (Phase 1)
 
 **Slug:** robin-portal / v1-accounts
-**Status:** design checkpoint, awaiting approval (2026-10-05). Nothing built.
+**Status:** **shelved 2026-10-05** (Tanner): four people use Birdnest as a proof of concept; one shared
+password set in Vercel stays the model. Kept for when the audience grows. Step 0 (gate the cleaner) went
+ahead on its own and is built.
 **Plan:** [`../IMPLEMENTATION-PLAN.md`](../IMPLEMENTATION-PLAN.md) Phase 1 · **Scope:** [`../SCOPE.md`](../SCOPE.md)
 
 > Replace the one shared password with named accounts: each person signs in with an emailed code, belongs

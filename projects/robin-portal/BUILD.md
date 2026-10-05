@@ -7,6 +7,28 @@
 ---
 
 
+## Session 2026-10-05 (night): accounts shelved; cleaner gated (Step 0); Requests tile
+
+**Decision (Tanner):** no accounts and no extra passwords. Four people use Birdnest as a proof of concept;
+the shared Vercel password stays and everyone sees everything. `v1-accounts/SPEC.md` is shelved, not deleted.
+
+**Step 0, built, not deployed:** `content-cleaner/cleaner/middleware.js` admits only the portal's
+`x-robin-internal` secret (fails closed if unset), 4 tests. Before it reaches production,
+`ROBIN_INTERNAL_SECRET` must be set on the `voiceagents-qewy` project (same value as the portal), or the
+Factory inside Birdnest goes dark. Verify after deploy from outside: `GET /api/kb_list` must answer 401.
+
+**Requests tile, built:** full-width tile on the home page above Demo Website (a seventh grid tile left it
+stranded alone; both layouts were rendered before choosing), linking to a new `/requests` page with an
+honest empty state (no sample rows). Verified locally on the production build: portal tests 41/41, build
+lists `/requests`, both pages 401 without the password and 200 with it, no horizontal scroll at 390 px.
+**Not verified:** the deployed preview.
+
+**Next session**
+> Set `ROBIN_INTERNAL_SECRET` on `voiceagents-qewy`, then merge to deploy the cleaner gate and the tile;
+> check `kb_list` is 401 from outside and the Factory still loads in Birdnest.
+
+---
+
 ## Session 2026-10-05 (evening): Phase 1 design checkpoint (v1 accounts)
 
 Design written to [`v1-accounts/SPEC.md`](./v1-accounts/SPEC.md); nothing built. Grounded in: the portal's

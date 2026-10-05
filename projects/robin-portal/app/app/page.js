@@ -34,6 +34,7 @@ export default async function Home() {
     { href: "/factory/", t: "Knowledge Factory", d: "Turn a messy source into answers Robin can give. Review each one, publish them to her Knowledge Base, then try them.", n: null, un: null },
     { href: "/robin-q-tester/", t: "Dry Run", d: "Ask a question the way a caller would and see how Robin answers, from her live prompt and the documents attached to her.", n: null, un: null },
     { href: "/calls", t: "Interactions", d: "Every recent conversation, by phone or chat: who verified, what they asked, how it ended, and the transcript.", n: summary?.last_24h ?? null, un: "interactions, 24 h" },
+    { href: "/requests", t: "Requests", d: "Members who called after hours and need a person. Call them back, then log what happened.", n: null, un: null, full: true },
     { href: "/demo-website/", t: "Demo Website", d: "A realistic employer site with Robin as the chat and voice widget in the corner. Try her the way a team member would; the tester guide has the personas and the script.", n: null, un: null, newTab: true, full: true },
   ];
 
