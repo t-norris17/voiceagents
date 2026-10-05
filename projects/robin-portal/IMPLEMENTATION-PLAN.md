@@ -34,7 +34,8 @@ Nothing in this plan changes the live Robin agent before Phase 5, and that phase
 | Is a recording notice required on the **phone** line, and where (greeting, carrier, IVR)? The web widget already asks for recording consent; the phone greeting does not. | Compliance | Ask before anyone but the builder can listen | Audio rollout (3) |
 | Who holds `call_audio`? | Compliance + you | A short named list | Audio rollout (3) |
 | Turn on ElevenLabs redaction (date of birth, account numbers) for transcript **and audio**? It would also redact what our grader and Birdnest read | Compliance + you | Test on the test agent first; decide with compliance | Audio (3), scrub task |
-| Call center hours and holiday calendar | Call center | Placeholder weekdays 8 to 5 Central until answered | Requests (4) |
+| Call center hours | Call center | **Answered 2026-10-05:** Mon to Fri 8 to 6, Sat 8 to 12, Sun closed (Central assumed) | |
+| Holiday calendar; does Saturday count toward the callback clock? | Call center | Saturday counts unless they say otherwise | Requests (4) |
 | Callback promise | Business | 8 business hours placeholder | Requests (4) |
 | SLA clock stops at first attempt or first contact? | Business | First attempt | Requests page (6) |
 | Callback number source for the experiment | You | Caller ID (no phone column exists) | Requests (4) |
@@ -132,7 +133,8 @@ reported as a number, not "fast".
 Safe to build in parallel with Phase 3: nothing here is reachable by Robin yet.
 
 1. `lib/hours.js` with tests for every case in the mocks (Thu 9:14 PM is due Fri 4:00 PM, Sat 9:42 PM
-   is due Mon 4:00 PM), daylight saving on both transitions, a listed holiday, a call at 4:59 PM and at
+   is due Mon 4:00 PM), Friday 7 PM due Mon 12:00 PM (Saturday's four hours count), Saturday 12:30 PM
+   due Mon 4:00 PM, daylight saving on both transitions, a listed holiday, a call at 4:59 PM and at
    8:00 AM exactly.
 2. Migration: `service_requests`, `service_request_events`.
 3. `api/handoff_option.js` and `api/file_request.js`, both requiring a shared-secret header.
