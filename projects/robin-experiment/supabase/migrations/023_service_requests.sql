@@ -34,7 +34,8 @@ create table public.service_requests (
   -- 'stated': a different number the caller asked to be called on.
   callback_number_source  text check (callback_number_source in ('caller_id', 'stated')),
   callback_window         text,
-  -- The sentence Robin read to the caller, verbatim ("by Monday, October 5 at 4 PM Central").
+  -- The callback time the broker gave Robin to read ("by Monday, October 5 at 4 PM Central"). What she
+  -- actually said is in the transcript.
   promised_text           text,
   filed_at                timestamptz not null default now(),
   -- Computed by the broker from lib/hours.js in both paths. Nothing the model passes sets it.
