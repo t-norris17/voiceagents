@@ -25,7 +25,8 @@ const COLS = "id,conversation_id,agent_id,source,request_type,request_detail,sub
   "callback_number,callback_number_source,callback_window,promised_text,filed_at,due_at,status,closed_at,closed_by,is_test";
 
 const RECENT_DAYS = 60;
-const inList = (ids) => `(${ids.map((x) => `"${x}"`).join(",")})`;
+// Same unquoted, encoded list grade.js uses: every id here is a uuid or an ElevenLabs id, no commas.
+const inList = (ids) => `(${ids.map(encodeURIComponent).join(",")})`;
 
 async function eventsFor(ids) {
   if (!ids.length) return {};
@@ -56,7 +57,13 @@ export async function list({ view = "open", test = false, now = new Date() } = {
   // the median, and bounded, so the history the queue reads (and the id list sent for its events and
   // summaries) does not grow forever as finished requests pile up.
   const since = new Date(now.getTime() - RECENT_DAYS * 864e5).toISOString();
-  const all = await sbAll(`service_requests?select=${COLS}${testFilter}&or=(status.eq.open,closed_at.gte."${since}")&order=due_at.asc,id.asc`);
+  // Two plain reads rather than one or=(...): a timestamp inside or=() needs PostgREST's quoting rules,
+  // and the broker's other time filters (utilization.js) are all plain gte filters like this one.
+  const [openRows, recentClosed] = await Promise.all([
+    sbAll(`service_requests?select=${COLS}${testFilter}&status=eq.open&order=due_at.asc,id.asc`),
+    sbAll(`service_requests?select=${COLS}${testFilter}&status=eq.closed&closed_at=gte.${encodeURIComponent(since)}&order=due_at.asc,id.asc`),
+  ]);
+  const all = [...openRows, ...recentClosed];
   const events = await eventsFor(all.map((r) => r.id));
   const stats = queueStats(all.filter((r) => !r.is_test), events, now);
   if (view === "stats") return { now: now.toISOString(), hours: HOURS_INFO, stats };
