@@ -7,6 +7,34 @@
 ---
 
 
+## Session 2026-10-06 (evening): after-merge evidence; test window removed
+
+**Callback outcome, checked against the database after #91 and #92 merged (query of 2026-10-06):**
+all five `service_requests` rows have their call at `outcome=callback`. Four were backfilled by hand
+after migration 024; `conv_8501m4999ee3f55r1vk9vtzq5nvn` (a hang-up, `source=postcall`) was set by the
+new post-call code with no help, which is the live proof that `markCallback` runs. ElevenLabs outcome
+totals now: resolved 125, transferred 45, abandoned 31, unknown 26, callback 5. All five requests are
+`is_test` and still open.
+
+**Drawer header (#92):** the sticky header had a transparent band above it, so text scrolled up
+behind it showed through. Fixed by moving the panel's top padding into the header itself.
+
+**Test window removed:** Tanner deleted `REQUESTS_FORCE_CLOSED_UNTIL` from voiceagents production. It
+had already switched itself off at 2:40 PM Central.
+
+**Not verified:**
+- *The transfer path since the window closed.* No ElevenLabs call has arrived since
+  2026-10-06T19:40Z. Proof is one call during open hours asking for a person: `get_handoff_option`
+  returns `mode=transfer` in `tool_results`, followed by `transfer_to_number`. Note the transfer number
+  is Tanner's own phone, so the transferred leg may ring busy; the tool sequence is still the evidence.
+- *Quality's "Callback requested" funnel row* has not been looked at on the live page.
+
+**Next session:** run the transfer check above, then call audio (Phase 3). The audio spec still
+assumes per-user accounts, which are shelved; revise it for the shared password first.
+
+---
+
+
 ## Session 2026-10-06 (afternoon): Requests live on Robin; callbacks are not transfers
 
 **Live Robin changes (each verified by full-config diff, nothing else moved):**
@@ -19,7 +47,7 @@
 - Restore point if anything misbehaves: `agtvrsn_3501m3stybwee928ftsgce4qbq7h`.
 
 **Test window:** `REQUESTS_FORCE_CLOSED_UNTIL=2026-10-06T19:40:00Z` set by Tanner on voiceagents
-production (my Vercel connector gets 403 on production env vars). Expires by itself; delete when convenient.
+production (my Vercel connector gets 403 on production env vars). Expired by itself; deleted that evening.
 
 **Phone tests, 2026-10-06 (evidence from `tool_results` and the rows):**
 - `conv_1201m4957fzreakt97t9ntb03gk1` loan: handoff at 80s said request; Robin read "by Wednesday, October
