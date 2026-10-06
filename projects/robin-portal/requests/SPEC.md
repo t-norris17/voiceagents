@@ -22,7 +22,7 @@ history are illustrative; the hours and the 8-hour promise are placeholders and 
 - **`callback_number_source` is `caller_id` | `stated`**, not `on_file`: `members` has no phone column,
   so the only other source is a number the caller asks to be called on.
 - **`plan_id` dropped.** `members` carries `plan_name`; the queue joins it by `subject_ref`.
-- **`is_test` added.** Rows filed by a test agent (`REQUESTS_TEST_AGENT_IDS`) or a preview broker are
+- **`is_test` added.** Rows filed inside the test window (`REQUESTS_FORCE_CLOSED_UNTIL`) or by a preview broker are
   hidden from the queue, the stats and the home tile unless the page is opened with `?test=1`.
 - **`promised_text` is what the broker gave Robin to read**, not a transcript of what she said. The
   drawer labels it that way and points at the transcript.
