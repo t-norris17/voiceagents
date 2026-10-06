@@ -26,7 +26,8 @@ test("phone numbers and names", () => {
 
 test("the status column for each state", () => {
   const base = { status: "open", due_at: "2026-10-05T16:00:00-05:00", events: [] };
-  assert.deepEqual(rowStatus({ ...base, sla: "amber" }, TZ, now), { cls: "", head: "Due 4:00 PM today", line: "no attempts" });
+  assert.deepEqual(rowStatus({ ...base, sla: "amber" }, TZ, now), { cls: "due", head: "Call back by 4:00 PM today", line: "no attempts" });
+  assert.equal(rowStatus({ ...base, due_at: "2026-10-07T16:00:00-05:00", sla: "none" }, TZ, now).head, "Call back by Wed 4:00 PM");
   assert.deepEqual(rowStatus({ ...base, due_at: "2026-10-02T16:00:00-05:00", sla: "red" }, TZ, now),
     { cls: "bad", head: "Overdue", line: "was due Fri 4:00 PM · no attempts" });
   const vm = { kind: "voicemail", at: "2026-10-05T09:05:00-05:00" };

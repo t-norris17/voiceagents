@@ -61,7 +61,10 @@ export default function RequestsQueue() {
         </div>
         <button className="btn sec" type="button" onClick={load}>Refresh</button>
       </div>
-      {withTest && <div className="banner">Showing test requests too (filed by a test agent or a preview). They never appear without ?test=1.</div>}
+      {withTest && <div className="banner">Showing test requests too (filed during a test window or by a preview). They never appear without ?test=1. <a href="/requests">Hide them</a></div>}
+      {!withTest && data?.test_hidden > 0 && (
+        <p className="rq-tests">{data.test_hidden} test {data.test_hidden === 1 ? "request" : "requests"} hidden · <a href="/requests?test=1">Show</a></p>
+      )}
       {err && <div className="banner">Couldn't load requests: {err}</div>}
       {s && (
         <div className="stat-row">

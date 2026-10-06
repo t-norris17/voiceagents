@@ -44,7 +44,7 @@ test("summariseSurvey: opinions exclude staff while the funnel and adherence cou
   assert.equal(s.nps.score, -100);
   assert.equal(s.surveyed, 1);
   const { excluded, ...counts } = s.funnel;
-  assert.deepEqual(counts, { in_range: 5, surveyed: 2, answered: 2, not_surveyed: 3, transferred: 1, abandoned: 1, other: 1, staff_included: true });
+  assert.deepEqual(counts, { in_range: 5, surveyed: 2, answered: 2, not_surveyed: 3, transferred: 1, callback: 0, abandoned: 1, other: 1, staff_included: true });
   assert.deepEqual(excluded.map((x) => x.outcome), ["transferred", "abandoned", "resolved"], "the excluded calls are listed, newest first");
   assert.equal(excluded[0].respondent, null, "a caller who never reached the survey gets no respondent number");
   assert.deepEqual(s.adherence.misses.map((m) => m.conversation_id), ["x2"], "the miss is listed");

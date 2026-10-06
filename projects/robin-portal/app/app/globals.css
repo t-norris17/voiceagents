@@ -256,7 +256,8 @@ footer { margin-top: 52px; padding-top: 14px; border-top: 1px solid var(--line);
 .rq-row .main .t { font-size: 1.05rem; }
 .rq-detail { font-size: .98rem; margin-top: 4px; }
 .rq-meta { font-size: .78rem; line-height: 1.7; }
-.rq-head { font-weight: 700; color: var(--ink); }
+.rq-head { font-weight: 700; color: var(--ink); font-size: .86rem; }
+.rq-head.due { color: var(--accent); }
 .rq-head.bad { color: var(--bad); } .rq-head.ok { color: var(--ok); } .rq-head.warn { color: var(--warn); }
 .rq-key { display: flex; gap: 28px; flex-wrap: wrap; margin-top: 18px; font: .7rem var(--mono); color: var(--sub); }
 .rq-key .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 8px; }
@@ -286,3 +287,14 @@ footer { margin-top: 52px; padding-top: 14px; border-top: 1px solid var(--line);
 .rq-small { font-size: .82rem; margin: 6px 0 0; }
 .rq-row .tag { white-space: nowrap; display: inline-block; }
 @media (max-width: 640px) { .rq-row { grid-template-columns: 14px 1fr; } .rq-row .rq-meta { grid-column: 2; text-align: left; margin-top: 6px; } .rq-ev { grid-template-columns: 1fr; gap: 2px; } }
+
+/* The callback deadline in the drawer: the accent colour, large, first thing under the name. */
+.rq-due { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-top: 16px; padding: 12px 16px; border-left: 4px solid var(--accent); background: color-mix(in srgb, var(--accent) 9%, transparent); }
+.rq-due .k { font: 600 .66rem var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
+.rq-due .t { font-size: 1.45rem; font-weight: 800; letter-spacing: -.01em; color: var(--accent); }
+.rq-due.late { border-left-color: var(--bad); background: color-mix(in srgb, var(--bad) 9%, transparent); }
+.rq-due.late .k, .rq-due.late .t { color: var(--bad); }
+.rq-due.met { border-left-color: var(--line); background: var(--hair); }
+.rq-due.met .k, .rq-due.met .t { color: var(--sub); }
+.rq-tests { margin: 10px 0 0; font: .72rem var(--mono); color: var(--faint); }
+.rq-tests a, .banner a { color: var(--ink); }

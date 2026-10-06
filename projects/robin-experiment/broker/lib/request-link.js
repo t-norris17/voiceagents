@@ -67,3 +67,15 @@ export async function linkOrFile({ conversationId, agentId, startedAt, transcrip
       note: `Filed after the call from its summary: the caller did not finish filing with Robin. Due ${callbackByText(due)}.` } });
   return { action: "filed", request_id: r.id };
 }
+
+// If this conversation has a callback request, record the call's outcome as 'callback' (migration 024).
+// Returns true when it did. Evidence, not judgement: the row exists or it does not.
+export async function markCallback({ conversationId, db }) {
+  const id = encodeURIComponent(conversationId);
+  const rows = await db(`service_requests?conversation_id=eq.${id}&select=id&limit=1`);
+  if (!Array.isArray(rows) || !rows.length) return false;
+  await db(`ai_call_events?provider=eq.elevenlabs&conversation_id=eq.${id}`, {
+    method: "PATCH", prefer: "return=minimal", body: { outcome: "callback" },
+  });
+  return true;
+}

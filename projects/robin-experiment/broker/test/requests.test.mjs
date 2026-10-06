@@ -14,7 +14,7 @@ process.env.SUPABASE_URL = process.env.SUPABASE_URL || "http://example.invalid";
 process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "test";
 
 const R = await import("../lib/requests.js");
-const { linkOrFile } = await import("../lib/request-link.js");
+const { linkOrFile, markCallback } = await import("../lib/request-link.js");
 const { buildRow } = await import("../api/file_request.js");
 const { answer } = await import("../api/handoff_option.js");
 const { toolSecretCheck } = await import("../lib/tool-secret.js");
@@ -292,5 +292,40 @@ test("postcall: a request failure never fails the stored call", async () => {
     assert.equal(res.out.status, 200, "the call record was stored; the request bug is logged, not returned");
     assert.equal(res.out.body.request, "error");
     assert.ok(seen[0].includes("ai_call_events"), "the call record is written first");
+  } finally { globalThis.fetch = realFetch; }
+});
+
+test("a call with a callback request is recorded as a callback, not a transfer", async () => {
+  const calls = [];
+  const db = (rows) => async (path, opts = {}) => { calls.push({ path, ...opts }); return path.startsWith("service_requests") ? rows : null; };
+  assert.equal(await markCallback({ conversationId: "conv_1", db: db([{ id: RID }]) }), true);
+  const patch = calls.find((c) => c.method === "PATCH");
+  assert.ok(patch.path.startsWith("ai_call_events?provider=eq.elevenlabs&conversation_id=eq.conv_1"));
+  assert.deepEqual(patch.body, { outcome: "callback" });
+  calls.length = 0;
+  assert.equal(await markCallback({ conversationId: "conv_2", db: db([]) }), false, "no request: the outcome is left alone");
+  assert.equal(calls.filter((c) => c.method === "PATCH").length, 0);
+});
+
+test("postcall: the outcome becomes callback after the stored call when a request exists", async () => {
+  process.env.ELEVENLABS_WEBHOOK_SECRET = "whsec";
+  const seen = [];
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (url, init = {}) => {
+    const u = String(url); seen.push({ u, method: init.method || "GET", body: init.body });
+    if (u.includes("service_requests?conversation_id=eq.")) return new Response(JSON.stringify([{ id: RID }]), { status: 200 });
+    if (u.includes("service_requests")) return new Response("[]", { status: 200 });
+    return new Response("", { status: 201 });
+  };
+  try {
+    const { default: handler } = await import("../api/postcall.js");
+    const res = resCapture();
+    await handler(signedReq(payload(ROBIN, { analysis: { data_collection_results: { outcome: { value: "transferred" } } } }), "whsec"), res);
+    assert.equal(res.out.status, 200);
+    assert.equal(res.out.body.outcome, "callback");
+    const upsert = seen.findIndex((c) => c.u.includes("ai_call_events?on_conflict"));
+    const patch = seen.findIndex((c) => c.u.includes("ai_call_events?provider") && c.method === "PATCH");
+    assert.ok(upsert >= 0 && patch > upsert, "stored first, then corrected");
+    assert.equal(JSON.parse(seen[patch].body).outcome, "callback");
   } finally { globalThis.fetch = realFetch; }
 });
