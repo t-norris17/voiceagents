@@ -2,7 +2,7 @@
 // proxies it with the internal secret).
 //
 // GET  ?view=open|done|all  [&test=1]
-//   -> { now, hours, stats, requests: [{ ...row, sla, first_attempt, events, call, member }] }
+//   -> { now, hours, stats, requests: [{ ...row, sla, first_attempt, events, call, member }], test_hidden }
 // GET  ?view=stats  -> { now, hours, stats }   (the home tile: no joins)
 //   Stats are over every non-test request, whatever the view. Test rows (filed by a test agent or a
 //   preview broker) appear only with test=1.
@@ -67,6 +67,8 @@ export async function list({ view = "open", test = false, now = new Date() } = {
   const events = await eventsFor(all.map((r) => r.id));
   const stats = queueStats(all.filter((r) => !r.is_test), events, now);
   if (view === "stats") return { now: now.toISOString(), hours: HOURS_INFO, stats };
+  // How many test rows the default view hides, so the page can say so instead of looking empty.
+  const testHidden = test ? 0 : ((await sb("service_requests?is_test=is.true&status=eq.open&select=id&limit=1000")) || []).length;
   const shown = all.filter((r) => view === "all" ? true : view === "done" ? r.status === "closed" : r.status === "open");
   if (view === "done") shown.sort((a, b) => String(b.closed_at).localeCompare(String(a.closed_at)));
   const [summaries, members] = await Promise.all([
@@ -79,7 +81,7 @@ export async function list({ view = "open", test = false, now = new Date() } = {
       call: r.conversation_id ? summaries[r.conversation_id] || null : null,
       member: r.subject_ref ? members[r.subject_ref] || null : null };
   });
-  return { now: now.toISOString(), hours: HOURS_INFO, stats, requests };
+  return { now: now.toISOString(), hours: HOURS_INFO, stats, requests, test_hidden: testHidden };
 }
 
 export default async function handler(req, res) {

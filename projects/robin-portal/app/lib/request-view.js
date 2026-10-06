@@ -59,10 +59,10 @@ export function rowStatus(r, tz, now = new Date()) {
   }
   switch (r.sla) {
     case "red": return { cls: "bad", head: "Overdue", line: `was due ${when(r.due_at, tz, now)} · ${attempt}` };
-    case "amber": return { cls: "", head: `Due ${when(r.due_at, tz, now)}`, line: attempt };
+    case "amber": return { cls: "due", head: `Call back by ${when(r.due_at, tz, now)}`, line: attempt };
     case "green": return { cls: "ok", head: "Called back on time", line: attempt };
     case "late": return { cls: "warn", head: "Called back late", line: `${attempt} · was due ${when(r.due_at, tz, now)}` };
-    default: return { cls: "", head: `Due ${when(r.due_at, tz, now)}`, line: attempt };
+    default: return { cls: "due", head: `Call back by ${when(r.due_at, tz, now)}`, line: attempt };
   }
 }
 

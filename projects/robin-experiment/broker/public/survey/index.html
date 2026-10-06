@@ -772,6 +772,7 @@
           <div class="row static"><span class="k"><b>Surveyed</b>Robin asked at the end</span>${fbar(f.surveyed)}<span class="v">${f.surveyed}</span></div>
           <div class="row static"><span class="k"><b>Answered</b>gave at least one rating</span>${fbar(f.answered)}<span class="v">${f.answered}</span></div>
           <button type="button" class="row" data-drill="excluded:transferred"><span class="k"><b>Transferred</b>handed to a person, never asked</span>${fbar(f.transferred,"acc")}<span class="v">${f.transferred}</span></button>
+          ${f.callback?`<button type="button" class="row" data-drill="excluded:callback"><span class="k"><b>Callback requested</b>team was out, a person calls back</span>${fbar(f.callback,"acc")}<span class="v">${f.callback}</span></button>`:""}
           <button type="button" class="row" data-drill="excluded:abandoned"><span class="k"><b>Ended early</b>hung up before there was anything to rate</span>${fbar(f.abandoned,"mid")}<span class="v">${f.abandoned}</span></button>
           ${f.other?`<button type="button" class="row" data-drill="excluded:other"><span class="k"><b>Other</b>not asked: failed verification, too short</span>${fbar(f.other,"mid")}<span class="v">${f.other}</span></button>`:""}
         </div>
@@ -946,9 +947,11 @@
         <h4>The interactions</h4>${list(rows,{said:(r)=>r.prefer_agent})}${take(rows)}`;
     }else if(kind==="excluded"){
       const f=s.funnel||{}, all=f.excluded||[];
-      const rows=a1==="transferred"?all.filter(x=>x.outcome==="transferred"):a1==="abandoned"?all.filter(x=>x.outcome==="abandoned"):all.filter(x=>x.outcome!=="transferred"&&x.outcome!=="abandoned");
-      t=`${a1==="transferred"?"Transferred":a1==="abandoned"?"Ended early":"Not surveyed, other"} · ${rows.length}`;
-      html=`<div class="formula">${a1==="transferred"
+      const rows=a1==="transferred"?all.filter(x=>x.outcome==="transferred"):a1==="callback"?all.filter(x=>x.outcome==="callback"):a1==="abandoned"?all.filter(x=>x.outcome==="abandoned"):all.filter(x=>x.outcome!=="transferred"&&x.outcome!=="callback"&&x.outcome!=="abandoned");
+      t=`${a1==="transferred"?"Transferred":a1==="callback"?"Callback requested":a1==="abandoned"?"Ended early":"Not surveyed, other"} · ${rows.length}`;
+      html=`<div class="formula">${a1==="callback"
+          ?"The team was out, so instead of transferring, Robin set up a callback and a person will call these members back. Most callback interactions still reach the survey; these did not, usually because the caller hung up before the end. The request itself is on the Requests page."
+          :a1==="transferred"
           ?"Robin handed these interactions to a person before the end, and she is told never to run the survey on the way into a transfer, so nobody here was asked. That is by design: someone waiting to be connected is not in a fair place to rate anything. How the handoff felt still matters; it is just not in the opinions above. For it, open the interaction."
           :a1==="abandoned"
           ?"These callers hung up before there was an exchange to rate: a wrong number, a dropped line, a change of mind in the first seconds. Nothing was asked because nothing happened. A handful is normal on any phone line; a share that grows against the interactions in range is worth a look."

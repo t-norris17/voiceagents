@@ -7,6 +7,43 @@
 ---
 
 
+## Session 2026-10-06 (afternoon): Requests live on Robin; callbacks are not transfers
+
+**Live Robin changes (each verified by full-config diff, nothing else moved):**
+- `agtvrsn_3501m48r1q4afd1vjkpsvvy3dvjg`: tools `get_handoff_option` (`tool_1301m48r08rwepk84gg7dvpk2bws`)
+  and `file_request` (`tool_3001m48r0jevet1shc1p40xfwgkp`) attached, header from secret `broker_tool_secret`.
+- `agtvrsn_2301m494mgs5ff7tb7n9d1cj4nbn`: AFTER HOURS prompt block inserted after TRANSFER, DON'T
+  DELEGATE. Live prompt equals the intended text exactly (19,913 chars); no virtual-assistant line.
+- `agtvrsn_3601m494nzgnewyrvzgdgd3j8zf6`: Data Collection `request_type`, `request_detail` (21 existing
+  fields sent unchanged, all 23 present after).
+- Restore point if anything misbehaves: `agtvrsn_3501m3stybwee928ftsgce4qbq7h`.
+
+**Test window:** `REQUESTS_FORCE_CLOSED_UNTIL=2026-10-06T19:40:00Z` set by Tanner on voiceagents
+production (my Vercel connector gets 403 on production env vars). Expires by itself; delete when convenient.
+
+**Phone tests, 2026-10-06 (evidence from `tool_results` and the rows):**
+- `conv_1201m4957fzreakt97t9ntb03gk1` loan: handoff at 80s said request; Robin read "by Wednesday, October
+  7 at 10:48 AM Central" verbatim; `file_request` ok at 113s; "you're all set" only after. Row linked,
+  caller ID filled.
+- `conv_9501m495bt38f4984ngy8adg6s72` beneficiary, different number: `callback_number_source=stated`,
+  not overwritten by caller ID.
+- `conv_2701m495fxyve06sd3y3jtnf05jh` hang-up: no `file_request`; safety net filed from Data Collection
+  (`source=postcall`), promise recovered from the handoff result.
+- All three `is_test`. Not yet run: one call after the window expires, to confirm the transfer path.
+
+**Found and fixed:** Data Collection labelled two callback calls `transferred`, which would have put
+every after-hours callback in the transfer numbers. Migration 024 (applied 2026-10-06) adds outcome
+`callback`; the post-call webhook now sets it from evidence (a request exists for the conversation),
+whatever the model guessed. Interactions shows "callback requested"; Quality's funnel has its own row.
+Requests: the callback time is the accent orange (row and a block at the top of the drawer), and a
+hint shows when test requests are hidden.
+
+**Known and accepted:** in a daytime test the offered time and the filed time can differ by a minute
+(each computed when called). A real after-hours call computes "next opening plus 8 open hours" both
+times, so both say the same.
+
+---
+
 ## Session 2026-10-06: Phase 5 replanned onto live Robin; restore point recorded
 
 **Restore point for live Robin: `agtvrsn_3501m3stybwee928ftsgce4qbq7h`** (branch

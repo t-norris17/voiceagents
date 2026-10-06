@@ -58,9 +58,15 @@ export default function RequestDrawer({ r, tz, now, onClose, onChanged, onTransc
         <div className="drw-meta">
           <b>{TYPE_LABEL[r.request_type] || r.request_type}</b> · {filedBy}, {stamp(r.filed_at, tz)}, phone ·{" "}
           {r.verified ? <><span className="rq-ok">Verified</span> (member ID + date of birth)</> : <span className="rq-bad">Not verified</span>}
-          {" "}· due {when(r.due_at, tz, now)}
           {closed && <> · <b>closed {when(r.closed_at, tz, now)}</b></>}
           {r.is_test && <> · <b>test request</b></>}
+        </div>
+
+        {/* The deadline is the one thing a rep must not miss, so it leads the drawer in the accent
+            colour: red once it has passed with no callback, grey once someone has called. */}
+        <div className={`rq-due ${r.sla === "red" ? "late" : r.first_attempt || closed ? "met" : ""}`}>
+          <span className="k">{r.sla === "red" ? "Overdue · was due" : "Call back by"}</span>
+          <span className="t">{when(r.due_at, tz, now)}</span>
         </div>
 
         <div className="section">

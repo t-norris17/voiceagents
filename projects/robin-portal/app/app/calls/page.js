@@ -76,6 +76,7 @@ export default function InteractionsPage() {
                 {c.duration_seconds != null ? ` · ${Math.max(1, Math.round(c.duration_seconds / 60))} min` : ""}
                 {` · verification ${c.auth_outcome === "not_attempted" ? "not attempted" : (c.auth_outcome || "unknown")}`}
                 {c.outcome === "transferred" ? ` · transferred${c.transfer_reason ? `: ${c.transfer_reason}` : ""}` : ""}
+                {c.outcome === "callback" ? " · callback requested" : ""}
                 {c.overall_sentiment ? ` · ${c.overall_sentiment}` : ""}
               </div>
             </div>

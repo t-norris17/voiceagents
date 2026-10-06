@@ -4,7 +4,7 @@
 import crypto from "node:crypto";
 import { sb } from "../lib/supabase.js";
 import { CALL_RECORD_AGENTS } from "../lib/requests.js";
-import { linkOrFile } from "../lib/request-link.js";
+import { linkOrFile, markCallback } from "../lib/request-link.js";
 
 // We need the RAW body to verify the signature, so disable Vercel's body parser.
 export const config = { api: { bodyParser: false } };
@@ -39,7 +39,10 @@ const ENUM = {
   },
   outcome: {
     fallback: "unknown",
-    map: { resolved: "resolved", completed: "resolved", answered: "resolved", success: "resolved",
+    // callback first: the contains-match below takes the first hit, and "callback requested, not
+    // transferred" must read as a callback.
+    map: { callback: "callback", "call back": "callback", "callback requested": "callback",
+           resolved: "resolved", completed: "resolved", answered: "resolved", success: "resolved",
            transferred: "transferred", transfer: "transferred", escalated: "transferred",
            abandoned: "abandoned", dropped: "abandoned", hangup: "abandoned", "hung up": "abandoned",
            unknown: "unknown" },
@@ -146,7 +149,16 @@ export default async function handler(req, res) {
       request = { action: "error" };
     }
 
-    return res.status(200).json({ ok: true, request: request?.action || "none" });
+    // A call that produced a callback request is a callback, not a transfer, whatever Data Collection
+    // guessed. Checked against the table rather than this delivery's link result, so a re-delivered
+    // webhook (whose upsert above rewrote outcome from Data Collection) is corrected again.
+    try {
+      if (await markCallback({ conversationId: conversation_id, db: sb })) request = { ...request, outcome: "callback" };
+    } catch (e) {
+      console.error("postcall callback outcome failed:", conversation_id, String(e.message || e));
+    }
+
+    return res.status(200).json({ ok: true, request: request?.action || "none", ...(request?.outcome ? { outcome: request.outcome } : {}) });
   } catch (e) {
     console.error("postcall error:", String(e.message || e));
     return res.status(500).json({ error: String(e.message || e) });

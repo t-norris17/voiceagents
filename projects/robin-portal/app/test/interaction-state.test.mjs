@@ -32,3 +32,8 @@ test("topics are one line", () => {
   const long = "x".repeat(200);
   assert.ok(topicOf({ topic: long }).length <= 72 && topicOf({ topic: long }).endsWith("…"));
 });
+
+test("an after-hours callback is worth a look, like a transfer", () => {
+  assert.equal(dotOf({ outcome: "callback", auth_outcome: "verified" }), "warn");
+  assert.equal(needsLook({ outcome: "callback", auth_outcome: "not_attempted" }), true);
+});

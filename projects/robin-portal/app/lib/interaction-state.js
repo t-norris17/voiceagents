@@ -3,12 +3,13 @@
 // The dot is the first thing a reader scans, so it carries the one question a manager has: does this
 // one need me?
 //   bad   a security flag, or the caller could not be verified
-//   warn  Robin handed it to a person (worth a look: it is where she fell short or the caller asked)
+//   warn  Robin handed it to a person, or set up an after-hours callback because the team was out
+//         (worth a look: it is where she fell short or the caller asked, and a callback still needs a person)
 //   ok    the caller was verified and nothing above applies
 //   none  nothing known yet (verification never attempted, or the data is missing)
 export function dotOf(c) {
   if (c.security_flag || c.auth_outcome === "failed") return "bad";
-  if (c.outcome === "transferred") return "warn";
+  if (c.outcome === "transferred" || c.outcome === "callback") return "warn";
   if (c.auth_outcome === "verified") return "ok";
   return "none";
 }

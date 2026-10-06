@@ -88,10 +88,12 @@ export function summariseSurvey(opinions, calls, everyone = calls) {
     answered: offered.filter(answered).length,
     not_surveyed: notSurveyed.length,
     transferred: notSurveyed.filter((r) => r.outcome === "transferred").length,
+    // After hours Robin sets up a callback instead of transferring (outcome 'callback', migration 024).
+    callback: notSurveyed.filter((r) => r.outcome === "callback").length,
     abandoned: notSurveyed.filter((r) => r.outcome === "abandoned").length,
     staff_included: true,
   };
-  funnel.other = funnel.not_surveyed - funnel.transferred - funnel.abandoned;
+  funnel.other = funnel.not_surveyed - funnel.transferred - funnel.callback - funnel.abandoned;
   // The calls behind the funnel's "not surveyed" number, so the drawer can list them rather than
   // send a reader to another page. Staff calls carry no respondent label here; they are marked.
   const brief = (r) => ({
