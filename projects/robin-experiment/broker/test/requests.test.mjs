@@ -19,7 +19,7 @@ const { buildRow } = await import("../api/file_request.js");
 const { answer } = await import("../api/handoff_option.js");
 const { toolSecretCheck } = await import("../lib/tool-secret.js");
 
-const ROBIN = R.AGENTS.robin, WEB = R.AGENTS.robin_web, TEST = "agent_test_survey";
+const ROBIN = R.AGENTS.robin, WEB = R.AGENTS.robin_web;
 const at = (s) => new Date(s);
 const PROD = { VERCEL_ENV: "production" };
 
@@ -78,19 +78,30 @@ test("safety net: files only for a phone call, after hours, that named a request
   assert.equal(R.safetyNetDecision({ ...base, externalNumber: undefined }).file, false, "web call: nobody to call back");
   assert.equal(R.safetyNetDecision({ ...base, agentId: WEB }).file, false, "web agent never files");
   assert.equal(R.safetyNetDecision({ ...base, requestType: "none" }).file, false);
-  assert.equal(R.safetyNetDecision({ ...base, agentId: TEST }).file, false, "an unlisted test agent files nothing");
-  const t = R.safetyNetDecision({ ...base, agentId: TEST, startedAt: "2026-10-05T10:00:00-05:00", env: { ...PROD, REQUESTS_TEST_AGENT_IDS: TEST } });
-  assert.deepEqual(t, { file: true, type: "loan", isTest: true }, "a listed test agent files in the daytime, flagged as test");
+  assert.equal(R.safetyNetDecision({ ...base, agentId: "agent_somebody_else" }).file, false, "an unlisted agent files nothing");
+  const now = at("2026-10-06T10:00:00-05:00");
+  const window = { ...PROD, REQUESTS_FORCE_CLOSED_UNTIL: "2026-10-06T12:00:00-05:00" };
+  const t = R.safetyNetDecision({ ...base, startedAt: "2026-10-06T09:55:00-05:00", env: window, now });
+  assert.deepEqual(t, { file: true, type: "loan", isTest: true }, "inside the test window a daytime hang-up files, as a test row");
 });
 
-test("forced-closed is a preview-only switch", () => {
-  assert.equal(R.forcedClosed({ REQUESTS_FORCE_CLOSED: "1", VERCEL_ENV: "preview" }), true);
-  assert.equal(R.forcedClosed({ REQUESTS_FORCE_CLOSED: "1", VERCEL_ENV: "production" }), false, "production ignores it");
-  const open = at("2026-10-05T10:00:00-05:00");
-  assert.deepEqual(answer(open, { REQUESTS_FORCE_CLOSED: "1", VERCEL_ENV: "production" }), { mode: "transfer" });
-  const forced = answer(open, { REQUESTS_FORCE_CLOSED: "1", VERCEL_ENV: "preview" });
+test("the test window: on until its time, then off by itself, and never for long", () => {
+  const now = at("2026-10-06T10:00:00-05:00"); // Tuesday 10 AM Central, open
+  const env = (until) => ({ VERCEL_ENV: "production", REQUESTS_FORCE_CLOSED_UNTIL: until });
+  assert.equal(R.forcedClosed(env("2026-10-06T12:00:00-05:00"), now), true, "two hours ahead: on");
+  assert.equal(R.forcedClosed(env("2026-10-06T09:59:00-05:00"), now), false, "already passed: off by itself");
+  assert.equal(R.forcedClosed(env("2027-10-06T12:00:00-05:00"), now), false, "a year ahead (a typo) is ignored");
+  assert.equal(R.forcedClosed(env("2026-10-06T22:01:00-05:00"), now), false, "more than 12 hours ahead is ignored");
+  assert.equal(R.forcedClosed(env("tomorrow"), now), false, "not a date: off");
+  assert.equal(R.forcedClosed({ VERCEL_ENV: "production" }, now), false, "unset: off");
+  assert.equal(R.isTestFiling(env("2026-10-06T12:00:00-05:00"), now), true, "filed inside the window: a test row");
+  assert.equal(R.isTestFiling({ VERCEL_ENV: "production" }, now), false, "a real after-hours filing is not a test");
+  assert.equal(R.isTestFiling({ VERCEL_ENV: "preview" }, now), true, "anything a preview files is a test");
+  // What Robin hears: transfer while open, a callback offer inside the window.
+  assert.deepEqual(answer(now, { VERCEL_ENV: "production" }), { mode: "transfer" });
+  const forced = answer(now, env("2026-10-06T12:00:00-05:00"));
   assert.equal(forced.mode, "request");
-  assert.equal(forced.callback_by_text, "by Monday, October 5 at 6 PM Central", "eight open hours from 10 AM");
+  assert.equal(forced.callback_by_text, "by Tuesday, October 6 at 6 PM Central", "eight open hours from 10 AM");
   assert.equal(answer(at("2026-10-03T21:42:00-05:00"), PROD).callback_by_text, "by Monday, October 5 at 4 PM Central");
 });
 

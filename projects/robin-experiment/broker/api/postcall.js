@@ -3,7 +3,7 @@
 // The async scoring pass reads these rows later; this endpoint only persists.
 import crypto from "node:crypto";
 import { sb } from "../lib/supabase.js";
-import { CALL_RECORD_AGENTS, testAgents } from "../lib/requests.js";
+import { CALL_RECORD_AGENTS } from "../lib/requests.js";
 import { linkOrFile } from "../lib/request-link.js";
 
 // We need the RAW body to verify the signature, so disable Vercel's body parser.
@@ -92,12 +92,10 @@ export default async function handler(req, res) {
     if (!conversation_id) return res.status(400).json({ error: "no conversation_id" });
 
     // The webhook is set once for the whole ElevenLabs workspace, so test agents' calls arrive here too.
-    // Only Robin's two agents are stored (the only two with rows as of 2026-10-05). A listed test agent
-    // goes straight to the request link below and never touches the call table. Anything else is
+    // Only Robin's two agents are stored (the only two with rows as of 2026-10-05). Anything else is
     // answered 200 so ElevenLabs does not retry it, and dropped.
     const agentId = d.agent_id || evt.agent_id || null;
-    const isTestAgent = testAgents().has(agentId);
-    if (!CALL_RECORD_AGENTS.has(agentId) && !isTestAgent) {
+    if (!CALL_RECORD_AGENTS.has(agentId)) {
       console.log("postcall: ignored call from unlisted agent", agentId, conversation_id);
       return res.status(200).json({ ok: true, ignored: "agent not in allowlist" });
     }
@@ -117,18 +115,16 @@ export default async function handler(req, res) {
       raw_payload: evt,
     };
 
-    if (!isTestAgent) {
-      try {
-        // Idempotent upsert on the (provider, conversation_id) unique constraint.
-        await sb("ai_call_events?on_conflict=provider,conversation_id", {
-          method: "POST",
-          prefer: "resolution=merge-duplicates,return=minimal",
-          body: row,
-        });
-      } catch (e) {
-        console.error("postcall upsert failed:", String(e.message || e), "| data keys:", Object.keys(d || {}), "| meta keys:", Object.keys(meta || {}), "| dc keys:", Object.keys(dc || {}));
-        return res.status(500).json({ error: "upsert failed: " + String(e.message || e) });
-      }
+    try {
+      // Idempotent upsert on the (provider, conversation_id) unique constraint.
+      await sb("ai_call_events?on_conflict=provider,conversation_id", {
+        method: "POST",
+        prefer: "resolution=merge-duplicates,return=minimal",
+        body: row,
+      });
+    } catch (e) {
+      console.error("postcall upsert failed:", String(e.message || e), "| data keys:", Object.keys(d || {}), "| meta keys:", Object.keys(meta || {}), "| dc keys:", Object.keys(dc || {}));
+      return res.status(500).json({ error: "upsert failed: " + String(e.message || e) });
     }
 
     // After-hours requests: link the one Robin filed, or file it if the caller hung up first. This runs

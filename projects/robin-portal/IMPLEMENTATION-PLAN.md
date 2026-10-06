@@ -159,13 +159,23 @@ the post-call webhook, confirm exactly one row; log attempts; close.
 
 ## Phase 5. Requests on an agent (M), live config, its own stop
 
-1. Wire both tools and the two Data Collection fields to **`Robin — survey test`** first, pointing at
-   the preview broker with an hours override that makes "now" after hours.
-2. Test calls: loan request, hang-up mid-request, unverified caller, in-hours transfer. Evidence from
-   `tool_results` and the rows, not transcripts.
-3. **Stop for approval.** Then apply the same to live `Robin` one change at a time: tools, Data
-   Collection, then the prompt edit made on the live prompt (with the stale virtual-assistant line
-   stripped from anything built from repo prompt files, per `CLAUDE.md`).
+**Revised 2026-10-06 (Tanner): straight onto live Robin, tested on her real phone line.** The original
+step 1 named `Robin — survey test` without checking it: a month-stale prompt, none of Robin's
+procedures, no phone number, and the preview broker it was to call sits behind Vercel's login, which
+ElevenLabs cannot pass. Testing in a browser could not reach caller ID or the hang-up safety net anyway.
+The changes are additive (two tools, two Data Collection fields, one prompt block) and the audience is
+four testers.
+
+Restore point: live Robin version **`agtvrsn_3501m3stybwee928ftsgce4qbq7h`** (branch
+`agtbrch_8801kwj5qb38f7n966f5375s5ccz`), recorded 2026-10-06 before any change.
+
+1. Broker: a self-expiring test window, `REQUESTS_FORCE_CLOSED_UNTIL` (ISO time, ignored if more than
+   12 hours ahead), so the after-hours path can be tested in the daytime. Filings inside it are test rows.
+2. Robin: add the two tools only (no prompt change). One normal call: nothing moved.
+3. Robin: the prompt block and the two Data Collection fields, edited on the live prompt itself.
+4. Set the window about two hours out; test calls from a phone: completed loan request, hang-up
+   mid-request, a different callback number. Evidence from `tool_results`, the rows and the page.
+5. The window expires; one call transfers as before.
 4. Confirm the promote landed before the first after-hours call it is meant to cover (timestamps, not
    belief).
 

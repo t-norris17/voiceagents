@@ -7,6 +7,23 @@
 ---
 
 
+## Session 2026-10-06: Phase 5 replanned onto live Robin; restore point recorded
+
+**Restore point for live Robin: `agtvrsn_3501m3stybwee928ftsgce4qbq7h`** (branch
+`agtbrch_8801kwj5qb38f7n966f5375s5ccz`). Given by Tanner and checked against the agent's own
+`version_id` on 2026-10-06, before any Phase 5 change. If a Phase 5 change misbehaves, restore this.
+
+**Plan changed (Tanner):** no test agent. Changes go straight onto live Robin, additively, tested on her
+real phone line. Why: `Robin — survey test` was a month stale with no phone number, and the preview
+broker it was meant to call sits behind Vercel's login. The broker's preview-only switch
+(`REQUESTS_FORCE_CLOSED`) and the test-agent list (`REQUESTS_TEST_AGENT_IDS`) are replaced by one
+self-expiring test window, `REQUESTS_FORCE_CLOSED_UNTIL`. ElevenLabs workspace secret
+`broker_tool_secret` exists (`ISYDstKL9KHPQKLpQVNM`), not yet used by any tool.
+
+**Pinned (Tanner):** the morning email. `RESEND_API_KEY` is set; recipient and sender still open.
+
+---
+
 ## Session 2026-10-05 (after merge): Requests verified live; masthead becomes section menus
 
 **Verified live (PR #88, `76fabfa`):** the Requests page loaded through the real broker and database

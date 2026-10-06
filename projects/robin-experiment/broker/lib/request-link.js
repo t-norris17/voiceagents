@@ -7,10 +7,9 @@
 //      re-delivered webhook never files twice and never overwrites what the caller confirmed.
 // Every database call goes through `db` so the whole flow runs in tests against a fake.
 import { callbackDue, callbackByText } from "./hours.js";
-import { filedRequestId, handoffPromise, safetyNetDecision, normalizePhone, clip, isUuid, testAgents } from "./requests.js";
+import { filedRequestId, handoffPromise, safetyNetDecision, normalizePhone, clip, isUuid } from "./requests.js";
 
 export async function linkOrFile({ conversationId, agentId, startedAt, transcript, externalNumber, pick, db, env = process.env, now = new Date() }) {
-  const isTestAgent = testAgents(env).has(agentId);
   const callerId = normalizePhone(externalNumber);
   const callerName = clip(pick("caller_name"), 120);
   const requestId = filedRequestId(transcript);
@@ -20,7 +19,7 @@ export async function linkOrFile({ conversationId, agentId, startedAt, transcrip
     // changes nothing. callback_number is filled only where the caller did not state one.
     const linked = await db(`service_requests?id=eq.${requestId}&conversation_id=is.null`, {
       method: "PATCH", prefer: "return=representation",
-      body: { conversation_id: conversationId, agent_id: agentId, ...(isTestAgent ? { is_test: true } : {}) },
+      body: { conversation_id: conversationId, agent_id: agentId },
     });
     const row = linked && linked[0];
     if (!row) return { action: "none", why: "tool request already linked or not found", request_id: requestId };
@@ -33,7 +32,7 @@ export async function linkOrFile({ conversationId, agentId, startedAt, transcrip
     return { action: "linked", request_id: requestId };
   }
 
-  const decision = safetyNetDecision({ agentId, requestType: pick("request_type"), externalNumber, startedAt, linked: false, env });
+  const decision = safetyNetDecision({ agentId, requestType: pick("request_type"), externalNumber, startedAt, linked: false, env, now });
   if (!decision.file) return { action: "none", why: decision.why };
 
   const start = new Date(startedAt);

@@ -12,11 +12,11 @@ import { handoffOption, callbackDue, callbackByText } from "../lib/hours.js";
 import { forcedClosed } from "../lib/requests.js";
 import { toolSecretCheck } from "../lib/tool-secret.js";
 
-// What a preview broker answers with REQUESTS_FORCE_CLOSED=1 while the call center is actually open:
-// "closed right now", with the deadline counted from now. Production ignores the flag (forcedClosed).
+// What the broker answers inside the test window (forcedClosed) while the call center is actually open:
+// "closed right now", with the deadline counted from now.
 export function answer(now = new Date(), env = process.env) {
   const real = handoffOption(now);
-  if (real.mode === "request" || !forcedClosed(env)) return real;
+  if (real.mode === "request" || !forcedClosed(env, now)) return real;
   const due = callbackDue(now);
   return { mode: "request", next_open: now.toISOString(), due_at: due.toISOString(), callback_by_text: callbackByText(due), forced_closed: true };
 }

@@ -5,8 +5,7 @@ import { HOURS, isOpen, localParts, openMinutesBetween } from "./hours.js";
 
 // Which agents may write what. The post-call webhook is configured once for the whole ElevenLabs
 // workspace, so every agent's calls arrive at /api/postcall, test agents included. Without this list a
-// test call would write a row into the live call table and, once the tools exist, a fake member into
-// the call center's queue.
+// test agent's call would write a row into the live call table.
 export const AGENTS = {
   robin: "agent_8301kwj5qa8ve1atremxxwjjp9f8",       // Robin, the phone line
   robin_web: "agent_0101m3sjqvfyejsa9kn127ez26mm",   // Robin (web demo): web voice and chat
@@ -16,12 +15,6 @@ export const AGENTS = {
 export const CALL_RECORD_AGENTS = new Set([AGENTS.robin, AGENTS.robin_web]);
 // Only the phone agent files requests: a web caller has no number to call back.
 export const REQUEST_AGENTS = new Set([AGENTS.robin]);
-
-// Test agents named in REQUESTS_TEST_AGENT_IDS (comma-separated) may file and link requests, always
-// flagged is_test so the queue and the morning email leave them out. They never write ai_call_events.
-export function testAgents(env = process.env) {
-  return new Set(String(env.REQUESTS_TEST_AGENT_IDS || "").split(",").map((s) => s.trim()).filter(Boolean));
-}
 
 export const REQUEST_TYPES = ["loan", "distribution", "contribution_change", "beneficiary", "account_access", "speak_to_person", "other"];
 
@@ -107,30 +100,39 @@ export function handoffPromise(transcript) {
 
 // Should the post-call webhook file a request itself? Only when the tool did not, the agent files
 // requests, the call was a phone call (there is a number to call back), Data Collection names a
-// request, and the call started while the call center was closed. A test agent skips the hours check:
-// it is tested in the daytime against a preview broker that pretends to be closed.
-export function safetyNetDecision({ agentId, requestType, externalNumber, startedAt, linked, env = process.env, cfg = HOURS }) {
-  const isTestAgent = testAgents(env).has(agentId);
+// request, and the call started while the call center was closed, or while the test window
+// (forcedClosed) is open, in which case the row is a test row.
+export function safetyNetDecision({ agentId, requestType, externalNumber, startedAt, linked, env = process.env, cfg = HOURS, now = new Date() }) {
+  const forced = forcedClosed(env, now);
   if (linked) return { file: false, why: "already filed by the tool" };
-  if (!REQUEST_AGENTS.has(agentId) && !isTestAgent) return { file: false, why: "agent does not file requests" };
+  if (!REQUEST_AGENTS.has(agentId)) return { file: false, why: "agent does not file requests" };
   const type = normalizeRequestType(requestType);
   if (!type) return { file: false, why: "no request named in Data Collection" };
   if (!normalizePhone(externalNumber)) return { file: false, why: "no callback number (not a phone call)" };
   const start = startedAt ? new Date(startedAt) : null;
   if (!start || Number.isNaN(start.getTime())) return { file: false, why: "no call start time" };
-  if (!isTestAgent && isOpen(start, cfg)) return { file: false, why: "call was during open hours" };
-  return { file: true, type, isTest: isTestAgent };
+  if (!forced && isOpen(start, cfg)) return { file: false, why: "call was during open hours" };
+  return { file: true, type, isTest: forced };
 }
 
-// A preview broker can be told to answer as if the call center were closed, so the test agent can be
-// exercised in the daytime. Never in production: there it would stop Robin transferring real callers.
-export function forcedClosed(env = process.env) {
-  return env.REQUESTS_FORCE_CLOSED === "1" && env.VERCEL_ENV !== "production";
+// THE TEST WINDOW. While REQUESTS_FORCE_CLOSED_UNTIL (an ISO timestamp) is in the future, the broker
+// answers as if the call center were closed, so the after-hours path can be tested on Robin's real
+// phone line during the day. It switches itself off at that time, so it cannot be left on by accident
+// (left on, Robin would never transfer anyone). A value more than MAX_FORCE_HOURS ahead is ignored, so
+// a typo in the year cannot turn it into a permanent state. Requests filed inside it are test rows.
+export const MAX_FORCE_HOURS = 12;
+export function forcedClosed(env = process.env, now = new Date()) {
+  const raw = env.REQUESTS_FORCE_CLOSED_UNTIL;
+  if (!raw) return false;
+  const until = new Date(raw);
+  if (Number.isNaN(until.getTime())) return false;
+  const ahead = until.getTime() - now.getTime();
+  return ahead > 0 && ahead <= MAX_FORCE_HOURS * 3600e3;
 }
 
-// Rows filed by a preview deployment are test rows whatever agent filed them.
-export function isTestDeployment(env = process.env) {
-  return env.VERCEL_ENV !== "production";
+// A row is a test row when a preview broker filed it, or when it was filed inside the test window.
+export function isTestFiling(env = process.env, now = new Date()) {
+  return env.VERCEL_ENV !== "production" || forcedClosed(env, now);
 }
 
 // ---- The queue ---------------------------------------------------------------------------------

@@ -12,7 +12,7 @@
 // result (request_id), and fills the callback number from the call's caller ID.
 import { sb } from "../lib/supabase.js";
 import { callbackDue, callbackByText, isOpen } from "../lib/hours.js";
-import { normalizeRequestType, isUuid, clip, normalizePhone, forcedClosed, isTestDeployment } from "../lib/requests.js";
+import { normalizeRequestType, isUuid, clip, normalizePhone, forcedClosed, isTestFiling } from "../lib/requests.js";
 import { toolSecretCheck } from "../lib/tool-secret.js";
 
 // The row, from the tool's body. Pure, so the rules are tested without a database.
@@ -33,7 +33,7 @@ export function buildRow(body, { now = new Date(), verifiedRef = null, env = pro
     promised_text: callbackByText(due),
     filed_at: now.toISOString(),
     due_at: due.toISOString(),
-    is_test: isTestDeployment(env),
+    is_test: isTestFiling(env, now),
   };
 }
 
@@ -52,7 +52,7 @@ export default async function handler(req, res) {
   try {
     const now = new Date();
     // After hours only. In hours the caller is transferred, exactly as before this feature existed.
-    if (isOpen(now) && !forcedClosed()) {
+    if (isOpen(now) && !forcedClosed(process.env, now)) {
       return res.status(200).json({ ok: false, mode: "transfer", reason: "The call center is open. Transfer the caller instead of filing." });
     }
     const body = req.body || {};
