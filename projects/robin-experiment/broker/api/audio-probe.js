@@ -4,6 +4,8 @@
 // them). Reports status codes, sizes and timings only, never audio. Refuses to run in production.
 import { fetchConversationAudio, CONVERSATION_ID } from "../lib/el-audio.js";
 import { bucketExists, putObject, signObject, deleteObject } from "../lib/storage.js";
+import { sb } from "../lib/supabase.js";
+import { issue } from "./call-audio.js";
 
 const BUCKET = "call-audio";
 
@@ -12,6 +14,19 @@ export default async function handler(req, res) {
   const id = String(req.query?.id || "");
   if (!CONVERSATION_ID.test(id)) return res.status(400).json({ error: "bad id" });
   const out = { id, key_set: !!process.env.ELEVENLABS_API_KEY };
+
+  // mode=route: run the REAL /api/call-audio logic (the portal password keeps this sandbox out of the
+  // route itself) and report what it returned, plus a Range read of the link it issued.
+  if (req.query?.mode === "route") {
+    const t0 = Date.now();
+    const r = await issue(id, { db: sb, fetchAudio: fetchConversationAudio, put: putObject, sign: signObject, now: () => new Date(), env: process.env });
+    out.route = { status: r.status, ms: Date.now() - t0, first_fetch: r.body.first_fetch, expires_at: r.body.expires_at, error: r.body.error };
+    if (r.body.url) {
+      const g = await fetch(r.body.url, { headers: { range: "bytes=0-99" } });
+      out.route.range = { status: g.status, content_range: g.headers.get("content-range"), bytes: (await g.arrayBuffer()).byteLength };
+    }
+    return res.status(200).json(out);
+  }
 
   const el = await fetchConversationAudio(id);
   if (!el.ok) return res.status(200).json({ ...out, elevenlabs: el });

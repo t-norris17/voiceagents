@@ -9,6 +9,8 @@
 import { sb } from "../lib/supabase.js";
 import { CALL_COLS } from "../lib/survey-data.js";
 import { fetchConversationSummary } from "../lib/kb-text.js";
+import { CHANNEL_COLS, channelOf } from "../lib/channel.js";
+import { audioEnabled, channelHasAudio } from "../lib/call-audio.js";
 
 // ElevenLabs' own post-call summary, read on demand and remembered per function instance. It sits
 // ABOVE the transcript, never instead of it: the transcript stays the trust anchor and the summary
@@ -40,7 +42,7 @@ export default async function handler(req, res) {
 
   try {
     const [meta] = (await sb(`survey_answers?conversation_id=eq.${id}&select=${CALL_COLS}&limit=1`)) || [];
-    const [row] = (await sb(`ai_call_events?conversation_id=eq.${id}&select=conversation_id,started_at,duration_seconds,outcome,transfer_reason,auth_outcome,transcript&limit=1`)) || [];
+    const [row] = (await sb(`ai_call_events?conversation_id=eq.${id}&select=conversation_id,started_at,duration_seconds,outcome,transfer_reason,auth_outcome,transcript,${CHANNEL_COLS}&limit=1`)) || [];
     if (!row) return res.status(404).json({ error: "not found" });
 
     // A miss is not cached: a transient failure should not hide the summary for the life of the instance.
@@ -69,6 +71,9 @@ export default async function handler(req, res) {
         transfer_reason: row.transfer_reason,
         auth_outcome: row.auth_outcome,
         survey: meta || null,
+        // Whether Birdnest shows a player: the audio switch is on and the conversation was spoken.
+        // The audio route re-checks both; this only decides what the drawer draws.
+        audio: audioEnabled() && channelHasAudio(channelOf(row)),
       },
       transcript,
       summary,

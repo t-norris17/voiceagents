@@ -2,7 +2,9 @@
 // One drawer for both pages: the call's summary and transcript from /api/survey-call (caller side
 // already scrubbed of PII by the broker) and, on the Accuracy page, the grade results from
 // /api/call-scores: a verdict line, the evidence per question, and the actions the evidence implies.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import CallPlayer, { useCallAudio } from "./CallPlayer.js";
+import { clock, currentTurn } from "../../lib/player-view.js";
 
 const RATING = { good: ["Correct", ""], partial: ["Incomplete", "mid"], wrong: ["Wrong", "bad"], unrated: ["Unrated", "mid"] };
 const GROUNDING = {
@@ -54,6 +56,12 @@ export default function CallDrawer({ id, withScores = false, onClose, actions = 
   const [call, setCall] = useState(null);
   const [scores, setScores] = useState(null);
   const [err, setErr] = useState(null);
+  // The player. Shown only when the broker says this call has a recording and audio is switched on
+  // (call.audio); the hook is always called so hook order never depends on data.
+  const a = useCallAudio(id, call?.call?.duration_seconds);
+  const [follow, setFollow] = useState(true);
+  const panel = useRef(null);
+  const lines = useRef([]);
 
   useEffect(() => {
     if (!id) return;
@@ -81,8 +89,30 @@ export default function CallDrawer({ id, withScores = false, onClose, actions = 
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  if (!id) return null;
   const c = call?.call, turns = call?.transcript || [], sum = call?.summary;
+  const hasAudio = !!c?.audio;
+  const now = hasAudio && a.status === "ready" ? currentTurn(turns, a.t) : -1;
+
+  // Following along: keep the spoken line in view while playing. A wheel, touch or key scroll by the
+  // reader turns it off (a programmatic scroll fires none of those); the button turns it back on.
+  useEffect(() => { setFollow(true); lines.current = []; }, [id]);
+  useEffect(() => {
+    if (!follow || !a.playing || now < 0) return;
+    const reduce = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    lines.current[now]?.scrollIntoView({ block: "center", behavior: reduce ? "auto" : "smooth" });
+  }, [now, follow, a.playing]);
+  useEffect(() => {
+    const el = panel.current;
+    if (!el || !hasAudio) return;
+    const off = () => setFollow(false);
+    const offKey = (e) => { if (["PageUp", "PageDown", "ArrowUp", "ArrowDown", "Home", "End"].includes(e.key) && e.target === el) setFollow(false); };
+    el.addEventListener("wheel", off, { passive: true });
+    el.addEventListener("touchmove", off, { passive: true });
+    el.addEventListener("keydown", offKey);
+    return () => { el.removeEventListener("wheel", off); el.removeEventListener("touchmove", off); el.removeEventListener("keydown", offKey); };
+  }, [hasAudio, call]);
+
+  if (!id) return null;
   const mins = c?.duration_seconds != null ? `${Math.floor(c.duration_seconds / 60)}m ${c.duration_seconds % 60}s` : "—";
   const rows = scores?.rows || [], questions = scores?.questions || [];
   const answered = questions.filter((q) => q.answered).length;
@@ -92,11 +122,17 @@ export default function CallDrawer({ id, withScores = false, onClose, actions = 
 
   return (
     <div className="drw" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="drw-p" role="dialog" aria-modal="true" aria-label="Interaction">
-        <div className="drw-h">
-          <span className="t">{String(id).slice(-8)}</span>
-          {actions && <span className="drw-a">{actions}</span>}
-          <button className="drw-x" type="button" onClick={onClose}>Close</button>
+      <div className="drw-p" role="dialog" aria-modal="true" aria-label="Interaction" ref={panel}>
+        <div className="drw-stick">
+          <div className="drw-h">
+            <span className="t">{String(id).slice(-8)}</span>
+            {actions && <span className="drw-a">{actions}</span>}
+            <button className="drw-x" type="button" onClick={onClose}>Close</button>
+          </div>
+          {hasAudio && (
+            <CallPlayer a={a} turns={turns} follow={follow}
+                        onFollow={() => { setFollow(true); if (now >= 0) lines.current[now]?.scrollIntoView({ block: "center" }); }} />
+          )}
         </div>
         {err && <p className="empty">Couldn't load that interaction: {err}</p>}
         {!err && !call && <p className="empty">Loading…</p>}
@@ -177,12 +213,23 @@ export default function CallDrawer({ id, withScores = false, onClose, actions = 
         {call && (
           <div className="section">
             {turns.length === 0 && <p className="empty">No transcript stored for this interaction.</p>}
-            {turns.map((t, i) => (
-              <div className={`turn ${t.role}`} key={i}>
-                <div className="who">{t.role === "agent" ? "Robin" : "Caller"}</div>
-                <div className="said">{t.text}</div>
-              </div>
-            ))}
+            {turns.map((t, i) => {
+              const timed = hasAudio && t.at != null;
+              return (
+                <div className={`turn ${t.role}${hasAudio ? " timed" : ""}${i === now ? " now" : ""}${timed ? " seekable" : ""}`} key={i}
+                     ref={(el) => { lines.current[i] = el; }}
+                     onClick={timed ? (e) => { if (!window.getSelection?.().toString()) { setFollow(true); a.seek(Number(t.at), { andPlay: true }); } } : undefined}>
+                  {hasAudio && (
+                    timed
+                      ? <button type="button" className="at" onClick={(e) => { e.stopPropagation(); setFollow(true); a.seek(Number(t.at), { andPlay: true }); }}
+                                aria-label={`Play from ${clock(t.at)}`}>{clock(t.at)}</button>
+                      : <span className="at" />
+                  )}
+                  <div className="who">{t.role === "agent" ? "Robin" : "Caller"}</div>
+                  <div className="said">{t.text}</div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

@@ -299,3 +299,40 @@ footer { margin-top: 52px; padding-top: 14px; border-top: 1px solid var(--line);
 .rq-due.met .k, .rq-due.met .t { color: var(--sub); }
 .rq-tests { margin: 10px 0 0; font: .72rem var(--mono); color: var(--faint); }
 .rq-tests a, .banner a { color: var(--ink); }
+
+/* ---- Call player (CallPlayer.js): pinned under the drawer header with it ---- */
+.drw-stick { position: sticky; top: 0; z-index: 2; background: var(--paper); }
+.drw-stick .drw-h { position: static; }
+.pl { padding: 14px 0 10px; border-bottom: 1px solid var(--ink); }
+.pl-row { display: flex; align-items: center; gap: 12px; }
+.pl-btn { flex: none; width: 40px; height: 40px; display: grid; place-items: center; background: var(--ink); color: var(--paper); border: 0; cursor: pointer; }
+.pl-btn svg { width: 16px; height: 16px; fill: currentColor; }
+.pl-btn:disabled { opacity: .5; cursor: progress; }
+.pl-t { flex: none; min-width: 38px; font: 600 .78rem var(--mono); font-variant-numeric: tabular-nums; }
+.pl-t.end { color: var(--sub); font-weight: 400; text-align: right; }
+.pl-bar { flex: 1; min-width: 0; position: relative; padding: 8px 0 2px; cursor: pointer; touch-action: none; }
+.pl-track { position: relative; height: 10px; border: 1.5px solid var(--ink); }
+.pl-fill { position: absolute; inset: 0 auto 0 0; background: var(--accent); }
+.pl-head { position: absolute; top: -6px; bottom: -6px; width: 2px; margin-left: -1px; background: var(--ink); }
+.pl-ticks { position: relative; height: 7px; margin-top: 3px; }
+.pl-ticks i { position: absolute; top: 0; width: 1px; height: 5px; background: var(--line); }
+.pl-ticks i.caller { height: 7px; background: var(--ink); }
+.pl-speed { flex: none; font: 600 .7rem var(--mono); color: var(--ink); background: none; border: 1px solid var(--line); padding: 6px 8px; cursor: pointer; }
+.pl-btn:focus-visible, .pl-bar:focus-visible, .pl-speed:focus-visible, .pl-follow:focus-visible, .turn .at:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.pl-note { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 14px; margin-top: 8px; font: .66rem/1.5 var(--mono); color: var(--faint); }
+.pl-note b { color: var(--sub); font-weight: 600; }
+.pl-note.bad { color: var(--bad); }
+.pl-follow { font: inherit; color: var(--faint); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+.pl-follow.on { color: var(--ink); text-decoration: underline; }
+.pl-load { margin-top: 6px; min-height: 38px; display: flex; align-items: center; }
+.pl-load .nest-loader { flex-direction: row; gap: 10px; color: var(--sub); }
+.pl-load .nest-shadow { display: none; }
+
+/* Transcript lines with a timestamp: click to jump, the spoken line carries the accent rule. */
+.turn.timed { display: grid; grid-template-columns: 52px 1fr; column-gap: 12px; margin: 0 -12px; padding: 10px 12px; }
+.turn.timed .who, .turn.timed .said { grid-column: 2; }
+.turn .at { grid-column: 1; grid-row: 1 / span 2; align-self: start; font: .68rem var(--mono); font-variant-numeric: tabular-nums; color: var(--faint); background: none; border: 0; padding: 1px 0; text-align: left; cursor: pointer; }
+.turn.seekable { cursor: pointer; }
+.turn.seekable:hover .at { color: var(--ink); }
+.turn.now { background: color-mix(in srgb, var(--accent) 9%, transparent); box-shadow: inset 3px 0 0 var(--accent); }
+.turn.now .at { color: var(--accent); font-weight: 700; }
