@@ -38,9 +38,12 @@ never fired. Renewal is now driven by the link's expiry (`expires_in` from the b
 locally with 20-second links: pause then jump renewed once and played; continuous play renewed on the
 stall with no gap.
 
-**Not verified:** playback of a real call in a browser on the portal preview (needs Tanner's browser:
-the portal preview is behind its password, and its `BROKER_PREVIEW_URL` still pointed at an old
-branch's broker on 2026-10-07); the cron firing (it runs on production only, and returns 503 until
+**Built checkpoint passed:** after `BROKER_PREVIEW_URL` was pointed at this branch's broker, Tanner
+played real calls on the portal preview ("looks and works great"). The listen log shows them: rows 3
+(`conv_8501m4999ee3f55r1vk9vtzq5nvn`, 21:16:30 UTC) and 4 (`conv_4001m4992fw7fxfrpv56qc06k1bg`,
+21:17:49 UTC), both `first_fetch = true`, `renewal = false`.
+
+**Not verified:** the cron firing (it runs on production only, and returns 503 until
 `CRON_SECRET` is set); renewal against real Supabase links (only against the fake).
 
 **To turn it on in production:** set `CALL_AUDIO_ENABLED=on` on the voiceagents project, redeploy.
