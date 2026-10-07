@@ -1,5 +1,5 @@
 "use client";
-// One request, opened: what they need, the callback time Robin was given to read, the number to call,
+// One request, opened: the callback deadline with the time the caller was told, what they need, the number to call,
 // the verify reminder, the callback log, history, and what happened on the call.
 //
 // Every action is one POST to /api/requests, which the broker runs as one transaction (the history row
@@ -13,6 +13,16 @@ const ATTEMPTS = [
   { action: "voicemail", label: "Left voicemail" },
   { action: "no_answer", label: "No answer" },
 ];
+
+// What the caller was told. A tool-filed request means Robin had the time before saying "you're all set";
+// a safety-net row means the caller hung up first, so whether they heard it is in the transcript only.
+function promiseLine(r) {
+  if (!r.promised_text) return "Robin did not give them a time, so they may not be expecting one.";
+  const t = `“${r.promised_text}”`;
+  return r.source === "tool"
+    ? <>Robin told them {t}</>
+    : <>Robin had {t} to read, but they hung up. The transcript shows whether they heard it.</>;
+}
 
 export default function RequestDrawer({ r, tz, now, onClose, onChanged, onTranscript }) {
   const [note, setNote] = useState("");
@@ -63,31 +73,19 @@ export default function RequestDrawer({ r, tz, now, onClose, onChanged, onTransc
         </div>
 
         {/* The deadline is the one thing a rep must not miss, so it leads the drawer in the accent
-            colour: red once it has passed with no callback, grey once someone has called. */}
+            colour: red once it has passed with no callback, grey once someone has called. Under it,
+            the same time as the caller heard it, so the promise and the deadline read as one thing. */}
         <div className={`rq-due ${r.sla === "red" ? "late" : r.first_attempt || closed ? "met" : ""}`}>
-          <span className="k">{r.sla === "red" ? "Overdue · was due" : "Call back by"}</span>
-          <span className="t">{when(r.due_at, tz, now)}</span>
+          <div className="row">
+            <span className="k">{r.sla === "red" ? "Overdue · was due" : "Call back by"}</span>
+            <span className="t">{when(r.due_at, tz, now)}</span>
+          </div>
+          <div className="said">{promiseLine(r)}</div>
         </div>
 
         <div className="section">
           <div className="lbl">What they need</div>
           <p className="rq-need">{r.request_detail || "Robin did not record the details. Ask when you call."}</p>
-        </div>
-
-        <div className="section">
-          <div className="lbl">The callback time Robin was given to read</div>
-          {r.promised_text ? (
-            <div className="rq-quote">
-              <div>{r.promised_text.charAt(0).toUpperCase() + r.promised_text.slice(1)}</div>
-              <div className="src">
-                {r.source === "tool"
-                  ? "returned by file_request when the request was filed; the transcript shows her exact words"
-                  : "returned by get_handoff_option before the caller hung up; the transcript shows whether she said it"}
-              </div>
-            </div>
-          ) : (
-            <p className="muted rq-small">No callback time was given to Robin on this call. The caller may not have heard one.</p>
-          )}
         </div>
 
         <div className="section">
