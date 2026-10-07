@@ -2,8 +2,8 @@
 // holds a short-lived cached copy (see api/call-audio.js). Inert without ELEVENLABS_API_KEY.
 //
 // Endpoint: GET /v1/convai/conversations/{id}/audio with the xi-api-key header, the same key and
-// header style as kb-text.js. Verified against a live conversation by api/audio-probe.js before the
-// route was built on it (see robin-portal/BUILD.md).
+// header style as kb-text.js. Verified against live phone, web-voice and chat conversations on a
+// preview deployment on 2026-10-07, before the route was built on it (see robin-portal/BUILD.md).
 const API = "https://api.elevenlabs.io/v1/convai/conversations";
 
 export const CONVERSATION_ID = /^conv_[A-Za-z0-9]{6,80}$/;

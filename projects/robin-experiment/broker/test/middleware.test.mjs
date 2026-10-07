@@ -40,7 +40,6 @@ const MUST_STAY_OPEN = [
   // (REQUESTS_TOOL_SECRET, lib/tool-secret.js), not the portal's.
   "/api/handoff_option", "/api/file_request",
   "/", "/robin-q-tester/", // the Dry Run PAGE is static and open; the API it calls is behind the password
-  "/api/audio-probe", // TEMPORARY: refuses in production, preview sits behind Vercel SSO; deleted before merge
   // The daily cache sweep: Vercel Cron cannot send the portal password, so it checks CRON_SECRET itself.
   "/api/call-audio-sweep",
 ];

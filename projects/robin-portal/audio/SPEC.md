@@ -1,8 +1,8 @@
 # SPEC — Call audio in the interaction drawer (Birdnest feature)
 
 **Slug:** robin-portal / audio
-**Status:** draft (design written 2026-10-04, not built)
-**Last updated:** 2026-10-04 (validity pass)
+**Status:** built 2026-10-07, on preview; production switch off (see "As built" below)
+**Last updated:** 2026-10-07
 
 > Press play on any voice interaction in Birdnest and hear the call, with the transcript following
 > along: the line being spoken is highlighted, and clicking any line jumps the audio there. No trip to
@@ -14,6 +14,47 @@ The existing Interactions drawer (`app/components/CallDrawer.js`), rendered with
 stylesheet, with the player added. Synthetic call; the greeting is Robin's live first message verbatim,
 and the member id shows in the transcript because today's scrub does not remove it (see Pre-existing
 finding).
+
+---
+
+## As built (2026-10-07), and what changed from this design
+
+v1 accounts were shelved on 2026-10-05, so three parts of the design below did not survive as written.
+Everything else was built as designed.
+
+- **No `call_audio` grant.** A shared password cannot grant audio to some people and not others. In its
+  place is a switch on the broker, `CALL_AUDIO_ENABLED`: `on` or `off` decides anywhere; unset means
+  off in production and on in preview deployments; any other value is off. Off hides the player and
+  makes `/api/call-audio` answer 404. Turning it on is an env var change and a redeploy.
+- **The listen log cannot name a person.** `call_audio_listens` records the call, the time, and actor
+  `birdnest` (the same word request history uses), and is append-only for everyone, the service role
+  included. One row per link issued: a listen that runs past the 5-minute link asks for a new one, which
+  is a second row.
+- **No `audit_log`.** The listen log above is the audit trail for audio.
+
+Premises checked on a preview before building (temporary probe, deleted before merge):
+
+| Question | Answer, measured 2026-10-07 |
+|---|---|
+| ElevenLabs endpoint and format | `GET /v1/convai/conversations/{id}/audio`, `audio/mpeg` with an ID3 header. 71 s call 1.1 MB, 137 s web voice 2.2 MB, 600 s call 9.6 MB (fetched in 0.9 to 1.1 s) |
+| Does ElevenLabs serve byte ranges? | No: a Range request gets 200 and the whole file. Our copy is what makes seeking work |
+| Does a signed Storage URL serve byte ranges? | Yes: `Range: bytes=1000-1999` got 206, `content-range bytes 1000-1999/9605421`, 1000 bytes |
+| Is a deleted object's URL cut off? | Yes: the same signed URL answered 400 right after the delete |
+| Web-voice audio | Returned, like phone |
+| Web chat | A 45-byte ID3 stub. The player is shown by channel; the route also refuses anything under 1 KB |
+
+Measured on the preview with the real route: first play of the longest stored call (600 s) **2.5 s**
+server-side (fetch from ElevenLabs, store, log, sign); a second play **0.29 s**. The Storage object
+carries `cacheControl max-age=60` (in `storage.objects.metadata`), though the signed-URL response did not
+echo a Cache-Control header.
+
+Files: migration `025_call_audio.sql` (applied live 2026-10-07: bucket `call-audio`, `call_audio_cache`,
+`call_audio_listens`); broker `api/call-audio.js`, `api/call-audio-sweep.js` (daily cron at 09:17 UTC,
+authenticates with `CRON_SECRET` and refuses with 503 until it is set), `lib/call-audio.js`,
+`lib/el-audio.js`, `lib/storage.js`, `api/survey-call.js` (`call.audio` tells the drawer whether to
+draw a player); portal `app/components/CallPlayer.js`, `CallDrawer.js`, `lib/player-view.js`.
+
+The compliance gate below still stands: Tanner is adding a recording notice to Robin's phone greeting.
 
 ---
 

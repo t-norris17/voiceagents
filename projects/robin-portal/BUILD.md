@@ -7,6 +7,38 @@
 ---
 
 
+## Session 2026-10-07: call audio built (Phase 3), production switch off
+
+**Design checkpoint:** approved by Tanner ("build it with the switch off"). He is adding a recording
+notice to Robin's opening message himself.
+
+**Premises, checked on a preview before building** (temporary `api/audio-probe.js`, deleted before
+merge; numbers in `audio/SPEC.md` "As built"): ElevenLabs returns MP3 for phone and web voice, 9.6 MB
+for the 600 s cap, and ignores Range; a signed Storage URL answers Range with 206; a deleted object's URL
+is refused at once; a web chat's "audio" is a 45-byte stub.
+
+**Live changes:** migration 025 applied to Supabase 2026-10-07 (state checked first: no buckets, no
+tables): private bucket `call-audio`, `call_audio_cache`, `call_audio_listens` (append-only; an
+`update` was refused by the trigger when tried). Nothing else live changed; Robin is untouched.
+
+**Verified on the preview (real route, real data):** `conv_2601m34qt28vfqsv3hmy9epxqz4h` (600 s)
+first play 2.5 s with `first_fetch=true`, second play 0.29 s with `first_fetch=false`, both links answer
+Range with 206; chat `conv_8101m3z1k42mfy986225617cgsa3` refused 404 "no audio for this channel";
+`/api/call-audio` without the portal's header answered 401 (the fetch tool could not show the body, but it reached the ungated routes on the same deployment, so the 401 is the broker's, consistent with its gate; the gate itself is unit-tested); the sweep answered 503 "CRON_SECRET
+is not set". Listen rows 1 and 2 in `call_audio_listens` are those two probe plays, not a person.
+**Verified locally** with a synthetic tone behind a fake broker: a line click before any audio fetched
+once and started at 1:38 with that line lit; the bar, arrow keys, speed and pause work; a wheel scroll
+turns follow-along off; the player stays pinned; a chat draws no player; no horizontal scroll at 390 px.
+
+**Not verified:** playback of a real call in a browser on the portal preview (needs Tanner's browser:
+the portal preview is behind its password); the cron firing (it runs on production only, and returns
+503 until `CRON_SECRET` is set); a link expiring mid-listen and being renewed (coded, not exercised).
+
+**To turn it on in production:** set `CALL_AUDIO_ENABLED=on` on the voiceagents project, redeploy.
+Set `CRON_SECRET` there too so the daily sweep runs.
+
+---
+
 ## Session 2026-10-06 (evening): after-merge evidence; test window removed
 
 **Callback outcome, checked against the database after #91 and #92 merged (query of 2026-10-06):**

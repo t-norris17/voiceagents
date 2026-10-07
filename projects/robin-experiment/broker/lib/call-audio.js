@@ -1,7 +1,7 @@
 // Call audio for Birdnest's player: the rules, with no I/O, so each is unit-tested
 // (test/call-audio.test.mjs). Spec: robin-portal/audio/SPEC.md.
 //
-// Measured on a preview deployment 2026-10-07 (api/audio-probe.js, since deleted): ElevenLabs returns
+// Measured on a preview deployment 2026-10-07 (a temporary probe, since deleted): ElevenLabs returns
 // audio/mpeg with an ID3 header, 1.1 MB for a 71 s call and 9.6 MB for the 600 s cap, in under 1.2 s;
 // it ignores Range (200, whole file), so seeking has to come from our copy. Supabase Storage answers a
 // Range request on a signed URL with 206 and the exact bytes, and refuses the URL once the object is
