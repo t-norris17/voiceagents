@@ -65,13 +65,14 @@ test("first play: fetch, store with a 60 s cache header, record the cache row, l
   assert.equal(out.body.first_fetch, true);
   assert.match(out.body.url, /e=300$/);
   assert.equal(out.body.expires_at, "2026-10-07T19:05:00.000Z");
+  assert.equal(out.body.expires_in, 300);
   assert.equal(w.fetches, 1);
   assert.deepEqual(w.puts, [{ bucket: "call-audio", key: `${ID}.mp3`, size: 5000, contentType: "audio/mpeg", cacheSeconds: 60 }]);
   const [cache, listen] = w.writes;
   assert.match(cache.path, /^call_audio_cache\?on_conflict=conversation_id/);
   assert.equal(cache.body.bytes, 5000);
   assert.equal(listen.path, "call_audio_listens");
-  assert.deepEqual(listen.body, { conversation_id: ID, at: NOW.toISOString(), actor: "birdnest", first_fetch: true });
+  assert.deepEqual(listen.body, { conversation_id: ID, at: NOW.toISOString(), actor: "birdnest", first_fetch: true, renewal: false });
   assert.equal(w.writes.length, 2, "no separate last_played PATCH on a first fetch");
 });
 
@@ -85,6 +86,20 @@ test("cached: no ElevenLabs call, a plain listen, last_played_at moves", async (
   assert.deepEqual(w.writes.map((x) => x.path), ["call_audio_listens", `call_audio_cache?conversation_id=eq.${ID}`]);
   assert.equal(w.writes[0].body.first_fetch, false);
   assert.equal(w.writes[1].body.last_played_at, NOW.toISOString());
+});
+
+test("a renewal is still logged, and marked as one; only renew=1 counts", async () => {
+  const w = world({ cached: true });
+  await issue(ID, w.deps, { renewal: true });
+  assert.equal(w.writes[0].path, "call_audio_listens");
+  assert.equal(w.writes[0].body.renewal, true);
+  for (const [q, want] of [[{ id: ID, renew: "1" }, true], [{ id: ID, renew: "true" }, false], [{ id: ID }, false]]) {
+    const v = world({ cached: true });
+    const res = fakeRes();
+    await handler({ method: "GET", query: q }, res, v.deps);
+    assert.equal(res.code, 200);
+    assert.equal(v.writes[0].body.renewal, want, JSON.stringify(q));
+  }
 });
 
 test("web voice plays; chat and unknown conversations are 404 and nothing is fetched", async () => {

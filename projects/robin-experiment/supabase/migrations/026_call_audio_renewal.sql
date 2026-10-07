@@ -1,0 +1,13 @@
+-- 026: tell a renewed link apart from a new play in the listen log.
+--
+-- A link to a recording lasts 5 minutes. If a listen runs past that (a long pause, or a jump to a part
+-- the browser had not downloaded), the player quietly asks for a fresh link and carries on. Every link
+-- is still logged, since each one is access to the recording; this column marks the ones that only
+-- continued a listen already logged, so counting plays does not count renewals.
+--
+-- Client-reported: the player sets it, and with one shared password nothing stronger is available. It
+-- separates "pressed play" from "kept listening"; it is not proof of either.
+--
+-- Additive. A constant default adds the column without rewriting rows, and the append-only trigger
+-- (025) guards UPDATE and DELETE, not ALTER, so existing rows read false.
+alter table public.call_audio_listens add column renewal boolean not null default false;

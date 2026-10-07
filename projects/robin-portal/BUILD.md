@@ -30,9 +30,18 @@ is not set". Listen rows 1 and 2 in `call_audio_listens` are those two probe pla
 once and started at 1:38 with that line lit; the bar, arrow keys, speed and pause work; a wheel scroll
 turns follow-along off; the player stays pinned; a chat draws no player; no horizontal scroll at 390 px.
 
+**Renewal (Tanner asked for it after the built checkpoint):** a link that expires mid-listen is
+replaced and logged with `renewal = true` (migration 026, applied live 2026-10-07, column checked
+first). Testing it found a real bug: Chrome never raises an error on a refused range request, it
+retries the dead link while the player says "playing", so the first version's error-driven renewal
+never fired. Renewal is now driven by the link's expiry (`expires_in` from the broker). Exercised
+locally with 20-second links: pause then jump renewed once and played; continuous play renewed on the
+stall with no gap.
+
 **Not verified:** playback of a real call in a browser on the portal preview (needs Tanner's browser:
-the portal preview is behind its password); the cron firing (it runs on production only, and returns
-503 until `CRON_SECRET` is set); a link expiring mid-listen and being renewed (coded, not exercised).
+the portal preview is behind its password, and its `BROKER_PREVIEW_URL` still pointed at an old
+branch's broker on 2026-10-07); the cron firing (it runs on production only, and returns 503 until
+`CRON_SECRET` is set); renewal against real Supabase links (only against the fake).
 
 **To turn it on in production:** set `CALL_AUDIO_ENABLED=on` on the voiceagents project, redeploy.
 Set `CRON_SECRET` there too so the daily sweep runs.

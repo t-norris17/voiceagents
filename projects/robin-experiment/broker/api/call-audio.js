@@ -1,4 +1,4 @@
-// GET /api/call-audio?id=conv_...  ->  { url, expires_at, first_fetch }
+// GET /api/call-audio?id=conv_...[&renew=1]  ->  { url, expires_at, expires_in, first_fetch }
 //
 // A short-lived link to one conversation's recording, for Birdnest's player. Portal-only (middleware).
 // Returns a LINK, never audio: the browser plays straight from Supabase Storage, which serves byte
@@ -9,6 +9,8 @@
 //   3. Our cached copy exists, or it is fetched from ElevenLabs and stored now (first play).
 //   4. A 5-minute signed URL.
 //   5. One row in call_audio_listens. If the listen cannot be logged, no link is issued.
+//      renew=1 means the player is replacing an expired link mid-listen; the row is still written,
+//      marked renewal, so counting plays does not count renewals (migration 026).
 import { sb } from "../lib/supabase.js";
 import { CHANNEL_COLS, channelOf } from "../lib/channel.js";
 import { fetchConversationAudio, CONVERSATION_ID } from "../lib/el-audio.js";
@@ -29,7 +31,7 @@ async function fill(id, deps) {
   return { ok: true };
 }
 
-export async function issue(id, deps) {
+export async function issue(id, deps, { renewal = false } = {}) {
   const [row] = (await deps.db(`ai_call_events?provider=eq.elevenlabs&conversation_id=eq.${id}&select=conversation_id,${CHANNEL_COLS}&limit=1`)) || [];
   if (!row) return { status: 404, body: { error: "not found" } };
   if (!channelHasAudio(channelOf(row))) return { status: 404, body: { error: "no audio for this channel" } };
@@ -56,11 +58,12 @@ export async function issue(id, deps) {
   }
 
   const at = deps.now();
-  await deps.db("call_audio_listens", { method: "POST", prefer: "return=minimal", body: { conversation_id: id, at: at.toISOString(), actor: "birdnest", first_fetch: firstFetch } });
+  await deps.db("call_audio_listens", { method: "POST", prefer: "return=minimal", body: { conversation_id: id, at: at.toISOString(), actor: "birdnest", first_fetch: firstFetch, renewal: !!renewal } });
   if (!firstFetch) {
     await deps.db(`call_audio_cache?conversation_id=eq.${id}`, { method: "PATCH", prefer: "return=minimal", body: { last_played_at: at.toISOString() } });
   }
-  return { status: 200, body: { url, expires_at: new Date(at.getTime() + SIGNED_URL_SECONDS * 1000).toISOString(), first_fetch: firstFetch } };
+  // expires_in lets the player time renewal on its own clock; expires_at is for people reading the log.
+  return { status: 200, body: { url, expires_at: new Date(at.getTime() + SIGNED_URL_SECONDS * 1000).toISOString(), expires_in: SIGNED_URL_SECONDS, first_fetch: firstFetch } };
 }
 
 export default async function handler(req, res, deps = { db: sb, fetchAudio: fetchConversationAudio, put: putObject, sign: signObject, now: () => new Date(), env: process.env }) {
@@ -70,7 +73,7 @@ export default async function handler(req, res, deps = { db: sb, fetchAudio: fet
   const id = String(req.query?.id || "").trim();
   if (!CONVERSATION_ID.test(id)) return res.status(400).json({ error: "bad id" });
   try {
-    const out = await issue(id, deps);
+    const out = await issue(id, deps, { renewal: req.query?.renew === "1" });
     return res.status(out.status).json(out.body);
   } catch (e) {
     console.error("call-audio failed:", String(e.message || e));

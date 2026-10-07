@@ -28,8 +28,16 @@ Everything else was built as designed.
   makes `/api/call-audio` answer 404. Turning it on is an env var change and a redeploy.
 - **The listen log cannot name a person.** `call_audio_listens` records the call, the time, and actor
   `birdnest` (the same word request history uses), and is append-only for everyone, the service role
-  included. One row per link issued: a listen that runs past the 5-minute link asks for a new one, which
-  is a second row.
+  included. One row per link issued. A listen that outlives its 5-minute link gets a new one, logged as
+  a second row with `renewal = true` (migration 026), so counting plays means counting
+  `renewal = false`. The flag is set by the player, so it separates "pressed play" from "kept
+  listening" but proves neither.
+- **Renewal is timed, not error-driven.** Chrome does not raise an error when a range request on an
+  expired link is refused; it retries the dead link quietly while the player shows "playing" (seen
+  locally: seven refused retries, no error event). So the player renews when the link is within
+  15 seconds of expiring, before a play or a jump, and when playback stalls. Exercised locally with
+  20-second links: a pause and a jump renewed once (`renew=1`) and played at 2:48; continuous play
+  renewed on the stall and carried on without a gap.
 - **No `audit_log`.** The listen log above is the audit trail for audio.
 
 Premises checked on a preview before building (temporary probe, deleted before merge):
@@ -48,8 +56,8 @@ server-side (fetch from ElevenLabs, store, log, sign); a second play **0.29 s**.
 carries `cacheControl max-age=60` (in `storage.objects.metadata`), though the signed-URL response did not
 echo a Cache-Control header.
 
-Files: migration `025_call_audio.sql` (applied live 2026-10-07: bucket `call-audio`, `call_audio_cache`,
-`call_audio_listens`); broker `api/call-audio.js`, `api/call-audio-sweep.js` (daily cron at 09:17 UTC,
+Files: migrations `025_call_audio.sql` (applied live 2026-10-07: bucket `call-audio`, `call_audio_cache`,
+`call_audio_listens`) and `026_call_audio_renewal.sql` (applied live 2026-10-07: the `renewal` column); broker `api/call-audio.js`, `api/call-audio-sweep.js` (daily cron at 09:17 UTC,
 authenticates with `CRON_SECRET` and refuses with 503 until it is set), `lib/call-audio.js`,
 `lib/el-audio.js`, `lib/storage.js`, `api/survey-call.js` (`call.audio` tells the drawer whether to
 draw a player); portal `app/components/CallPlayer.js`, `CallDrawer.js`, `lib/player-view.js`.
