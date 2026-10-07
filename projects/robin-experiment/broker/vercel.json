@@ -5,6 +5,10 @@
   ],
   "functions": {
     "api/grade.js": { "maxDuration": 300 },
-    "api/survey-themes.js": { "maxDuration": 60 }
-  }
+    "api/survey-themes.js": { "maxDuration": 60 },
+    "api/call-audio.js": { "maxDuration": 60 }
+  },
+  "crons": [
+    { "path": "/api/call-audio-sweep", "schedule": "17 9 * * *" }
+  ]
 }

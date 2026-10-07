@@ -18,6 +18,7 @@ export const BROKER_PATHS = new Set([
   "questions",
   "gap_request",
   "requests",
+  "call-audio", // a 5-minute link to a recording; the broker switch decides whether it answers
 ]);
 
 export const CLEANER_PATHS = new Set([

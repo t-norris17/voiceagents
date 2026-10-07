@@ -27,6 +27,8 @@ const GATED = [
   "/api/ask", "/api/grade", "/api/questions", "/api/gap_request",
   // The call center's after-hours queue: names, callback numbers, what members asked for.
   "/api/requests", "/api/requests?view=all",
+  // Call recordings: a voice cannot be scrubbed.
+  "/api/call-audio", "/api/call-audio?id=conv_x",
 ];
 
 // Gating any of these does not hide a dashboard — it takes Robin off the phone. ElevenLabs calls
@@ -38,6 +40,8 @@ const MUST_STAY_OPEN = [
   // (REQUESTS_TOOL_SECRET, lib/tool-secret.js), not the portal's.
   "/api/handoff_option", "/api/file_request",
   "/", "/robin-q-tester/", // the Dry Run PAGE is static and open; the API it calls is behind the password
+  // The daily cache sweep: Vercel Cron cannot send the portal password, so it checks CRON_SECRET itself.
+  "/api/call-audio-sweep",
 ];
 
 // Sibling routes that merely start with the same letters. A bare startsWith() would sweep these in.

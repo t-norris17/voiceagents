@@ -19,6 +19,11 @@ test("Robin's own endpoints are never proxied", () => {
   }
 });
 
+test("the audio link is proxied; the audio cache sweep is not (it is Vercel Cron's, with its own secret)", () => {
+  assert.equal(upstreamFor("call-audio", env).name, "broker");
+  assert.equal(upstreamFor("call-audio-sweep", env), null);
+});
+
 test("unlisted, empty and odd segments are 404s, and a missing upstream URL is too", () => {
   for (const seg of ["", undefined, "..", "metrics/../postcall", "admin"]) assert.equal(upstreamFor(seg, env), null);
   assert.equal(upstreamFor("metrics", {}), null);

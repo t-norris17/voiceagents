@@ -117,6 +117,9 @@ for the experiment, but it should land before any real traffic and before reps g
 
 ## Phase 3. Call audio (M)
 
+**Built 2026-10-07, without Phase 1** (accounts shelved): a broker switch replaces the `call_audio`
+grant and the listen log records times, not names. Production switch off. See `audio/SPEC.md` "As built".
+
 After Phase 1, and Phase 0's audio checks pass. Rollout beyond the builder waits on compliance.
 
 1. Migration: private bucket `call-audio`, table `call_audio_cache`.
