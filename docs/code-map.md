@@ -11,8 +11,9 @@ is configured in ElevenLabs were not checked. Treat any "live" statement below a
 
 ## How the pieces fit
 
-Four Vercel projects build from folders in this repo. All four project names were confirmed in the
-Vercel team on 2026-10-16; the root-directory mappings come from the BUILD logs and READMEs.
+Five Vercel projects build from folders in this repo. The mapping below was confirmed by Vercel's own
+deployment comment on PR #96 (2026-10-16), which lists each project with its root directory; all five
+built that commit as Ready.
 
 | Vercel project | Root directory | What it is |
 |---|---|---|
@@ -20,6 +21,7 @@ Vercel team on 2026-10-16; the root-directory mappings come from the BUILD logs 
 | `robin-portal` | `projects/robin-portal/app` | **Birdnest.** The Next.js front door behind one shared password. Proxies to the broker and the Factory. |
 | `voiceagents-qewy` | `projects/content-cleaner/cleaner` | **The Knowledge Factory.** Cleans raw plan documents into KB articles and publishes them to Robin. |
 | `vertex-demo-site` | `projects/vertex-demo-site/site` | **Vertex Manufacturing**, a fictional employer site that hosts the Robin chat and voice widget. |
+| `lumio-retirement` | `projects/nestegg-u-demo/mock-backend` | The July NestEgg U mock tools (section 5). Inactive, but still connected and still builds on every push. |
 
 ```
 Caller ── phone ──► ElevenLabs (Robin) ──tools mid-call──► broker: verify_caller, get_balance,
