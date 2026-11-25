@@ -24,6 +24,7 @@ function stub() {
   globalThis.fetch = async (url) => {
     const u = decodeURIComponent(String(url));
     const reply = (body) => ({ ok: true, status: 200, text: async () => JSON.stringify(body) });
+    if (u.includes("experiment_waves")) return reply([]);
     if (u.includes("call_question_scores")) return reply(SCORES);
     const m = u.match(/conversation_id=in\.\((.*?)\)&select/);
     if (m) {

@@ -336,3 +336,13 @@ footer { margin-top: 52px; padding-top: 14px; border-top: 1px solid var(--line);
 .turn.seekable:hover .at { color: var(--ink); }
 .turn.now { background: color-mix(in srgb, var(--accent) 9%, transparent); box-shadow: inset 3px 0 0 var(--accent); }
 .turn.now .at { color: var(--accent); font-weight: 700; }
+
+/* ---- Wave filter (WaveFilter.js): which wave of testing the page is about ---- */
+.waves { display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap; margin: 22px 0 0; font: 600 .66rem var(--mono); letter-spacing: .14em; text-transform: uppercase; }
+.waves-k { color: var(--sub); }
+.waves button { background: none; border: 0; border-bottom: 1px solid transparent; padding: 0 0 1px; font: inherit; letter-spacing: inherit; text-transform: inherit; color: var(--sub); cursor: pointer; }
+.waves button:hover { color: var(--ink); }
+.waves button.on { color: var(--ink); border-bottom-color: var(--ink); }
+.waves button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.waves-n { margin-left: 6px; font-weight: 400; color: var(--faint); }
+.waves button.on .waves-n { color: var(--sub); }

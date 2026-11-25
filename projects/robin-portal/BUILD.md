@@ -7,6 +7,44 @@
 ---
 
 
+## Session 2026-11-25: Birdnest ready for wave 2 (built, not merged)
+
+**Context (Tanner):** wave 2 starts Monday 2026-12-07 on a different Robin in an enterprise ElevenLabs
+and Supabase that this session cannot reach. Birdnest stays on the personal stack and tracks wave 2 by
+the enterprise Robin's post-call webhook pointing at the broker. All wave 2 data is synthetic. The old
+personal Robin is Tanner's own test line now (2 calls on 2026-11-19 were his).
+
+**Repo vs live, checked first:** git clean, `main` = production = `d312be0`; Supabase migrations end at
+026 like the repo. The personal Robin moved to version `agtvrsn_4301m5cw6t2sfp5b7ntta4tm4z9c` (13
+versions after the last one this log records); not reviewed here, and no longer the wave 2 agent.
+
+**Design checkpoint:** approved ("yes", default All), then revised before building: a wave is a date
+window in `experiment_waves`, the definition the Quality page already slices by (migration 017), not
+"which agent". Tanner gave the start date, taken as approval.
+
+**Built:**
+- `ROBIN_AGENT_IDS` (broker setting): extra phone agents whose calls are recorded and who file requests,
+  added to the built-in two. Malformed entries are ignored. `lib/requests.js`, `api/postcall.js`.
+- `ELEVENLABS_WEBHOOK_SECRET_ENTERPRISE` (optional): a second signing secret, for a workspace that
+  issues its own. Either secret verifies; an unset one never matches.
+- Wave filter on Interactions and Requests (`lib/waves.js`, `components/WaveFilter.js`), same windows as
+  Quality, `?wave=` in the address. Quality's default slice is now All time (was the newest wave).
+- Migration `027_second_wave.sql` (not applied): Second wave from Dec 7 midnight Central, open-ended.
+  Apply after the merge deploys, or the old Quality default opens on the empty wave.
+
+**Verified:** broker 216 tests (8 new: wave windows, agent setting, both secrets, `/api/calls?wave=`
+end to end against a stub), portal 60, `next build` clean. Locally against a fake broker: the filter
+narrows list and stats (6 calls, Second wave 3), survives reload via `?wave=`, Requests `?wave=first`
+loads filtered, no horizontal scroll at 390px.
+
+**Not verified:** a real enterprise webhook arriving (needs the enterprise agent id, secret and webhook);
+whether the enterprise Robin's mid-call tools point at this broker (decides whether Requests gets
+Robin-filed callbacks or only safety-net ones); the enterprise survey's Data Collection field names
+(Quality reads 12 by name: survey_offered, survey_consent, offer_context, nps, prefer_agent,
+voice_naturalness, would_recommend, open_comments, satisfaction, caller_name, topic, plan_topic).
+
+---
+
 ## Session 2026-10-07: call audio built (Phase 3), production switch off
 
 **Design checkpoint:** approved by Tanner ("build it with the switch off"). He is adding a recording

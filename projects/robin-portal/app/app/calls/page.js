@@ -3,6 +3,7 @@
 // What the Experiment Monitor was for, without its grading grid.
 import { useCallback, useEffect, useState } from "react";
 import CallDrawer from "../components/CallDrawer.js";
+import WaveFilter, { useWave } from "../components/WaveFilter.js";
 import NestLoader from "../components/NestLoader.js";
 import { CHANNEL_LABEL } from "../../lib/channel-label.js";
 import { dotOf, needsLook, FILTERS, topicOf } from "../../lib/interaction-state.js";
@@ -15,16 +16,17 @@ export default function InteractionsPage() {
   const [err, setErr] = useState(null);
   const [open, setOpen] = useState(null);
   const [filter, setFilter] = useState("all");
+  const [wave, setWave] = useWave();
   const close = useCallback(() => setOpen(null), []);
 
   const load = useCallback(async () => {
     try {
-      const r = await fetch(`/api/calls?limit=${LIMIT}`, { cache: "no-store" });
+      const r = await fetch(`/api/calls?limit=${LIMIT}${wave !== "all" ? `&wave=${encodeURIComponent(wave)}` : ""}`, { cache: "no-store" });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
       setData(d); setErr(null);
     } catch (e) { setErr(String(e.message || e)); }
-  }, []);
+  }, [wave]);
   useEffect(() => { load(); const t = setInterval(load, 60000); return () => clearInterval(t); }, [load]);
 
   const calls = data?.calls || [], s = data?.summary;
@@ -42,8 +44,10 @@ export default function InteractionsPage() {
         <button className="btn sec" type="button" onClick={load}>Refresh</button>
       </div>
       {err && <div className="banner">Couldn't load interactions: {err}</div>}
+      <WaveFilter waves={data?.waves} value={data?.wave ?? wave} onChange={setWave} />
       {s && (
         <div className="stat-row">
+          {wave !== "all" && <div className="stat"><div className="n">{data?.matching ?? 0}</div><div className="k">in this wave</div></div>}
           <div className="stat"><div className="n">{s.last_24h}</div><div className="k">last 24 h</div></div>
           <div className="stat"><div className="n">{s.last_7d}</div><div className="k">last 7 days</div></div>
           <div className="stat"><div className="n">{flagged}</div><div className="k">{calls.length >= LIMIT ? `need a look, newest ${LIMIT}` : "need a look"}</div></div>

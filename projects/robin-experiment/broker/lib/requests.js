@@ -16,6 +16,18 @@ export const CALL_RECORD_AGENTS = new Set([AGENTS.robin, AGENTS.robin_web]);
 // Only the phone agent files requests: a web caller has no number to call back.
 export const REQUEST_AGENTS = new Set([AGENTS.robin]);
 
+// MORE PHONE AGENTS, FROM SETTINGS. Wave 2 (from 2026-12-07) runs on a different Robin, in a different
+// ElevenLabs workspace, whose id this repo does not know. ROBIN_AGENT_IDS (comma or space separated)
+// adds phone agents to both lists above without a code change: their calls are recorded and they file
+// requests. Unset, the lists are exactly the built-in ones. Anything that is not an agent id is
+// ignored, so a stray character cannot open the allowlist.
+const AGENT_ID = /^agent_[A-Za-z0-9]{8,64}$/;
+export function extraAgents(env = process.env) {
+  return String(env.ROBIN_AGENT_IDS || "").split(/[\s,]+/).filter((x) => AGENT_ID.test(x));
+}
+export const recordsCalls = (agentId, env = process.env) => CALL_RECORD_AGENTS.has(agentId) || extraAgents(env).includes(agentId);
+export const filesRequests = (agentId, env = process.env) => REQUEST_AGENTS.has(agentId) || extraAgents(env).includes(agentId);
+
 export const REQUEST_TYPES = ["loan", "distribution", "contribution_change", "beneficiary", "account_access", "speak_to_person", "other"];
 
 // The model's wording for a request type, normalized into the table's vocabulary. Data Collection
@@ -105,7 +117,7 @@ export function handoffPromise(transcript) {
 export function safetyNetDecision({ agentId, requestType, externalNumber, startedAt, linked, env = process.env, cfg = HOURS, now = new Date() }) {
   const forced = forcedClosed(env, now);
   if (linked) return { file: false, why: "already filed by the tool" };
-  if (!REQUEST_AGENTS.has(agentId)) return { file: false, why: "agent does not file requests" };
+  if (!filesRequests(agentId, env)) return { file: false, why: "agent does not file requests" };
   const type = normalizeRequestType(requestType);
   if (!type) return { file: false, why: "no request named in Data Collection" };
   if (!normalizePhone(externalNumber)) return { file: false, why: "no callback number (not a phone call)" };
