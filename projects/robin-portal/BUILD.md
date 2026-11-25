@@ -55,6 +55,12 @@ legitimate `pre_transfer`.
 - Rendered locally with the REAL `/api/metrics` over synthetic rows (6 wave 1, 7 wave 2): wave 2
   57% answered fully (4/2/1), ease 8.1, no leak banner, 1 call for review; wave 1 unchanged.
 
+**Released 2026-11-25 (PR #97, merge `d89822e`), in order:** (1) 028 applied, then checked:
+`survey_answers` 265 rows, `in_nps_era` 203, `survey_people` 35, the five columns last; (2) merged;
+broker production READY on `d89822e`; (3) 027 applied after the broker was live: `second` wave from
+`2026-12-10 17:30 UTC` (11:30 AM Central), open, 0 calls; `survey_wave_start()` unchanged
+(2026-09-21 05:00 UTC). Portal health `ok: true`, `deployed: d89822e`.
+
 **Release order:** apply 028 BEFORE the merge deploys (the broker selects its columns); merge; apply
 027 AFTER (the old broker would open Quality on the empty wave).
 
