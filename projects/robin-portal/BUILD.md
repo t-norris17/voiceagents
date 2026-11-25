@@ -9,7 +9,7 @@
 
 ## Session 2026-11-25: Birdnest ready for wave 2 (built, not merged)
 
-**Context (Tanner):** wave 2 starts Monday 2026-12-07 on a different Robin in an enterprise ElevenLabs
+**Context (Tanner):** wave 2 starts Thursday 2026-12-10 (first given as Dec 7, moved the same day) on a different Robin in an enterprise ElevenLabs
 and Supabase that this session cannot reach. Birdnest stays on the personal stack and tracks wave 2 by
 the enterprise Robin's post-call webhook pointing at the broker. All wave 2 data is synthetic. The old
 personal Robin is Tanner's own test line now (2 calls on 2026-11-19 were his).
@@ -29,7 +29,7 @@ window in `experiment_waves`, the definition the Quality page already slices by 
   issues its own. Either secret verifies; an unset one never matches.
 - Wave filter on Interactions and Requests (`lib/waves.js`, `components/WaveFilter.js`), same windows as
   Quality, `?wave=` in the address. Quality's default slice is now All time (was the newest wave).
-- Migration `027_second_wave.sql` (not applied): Second wave from Dec 7 midnight Central, open-ended.
+- Migration `027_second_wave.sql` (not applied): Second wave from Dec 10 midnight Central, open-ended.
   Apply after the merge deploys, or the old Quality default opens on the empty wave.
 
 **Verified:** broker 216 tests (8 new: wave windows, agent setting, both secrets, `/api/calls?wave=`
@@ -37,7 +37,28 @@ end to end against a stub), portal 60, `next build` clean. Locally against a fak
 narrows list and stats (6 calls, Second wave 3), survives reload via `?wave=`, Requests `?wave=first`
 loads filtered, no horizontal scroll at 390px.
 
-**Not verified:** a real enterprise webhook arriving (needs the enterprise agent id, secret and webhook);
+**Wave 2's survey, added the same session** (Tanner sent the enterprise Robin's Data Collection list;
+wave 2 tests ACCURACY: "we know they prefer Robin"). `prefer_agent` and `voice_naturalness` are retired;
+`answered_fully` (yes | partly | no) and `ease_of_understanding` (0-10) are new; `offer_context` gains a
+legitimate `pre_transfer`.
+- Migration `028_accuracy_survey.sql` (NOT applied): appends `in_accuracy_era`, `answered_fully_raw`,
+  `answered_fully`, `ease_raw`, `ease_score` to `survey_answers` by reading the live definition and
+  appending to its final SELECT (refuses if the definition's ending changed). Dry-run on the live
+  schema inside a rolled-back transaction: 265 rows, `in_nps_era` 203 unchanged, the five columns
+  last, `survey_people` 35 rows; classifier "Yes, fully"/"not fully"/"partly"/"No"/"hmm" →
+  yes/partly/partly/no/unclear. Afterwards: 0 new functions, 0 new columns (rollback held).
+- Quality: "Answered fully" leads the page when the slice has those answers; "Ease of understanding"
+  tile; preference and voice tiles hide when not asked; the score-against-choice grid ignores wave 2
+  blanks; a pre-transfer survey is a leak only on the old survey; "said Robin did not answer" flags a
+  call for review; the CSVs carry the new columns. Lede and tour no longer frame the page as Robin vs a
+  person. Broker tests 223.
+- Rendered locally with the REAL `/api/metrics` over synthetic rows (6 wave 1, 7 wave 2): wave 2
+  57% answered fully (4/2/1), ease 8.1, no leak banner, 1 call for review; wave 1 unchanged.
+
+**Release order:** apply 028 BEFORE the merge deploys (the broker selects its columns); merge; apply
+027 AFTER (the old broker would open Quality on the empty wave).
+
+**Not verified:** the Accuracy page on wave 2 calls (the grader needs an ENTERPRISE ElevenLabs key to read the enterprise Robin's documents; without it every wave 2 grade is "no source"); the `survey_asked_when_eligible` evaluation criterion on the enterprise agent (Quality's offer-rate tile reads it); a real enterprise webhook arriving (needs the enterprise agent id, secret and webhook);
 whether the enterprise Robin's mid-call tools point at this broker (decides whether Requests gets
 Robin-filed callbacks or only safety-net ones); the enterprise survey's Data Collection field names
 (Quality reads 12 by name: survey_offered, survey_consent, offer_context, nps, prefer_agent,

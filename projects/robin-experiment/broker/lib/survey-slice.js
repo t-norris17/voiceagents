@@ -89,7 +89,7 @@ export function parseSlice(query = {}, { waves = [], now = new Date() } = {}) {
   });
 
   // Default: everything. Until 2026-11-25 the default was the newest non-internal wave; with wave 2
-  // declared ahead of its start (Dec 7) that would have opened Quality on an empty wave, and Tanner
+  // declared ahead of its start (Dec 10) that would have opened Quality on an empty wave, and Tanner
   // chose All as the default for every page's wave filter. Staff calls stay hidden by default.
   if (!raw) return { ...base, kind: "all", key: "all", label: "All time", from: null, to: null, param: "all", defaulted: true };
 

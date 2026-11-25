@@ -74,9 +74,9 @@ export function summariseSurvey(opinions, calls, everyone = calls) {
   // ---- Operational: did she ASK when she should have? Correctly a CALL-level question. ----
   const judged = everyone.filter((r) => r.survey_verdict === "success" || r.survey_verdict === "failure");
   const offered = everyone.filter((r) => r.survey_offered === true);
-  // Any answer to any question, under either instrument. prefer_agent_raw is listed first
-  // because under v2 it is question one and the only one guaranteed to survive a short call.
-  const answered = (r) => r.prefer_agent_raw || r.nps_raw || r.voice_raw || r.satisfaction_raw;
+  // Any answer to any question, under any instrument. prefer_agent_raw is listed first because under
+  // v2 it is question one; under the wave 2 accuracy survey (v3) question one is answered_fully.
+  const answered = (r) => r.prefer_agent_raw || r.answered_fully_raw || r.nps_raw || r.voice_raw || r.ease_raw || r.satisfaction_raw;
   const answeredCalls = everyone.filter(answered);
 
   // What the slice excludes, in five numbers. Every opinion on the page comes from `surveyed`; the
@@ -129,6 +129,7 @@ export function summariseSurvey(opinions, calls, everyone = calls) {
   const scores = opinions.map((r) => score(r.satisfaction_score)).filter((n) => n !== null);
   const npsScores = opinions.map((r) => score(r.nps_score)).filter((n) => n !== null);
   const voiceScores = opinions.map((r) => score(r.voice_score)).filter((n) => n !== null);
+  const easeScores = opinions.map((r) => score(r.ease_score)).filter((n) => n !== null);
   const band = (b) => opinions.filter((r) => r.nps_band === b).length;
   // Respondents split by which instrument they answered, so v1 and v2 are never averaged
   // together and neither silently vanishes from a count.
@@ -184,7 +185,9 @@ export function summariseSurvey(opinions, calls, everyone = calls) {
     agent: opinions.filter((r) => r.nps_band === b && r.preference === "agent").length,
     person: opinions.filter((r) => r.nps_band === b && r.preference === "person").length,
     no_preference: opinions.filter((r) => r.nps_band === b && r.preference === "no_preference").length,
-    unclassified: opinions.filter((r) => r.nps_band === b && (r.preference === "unclassified" || r.preference === null)).length,
+    // A blank preference counts as unclear only where the question was asked (v2). The wave 2 survey
+    // does not ask it, so its blanks are not answers and stay out of the grid.
+    unclassified: opinions.filter((r) => r.nps_band === b && (r.preference === "unclassified" || (r.preference === null && !r.in_accuracy_era))).length,
   }));
   // Respondents the cross-tab cannot place, because they answered the retired 1-5 instrument. Shipped
   // beside the grid so a reader can see the grid does not cover everyone, rather than assuming it does.
@@ -288,7 +291,23 @@ export function summariseSurvey(opinions, calls, everyone = calls) {
       mean: voiceScores.length ? Number((voiceScores.reduce((a, b) => a + b, 0) / voiceScores.length).toFixed(2)) : null,
       unparsed: opinions.filter((r) => r.voice_raw && score(r.voice_score) === null).length,
     },
-    instrument: { v1, v2 },
+    instrument: { v1, v2, v3: opinions.filter((r) => r.in_accuracy_era).length },
+    // v3, wave 2: "Did I fully answer your question today?" The question wave 2 exists to ask.
+    // Counted over the responses that answered it; `unclear` is an answer in words that maps to none
+    // of the three, kept visible rather than dropped.
+    accuracy: (() => {
+      const t = (v) => opinions.filter((r) => r.answered_fully === v).length;
+      const yes = t("yes"), partly = t("partly"), no = t("no"), unclear = t("unclear");
+      const n = yes + partly + no;
+      return { n, yes, partly, no, unclear, yes_pct: n ? Math.round((yes / n) * 100) : null, ci: n ? wilson(yes, n) : null };
+    })(),
+    // v3. "Zero to ten, how easy was I to understand?" Replaces the voice-naturalness question;
+    // kept apart from nps for the same reason that one was.
+    ease: {
+      n: easeScores.length,
+      mean: easeScores.length ? Number((easeScores.reduce((a, b) => a + b, 0) / easeScores.length).toFixed(2)) : null,
+      unparsed: opinions.filter((r) => r.ease_raw && score(r.ease_score) === null).length,
+    },
     recommend: { ...recommendCounts, yes_pct: recommendCounts.ci ? recommendCounts.ci.pct : null },
     matrix,
     matrix_excluded_v1,
@@ -348,16 +367,19 @@ export function summariseSurvey(opinions, calls, everyone = calls) {
         })),
       };
     })(),
-    // Should always be 0. The prompt forbids surveying on a transfer, so anything here means the
-    // gate leaked and the pre-transfer failure mode is back. Surfaced as an alarm, not a statistic.
-    leaked_pre_transfer: calls.filter((r) => r.offer_context === "pre_transfer").length,
+    // Should always be 0 under the v2 survey, which forbade surveying on a transfer: anything here
+    // means the gate leaked. The wave 2 survey asks before a transfer on purpose ("Before I connect
+    // you"), so its calls are not counted.
+    leaked_pre_transfer: calls.filter((r) => r.offer_context === "pre_transfer" && !r.in_accuracy_era).length,
 
     // Calls a human should listen to. The survey already captured the Dana call correctly - a 3, a
     // negative sentiment read, and a comment about Robin remarking on the member's age - and the
     // page showed none of it, because nothing here ever read the sentiment column. A rating alone
     // would have missed it: 3 out of 5 is not a bad score, and the complaint was about tone.
     review: (() => {
-      const flagged = calls.filter((r) => r.survey_offered && r.needs_review);
+      // A caller who says Robin did NOT answer their question is the first call to listen to in an
+      // accuracy wave, whatever their score.
+      const flagged = calls.filter((r) => r.survey_offered && (r.needs_review || r.answered_fully === "no"));
       return {
         n: flagged.length,
         calls: flagged.slice(0, 25).map((r) => ({
@@ -366,6 +388,7 @@ export function summariseSurvey(opinions, calls, everyone = calls) {
           satisfaction_score: r.satisfaction_score, sentiment: r.overall_sentiment,
           nps_score: r.nps_score, nps_band: r.nps_band, voice_score: r.voice_score,
           preference: r.preference, comment: r.open_comments,
+          answered_fully: r.answered_fully || null, ease_score: r.ease_score ?? null,
         })),
       };
     })(),
@@ -391,6 +414,10 @@ export function summariseSurvey(opinions, calls, everyone = calls) {
         nps_band: r.nps_band,
         voice: r.voice_raw,
         voice_score: r.voice_score,
+        answered_fully: r.answered_fully_raw || null,
+        answered_fully_class: r.answered_fully || null,
+        ease: r.ease_raw || null,
+        ease_score: r.ease_score ?? null,
         sentiment: r.overall_sentiment,
         needs_review: r.needs_review === true,
         prefer_agent: r.prefer_agent_raw,

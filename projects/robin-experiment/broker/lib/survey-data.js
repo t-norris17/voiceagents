@@ -25,7 +25,9 @@ export const CALL_COLS =
   "survey_consent,offer_context,survey_verdict,overall_sentiment,needs_review,in_nps_era,outcome," +
   "topic,plan_topic,prefer_agent_raw,preference,nps_raw,nps_score,nps_band," +
   "voice_raw,voice_score,open_comments,comments_redacted,caller_name,respondent_name,wave,is_staff," +
-  "satisfaction_raw,satisfaction_score,would_recommend_raw,would_recommend";
+  "satisfaction_raw,satisfaction_score,would_recommend_raw,would_recommend," +
+  // The wave 2 accuracy survey (migration 028). Selecting these needs 028 applied first.
+  "in_accuracy_era,answered_fully_raw,answered_fully,ease_raw,ease_score";
 
 export async function surveyPeople() {
   return (await sb(`survey_people?select=${PEOPLE_COLS}&order=first_at.asc.nullslast`)) || [];

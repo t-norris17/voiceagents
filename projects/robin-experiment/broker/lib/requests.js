@@ -16,7 +16,7 @@ export const CALL_RECORD_AGENTS = new Set([AGENTS.robin, AGENTS.robin_web]);
 // Only the phone agent files requests: a web caller has no number to call back.
 export const REQUEST_AGENTS = new Set([AGENTS.robin]);
 
-// MORE PHONE AGENTS, FROM SETTINGS. Wave 2 (from 2026-12-07) runs on a different Robin, in a different
+// MORE PHONE AGENTS, FROM SETTINGS. Wave 2 (from 2026-12-10) runs on a different Robin, in a different
 // ElevenLabs workspace, whose id this repo does not know. ROBIN_AGENT_IDS (comma or space separated)
 // adds phone agents to both lists above without a code change: their calls are recorded and they file
 // requests. Unset, the lists are exactly the built-in ones. Anything that is not an agent id is

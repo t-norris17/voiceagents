@@ -16,7 +16,7 @@ const { verifySig, webhookSecrets } = await import("../api/postcall.js");
 const WAVES = [
   { wave: "internal", label: "Internal testing", internal: true, started_at: "2026-09-08T05:00:00+00:00", ended_at: "2026-09-21T05:00:00+00:00" },
   { wave: "first", label: "First wave", internal: false, started_at: "2026-09-21T05:00:00+00:00", ended_at: "2026-09-24T05:00:00+00:00" },
-  { wave: "second", label: "Second wave", internal: false, started_at: "2026-12-07T06:00:00+00:00", ended_at: null },
+  { wave: "second", label: "Second wave", internal: false, started_at: "2026-12-10T06:00:00+00:00", ended_at: null },
 ];
 
 test("a wave is its date window: start inclusive, end exclusive, no end means still running", () => {
@@ -24,8 +24,8 @@ test("a wave is its date window: start inclusive, end exclusive, no end means st
   assert.equal(first.label, "First wave");
   assert.equal(inWave("2026-09-21T05:00:00Z", first), true, "midnight Central on the first day is in");
   assert.equal(inWave("2026-09-24T05:00:00Z", first), false, "midnight after the last day is out");
-  assert.equal(inWave("2026-12-07T05:59:59Z", second), false, "11:59 PM Central on Dec 6 is before wave 2");
-  assert.equal(inWave("2026-12-07T06:00:00Z", second), true, "midnight Central on Dec 7 starts wave 2");
+  assert.equal(inWave("2026-12-10T05:59:59Z", second), false, "11:59 PM Central on Dec 9 is before wave 2");
+  assert.equal(inWave("2026-12-10T06:00:00Z", second), true, "midnight Central on Dec 10 starts wave 2");
   assert.equal(inWave("2027-03-01T12:00:00Z", second), true, "an open wave has no end");
   assert.equal(inWave(null, second), false, "no timestamp, no wave");
 });
@@ -39,7 +39,7 @@ test("no wave, 'all', or a name no wave has means every row", () => {
 });
 
 test("the filter row lists All first, then each wave in order, with counts", () => {
-  const rows = [{ t: "2026-09-10T12:00:00Z" }, { t: "2026-09-22T12:00:00Z" }, { t: "2026-12-08T12:00:00Z" }, { t: "2026-11-01T12:00:00Z" }];
+  const rows = [{ t: "2026-09-10T12:00:00Z" }, { t: "2026-09-22T12:00:00Z" }, { t: "2026-12-11T12:00:00Z" }, { t: "2026-11-01T12:00:00Z" }];
   assert.deepEqual(waveOptions(WAVES, rows, "t").map((o) => [o.key, o.count]),
     [["all", 4], ["internal", 1], ["first", 1], ["second", 1]]);
 });
@@ -84,7 +84,7 @@ test("/api/calls?wave= narrows list, matching and totals, but not the landing pa
     { conversation_id: "w1a", started_at: "2026-09-22T12:00:00Z", scored_at: null },
     { conversation_id: "w1b", started_at: "2026-09-23T12:00:00Z", scored_at: "2026-09-23T13:00:00Z" },
     { conversation_id: "mid", started_at: "2026-11-19T12:00:00Z", scored_at: null },
-    { conversation_id: "w2a", started_at: "2026-12-08T12:00:00Z", scored_at: null },
+    { conversation_id: "w2a", started_at: "2026-12-11T12:00:00Z", scored_at: null },
   ];
   globalThis.fetch = async (url) => {
     const u = decodeURIComponent(String(url));
