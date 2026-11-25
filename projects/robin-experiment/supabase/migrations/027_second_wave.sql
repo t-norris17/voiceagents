@@ -1,4 +1,4 @@
--- 027: declare the second wave of testing, from Thursday 2026-12-10 (midnight Central), still open.
+-- 027: declare the second wave of testing, from Thursday 2026-12-10 at 11:30 AM Central, still open.
 --
 -- Wave 2 runs on a different Robin, in an enterprise ElevenLabs workspace, whose post-call webhook
 -- points at the same broker. Its agent id comes in through the broker's ROBIN_AGENT_IDS setting, not
@@ -14,7 +14,7 @@
 
 insert into public.experiment_waves (wave, label, internal, started_at, ended_at, note) values
   ('second', 'Second wave', false,
-   ('2026-12-10 00:00:00'::timestamp at time zone 'America/Chicago'),
+   ('2026-12-10 11:30:00'::timestamp at time zone 'America/Chicago'),
    null,
    'Synthetic testers on the enterprise Robin (separate number and ElevenLabs workspace). Open-ended until closed.')
 on conflict (wave) do nothing;

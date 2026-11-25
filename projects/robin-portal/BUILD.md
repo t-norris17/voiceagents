@@ -9,7 +9,7 @@
 
 ## Session 2026-11-25: Birdnest ready for wave 2 (built, not merged)
 
-**Context (Tanner):** wave 2 starts Thursday 2026-12-10 (first given as Dec 7, moved the same day) on a different Robin in an enterprise ElevenLabs
+**Context (Tanner):** wave 2 starts Thursday 2026-12-10 at 11:30 AM Central (first given as Dec 7, then Dec 10, then the time) on a different Robin in an enterprise ElevenLabs
 and Supabase that this session cannot reach. Birdnest stays on the personal stack and tracks wave 2 by
 the enterprise Robin's post-call webhook pointing at the broker. All wave 2 data is synthetic. The old
 personal Robin is Tanner's own test line now (2 calls on 2026-11-19 were his).
@@ -29,7 +29,7 @@ window in `experiment_waves`, the definition the Quality page already slices by 
   issues its own. Either secret verifies; an unset one never matches.
 - Wave filter on Interactions and Requests (`lib/waves.js`, `components/WaveFilter.js`), same windows as
   Quality, `?wave=` in the address. Quality's default slice is now All time (was the newest wave).
-- Migration `027_second_wave.sql` (not applied): Second wave from Dec 10 midnight Central, open-ended.
+- Migration `027_second_wave.sql` (not applied): Second wave from Dec 10, 11:30 AM Central, open-ended.
   Apply after the merge deploys, or the old Quality default opens on the empty wave.
 
 **Verified:** broker 216 tests (8 new: wave windows, agent setting, both secrets, `/api/calls?wave=`
