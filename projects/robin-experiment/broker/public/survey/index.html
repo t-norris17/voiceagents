@@ -63,6 +63,8 @@
   .sm-hero .ci b{ color:var(--ink); }
   .sm-bar{ display:flex; height:16px; margin:18px 0 8px; border:1px solid var(--ink); background:var(--paper); overflow:hidden; }
   .sm-bar .a{ background:var(--c-agent); } .sm-bar .n{ background:var(--c-none); } .sm-bar .p{ background:var(--c-person); }
+  .sm-bar .yes{ background:var(--nps-pro); } .sm-bar .partly{ background:var(--nps-pas); } .sm-bar .no{ background:var(--nps-det); }
+  .sm-key .yes i{ background:var(--nps-pro); } .sm-key .partly i{ background:var(--nps-pas); } .sm-key .no i{ background:var(--nps-det); }
   .sm-key{ display:flex; gap:18px; flex-wrap:wrap; font-size:.78rem; color:var(--sub); }
   .sm-key i{ display:inline-block; width:10px; height:10px; margin-right:6px; vertical-align:-1px; }
   .sm-key .a i{ background:var(--c-agent); } .sm-key .n i{ background:var(--c-none); } .sm-key .p i{ background:var(--c-person); }
@@ -415,7 +417,7 @@
   <div class="mast">
     <div>
       <h1 class="wm">Quality</h1>
-      <p class="lede">Would they rather use Robin than wait for a person? What callers said, and every number opens to the interaction behind it.</p>
+      <p class="lede">What callers said about Robin: did she answer them, and would they recommend her. Every number opens to the interaction behind it.</p>
     </div>
     <div class="right">
       <div class="modes" role="tablist" aria-label="View">
@@ -436,7 +438,7 @@
       <div class="cap" id="cap"></div>
 
       <section id="simplesec">
-        <p class="sm-q">Asked at the end of an interaction: would you rather handle this with Robin, or hold for a person, even if it took longer?</p>
+        <p class="sm-q" id="smq">Asked at the end of an interaction: would you rather handle this with Robin, or hold for a person, even if it took longer?</p>
         <div id="simple"></div>
       </section>
 
@@ -612,7 +614,7 @@
     document.getElementById("rail").innerHTML=`
       <div><span class="lbl">Wave</span>
         ${waves.filter(w=>!w.internal).map(waveBtn).join("")}
-        <button type="button" class="opt soon" disabled><span>Second wave<span class="sub">dates to come</span></span></button>
+        ${waves.filter(w=>!w.internal).length<2?`<button type="button" class="opt soon" disabled><span>Second wave<span class="sub">dates to come</span></span></button>`:""}
         ${waves.filter(w=>w.internal).map(waveBtn).join("")}
         ${preset("all","All interactions")}
       </div>
@@ -672,10 +674,26 @@
     const el=document.getElementById("simple"), s=DATA.survey;
     if(!s || s.awaiting_first_call || !s.people){ el.innerHTML=`<div class="empty">No one has answered the survey in this slice, so there is nothing to show.</div>`; return; }
     const p=s.preference||{}, ci=p.ci, a=s.adherence||{}, nps=s.nps||{}, voice=s.voice||{}, rev=s.review||{}, sl=s.slice||{};
+    const acc=s.accuracy||{}, ease=s.ease||{};
     const settled = ci && (ci.lo>50 || ci.hi<50);
     const pc=(n)=>p.decided?((n/p.decided)*100).toFixed(2)+"%":"0%";
     const go=(id)=>`href="#${id}" data-goto="${id}"`;
-    el.innerHTML=`
+    // Wave 2 asks whether Robin fully answered, not whether callers prefer her. When the slice holds
+    // those answers they are the headline; otherwise the headline is the preference, as before.
+    const ac=(n)=>acc.n?((n/acc.n)*100).toFixed(2)+"%":"0%";
+    const accHero=acc.n?`
+      <a class="sm-hero" ${go("board")}>
+        <div class="fig tnum">${acc.yes_pct}<span class="un">%</span></div>
+        <div class="ci">said Robin <b>fully answered</b> their question, from <b>${plural(acc.n,"answer")}</b>${acc.ci?`<br>95% confidence: <b>${acc.ci.lo}–${acc.ci.hi}%</b>`:""}${acc.n<10?`<br><b>Provisional: fewer than 10 answers.</b>`:""}</div>
+      </a>
+      <div class="sm-bar" role="img" aria-label="${acc.yes} yes, ${acc.partly} partly, ${acc.no} no">
+        <span class="yes" style="width:${ac(acc.yes)}"></span><span class="partly" style="width:${ac(acc.partly)}"></span><span class="no" style="width:${ac(acc.no)}"></span>
+      </div>
+      <div class="sm-key"><span class="yes"><i></i>${acc.yes} yes</span><span class="partly"><i></i>${acc.partly} partly</span><span class="no"><i></i>${acc.no} no</span>${acc.unclear?`<span>${acc.unclear} unclear</span>`:""}</div>`:"";
+    // The question above the headline is the one the headline answers.
+    const q=document.getElementById("smq");
+    if(q) q.textContent=accHero?"Asked at the end of an interaction: did I fully answer your question today? Yes, partly, or no?":"Asked at the end of an interaction: would you rather handle this with Robin, or hold for a person, even if it took longer?";
+    el.innerHTML=accHero?accHero+simpleRest():`
       <a class="sm-hero" ${go("board")}>
         <div class="fig tnum">${ci?ci.pct:"—"}<span class="un">%</span></div>
         <div class="ci">chose <b>Robin</b> over holding for a person, from <b>${plural(s.people,"person","people")}</b>${ci?`<br>95% confidence: <b>${ci.lo}–${ci.hi}%</b>`:""}${ci?`<br>${settled?"Above an even split.":"<b>Still spans 50%, not yet conclusive.</b>"}`:""}</div>
@@ -684,9 +702,13 @@
         <span class="a" style="width:${pc(p.agent||0)}"></span><span class="n" style="width:${pc(p.no_preference||0)}"></span><span class="p" style="width:${pc(p.person||0)}"></span>
       </div>
       <div class="sm-key"><span class="a"><i></i>${p.agent||0} Robin</span><span class="n"><i></i>${p.no_preference||0} either</span><span class="p"><i></i>${p.person||0} a person</span></div>`:""}
+` + simpleRest();
+    function simpleRest(){ return `
       <div class="sm-grid">
         <a class="sm-m" ${go("board")}><div class="v tnum">${nps.n?sign(nps.score):"—"}</div><div class="c">NPS${nps.n?`, ${plural(nps.n,"response")}`:""}. Promoters minus detractors.</div></a>
-        <a class="sm-m" ${go("board")}><div class="v tnum">${voice.n?Number(voice.mean).toFixed(1):"—"}<span class="u">/10</span></div><div class="c">how natural Robin's voice sounded</div></a>
+        ${ease.n||!voice.n
+          ?`<a class="sm-m" ${go("board")}><div class="v tnum">${ease.n?Number(ease.mean).toFixed(1):"—"}<span class="u">/10</span></div><div class="c">how easy Robin was to understand</div></a>`
+          :`<a class="sm-m" ${go("board")}><div class="v tnum">${Number(voice.mean).toFixed(1)}<span class="u">/10</span></div><div class="c">how natural Robin's voice sounded</div></a>`}
         ${(()=>{ // The theme said by the most people, in its own few words. Loads a beat after the numbers.
           const th=THEMES&&THEMES.ready?(THEMES.themes||[]).slice().sort((a,b)=>(b.people-a.people)||(b.mentions-a.mentions))[0]:null;
           if(th) return `<a class="sm-m${th.sentiment==="negative"?" flag":""}" ${go("saidcard")}><div class="v txt">${esc(th.label)}</div><div class="c">top theme, <b>${plural(th.people,"person","people")}</b> said it · ${esc(th.sentiment)}</div></a>`;
@@ -695,7 +717,7 @@
       </div>
       ${rev.n?`<a class="sm-m flag" ${go("revcard")} style="margin-top:14px;border-top:0"><div class="c"><b>${plural(rev.n,"interaction")} need${rev.n===1?"s":""} a listen.</b> Read ${rev.n===1?"it":"them"} first.</div></a>`:""}
       <div class="sm-foot"><span>${esc(sl.label||"All interactions")}${sl.when&&sl.when!==sl.label?`, ${esc(sl.when)}`:""} · staff ${S.staff==="show"?"included":"excluded"}. ${a.pct!=null?`Robin asked on ${a.pct}% of eligible interactions.`:""}</span><span>${plural(s.surveyed??0,"surveyed interaction")}</span></div>
-      <a class="sm-more" ${go("board")}>Everything, in detail &rarr;</a>`;
+      <a class="sm-more" ${go("board")}>Everything, in detail &rarr;</a>`; }
   }
   // Any link into the board switches to Advanced and scrolls there. Delegated, because the slide,
   // the footer and the tour all render such links at different times.
@@ -712,6 +734,10 @@
       el.innerHTML=`<div class="c12 empty">No interactions in this slice yet.</div>`; return;
     }
     const p=s.preference||{}, ci=p.ci, a=s.adherence||{}, nps=s.nps||{}, voice=s.voice||{}, f=s.funnel||{}, rev=s.review||{};
+    // Wave 2 asks whether Robin fully answered and how easy she was to understand, and no longer asks
+    // preference or voice. A question the slice never asked hides rather than reading as zero.
+    const acc=s.accuracy||{}, ease=s.ease||{};
+    const showPref=!!p.decided||!acc.n, showVoice=!!voice.n||!ease.n;
     const nTot=nps.n||0, seg=(c)=>nTot?`flex:${c} 0 0%`:"flex:0";
     const settled = ci && (ci.lo>50 || ci.hi<50);
     const warn = a.pct!=null && a.pct<70;
@@ -723,19 +749,32 @@
         <div class="legend"><span><i class="s-pro"></i>${nps.promoters} promoter${nps.promoters===1?"":"s"}</span><span><i class="s-pas"></i>${nps.passives} passive${nps.passives===1?"":"s"}</span><span><i class="s-det"></i>${nps.detractors} detractor${nps.detractors===1?"":"s"}</span></div>`:""}
         <div class="note">${nTot?`<b>${nTot}</b> of ${s.surveyed} gave a number${nTot<10?` · <span class="accent">provisional</span>`:""}`:"Nobody has given a number yet"}</div>
       </button>
-      <button type="button" class="tile" data-drill="prefer">
+      ${acc.n?`<div class="tile${acc.n<10?" thin":""}">
+        <span class="lbl">Answered fully&nbsp;<span class="tipw"><span class="tip" aria-hidden="true">?</span><span class="tip-box">Asked at the end of the interaction: did I fully answer your question today? Yes, partly or no. The share is of everyone who answered; answers in words that fit none of the three count as unclear and stay out of the share.</span></span></span>
+        <div class="fig">${acc.yes_pct}<span class="un">%</span></div>
+        <div class="stack" role="img" aria-label="${acc.yes} yes, ${acc.partly} partly, ${acc.no} no"><span class="s-pro" style="flex:${acc.yes} 0 0%"></span><span class="s-pas" style="flex:${acc.partly} 0 0%"></span><span class="s-det" style="flex:${acc.no} 0 0%"></span></div>
+        <div class="legend"><span><i class="s-pro"></i>${acc.yes} yes</span><span><i class="s-pas"></i>${acc.partly} partly</span><span><i class="s-det"></i>${acc.no} no</span></div>
+        <div class="note"><b>${acc.n}</b> of ${s.surveyed} answered${acc.unclear?` · ${acc.unclear} unclear`:""}${acc.n<10?` · <span class="accent">provisional</span>`:""}</div>
+      </div>`:""}
+      ${showPref?`<button type="button" class="tile" data-drill="prefer">
         <span class="lbl">Prefer Robin to a person&nbsp;<span class="tipw"><span class="tip" aria-hidden="true">?</span><span class="tip-box">Asked at the end of the interaction: next time, would you rather handle this with Robin or hold for a person? The bar is the 95% range for the true share at this sample size.</span></span></span>
         <div class="fig">${ci?ci.pct:"—"}<span class="un">%</span></div>
         ${ci?`<div class="rng" role="img" aria-label="likely between ${ci.lo} and ${ci.hi} percent"><b style="left:${ci.lo}%;width:${Math.max(1,ci.hi-ci.lo)}%"></b><i style="left:${ci.pct}%"></i></div>
         <div class="legend"><span>likely ${ci.lo} to ${ci.hi}% at this sample${settled?"":" · <b>still spans 50%</b>"}</span></div>`:""}
         <div class="note">${p.decided?`<b>${p.agent}</b> Robin · <b>${p.person}</b> a person · <b>${p.no_preference}</b> either, of ${p.decided} who chose${p.unclassified?` · ${p.unclassified} unclear`:""}`:"Nobody has answered the preference question yet"}</div>
-      </button>
-      <button type="button" class="tile${voice.n&&voice.n<10?" thin":""}" data-drill="voice">
+      </button>`:""}
+      ${ease.n?`<div class="tile${ease.n<10?" thin":""}">
+        <span class="lbl">Ease of understanding&nbsp;<span class="tipw"><span class="tip" aria-hidden="true">?</span><span class="tip-box">How easy Robin was to understand, 0 to 10, averaged over everyone who rated it. Replaced the voice-naturalness question in wave 2, and kept apart from NPS for the same reason.</span></span></span>
+        <div class="fig">${Number(ease.mean).toFixed(1)}<span class="un">/ 10</span></div>
+        <div class="rng"><b class="solid" style="left:0;width:${Math.max(1,Math.round(ease.mean*10))}%"></b></div>
+        <div class="note"><b>${ease.n}</b> of ${s.surveyed} rated it${ease.unparsed?` · ${ease.unparsed} in words`:""}</div>
+      </div>`:""}
+      ${showVoice?`<button type="button" class="tile${voice.n&&voice.n<10?" thin":""}" data-drill="voice">
         <span class="lbl">Voice naturalness score&nbsp;<span class="tipw"><span class="tip" aria-hidden="true">?</span><span class="tip-box">How natural Robin's voice sounded, 0 to 10, averaged over everyone who rated it. Kept apart from NPS so a voice problem cannot hide behind a good score, or the reverse.</span></span></span>
         <div class="fig">${voice.n?Number(voice.mean).toFixed(1):"—"}<span class="un">/ 10</span></div>
         ${voice.n?`<div class="rng"><b class="solid" style="left:0;width:${Math.max(1,Math.round(voice.mean*10))}%"></b></div>`:""}
         <div class="note">${voice.n?`<b>${voice.n}</b> of ${s.surveyed} rated the voice${voice.unparsed?` · ${voice.unparsed} in words`:""}`:"No voice ratings yet"}</div>
-      </button>
+      </button>`:""}
       <button type="button" class="tile" data-drill="asked">
         <span class="lbl">Survey offer rate&nbsp;<span class="tipw"><span class="tip" aria-hidden="true">?</span><span class="tip-box">Of the interactions where the survey was due, the share Robin actually asked on. Transferred interactions and failed verifications are not due. Below 70%, every number on this board comes from a biased slice. Counts all callers, staff included.</span></span></span>
         <div class="fig">${a.pct!=null?a.pct:"—"}<span class="un">%</span></div>
@@ -792,7 +831,7 @@
     if(!el) return;
     if(!r.n){ el.innerHTML=`<div class="empty">Nothing flagged in this slice.</div>`; return; }
     el.innerHTML=(r.calls||[]).map(c=>{
-      const why=[c.sentiment==="negative"?"sounded unhappy":"", c.preference==="person"?"prefers a person":"", c.satisfaction_score!=null&&c.satisfaction_score<=2?`rated ${c.satisfaction_score}/5`:""].filter(Boolean).join(" · ");
+      const why=[c.answered_fully==="no"?"said Robin did not answer":c.answered_fully==="partly"?"only partly answered":"", c.sentiment==="negative"?"sounded unhappy":"", c.preference==="person"?"prefers a person":"", c.satisfaction_score!=null&&c.satisfaction_score<=2?`rated ${c.satisfaction_score}/5`:""].filter(Boolean).join(" · ");
       return `<div class="rv" role="button" tabindex="0" data-id="${esc(c.conversation_id)}" data-who="${esc(c.respondent||"")}">
         <span class="who">${esc(c.respondent||"Respondent")}${chanTag(c.conversation_id)}${c.response_seq>1?` · interaction ${c.response_seq}`:""}</span>
         <span>${c.nps_score!=null?`<span class="badge">NPS ${c.nps_score}</span>`:c.satisfaction_score!=null?`<span class="badge">${c.satisfaction_score}/5</span>`:`<span class="badge">flagged</span>`}</span>
@@ -1188,8 +1227,8 @@
       // viewer's own choice back when it ends.
       onStart:()=>{ modeBefore=document.body.dataset.mode||"simple"; setMode("advanced",false); },
       onStop:()=>setMode(modeBefore,false),
-      welcome:{ title:"Would they rather use Robin?", body:[
-        "This page answers that question for the interactions you choose, and every number on it opens to the interactions behind it.",
+      welcome:{ title:"What callers said about Robin", body:[
+        "This page shows what callers told Robin's survey, for the interactions you choose, and every number on it opens to the interactions behind it.",
         "This tour walks through each section in about two minutes. You can bring it back any time from <b>Help</b> at the bottom of the page." ] },
       steps:[
         { target:".modes", placement:"bottom", title:"Simple and Advanced", body:[

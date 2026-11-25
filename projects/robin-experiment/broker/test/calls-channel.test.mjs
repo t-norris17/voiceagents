@@ -24,6 +24,7 @@ function stubDatabase({ rejectChannelSelect }) {
     const u = String(url);
     seen.push(u);
     const reply = (status, body) => ({ ok: status < 400, status, text: async () => JSON.stringify(body) });
+    if (u.includes("experiment_waves")) return reply(200, []);
     if (u.includes("started_at=gte.")) return reply(200, [{ started_at: new Date().toISOString(), scored_at: null }]);
     if (u.includes("raw_payload")) {
       if (rejectChannelSelect) return reply(400, { code: "PGRST100", message: "failed to parse select parameter" });

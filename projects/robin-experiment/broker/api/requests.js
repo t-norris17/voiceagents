@@ -11,6 +11,7 @@
 //   One transaction per action (service_request_act): the history row and any status change land
 //   together. The actor is "birdnest": the portal is one shared password and cannot say which person.
 import { sb, sbAll } from "../lib/supabase.js";
+import { loadWaves, pickWave, inWave, waveOptions } from "../lib/waves.js";
 import { ACTIONS, isUuid, clip, slaState, firstAttempt, queueStats } from "../lib/requests.js";
 import { HOURS, hoursText } from "../lib/hours.js";
 
@@ -51,7 +52,7 @@ async function membersFor(refs) {
   return Object.fromEntries((rows || []).map((m) => [m.id, { first_name: m.first_name, plan_name: m.plan_name }]));
 }
 
-export async function list({ view = "open", test = false, now = new Date() } = {}) {
+export async function list({ view = "open", test = false, wave: waveParam = null, now = new Date(), db = sb } = {}) {
   const testFilter = test ? "" : "&is_test=is.false";
   // Every open request, plus what was closed in the last RECENT_DAYS: enough for "done this month" and
   // the median, and bounded, so the history the queue reads (and the id list sent for its events and
@@ -63,7 +64,12 @@ export async function list({ view = "open", test = false, now = new Date() } = {
     sbAll(`service_requests?select=${COLS}${testFilter}&status=eq.open&order=due_at.asc,id.asc`),
     sbAll(`service_requests?select=${COLS}${testFilter}&status=eq.closed&closed_at=gte.${encodeURIComponent(since)}&order=due_at.asc,id.asc`),
   ]);
-  const all = [...openRows, ...recentClosed];
+  // A wave narrows the queue and its numbers to requests FILED inside that wave's dates (lib/waves.js,
+  // the same windows the Quality page uses). Without one, every request, as before.
+  const waves = await loadWaves(db);
+  const wave = pickWave(waves, waveParam);
+  const unfiltered = [...openRows, ...recentClosed];
+  const all = unfiltered.filter((r) => inWave(r.filed_at, wave));
   const events = await eventsFor(all.map((r) => r.id));
   const stats = queueStats(all.filter((r) => !r.is_test), events, now);
   if (view === "stats") return { now: now.toISOString(), hours: HOURS_INFO, stats };
@@ -81,7 +87,8 @@ export async function list({ view = "open", test = false, now = new Date() } = {
       call: r.conversation_id ? summaries[r.conversation_id] || null : null,
       member: r.subject_ref ? members[r.subject_ref] || null : null };
   });
-  return { now: now.toISOString(), hours: HOURS_INFO, stats, requests, test_hidden: testHidden };
+  return { now: now.toISOString(), hours: HOURS_INFO, stats, requests, test_hidden: testHidden,
+    wave: wave ? wave.key : "all", waves: waveOptions(waves, unfiltered, "filed_at") };
 }
 
 export default async function handler(req, res) {
@@ -89,7 +96,7 @@ export default async function handler(req, res) {
     if (req.method === "GET") {
       const view = ["open", "done", "all", "stats"].includes(req.query?.view) ? req.query.view : "open";
       res.setHeader("cache-control", "no-store");
-      return res.status(200).json(await list({ view, test: req.query?.test === "1" }));
+      return res.status(200).json(await list({ view, test: req.query?.test === "1", wave: req.query?.wave }));
     }
     if (req.method === "POST") {
       const { id, action, note } = req.body || {};

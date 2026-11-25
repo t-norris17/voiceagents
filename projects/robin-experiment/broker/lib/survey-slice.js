@@ -88,12 +88,10 @@ export function parseSlice(query = {}, { waves = [], now = new Date() } = {}) {
     param: `wave:${w.wave}`,
   });
 
-  // Default: the newest wave that is not internal testing; failing that, everything.
-  if (!raw) {
-    const real = waves.filter((w) => !w.internal).sort((a, b) => String(b.started_at).localeCompare(String(a.started_at)));
-    if (real.length) return { ...fromWave(real[0]), param: `wave:${real[0].wave}`, defaulted: true };
-    return { ...base, kind: "all", key: "all", label: "All time", from: null, to: null, param: "all", defaulted: true };
-  }
+  // Default: everything. Until 2026-11-25 the default was the newest non-internal wave; with wave 2
+  // declared ahead of its start (Dec 10) that would have opened Quality on an empty wave, and Tanner
+  // chose All as the default for every page's wave filter. Staff calls stay hidden by default.
+  if (!raw) return { ...base, kind: "all", key: "all", label: "All time", from: null, to: null, param: "all", defaulted: true };
 
   if (raw === "all") return { ...base, kind: "all", key: "all", label: "All time", from: null, to: null, param: "all" };
 

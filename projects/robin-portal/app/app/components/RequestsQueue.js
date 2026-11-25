@@ -10,6 +10,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import NestLoader from "./NestLoader.js";
 import RequestDrawer from "./RequestDrawer.js";
 import CallDrawer from "./CallDrawer.js";
+import WaveFilter, { useWave } from "./WaveFilter.js";
 import { TYPE_LABEL, FILTERS, nameOf, rowStatus, dotOf, stamp, phone, duration } from "../../lib/request-view.js";
 
 const TZ_FALLBACK = "America/Chicago";
@@ -21,17 +22,18 @@ export default function RequestsQueue() {
   const [openId, setOpenId] = useState(null);
   const [transcript, setTranscript] = useState(null);
   const [withTest, setWithTest] = useState(false);
+  const [wave, setWave] = useWave();
 
   useEffect(() => { setWithTest(new URLSearchParams(window.location.search).get("test") === "1"); }, []);
 
   const load = useCallback(async () => {
     try {
-      const r = await fetch(`/api/requests?view=all${withTest ? "&test=1" : ""}`, { cache: "no-store" });
+      const r = await fetch(`/api/requests?view=all${withTest ? "&test=1" : ""}${wave !== "all" ? `&wave=${encodeURIComponent(wave)}` : ""}`, { cache: "no-store" });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
       setData(d); setErr(null);
     } catch (e) { setErr(String(e.message || e)); }
-  }, [withTest]);
+  }, [withTest, wave]);
   useEffect(() => { load(); const t = setInterval(load, 60000); return () => clearInterval(t); }, [load]);
 
   const tz = data?.hours?.time_zone || TZ_FALLBACK;
@@ -66,6 +68,7 @@ export default function RequestsQueue() {
         <p className="rq-tests">{data.test_hidden} test {data.test_hidden === 1 ? "request" : "requests"} hidden · <a href="/requests?test=1">Show</a></p>
       )}
       {err && <div className="banner">Couldn't load requests: {err}</div>}
+      <WaveFilter waves={data?.waves} value={data?.wave ?? wave} onChange={setWave} />
       {s && (
         <div className="stat-row">
           <div className="stat"><div className="n">{s.open}</div><div className="k">Open</div></div>

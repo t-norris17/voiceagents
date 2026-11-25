@@ -402,3 +402,72 @@ test("a topic nobody was asked about does not appear as an empty slice", () => {
   assert.equal(r.by_topic[0].topic, "loans");
   assert.equal(r.by_topic[0].nps, null, "no scores in the slice is null, never 0");
 });
+
+// ---- Wave 2: the accuracy survey (migration 028) ------------------------------------------------
+
+test("answered fully is counted over those who answered it; unclear is shown, not counted in the share", () => {
+  const r = summariseSurvey(
+    [person({ person_key: "P-1", in_accuracy_era: true, answered_fully: "yes", answered_fully_raw: "Yes" }),
+     person({ person_key: "P-2", in_accuracy_era: true, answered_fully: "yes", answered_fully_raw: "yep, all of it" }),
+     person({ person_key: "P-3", in_accuracy_era: true, answered_fully: "partly", answered_fully_raw: "partly" }),
+     person({ person_key: "P-4", in_accuracy_era: true, answered_fully: "no", answered_fully_raw: "no" }),
+     person({ person_key: "P-5", in_accuracy_era: true, answered_fully: "unclear", answered_fully_raw: "hmm" }),
+     person({ person_key: "P-6", in_accuracy_era: true, answered_fully: null, answered_fully_raw: null })],
+    [call({})]
+  );
+  assert.deepEqual([r.accuracy.n, r.accuracy.yes, r.accuracy.partly, r.accuracy.no, r.accuracy.unclear], [4, 2, 1, 1, 1]);
+  assert.equal(r.accuracy.yes_pct, 50);
+  assert.equal(r.instrument.v3, 6);
+});
+
+test("ease of understanding averages like the other 0-10 scores, never counting a blank as zero", () => {
+  const r = summariseSurvey(
+    [person({ person_key: "P-1", ease_score: 9, ease_raw: "nine" }),
+     person({ person_key: "P-2", ease_score: 7, ease_raw: "7" }),
+     person({ person_key: "P-3", ease_score: null, ease_raw: null }),
+     person({ person_key: "P-4", ease_score: null, ease_raw: "pretty easy" })],
+    [call({})]
+  );
+  assert.equal(r.ease.n, 2); assert.equal(r.ease.mean, 8); assert.equal(r.ease.unparsed, 1);
+});
+
+test("a wave 1 slice is unchanged: no accuracy answers, preference and voice as before", () => {
+  const r = summariseSurvey(
+    [person({ preference: "agent", nps_score: 9, nps_band: "promoter", voice_score: 8, in_nps_era: true })],
+    [call({})]
+  );
+  assert.equal(r.accuracy.n, 0); assert.equal(r.accuracy.yes_pct, null);
+  assert.equal(r.ease.n, 0); assert.equal(r.voice.n, 1); assert.equal(r.preference.agent, 1);
+});
+
+test("surveying before a transfer is a leak under the old survey and by design under the new one", () => {
+  const r = summariseSurvey([], [
+    call({ conversation_id: "old", offer_context: "pre_transfer" }),
+    call({ conversation_id: "new", offer_context: "pre_transfer", in_accuracy_era: true }),
+  ]);
+  assert.equal(r.leaked_pre_transfer, 1);
+});
+
+test("a caller who says Robin did not answer their question is flagged for a listen, whatever the score", () => {
+  const r = summariseSurvey([], [
+    call({ conversation_id: "a", answered_fully: "no", nps_score: 10, needs_review: false }),
+    call({ conversation_id: "b", answered_fully: "yes", needs_review: false }),
+  ]);
+  assert.deepEqual(r.review.calls.map((c) => c.conversation_id), ["a"]);
+  assert.equal(r.review.calls[0].answered_fully, "no");
+});
+
+test("an accuracy answer alone makes a call count as answered", () => {
+  const r = summariseSurvey([], [call({ conversation_id: "a", answered_fully_raw: "yes" }), call({ conversation_id: "b" })]);
+  assert.equal(r.funnel.answered, 1);
+});
+
+test("the score-against-choice grid ignores wave 2 answers, which were never asked the preference", () => {
+  const r = summariseSurvey(
+    [person({ person_key: "P-1", nps_band: "promoter", preference: null, in_accuracy_era: true }),
+     person({ person_key: "P-2", nps_band: "promoter", preference: null, in_accuracy_era: false })],
+    [call({})]
+  );
+  const promoters = r.matrix.find((m) => m.band === "promoter");
+  assert.equal(promoters.unclassified, 1, "the wave 1 blank still counts as unclear; the wave 2 one does not");
+});

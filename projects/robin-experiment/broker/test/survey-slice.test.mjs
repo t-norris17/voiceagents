@@ -17,11 +17,11 @@ test("central midnight is 05:00 UTC in September and 06:00 UTC in January", () =
   assert.equal(centralMidnight(2026, 3, 9).toISOString(), "2026-03-09T05:00:00.000Z");
 });
 
-test("no range means the newest wave that is not internal testing, staff hidden", () => {
+test("no range means every wave (All time), staff hidden: the default since wave 2 was declared", () => {
   const s = parseSlice({}, { waves: WAVES, now: NOW });
-  assert.equal(s.kind, "wave"); assert.equal(s.key, "first"); assert.equal(s.label, "First wave");
-  assert.equal(s.from, "2026-09-21T05:00:00.000Z"); assert.equal(s.to, "2026-09-24T05:00:00.000Z");
-  assert.equal(s.staff, "hidden"); assert.equal(s.defaulted, true); assert.equal(s.param, "wave:first");
+  assert.equal(s.kind, "all"); assert.equal(s.key, "all"); assert.equal(s.label, "All time");
+  assert.equal(s.from, null); assert.equal(s.to, null);
+  assert.equal(s.staff, "hidden"); assert.equal(s.defaulted, true); assert.equal(s.param, "all");
 });
 
 test("no waves at all falls back to everything", () => {
@@ -67,9 +67,9 @@ test("staff are hidden unless staff=show; rows without the flag are never hidden
     { started_at: "2026-09-24T12:00:00Z", is_staff: false, who: "after the wave" },
     { started_at: "2026-09-20T12:00:00Z", is_staff: false, who: "before the wave" },
   ];
-  const hidden = applySlice(rows, parseSlice({}, { waves: WAVES, now: NOW }));
+  const hidden = applySlice(rows, parseSlice({ range: "wave:first" }, { waves: WAVES, now: NOW }));
   assert.deepEqual(hidden.map((r) => r.who), ["tester", "old row"]);
-  const shown = applySlice(rows, parseSlice({ staff: "show" }, { waves: WAVES, now: NOW }));
+  const shown = applySlice(rows, parseSlice({ range: "wave:first", staff: "show" }, { waves: WAVES, now: NOW }));
   assert.deepEqual(shown.map((r) => r.who), ["tanner", "tester", "old row"]);
   const all = applySlice(rows, parseSlice({ range: "all", staff: "show" }, { waves: WAVES, now: NOW }));
   assert.equal(all.length, 5);

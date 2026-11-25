@@ -28,7 +28,10 @@ export default async function handler(req, res) {
     const s = await surveySlice(req.query || {});
     const surveyed = s.calls.filter((c) => c.survey_offered);
     const rows = level === "calls" ? surveyed : peopleFromCalls(surveyed);
-    const cols = (level === "calls" ? CALL_COLS : PEOPLE_COLS).split(",");
+    // People rows are derived from calls here, so they carry the wave 2 survey columns too. Those are
+    // added for the file only: PEOPLE_COLS also selects from the survey_people view, which lacks them.
+    const ACCURACY = ["in_accuracy_era", "answered_fully_raw", "answered_fully", "ease_raw", "ease_score"];
+    const cols = level === "calls" ? CALL_COLS.split(",") : [...PEOPLE_COLS.split(","), ...ACCURACY];
     const csv = [cols.join(","), ...rows.map((r) => cols.map((c) => cell(r[c])).join(","))].join("\r\n");
 
     const stamp = new Date().toISOString().slice(0, 10);

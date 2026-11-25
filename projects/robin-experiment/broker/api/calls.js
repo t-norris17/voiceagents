@@ -6,6 +6,7 @@
 import { sb, sbAll } from "../lib/supabase.js";
 import { CALL_COLS, clampLimit, summarize, parseFilter, parseOffset, sourceStatusByCall, statusOf, selectIds, totals } from "../lib/calls.js";
 import { CHANNEL_COLS, withChannel } from "../lib/channel.js";
+import { loadWaves, pickWave, inWave, waveOptions } from "../lib/waves.js";
 
 // Each row also says which channel it came in on (phone, web voice, web chat). That is derived from
 // the stored webhook payload; if the database rejects the extra select the list still loads, with
@@ -22,7 +23,9 @@ async function callRows(ids) {
   }
 }
 
-// GET /api/calls?limit=50&offset=0&filter=all|ungraded|graded|no_source
+// GET /api/calls?limit=50&offset=0&filter=all|ungraded|graded|no_source&wave=all|<experiment_waves.wave>
+// `wave` narrows everything below (the list, matching, totals) to one wave's date window; without it,
+// or with a name no wave has, it is every call, exactly as before. `waves` lists them with counts.
 // `filter` and `offset` are what the Accuracy page pages through; without them this is the newest
 // `limit` calls, as before. `totals` counts the whole table, so the page's numbers never depend on how
 // many rows it has loaded. Each call carries `source_status`: ungraded, sourced (its answers were
@@ -35,10 +38,13 @@ export default async function handler(req, res) {
   try {
     // Every call, newest first, with only the columns needed to count and filter; the full rows are
     // fetched for the one page that is shown.
-    const [all, scores] = await Promise.all([
+    const [everyCall, scores, waves] = await Promise.all([
       sbAll(`ai_call_events?provider=eq.elevenlabs&select=conversation_id,started_at,scored_at&order=started_at.desc.nullslast,conversation_id.asc`),
       sbAll(`call_question_scores?select=conversation_id,grounding&order=conversation_id.asc,question_key.asc`),
+      loadWaves(sb),
     ]);
+    const wave = pickWave(waves, req.query?.wave);
+    const all = (everyCall || []).filter((r) => inWave(r.started_at, wave));
     const status = sourceStatusByCall(scores || []);
     const matching = selectIds(all || [], filter, status);
     const pageIds = matching.slice(offset, offset + limit);
@@ -49,11 +55,13 @@ export default async function handler(req, res) {
       .map((r) => ({ ...r, source_status: statusOf(byAll.get(r.conversation_id) || r, status) }));
 
     const weekAgo = Date.now() - 7 * 24 * 3600 * 1000;
-    const week = (all || []).filter((r) => Date.parse(r?.started_at || "") >= weekAgo);
+    // The landing page's 24h / 7d counts are about every call, whatever wave is picked.
+    const week = (everyCall || []).filter((r) => Date.parse(r?.started_at || "") >= weekAgo);
     res.setHeader("cache-control", "no-store");
     return res.status(200).json({
       calls, summary: summarize(week), totals: totals(all || [], status),
       matching: matching.length, offset, limit, filter,
+      wave: wave ? wave.key : "all", waves: waveOptions(waves, everyCall || [], "started_at"),
     });
   } catch (e) {
     return res.status(500).json({ error: String(e?.message || e) });
